@@ -14,3 +14,13 @@ export function crearClientePrisma(): PrismaClient {
   }
   return new PrismaClient({ adapter: new PrismaMariaDb(url) });
 }
+
+const claveClienteUnico = Symbol.for("evaristo.prisma");
+
+// Devuelve siempre el mismo cliente dentro del proceso. Se guarda en globalThis a propósito:
+// el build de Astro empaqueta su propia copia de este módulo, y con una variable de módulo
+// común la API y el sitio terminarían con un cliente (y un pool de conexiones) cada uno.
+export function obtenerClientePrisma(): PrismaClient {
+  const global = globalThis as { [clave: symbol]: PrismaClient | undefined };
+  return (global[claveClienteUnico] ??= crearClientePrisma());
+}

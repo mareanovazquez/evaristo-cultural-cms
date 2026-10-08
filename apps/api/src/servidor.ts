@@ -1,9 +1,9 @@
-import { crearClientePrisma } from "@evaristo/compartido/db";
+import { obtenerClientePrisma } from "@evaristo/compartido/db";
 import { crearApp } from "./app.js";
 
 const puerto = Number(process.env["PORT"] ?? 3000);
 
-const prisma = crearClientePrisma();
+const prisma = obtenerClientePrisma();
 const app = crearApp(prisma);
 const servidor = app.listen(puerto, "127.0.0.1", () => {
   console.log(`Servidor escuchando en http://127.0.0.1:${puerto}`);

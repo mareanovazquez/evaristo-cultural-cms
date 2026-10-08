@@ -1,8 +1,7 @@
 import { existsSync } from "node:fs";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import express, { type NextFunction, type Request, type RequestHandler, type Response } from "express";
-import type { PrismaClient } from "@evaristo/compartido/db";
-import { crearClientePrisma } from "@evaristo/compartido/db";
+import { obtenerClientePrisma, type PrismaClient } from "@evaristo/compartido/db";
 
 // Salida de `npm run build:sitio` (adaptador de Node de Astro, modo middleware).
 const dirSitioCompilado = fileURLToPath(new URL("../../sitio/dist/", import.meta.url));
@@ -11,7 +10,7 @@ const entradaServidor = `${dirSitioCompilado}server/entry.mjs`;
 
 type ManejadorAstro = (req: Request, res: Response, next: NextFunction) => void;
 
-export function crearApp(prisma: PrismaClient = crearClientePrisma()): express.Express {
+export function crearApp(prisma: PrismaClient = obtenerClientePrisma()): express.Express {
   const app = express();
 
   // Se carga una sola vez, la primera vez que hace falta y existe el build.

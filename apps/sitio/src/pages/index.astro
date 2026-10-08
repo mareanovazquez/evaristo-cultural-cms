@@ -1,9 +1,6 @@
 ---
 import { prisma } from "../lib/prisma";
 
-// El adaptador de Node no agrega el charset al Content-Type: lo declaramos acá.
-Astro.response.headers.set("Content-Type", "text/html; charset=utf-8");
-
 const filas = await prisma.pruebaConexion.findMany({ orderBy: { id: "asc" } });
 const formato = new Intl.DateTimeFormat("es-AR", { dateStyle: "medium", timeStyle: "medium", timeZone: "UTC" });
 ---

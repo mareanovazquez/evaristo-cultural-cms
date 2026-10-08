@@ -1,4 +1,4 @@
-import { crearClientePrisma } from "@evaristo/compartido/db";
+import { obtenerClientePrisma } from "@evaristo/compartido/db";
 
-// Un único cliente por proceso de servidor.
-export const prisma = crearClientePrisma();
+// Cliente compartido con la API: es el mismo objeto dentro del proceso.
+export const prisma = obtenerClientePrisma();

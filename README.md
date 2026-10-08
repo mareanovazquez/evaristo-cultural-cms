@@ -106,6 +106,10 @@ Después abrir:
 | `npm run dev:sitio` | `astro dev` del sitio solo, en http://127.0.0.1:4321, con recarga en caliente. No incluye la API. |
 | `npm run start --workspace=@evaristo/api` | Arranca el servidor único sin compilar el sitio antes (pensado para producción). |
 
+> **Apagado ordenado:** el servidor atiende SIGINT y SIGTERM (cierra el servidor y desconecta Prisma), pero en Windows no se puede probar porque ahí las señales terminan el proceso sin pasar por los handlers. Se prueba en Linux al desplegar.
+>
+> **Charset UTF-8:** lo pone el middleware de Astro (`apps/sitio/src/middleware.ts`) en todas las páginas HTML, así que las páginas nuevas no necesitan declararlo.
+
 ## Estructura de carpetas
 
 ```
@@ -132,3 +136,13 @@ npm run typecheck
 4. Crear el `.env` a partir de `.env.example` y completar la clave. Las claves nunca se commitean.
 5. Crear las bases de datos siguiendo la sección anterior.
 6. Correr `npm run db:generate` y `npm run db:deploy` (ver la sección de base de datos).
+
+### Windows 11: Control Inteligente de Aplicaciones
+
+En Windows 11, el Control Inteligente de Aplicaciones (Smart App Control) puede bloquear el binario nativo del compilador de Astro y hacer fallar `astro build` y `astro dev` con el error 4551 ("Una directiva de Control de aplicaciones bloqueó este archivo"). Para comprobarlo antes de empezar, después de `npm ci`:
+
+```bash
+node -e "require('./node_modules/@astrojs/compiler-binding-win32-x64-msvc/astro.win32-x64-msvc.node'); console.log('carga OK')"
+```
+
+Si falla, revisá Seguridad de Windows → Control de aplicaciones y navegador → Control Inteligente de Aplicaciones. Desactivarlo es decisión de cada uno: en muchas versiones no se puede volver a activar sin restablecer Windows. Si la máquina la administra una organización, no se toca.
