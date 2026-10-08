@@ -64,6 +64,10 @@ El proyecto usa `utf8mb4_es_0900_ai_ci` (la ñ es una letra distinta de la n). P
 
 Por eso **cada migración nueva se crea con `npm run db:nueva -- <nombre>`** y no con `migrate dev` a secas: el script genera la migración, le borra esa cláusula, avisa si todavía queda algún `COLLATE` y no la aplica. Después de revisar el SQL, se aplica con `npm run db:deploy` y se comprueba con `npm run db:verificar`.
 
+### Base shadow
+
+Prisma recrea la base shadow (`evaristo_cms_shadow`) con la intercalación por defecto del servidor cada vez que la usa, y eso no importa: solo cuenta la intercalación de `evaristo_cms`. Por eso `db:verificar` mira únicamente `evaristo_cms`.
+
 ### Recrear la base en otro equipo
 
 1. Crear las bases y el usuario como se indica en la sección anterior. Las dos bases tienen que crearse con `utf8mb4_es_0900_ai_ci` **antes** de correr `db:deploy`; si no, las tablas heredarían otra intercalación.
@@ -73,6 +77,34 @@ Por eso **cada migración nueva se crea con `npm run db:nueva -- <nombre>`** y n
 5. Correr `npm run db:deploy` para aplicar las migraciones existentes. (`db:migrate` es solo para crear migraciones nuevas durante el desarrollo.)
 6. Correr `npm run db:verificar` para confirmar la intercalación.
 7. Opcional: `npm run db:probar` para comprobar la conexión y la codificación.
+
+## Servidor único (Express 5 + Astro)
+
+Todo corre en **un solo proceso de Node** (`apps/api`):
+
+- Express 5 atiende la API bajo `/api`. Cualquier otra ruta de `/api` responde un 404 en JSON.
+- Para todo lo demás, Express sirve los archivos estáticos del sitio y delega en el handler SSR de Astro (adaptador `@astrojs/node` en modo `middleware`), tomado de `apps/sitio/dist/server/entry.mjs`.
+- Escucha solo en `127.0.0.1`, puerto 3000 (se cambia con la variable `PORT`). El `.env` se carga con `--env-file` de Node, sin `dotenv`.
+- Si el sitio todavía no se compiló, la API funciona igual y el resto responde 503 con "Falta compilar el sitio: corré npm run build:sitio".
+
+### Cómo arrancar todo en local
+
+1. Arrancar MySQL (puerto 3308).
+2. `npm ci`
+3. `npm run db:generate`
+4. `npm run dev`
+
+Después abrir:
+
+- http://127.0.0.1:3000/ : página de prueba del sitio, con las filas de `PruebaConexion` leídas de MySQL (o "Sin filas de prueba") y un texto con ñ, tildes y comillas tipográficas para comprobar la codificación UTF-8.
+- http://127.0.0.1:3000/api/salud : responde `{"estado":"ok","filas":N}`, o 503 con `{"estado":"error"}` si la base falla.
+
+| Comando | Para qué sirve |
+| --- | --- |
+| `npm run dev` | Compila el sitio y arranca el servidor único. **El sitio no se recompila solo**: para ver cambios en `apps/sitio` hay que volver a correr `npm run dev` (o `npm run build:sitio` y reiniciar). |
+| `npm run build:sitio` | Compila el sitio de Astro en `apps/sitio/dist/` (no se versiona). |
+| `npm run dev:sitio` | `astro dev` del sitio solo, en http://127.0.0.1:4321, con recarga en caliente. No incluye la API. |
+| `npm run start --workspace=@evaristo/api` | Arranca el servidor único sin compilar el sitio antes (pensado para producción). |
 
 ## Estructura de carpetas
 

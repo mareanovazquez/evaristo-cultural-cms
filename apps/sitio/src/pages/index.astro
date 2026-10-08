@@ -1,0 +1,36 @@
+---
+import { prisma } from "../lib/prisma";
+
+// El adaptador de Node no agrega el charset al Content-Type: lo declaramos acá.
+Astro.response.headers.set("Content-Type", "text/html; charset=utf-8");
+
+const filas = await prisma.pruebaConexion.findMany({ orderBy: { id: "asc" } });
+const formato = new Intl.DateTimeFormat("es-AR", { dateStyle: "medium", timeStyle: "medium", timeZone: "UTC" });
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Evaristo Cultural CMS: prueba</title>
+  </head>
+  <body>
+    <h1>Evaristo Cultural CMS: prueba</h1>
+    <p>Codificación: Ñandú, canción, “comillas tipográficas” y ¿tildes?</p>
+    <h2>Filas de PruebaConexion</h2>
+    {
+      filas.length === 0 ? (
+        <p>Sin filas de prueba</p>
+      ) : (
+        <ul>
+          {filas.map((fila) => (
+            <li>
+              {fila.mensaje} (<time datetime={fila.creadoEn.toISOString()}>{formato.format(fila.creadoEn)} UTC</time>)
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </body>
+</html>

@@ -4,6 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "dev": "tsx --env-file=../../.env src/servidor.ts",
+    "start": "tsx --env-file=../../.env src/servidor.ts",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@evaristo/compartido": "0.0.0",
+    "express": "5.2.1"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6",
+    "tsx": "4.23.15"
   }
 }

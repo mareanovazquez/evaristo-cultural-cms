@@ -3,6 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./db": "./src/db.ts"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate",

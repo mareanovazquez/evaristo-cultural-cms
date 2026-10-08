@@ -1,19 +1,16 @@
 import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-import { PrismaClient } from "./generated/prisma/client.js";
+import { crearClientePrisma } from "./db.js";
 
 // El .env vive en la raíz del repo (../../../ respecto de este archivo).
 config({ path: fileURLToPath(new URL("../../../.env", import.meta.url)), quiet: true });
 
-const urlBase = process.env["DATABASE_URL"];
-if (!urlBase) {
+if (!process.env["DATABASE_URL"]) {
   console.error("FALLÓ: falta DATABASE_URL en el .env");
   process.exit(1);
 }
 
-const adapter = new PrismaMariaDb(urlBase);
-const prisma = new PrismaClient({ adapter });
+const prisma = crearClientePrisma();
 
 const textoOriginal = "Ñandú, canción, “comillas” y ¿tildes?";
 let filaId: number | undefined;

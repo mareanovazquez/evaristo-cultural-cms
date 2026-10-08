@@ -4,6 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "build": "astro build",
+    "dev": "astro dev",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@astrojs/node": "11.1.7",
+    "@evaristo/compartido": "0.0.0",
+    "astro": "7.3.8"
   }
 }
