@@ -12,3 +12,7 @@ Thumbs.db
 uploads/
 wp-uploads/
 out/
+packages/compartido/src/generated/
+
+# Las migraciones de Prisma sí se versionan
+!packages/compartido/prisma/migrations/**/*.sql

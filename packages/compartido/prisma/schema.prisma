@@ -1,0 +1,18 @@
+// Esquema de Prisma para el CMS de Evaristo Cultural.
+// La URL de la base no va acá: se define en prisma.config.ts.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// Modelo de prueba para verificar la conexión y la codificación de textos.
+model PruebaConexion {
+  id       Int      @id @default(autoincrement())
+  mensaje  String   @db.VarChar(255)
+  creadoEn DateTime @default(now())
+}

@@ -10,7 +10,11 @@
     "node": ">=22.12"
   },
   "scripts": {
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "db:generate": "npm run db:generate --workspace=@evaristo/compartido",
+    "db:migrate": "npm run db:migrate --workspace=@evaristo/compartido",
+    "db:probar": "npm run db:probar --workspace=@evaristo/compartido",
+    "db:deploy": "npm run db:deploy --workspace=@evaristo/compartido"
   },
   "devDependencies": {
     "typescript": "7.0.2"
