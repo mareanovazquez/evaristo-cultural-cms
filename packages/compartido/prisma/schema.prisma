@@ -61,6 +61,16 @@ model Autor {
   actualizadoEn DateTime        @updatedAt
   articulos     ArticuloAutor[]
 
+  // Foto del autor. El texto alternativo y el punto focal viven acá, en el uso, y no en la biblioteca.
+  fotoId          Int?
+  foto            Imagen?       @relation("FotoAutor", fields: [fotoId], references: [id], onDelete: Restrict)
+  // Vacío significa texto alternativo pendiente.
+  fotoAlt         String?       @db.VarChar(512)
+  // Los puntos focales van de 0 a 1 (0.5 es el centro) y la API los valida.
+  fotoPuntoFocalX Float         @default(0.5)
+  fotoPuntoFocalY Float         @default(0.5)
+  redirecciones   Redireccion[]
+
   @@map("autores")
 }
 
@@ -99,8 +109,33 @@ model Articulo {
   creadoEn             DateTime            @default(now())
   actualizadoEn        DateTime            @updatedAt
 
+  // Opcional en la base porque 2 artículos de WordPress no tienen imagen destacada; la obligatoriedad
+  // se exige al publicar, en la API.
+  imagenEncabezadoId    Int?
+  imagenEncabezado      Imagen?       @relation("ImagenEncabezado", fields: [imagenEncabezadoId], references: [id], onDelete: Restrict)
+  // Vacío significa texto alternativo pendiente (como altPendiente en el cuerpo). El servidor exige
+  // texto alternativo en lo nuevo (fase 4). Es Text porque viene de WordPress y no se puede truncar.
+  encabezadoAlt         String?       @db.Text
+  encabezadoCredito     String?       @db.VarChar(255)
+  // Los puntos focales van de 0 a 1 (0.5 es el centro) y la API los valida.
+  encabezadoPuntoFocalX Float         @default(0.5)
+  encabezadoPuntoFocalY Float         @default(0.5)
+  // Sobrescritura de los datos para redes: vacíos significa que se toman de la bajada y de la imagen
+  // de encabezado.
+  redesDescripcion      String?       @db.Text
+  redesImagenId         Int?
+  redesImagen           Imagen?       @relation("ImagenRedes", fields: [redesImagenId], references: [id], onDelete: Restrict)
+  // Cantidad de imágenes del artículo (cuerpo, encabezado y galería) con texto alternativo pendiente.
+  // La calcula el servidor al guardar; sirve para la vista de artículos pendientes del panel.
+  altPendientes         Int           @default(0)
+  galeria               GaleriaItem[]
+  // Una por artículo.
+  fichaTecnica          FichaTecnica?
+  redirecciones         Redireccion[]
+
   @@index([estado, publicadoEn])
   @@index([seccionId, publicadoEn])
+  @@index([altPendientes])
   @@map("articulos")
 }
 
@@ -125,4 +160,121 @@ model ArticuloAutor {
   @@id([articuloId, autorId])
   @@index([autorId])
   @@map("articulos_autores")
+}
+
+enum RolUsuario {
+  EDITOR
+  ADMINISTRADOR
+}
+
+enum TipoRedireccion {
+  ARTICULO
+  SLUG_ANTERIOR
+  AUTOR
+  MANUAL
+}
+
+// Biblioteca de imágenes. Las imágenes del cuerpo del artículo son nodos del documento: sus
+// referencias no se validan con claves foráneas, así que la API tendrá que evitar borrar una imagen
+// en uso (fase 4).
+model Imagen {
+  id             Int           @id @default(autoincrement())
+  // Ruta relativa del archivo original dentro del almacenamiento (disco o S3/R2, todavía sin
+  // definir), nunca una ruta absoluta. Las variantes de tamaño se generan a partir de la clave y no
+  // se guardan en la base.
+  clave          String        @unique @db.VarChar(512)
+  // Sirve para buscar por nombre de archivo (por ejemplo, las 77 imágenes del dominio temporal).
+  nombreOriginal String        @db.VarChar(255)
+  tipoMime       String        @db.VarChar(100)
+  ancho          Int
+  alto           Int
+  bytes          Int
+  // SHA-256 en hexadecimal. Con índice pero no único a propósito: dos adjuntos de WordPress pueden
+  // tener el mismo contenido.
+  hash           String        @db.Char(64)
+  // Id del adjunto en WordPress.
+  wpId           Int?          @unique
+  creadoEn       DateTime      @default(now())
+  encabezadoDe   Articulo[]    @relation("ImagenEncabezado")
+  redesDe        Articulo[]    @relation("ImagenRedes")
+  galerias       GaleriaItem[]
+  fotoDe         Autor[]       @relation("FotoAutor")
+
+  @@index([nombreOriginal])
+  @@index([hash])
+  @@map("imagenes")
+}
+
+model GaleriaItem {
+  id         Int      @id @default(autoincrement())
+  articuloId Int
+  imagenId   Int
+  orden      Int      @default(0)
+  // Vacío significa texto alternativo pendiente. Es Text porque viene de WordPress y no se puede truncar.
+  alt        String?  @db.Text
+  epigrafe   String?  @db.Text
+  articulo   Articulo @relation(fields: [articuloId], references: [id], onDelete: Cascade)
+  imagen     Imagen   @relation(fields: [imagenId], references: [id], onDelete: Restrict)
+
+  @@index([articuloId, orden])
+  @@index([imagenId])
+  @@map("articulos_galeria")
+}
+
+// Una por artículo. Todos los campos son opcionales (la segunda pasada semiautomática carga fichas
+// incompletas).
+model FichaTecnica {
+  articuloId Int      @id
+  titulo     String?  @db.VarChar(512)
+  // Autor del libro, en texto libre; no es el autor de la nota.
+  autor      String?  @db.VarChar(512)
+  traductor  String?  @db.VarChar(255)
+  editorial  String?  @db.VarChar(255)
+  coleccion  String?  @db.VarChar(255)
+  anio       Int?
+  paginas    Int?
+  isbn       String?  @db.VarChar(20)
+  // Texto libre.
+  precio     String?  @db.VarChar(50)
+  articulo   Articulo @relation(fields: [articuloId], references: [id], onDelete: Cascade)
+
+  @@map("fichas_tecnicas")
+}
+
+model Usuario {
+  id             Int        @id @default(autoincrement())
+  email          String     @unique @db.VarChar(255)
+  nombre         String     @db.VarChar(255)
+  // Hash de la contraseña. El algoritmo se define en la fase 4; esta tanda no guarda ni siembra
+  // ningún usuario.
+  passwordHash   String     @db.VarChar(255)
+  rol            RolUsuario @default(EDITOR)
+  activo         Boolean    @default(true)
+  ultimoAccesoEn DateTime?
+  creadoEn       DateTime   @default(now())
+  actualizadoEn  DateTime   @updatedAt
+
+  @@map("usuarios")
+}
+
+model Redireccion {
+  id         Int             @id @default(autoincrement())
+  // Ruta vieja tal cual de WordPress. Sus URLs usan la fecha en hora local y publicadoEn está en UTC,
+  // así que no se recalculan.
+  origen     String          @unique @db.VarChar(512)
+  tipo       TipoRedireccion
+  codigo     Int             @default(301)
+  // Según el tipo, apunta a un artículo (articuloId), a un autor (autorId) o a un destino manual
+  // (destino). Exactamente uno de los tres tiene que estar completo: lo validan el script de
+  // migración y la API, no la base.
+  articuloId Int?
+  autorId    Int?
+  destino    String?         @db.VarChar(512)
+  creadoEn   DateTime        @default(now())
+  articulo   Articulo?       @relation(fields: [articuloId], references: [id], onDelete: Cascade)
+  autor      Autor?          @relation(fields: [autorId], references: [id], onDelete: Cascade)
+
+  @@index([articuloId])
+  @@index([autorId])
+  @@map("redirecciones")
 }

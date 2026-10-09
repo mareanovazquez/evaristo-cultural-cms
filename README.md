@@ -80,7 +80,7 @@ Prisma recrea la base shadow (`evaristo_cms_shadow`) con la intercalación por d
 
 ## Modelo de datos
 
-Hoy el esquema tiene el núcleo del contenido:
+Hoy el esquema tiene el núcleo del contenido y sus complementos:
 
 | Tabla | Qué guarda |
 | --- | --- |
@@ -90,21 +90,30 @@ Hoy el esquema tiene el núcleo del contenido:
 | `articulos` | Los artículos: cuerpo en JSON de TipTap, texto plano para el buscador, estado, fechas, sección y categoría principal. |
 | `articulos_categorias` | Relación entre artículos y categorías. |
 | `articulos_autores` | Relación entre artículos y autores, con el orden en que aparecen. |
+| `imagenes` | Biblioteca de imágenes: clave del archivo original (ruta relativa en el almacenamiento), nombre original, tipo, medidas, tamaño, hash SHA-256 e id del adjunto de WordPress. |
+| `articulos_galeria` | Galería de cada artículo: imagen, orden, texto alternativo y epígrafe. |
+| `fichas_tecnicas` | Ficha técnica del libro reseñado (una por artículo; todos los campos son opcionales). |
+| `usuarios` | Usuarios del panel, con rol `EDITOR` o `ADMINISTRADOR`. Todavía no tienen sesiones ni inicio de sesión. |
+| `redirecciones` | Redirecciones desde las URLs viejas de WordPress hacia un artículo, un autor o un destino manual. |
 
-> `PruebaConexion` es un modelo temporal para probar la conexión y se va a eliminar. Las imágenes, la ficha técnica, los usuarios y roles, los datos para redes y las redirecciones llegan en la próxima tanda.
+Columnas nuevas en `articulos`: imagen de encabezado (con texto alternativo, crédito y punto focal), datos para redes (descripción e imagen que reemplazan a la bajada y al encabezado) y `altPendientes`, la cantidad de imágenes con texto alternativo pendiente. En `autores`: foto (con texto alternativo y punto focal).
+
+El texto alternativo del encabezado, de la galería y de la foto del autor vive en cada uso y no en la biblioteca de imágenes: la misma imagen puede usarse en varios lugares con textos distintos.
+
+> `PruebaConexion` es un modelo temporal para probar la conexión y se va a eliminar.
 
 ### Convenciones
 
 - Los nombres de tabla van en minúscula y se fijan con `@@map("...")` en cada modelo. MySQL en Windows guarda los nombres de tabla en minúscula y en Linux respeta las mayúsculas, así que en Windows un error de mayúsculas no se vería. `npm run db:verificar` lee `schema.prisma` y falla si algún modelo (salvo `PruebaConexion`) no tiene un `@@map` en minúscula.
 - Las migraciones se crean siempre con `npm run db:nueva -- <nombre>` (ver "Intercalación y migraciones nuevas").
-- Las relaciones usan `Restrict` para no dejar borrar una sección, categoría o autor en uso, y `Cascade` en las tablas intermedias, que se borran junto con el artículo.
+- Las relaciones usan `Restrict` para no dejar borrar una sección, categoría o autor en uso, y `Cascade` en las tablas intermedias, la galería, la ficha técnica y las redirecciones, que se borran junto con el artículo (o con el autor, en el caso de sus redirecciones). Una imagen en uso como encabezado, en la galería, en los datos para redes o como foto de un autor tampoco se puede borrar (`Restrict`).
 
 ### Scripts del modelo
 
 | Comando | Para qué sirve |
 | --- | --- |
 | `npm run db:sembrar` | Carga las 18 secciones (definidas en `packages/compartido/src/secciones.ts`). Es idempotente: se puede correr las veces que haga falta sin duplicar ni cambiar ids. |
-| `npm run db:probar-modelo` | Prueba el modelo contra la base real: relaciones, orden de autores, fechas en UTC, cuerpos grandes, restricciones y unicidad. Todo lo que crea lo borra al final y no toca las secciones sembradas. |
+| `npm run db:probar-modelo` | Prueba el modelo contra la base real: relaciones, orden de autores, fechas en UTC, cuerpos grandes, imágenes y sus usos, ficha técnica, usuarios, redirecciones, restricciones y unicidad. Todo lo que crea lo borra al final y no toca las secciones sembradas. |
 
 ## Servidor único (Express 5 + Panel + Astro)
 
