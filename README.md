@@ -78,37 +78,51 @@ Prisma recrea la base shadow (`evaristo_cms_shadow`) con la intercalación por d
 6. Correr `npm run db:verificar` para confirmar la intercalación.
 7. Opcional: `npm run db:probar` para comprobar la conexión y la codificación.
 
-## Servidor único (Express 5 + Astro)
+## Servidor único (Express 5 + Panel + Astro)
 
 Todo corre en **un solo proceso de Node** (`apps/api`):
 
 - Express 5 atiende la API bajo `/api`. Cualquier otra ruta de `/api` responde un 404 en JSON.
+- El panel de administración (React + Vite) se sirve bajo `/admin` (ver la sección siguiente).
 - Para todo lo demás, Express sirve los archivos estáticos del sitio y delega en el handler SSR de Astro (adaptador `@astrojs/node` en modo `middleware`), tomado de `apps/sitio/dist/server/entry.mjs`.
 - Escucha solo en `127.0.0.1`, puerto 3000 (se cambia con la variable `PORT`). El `.env` se carga con `--env-file` de Node, sin `dotenv`.
 - Si el sitio todavía no se compiló, la API funciona igual y el resto responde 503 con "Falta compilar el sitio: corré npm run build:sitio".
+- El orden en el servidor es: `/api`, después `/admin` y por último Astro (archivos estáticos y SSR) para todo lo demás.
 
 ### Cómo arrancar todo en local
 
 1. Arrancar MySQL (puerto 3308).
 2. `npm ci`
 3. `npm run db:generate`
-4. `npm run dev`
+4. `npm run dev` (compila el sitio y el panel, y arranca el servidor)
 
 Después abrir:
 
 - http://127.0.0.1:3000/ : página de prueba del sitio, con las filas de `PruebaConexion` leídas de MySQL (o "Sin filas de prueba") y un texto con ñ, tildes y comillas tipográficas para comprobar la codificación UTF-8.
+- http://127.0.0.1:3000/admin/ : el panel de administración (hoy, solo una pantalla de prueba).
 - http://127.0.0.1:3000/api/salud : responde `{"estado":"ok","filas":N}`, o 503 con `{"estado":"error"}` si la base falla.
 
 | Comando | Para qué sirve |
 | --- | --- |
-| `npm run dev` | Compila el sitio y arranca el servidor único. **El sitio no se recompila solo**: para ver cambios en `apps/sitio` hay que volver a correr `npm run dev` (o `npm run build:sitio` y reiniciar). |
+| `npm run dev` | Compila el sitio y el panel, y arranca el servidor único. **Ni el sitio ni el panel se recompilan solos**: para ver cambios hay que volver a correr `npm run dev` (o el build correspondiente; el panel no necesita reiniciar el servidor). Para trabajar el panel con recarga en caliente, usá `npm run dev:panel`. |
+| `npm run build` | Compila el sitio y después el panel. |
 | `npm run build:sitio` | Compila el sitio de Astro en `apps/sitio/dist/` (no se versiona). |
+| `npm run build:panel` | Compila el panel con Vite en `apps/panel/dist/` (no se versiona). |
+| `npm run dev:panel` | Servidor de desarrollo de Vite para el panel, con recarga en caliente (ver más abajo). |
 | `npm run dev:sitio` | `astro dev` del sitio solo, en http://127.0.0.1:4321, con recarga en caliente. No incluye la API. |
-| `npm run start --workspace=@evaristo/api` | Arranca el servidor único sin compilar el sitio antes (pensado para producción). |
+| `npm run start --workspace=@evaristo/api` | Arranca el servidor único sin compilar nada antes (pensado para producción). |
 
 > **Apagado ordenado:** el servidor atiende SIGINT y SIGTERM (cierra el servidor y desconecta Prisma), pero en Windows no se puede probar porque ahí las señales terminan el proceso sin pasar por los handlers. Se prueba en Linux al desplegar.
 >
 > **Charset UTF-8:** lo pone el middleware de Astro (`apps/sitio/src/middleware.ts`) en todas las páginas HTML, así que las páginas nuevas no necesitan declararlo.
+
+## Panel de administración (/admin)
+
+El panel es una app React + Vite + TypeScript (`apps/panel`). **Hoy es solo una pantalla de prueba** que consulta `/api/salud` y muestra si la API responde; todavía no tiene login, rutas internas ni editor.
+
+- **En producción:** `npm run build:panel` genera `apps/panel/dist/` y el mismo servidor Express lo sirve en http://127.0.0.1:3000/admin/. `/admin` (sin barra) redirige a `/admin/`, y cualquier ruta interna sin extensión (por ejemplo `/admin/articulos`) devuelve el `index.html` del panel. Una ruta con extensión que no existe da 404. Si el panel no está compilado, `/admin` responde 503 con "Falta compilar el panel: corré npm run build:panel"; el sitio y la API siguen funcionando, y el servidor lo comprueba en cada pedido, así que no hace falta reiniciarlo después de compilar.
+- **En desarrollo, con proxy:** con el servidor Express arriba (`npm run dev` o `npm run start --workspace=@evaristo/api`), correr `npm run dev:panel` en otra terminal. Vite queda en http://127.0.0.1:5173/admin/ con recarga en caliente y reenvía `/api` al puerto 3000. El puerto 5173 es fijo: si está ocupado, Vite falla en lugar de cambiar de puerto.
+- **Sin indexación:** todo lo que se sirve bajo `/admin` lleva el encabezado `X-Robots-Tag: noindex, nofollow`, y el HTML del panel incluye `<meta name="robots" content="noindex, nofollow">`.
 
 ## Estructura de carpetas
 
@@ -116,8 +130,8 @@ Después abrir:
 evaristo-cultural-cms/
 ├── apps/
 │   ├── sitio/        # Sitio público (Astro)
-│   ├── panel/        # Panel de administración (React + Vite)
-│   └── api/          # API (Express 5)
+│   ├── panel/        # Panel de administración (React + Vite), servido en /admin
+│   └── api/          # Servidor único (Express 5): /api, /admin y el sitio de Astro
 └── packages/
     └── compartido/   # Tipos, editor, renderizador, validador, conversor y schema de Prisma
 ```

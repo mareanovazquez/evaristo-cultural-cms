@@ -12,14 +12,17 @@
   "scripts": {
     "typecheck": "npm run typecheck --workspaces --if-present",
     "build:sitio": "npm run build --workspace=@evaristo/sitio",
-    "dev": "npm run build:sitio && npm run dev --workspace=@evaristo/api",
+    "dev": "npm run build && npm run dev --workspace=@evaristo/api",
     "dev:sitio": "npm run dev --workspace=@evaristo/sitio",
     "db:generate": "npm run db:generate --workspace=@evaristo/compartido",
     "db:migrate": "npm run db:migrate --workspace=@evaristo/compartido",
     "db:probar": "npm run db:probar --workspace=@evaristo/compartido",
     "db:deploy": "npm run db:deploy --workspace=@evaristo/compartido",
     "db:nueva": "npm run db:nueva --workspace=@evaristo/compartido --",
-    "db:verificar": "npm run db:verificar --workspace=@evaristo/compartido"
+    "db:verificar": "npm run db:verificar --workspace=@evaristo/compartido",
+    "build:panel": "npm run build --workspace=@evaristo/panel",
+    "build": "npm run build:sitio && npm run build:panel",
+    "dev:panel": "npm run dev --workspace=@evaristo/panel"
   },
   "devDependencies": {
     "@types/node": "24.19.1",

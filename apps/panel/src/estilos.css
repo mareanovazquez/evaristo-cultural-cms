@@ -1,0 +1,32 @@
+:root {
+  color-scheme: light dark;
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+.pantalla {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+}
+
+.resultado {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid currentColor;
+}
+
+.resultado-ok {
+  color: #1a7f37;
+}
+
+.resultado-error {
+  color: #cf222e;
+}
+
+.nota {
+  opacity: 0.7;
+}

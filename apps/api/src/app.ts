@@ -1,4 +1,5 @@
 import { existsSync } from "node:fs";
+import { extname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import express, { type NextFunction, type Request, type RequestHandler, type Response } from "express";
 import { obtenerClientePrisma, type PrismaClient } from "@evaristo/compartido/db";
@@ -7,6 +8,10 @@ import { obtenerClientePrisma, type PrismaClient } from "@evaristo/compartido/db
 const dirSitioCompilado = fileURLToPath(new URL("../../sitio/dist/", import.meta.url));
 const dirCliente = `${dirSitioCompilado}client/`;
 const entradaServidor = `${dirSitioCompilado}server/entry.mjs`;
+
+// Salida de `npm run build:panel` (Vite). Se comprueba en cada pedido, así no hace falta reiniciar.
+const dirPanelCompilado = fileURLToPath(new URL("../../panel/dist/", import.meta.url));
+const indicePanel = `${dirPanelCompilado}index.html`;
 
 type ManejadorAstro = (req: Request, res: Response, next: NextFunction) => void;
 
@@ -39,9 +44,46 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma()): express
     }
   });
 
-  // (3) Cualquier otra ruta bajo /api: 404 en JSON.
+  // (2b) Cualquier otra ruta bajo /api: 404 en JSON.
   app.use("/api", (_req, res) => {
     res.status(404).json({ estado: "error", mensaje: "No encontrado" });
+  });
+
+  // (3) Panel de administración (React + Vite) en /admin. Va antes que Astro.
+  const archivosPanel = express.static(dirPanelCompilado, { index: false, fallthrough: true });
+  app.use("/admin", (req, res, next) => {
+    res.setHeader("X-Robots-Tag", "noindex, nofollow");
+
+    // /admin sin barra final redirige a /admin/ (conservando la consulta).
+    const [ruta = "", consulta] = req.originalUrl.split("?");
+    if (ruta === "/admin") {
+      res.redirect(301, consulta === undefined ? "/admin/" : `/admin/?${consulta}`);
+      return;
+    }
+
+    if (!existsSync(indicePanel)) {
+      res
+        .status(503)
+        .type("text/plain; charset=utf-8")
+        .send("Falta compilar el panel: corré npm run build:panel");
+      return;
+    }
+
+    archivosPanel(req, res, (error?: unknown) => {
+      if (error) {
+        next(error);
+        return;
+      }
+      // Rutas internas del panel (sin extensión): siempre el index.html.
+      const esLectura = req.method === "GET" || req.method === "HEAD";
+      if (!esLectura || extname(req.path) !== "") {
+        res.status(404).type("text/plain; charset=utf-8").send("No encontrado");
+        return;
+      }
+      res.sendFile(indicePanel, (errorEnvio) => {
+        if (errorEnvio) next(errorEnvio);
+      });
+    });
   });
 
   // (4) Archivos estáticos del cliente de Astro y, para todo lo demás, el SSR de Astro.
