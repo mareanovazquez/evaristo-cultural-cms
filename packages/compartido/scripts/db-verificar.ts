@@ -1,7 +1,9 @@
 // Verifica que la base actual, sus tablas y sus columnas de texto usen la
-// intercalación del proyecto. Sale con código 1 si algo difiere.
+// intercalación del proyecto, y que todos los modelos de schema.prisma tengan un @@map en
+// minúscula. Sale con código 1 si algo difiere.
 //
 // Uso: npm run db:verificar
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
@@ -12,6 +14,27 @@ config({ path: fileURLToPath(new URL("../../../.env", import.meta.url)), quiet: 
 const ESPERADA = "utf8mb4_es_0900_ai_ci";
 // Tabla que crea Prisma por su cuenta: se informa, pero no se exige.
 const TABLA_PRISMA = "_prisma_migrations";
+
+// Chequeo estático: MySQL en Windows guarda los nombres de tabla en minúscula y en Linux respeta
+// las mayúsculas, así que un modelo sin @@map en minúscula fallaría solo al desplegar.
+// PruebaConexion es temporal y se va a eliminar, por eso se excluye.
+const MODELO_EXCLUIDO = "PruebaConexion";
+const esquema = readFileSync(fileURLToPath(new URL("../prisma/schema.prisma", import.meta.url)), "utf8");
+const modelosSinMapMinuscula: string[] = [];
+let cantidadModelos = 0;
+// El modelo termina en la primera "}" que está al comienzo de una línea (los comentarios pueden llevar llaves).
+for (const [, nombreModelo, cuerpoModelo] of esquema.matchAll(/^model\s+(\w+)\s*\{\r?\n([\s\S]*?)^\}/gm)) {
+  if (nombreModelo === undefined || nombreModelo === MODELO_EXCLUIDO) continue;
+  cantidadModelos++;
+  const nombreTabla = cuerpoModelo?.match(/@@map\(\s*"([^"]*)"\s*\)/)?.[1];
+  if (nombreTabla === undefined || !/^[a-z0-9_]+$/.test(nombreTabla)) modelosSinMapMinuscula.push(nombreModelo);
+}
+if (modelosSinMapMinuscula.length > 0) {
+  console.error("FALLÓ: estos modelos no tienen @@map con un nombre en minúscula (letras, números y guion bajo):");
+  for (const m of modelosSinMapMinuscula) console.error(`  - ${m}`);
+  process.exit(1);
+}
+console.log(`OK: los ${cantidadModelos} modelos de schema.prisma tienen @@map en minúscula`);
 
 const urlBase = process.env["DATABASE_URL"];
 if (!urlBase) {

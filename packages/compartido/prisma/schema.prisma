@@ -16,3 +16,113 @@ model PruebaConexion {
   mensaje  String   @db.VarChar(255)
   creadoEn DateTime @default(now())
 }
+
+enum EstadoArticulo {
+  BORRADOR
+  PUBLICADO
+  PROGRAMADO
+}
+
+model Seccion {
+  id        Int        @id @default(autoincrement())
+  slug      String     @unique @db.VarChar(100)
+  nombre    String     @db.VarChar(100)
+  // Sección que no se elige en el panel ni tiene página pública (por ejemplo, sin-asignar).
+  interna   Boolean    @default(false)
+  articulos Articulo[]
+
+  @@map("secciones")
+}
+
+model Categoria {
+  id          Int                 @id @default(autoincrement())
+  slug        String              @unique @db.VarChar(150)
+  nombre      String              @db.VarChar(150)
+  articulos   ArticuloCategoria[]
+  principalDe Articulo[]          @relation("CategoriaPrincipal")
+
+  @@map("categorias")
+}
+
+model Autor {
+  id            Int             @id @default(autoincrement())
+  // Id del usuario en WordPress: permite re-ejecutar la migración sin duplicar y armar redirecciones.
+  wpUserId      Int?            @unique
+  slug          String          @unique @db.VarChar(255)
+  nombre        String          @db.VarChar(255)
+  // Autor que no es una persona: sin página, sin bio y sin enlace.
+  soloTexto     Boolean         @default(false)
+  bio           Json?
+  instagram     String?         @db.VarChar(255)
+  x             String?         @db.VarChar(255)
+  facebook      String?         @db.VarChar(255)
+  sitioWeb      String?         @db.VarChar(255)
+  creadoEn      DateTime        @default(now())
+  actualizadoEn DateTime        @updatedAt
+  articulos     ArticuloAutor[]
+
+  @@map("autores")
+}
+
+model Articulo {
+  id                   Int                 @id @default(autoincrement())
+  // Id del artículo en WordPress: permite re-ejecutar la migración sin duplicar y armar redirecciones.
+  wpId                 Int?                @unique
+  slug                 String              @unique @db.VarChar(255)
+  titulo               String              @db.VarChar(512)
+  bajada               String?             @db.Text
+  // Documento JSON de TipTap. En un borrador vacío es {"type":"doc","content":[]}.
+  cuerpo               Json
+  // Versión del esquema del cuerpo.
+  schemaVersion        Int                 @default(1)
+  // Texto del cuerpo sin formato, para el buscador.
+  textoPlano           String              @db.LongText
+  estado               EstadoArticulo      @default(BORRADOR)
+  // Se guarda en UTC.
+  publicadoEn          DateTime?
+  // Si la fecha está vigente, el artículo es novedad.
+  novedadHasta         DateTime?
+  seccionId            Int
+  seccion              Seccion             @relation(fields: [seccionId], references: [id], onDelete: Restrict)
+  // Es la volanta. Que pertenezca a las categorías del artículo lo valida la API (fase 4) y el
+  // script de migración, no la base.
+  categoriaPrincipalId Int?
+  categoriaPrincipal   Categoria?          @relation("CategoriaPrincipal", fields: [categoriaPrincipalId], references: [id], onDelete: Restrict)
+  categorias           ArticuloCategoria[]
+  autores              ArticuloAutor[]
+  // Etiquetas originales de WordPress, ocultas.
+  etiquetasWp          Json?
+  // Avisos del conversor para la revisión posterior.
+  avisosMigracion      Json?
+  // Contador de visitas del tema anterior.
+  visitasWp            Int?
+  creadoEn             DateTime            @default(now())
+  actualizadoEn        DateTime            @updatedAt
+
+  @@index([estado, publicadoEn])
+  @@index([seccionId, publicadoEn])
+  @@map("articulos")
+}
+
+model ArticuloCategoria {
+  articuloId  Int
+  categoriaId Int
+  articulo    Articulo  @relation(fields: [articuloId], references: [id], onDelete: Cascade)
+  categoria   Categoria @relation(fields: [categoriaId], references: [id], onDelete: Restrict)
+
+  @@id([articuloId, categoriaId])
+  @@index([categoriaId])
+  @@map("articulos_categorias")
+}
+
+model ArticuloAutor {
+  articuloId Int
+  autorId    Int
+  orden      Int      @default(0)
+  articulo   Articulo @relation(fields: [articuloId], references: [id], onDelete: Cascade)
+  autor      Autor    @relation(fields: [autorId], references: [id], onDelete: Restrict)
+
+  @@id([articuloId, autorId])
+  @@index([autorId])
+  @@map("articulos_autores")
+}

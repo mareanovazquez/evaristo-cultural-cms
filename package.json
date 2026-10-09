@@ -22,7 +22,9 @@
     "db:verificar": "npm run db:verificar --workspace=@evaristo/compartido",
     "build:panel": "npm run build --workspace=@evaristo/panel",
     "build": "npm run build:sitio && npm run build:panel",
-    "dev:panel": "npm run dev --workspace=@evaristo/panel"
+    "dev:panel": "npm run dev --workspace=@evaristo/panel",
+    "db:sembrar": "npm run db:sembrar --workspace=@evaristo/compartido",
+    "db:probar-modelo": "npm run db:probar-modelo --workspace=@evaristo/compartido"
   },
   "devDependencies": {
     "@types/node": "24.19.1",

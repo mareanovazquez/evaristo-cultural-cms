@@ -78,6 +78,34 @@ Prisma recrea la base shadow (`evaristo_cms_shadow`) con la intercalación por d
 6. Correr `npm run db:verificar` para confirmar la intercalación.
 7. Opcional: `npm run db:probar` para comprobar la conexión y la codificación.
 
+## Modelo de datos
+
+Hoy el esquema tiene el núcleo del contenido:
+
+| Tabla | Qué guarda |
+| --- | --- |
+| `secciones` | Las 18 secciones de la revista (17 públicas y `sin-asignar`, que es interna). Se cargan con `db:sembrar`. |
+| `categorias` | Las categorías de los artículos. |
+| `autores` | Los autores, incluidos los que son solo texto (por ejemplo, una redacción). |
+| `articulos` | Los artículos: cuerpo en JSON de TipTap, texto plano para el buscador, estado, fechas, sección y categoría principal. |
+| `articulos_categorias` | Relación entre artículos y categorías. |
+| `articulos_autores` | Relación entre artículos y autores, con el orden en que aparecen. |
+
+> `PruebaConexion` es un modelo temporal para probar la conexión y se va a eliminar. Las imágenes, la ficha técnica, los usuarios y roles, los datos para redes y las redirecciones llegan en la próxima tanda.
+
+### Convenciones
+
+- Los nombres de tabla van en minúscula y se fijan con `@@map("...")` en cada modelo. MySQL en Windows guarda los nombres de tabla en minúscula y en Linux respeta las mayúsculas, así que en Windows un error de mayúsculas no se vería. `npm run db:verificar` lee `schema.prisma` y falla si algún modelo (salvo `PruebaConexion`) no tiene un `@@map` en minúscula.
+- Las migraciones se crean siempre con `npm run db:nueva -- <nombre>` (ver "Intercalación y migraciones nuevas").
+- Las relaciones usan `Restrict` para no dejar borrar una sección, categoría o autor en uso, y `Cascade` en las tablas intermedias, que se borran junto con el artículo.
+
+### Scripts del modelo
+
+| Comando | Para qué sirve |
+| --- | --- |
+| `npm run db:sembrar` | Carga las 18 secciones (definidas en `packages/compartido/src/secciones.ts`). Es idempotente: se puede correr las veces que haga falta sin duplicar ni cambiar ids. |
+| `npm run db:probar-modelo` | Prueba el modelo contra la base real: relaciones, orden de autores, fechas en UTC, cuerpos grandes, restricciones y unicidad. Todo lo que crea lo borra al final y no toca las secciones sembradas. |
+
 ## Servidor único (Express 5 + Panel + Astro)
 
 Todo corre en **un solo proceso de Node** (`apps/api`):
