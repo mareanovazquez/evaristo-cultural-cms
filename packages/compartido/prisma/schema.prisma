@@ -104,7 +104,9 @@ model Articulo {
   etiquetasWp          Json?
   // Avisos del conversor para la revisión posterior.
   avisosMigracion      Json?
-  // Contador de visitas del tema anterior.
+  // Contador de visitas de WordPress (cb_visit_counter). Dato de archivo, de solo lectura: se guarda
+  // al migrar y no se incrementa. Es null en los artículos nuevos. No se muestra en el sitio público
+  // ni en el panel por ahora (decisión del 13/10/2026); se trae a pantalla solo si más adelante hace falta.
   visitasWp            Int?
   creadoEn             DateTime            @default(now())
   actualizadoEn        DateTime            @updatedAt

@@ -149,6 +149,16 @@ try {
   comprobar("a) novedadHasta es null", leido.novedadHasta === null);
   comprobar("a) schemaVersion vale 1", leido.schemaVersion === 1, String(leido.schemaVersion));
 
+  // a2) Contador histórico de visitas de WordPress: con valor y sin valor (null).
+  const conVisitas = await crearArticulo({ slug: `prueba-visitas-${sufijo}`, titulo: "Con visitas", seccionId: resena.id, visitasWp: 27177 });
+  const sinVisitas = await crearArticulo({ slug: `prueba-sin-visitas-${sufijo}`, titulo: "Sin visitas", seccionId: resena.id });
+  const visitasLeidas = await prisma.articulo.findMany({
+    where: { id: { in: [conVisitas.id, sinVisitas.id] } },
+    select: { id: true, visitasWp: true },
+  });
+  comprobar("a2) un artículo con visitasWp lo guarda (27177)", visitasLeidas.find((x) => x.id === conVisitas.id)?.visitasWp === 27177);
+  comprobar("a2) un artículo sin visitasWp queda en null", visitasLeidas.find((x) => x.id === sinVisitas.id)?.visitasWp === null);
+
   // b) Fechas en UTC.
   const instante = new Date("2026-10-09T15:30:00.123Z");
   const conFecha = await crearArticulo({ slug: `prueba-fecha-${sufijo}`, titulo: "Fecha", seccionId: resena.id, publicadoEn: instante });

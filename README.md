@@ -98,6 +98,8 @@ Hoy el esquema tiene el núcleo del contenido y sus complementos:
 
 Columnas nuevas en `articulos`: imagen de encabezado (con texto alternativo, crédito y punto focal), datos para redes (descripción e imagen que reemplazan a la bajada y al encabezado) y `altPendientes`, la cantidad de imágenes con texto alternativo pendiente. En `autores`: foto (con texto alternativo y punto focal).
 
+`articulos.visitasWp` guarda el contador de visitas de WordPress (`cb_visit_counter`): un dato de archivo de solo lectura (cerca de 4,1 millones de visitas en total, máximo 27.177 por artículo). Se carga al migrar, no se incrementa y es `null` en los artículos nuevos. Por decisión del 13/10/2026 no se muestra en el sitio público ni en el panel; se trae a pantalla solo si más adelante hace falta.
+
 El texto alternativo del encabezado, de la galería y de la foto del autor vive en cada uso y no en la biblioteca de imágenes: la misma imagen puede usarse en varios lugares con textos distintos.
 
 > `PruebaConexion` es un modelo temporal para probar la conexión y se va a eliminar.
@@ -114,6 +116,10 @@ El texto alternativo del encabezado, de la galería y de la foto del autor vive 
 | --- | --- |
 | `npm run db:sembrar` | Carga las 18 secciones (definidas en `packages/compartido/src/secciones.ts`). Es idempotente: se puede correr las veces que haga falta sin duplicar ni cambiar ids. |
 | `npm run db:probar-modelo` | Prueba el modelo contra la base real: relaciones, orden de autores, fechas en UTC, cuerpos grandes, imágenes y sus usos, ficha técnica, usuarios, redirecciones, restricciones y unicidad. Todo lo que crea lo borra al final y no toca las secciones sembradas. |
+
+### Fase 4: API de artículos (pendiente)
+
+- La API de artículos no debe devolver `visitasWp` hacia el sitio ni hacia el panel. Hay que usar `select` explícito en cada consulta y no devolver el artículo completo.
 
 ## Servidor único (Express 5 + Panel + Astro)
 
