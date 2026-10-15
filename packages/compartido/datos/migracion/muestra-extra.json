@@ -1,0 +1,30 @@
+{
+  "descripcion": "Ampliación de la muestra de migración del 15/10/2026. Acompaña a src/conversor/tests/fixtures/muestra-wordpress.json sin reemplazarlo: son artículos reales de WordPress que cubren ramas que los 30 originales no ejercitaron.",
+  "articulos": [
+    {
+      "id": 19660,
+      "casos": ["credito-imagen-encabezado", "datos-facebook-descripcion-e-imagen"],
+      "nota": "Tiene cb_image_credit y las dos claves _webdados_fb_open_graph_specific_* con contenido."
+    },
+    {
+      "id": 19899,
+      "casos": ["slug-con-u200e"],
+      "nota": "El post_name lleva %e2%80%8e (U+200E); el título también tiene U+200E."
+    },
+    {
+      "id": 12526,
+      "casos": ["wp-old-slug-real"],
+      "nota": "_wp_old_slug distinto del slug actual y no numérico."
+    },
+    {
+      "id": 15244,
+      "casos": ["wp-old-slug-trashed"],
+      "nota": "_wp_old_slug terminado en __trashed: debe descartarse."
+    },
+    {
+      "id": 22546,
+      "casos": ["borrador"],
+      "nota": "Borrador sin post_name: el slug se genera como borrador-<wpId>."
+    }
+  ]
+}
