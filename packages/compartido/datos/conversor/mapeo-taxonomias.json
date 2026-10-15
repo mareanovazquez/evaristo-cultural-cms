@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "urlViejaPlantilla": "https://evaristocultural.com.ar/?p={id}",
+  "seccionSinAsignar": { "slug": "sin-asignar", "nombre": "Sin asignar" },
+  "secciones": [
+    { "slug": "resena", "nombre": "Reseña" },
+    { "slug": "ensayo", "nombre": "Ensayo" },
+    { "slug": "cronica", "nombre": "Crónica" },
+    { "slug": "critica", "nombre": "Crítica" },
+    { "slug": "entrevista", "nombre": "Entrevista" },
+    { "slug": "rastros", "nombre": "Rastros" },
+    { "slug": "asia", "nombre": "Asia" },
+    { "slug": "poesia", "nombre": "Poesía" },
+    { "slug": "teatro", "nombre": "Teatro" },
+    { "slug": "musica", "nombre": "Música" },
+    { "slug": "historieta", "nombre": "Historieta" },
+    { "slug": "tv-cine", "nombre": "TV & Cine" },
+    { "slug": "fantastico", "nombre": "Fantástico" },
+    { "slug": "arte", "nombre": "Arte" },
+    { "slug": "infantojuvenil", "nombre": "Infantojuvenil" },
+    { "slug": "libro-ilustrado", "nombre": "Libro Ilustrado" },
+    { "slug": "literatura", "nombre": "Literatura" }
+  ],
+  "prioridadSecciones": [
+    "rastros", "asia", "entrevista", "resena", "ensayo", "cronica",
+    "poesia", "teatro", "musica", "historieta", "tv-cine", "fantastico", "arte", "infantojuvenil", "libro-ilustrado", "literatura"
+  ],
+  "entrevista": {
+    "seccion": "entrevista",
+    "patronTitulo": "^entrevista(?![a-záéíóúüñ0-9])",
+    "banderas": "iu",
+    "tramosRevisados": 2,
+    "porId": {
+      "648": {
+        "es": false,
+        "motivo": "LA ENTREVISTA: no es una entrevista."
+      },
+      "2388": {
+        "es": true,
+        "motivo": "Título con prefijo (SERENGUETI: Entrevista a ...): no lo detecta el patrón."
+      },
+      "9485": {
+        "es": false,
+        "motivo": "Presentación de Rastros (Entrevistas de género negro): no es una entrevista."
+      },
+      "19565": {
+        "es": true,
+        "motivo": "UNA ENTREVISTA A ...: no lo detecta el patrón."
+      },
+      "20919": {
+        "es": false,
+        "motivo": "ENTREVISTA CON MUERTOS: el patrón lo detecta pero no es una entrevista."
+      }
+    }
+  },
+  "categorias": [
+    { "slug": "resena", "nombre": "Reseña" },
+    { "slug": "ensayo", "nombre": "Ensayo" },
+    { "slug": "cronica", "nombre": "Crónica" },
+    { "slug": "critica", "nombre": "Crítica" },
+    { "slug": "entrevista", "nombre": "Entrevista" },
+    { "slug": "rastros", "nombre": "Rastros" },
+    { "slug": "asia", "nombre": "Asia" },
+    { "slug": "poesia", "nombre": "Poesía" },
+    { "slug": "teatro", "nombre": "Teatro" },
+    { "slug": "musica", "nombre": "Música" },
+    { "slug": "historieta", "nombre": "Historieta" },
+    { "slug": "tv-cine", "nombre": "TV & Cine" },
+    { "slug": "fantastico", "nombre": "Fantástico" },
+    { "slug": "arte", "nombre": "Arte" },
+    { "slug": "infantojuvenil", "nombre": "Infantojuvenil" },
+    { "slug": "libro-ilustrado", "nombre": "Libro Ilustrado" },
+    { "slug": "literatura", "nombre": "Literatura" },
+    { "slug": "poesia-rumana", "nombre": "Poesía rumana" },
+    { "slug": "encuentro-internacional-literatura-fantastica", "nombre": "Encuentro Internacional Literatura Fantástica" }
+  ],
+  "taxonomiasWp": {
+    "resena": { "nombre": "Reseñas", "accion": "seccion", "seccion": "resena" },
+    "ensayo": { "nombre": "Ensayo", "accion": "seccion", "seccion": "ensayo" },
+    "cronica": { "nombre": "Crónica", "accion": "seccion", "seccion": "cronica" },
+    "rastros": { "nombre": "Rastros", "accion": "seccion", "seccion": "rastros" },
+    "seda": { "nombre": "Seda", "accion": "seccion", "seccion": "asia" },
+    "poesia": { "nombre": "Poesia", "accion": "seccion", "seccion": "poesia" },
+    "teatro": { "nombre": "Teatro", "accion": "seccion", "seccion": "teatro" },
+    "musica": { "nombre": "Música", "accion": "seccion", "seccion": "musica" },
+    "historieta": { "nombre": "Historieta", "accion": "seccion", "seccion": "historieta" },
+    "tv-cine": { "nombre": "TV & CINE", "accion": "seccion", "seccion": "tv-cine" },
+    "series-tv": { "nombre": "Series TV", "accion": "seccion", "seccion": "tv-cine" },
+    "fantastico": { "nombre": "Fantástico", "accion": "seccion", "seccion": "fantastico" },
+    "arte": { "nombre": "Arte", "accion": "seccion", "seccion": "arte" },
+    "infantojuvenil": { "nombre": "Infantojuvenil", "accion": "seccion", "seccion": "infantojuvenil" },
+    "libro-ilustrado": { "nombre": "Libro Ilustrado", "accion": "seccion", "seccion": "libro-ilustrado" },
+    "literatura": { "nombre": "Literatura", "accion": "seccion", "seccion": "literatura" },
+    "resenas-seda": { "nombre": "Reseñas Seda", "accion": "seccion", "seccion": "resena", "tambienSecciones": ["asia"] },
+    "resenas-rastros": { "nombre": "Reseñas Rastros", "accion": "seccion", "seccion": "resena", "tambienSecciones": ["rastros"] },
+    "resenas-historietas": { "nombre": "Reseñas Historietas", "accion": "seccion", "seccion": "resena", "categorias": ["historieta"] },
+    "resenas-fantastico": { "nombre": "Reseñas Fantástico", "accion": "seccion", "seccion": "resena", "categorias": ["fantastico"] },
+    "poesia-rumana": { "nombre": "Poesía rumana", "accion": "categoria", "categorias": ["poesia-rumana"] },
+    "encuentro-internacional-literatura-fantastica": { "nombre": "Encuentro Internacional Literatura Fantástica", "accion": "categoria", "categorias": ["encuentro-internacional-literatura-fantastica"] },
+    "mexico": { "nombre": "México", "accion": "descartar" },
+    "novedades": { "nombre": "Novedades", "accion": "descartar", "registrarIdsEn": "novedades-ids" },
+    "uncategorized": { "nombre": "Uncategorized", "accion": "descartar" },
+    "articulos": { "nombre": "Artículos", "accion": "descartar" }
+  },
+  "excepcionesPorId": {
+    "21482": {
+      "seccion": "fantastico",
+      "categorias": ["encuentro-internacional-literatura-fantastica"],
+      "motivo": "Única categoría original: Encuentro Internacional Literatura Fantástica; decisión editorial."
+    }
+  }
+}

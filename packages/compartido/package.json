@@ -17,7 +17,8 @@
     "db:nueva": "tsx scripts/db-nueva-migracion.ts",
     "db:verificar": "tsx scripts/db-verificar.ts",
     "db:sembrar": "tsx scripts/db-sembrar.ts",
-    "db:probar-modelo": "tsx scripts/db-probar-modelo.ts"
+    "db:probar-modelo": "tsx scripts/db-probar-modelo.ts",
+    "test:conversor": "tsx src/conversor/tests/test.ts && tsx src/conversor/tests/test-titulos.ts && tsx src/conversor/tests/test-integracion-titulos.ts && tsx src/conversor/tests/test-taxonomia.ts"
   },
   "devDependencies": {
     "prisma": "7.10.0",
@@ -26,6 +27,7 @@
   "dependencies": {
     "@prisma/adapter-mariadb": "7.10.0",
     "@prisma/client": "7.10.0",
-    "dotenv": "18.0.6"
+    "dotenv": "18.0.6",
+    "parse5": "8.0.1"
   }
 }
