@@ -60,7 +60,7 @@ t('excepciones por id de Entrevista: 2388 y 19565 sí; 648, 9485 y 20919 no', ()
   assert.equal(esEntrevista(20920, 'ENTREVISTA CON MUERTOS', m), true) // otro id con el mismo título: sí
 })
 t('sin título no hay Entrevista (compatibilidad)', () => assert.deepEqual(sc(r(1, 'poesia')), ['poesia', []]))
-t('series-tv -> TV & Cine', () => assert.deepEqual(sc(r(1, 'series-tv')), ['tv-cine', []]))
+t('series-tv -> TV & Cine', () => assert.deepEqual(sc(r(1, 'series-tv')), ['tv-y-cine', []]))
 t('México solo, Novedades solo, Uncategorized y Artículos -> sin-asignar', () => {
   for (const s of ['mexico', 'novedades', 'uncategorized', 'articulos']) assert.deepEqual([r(1, s).seccion, r(1, s).sinAsignar], ['sin-asignar', true])
 })

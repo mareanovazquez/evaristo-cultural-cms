@@ -14,7 +14,7 @@
     { "slug": "teatro", "nombre": "Teatro" },
     { "slug": "musica", "nombre": "Música" },
     { "slug": "historieta", "nombre": "Historieta" },
-    { "slug": "tv-cine", "nombre": "TV & Cine" },
+    { "slug": "tv-y-cine", "nombre": "TV & Cine" },
     { "slug": "fantastico", "nombre": "Fantástico" },
     { "slug": "arte", "nombre": "Arte" },
     { "slug": "infantojuvenil", "nombre": "Infantojuvenil" },
@@ -23,7 +23,7 @@
   ],
   "prioridadSecciones": [
     "rastros", "asia", "entrevista", "resena", "ensayo", "cronica",
-    "poesia", "teatro", "musica", "historieta", "tv-cine", "fantastico", "arte", "infantojuvenil", "libro-ilustrado", "literatura"
+    "poesia", "teatro", "musica", "historieta", "tv-y-cine", "fantastico", "arte", "infantojuvenil", "libro-ilustrado", "literatura"
   ],
   "entrevista": {
     "seccion": "entrevista",
@@ -65,7 +65,7 @@
     { "slug": "teatro", "nombre": "Teatro" },
     { "slug": "musica", "nombre": "Música" },
     { "slug": "historieta", "nombre": "Historieta" },
-    { "slug": "tv-cine", "nombre": "TV & Cine" },
+    { "slug": "tv-y-cine", "nombre": "TV & Cine" },
     { "slug": "fantastico", "nombre": "Fantástico" },
     { "slug": "arte", "nombre": "Arte" },
     { "slug": "infantojuvenil", "nombre": "Infantojuvenil" },
@@ -84,8 +84,8 @@
     "teatro": { "nombre": "Teatro", "accion": "seccion", "seccion": "teatro" },
     "musica": { "nombre": "Música", "accion": "seccion", "seccion": "musica" },
     "historieta": { "nombre": "Historieta", "accion": "seccion", "seccion": "historieta" },
-    "tv-cine": { "nombre": "TV & CINE", "accion": "seccion", "seccion": "tv-cine" },
-    "series-tv": { "nombre": "Series TV", "accion": "seccion", "seccion": "tv-cine" },
+    "tv-cine": { "nombre": "TV & CINE", "accion": "seccion", "seccion": "tv-y-cine" },
+    "series-tv": { "nombre": "Series TV", "accion": "seccion", "seccion": "tv-y-cine" },
     "fantastico": { "nombre": "Fantástico", "accion": "seccion", "seccion": "fantastico" },
     "arte": { "nombre": "Arte", "accion": "seccion", "seccion": "arte" },
     "infantojuvenil": { "nombre": "Infantojuvenil", "accion": "seccion", "seccion": "infantojuvenil" },
