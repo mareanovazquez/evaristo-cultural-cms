@@ -1,0 +1,12 @@
+{
+  "descripcion": "Cuentas de WordPress que no son personas: se migran como autor de solo texto (sin página ni bio). Cada una se verifica con un SELECT contra wp_users (id, user_login y display_name) en la corrida en seco. Origen de la lista: testing-tiptap/conversor/scripts/consultar-autoria.ts (rama integracion-conversor, commit ba37c92) ampliada a siete cuentas por decisión del 16/10/2026.",
+  "cuentas": [
+    { "wpUserId": 1, "user_login": "eva", "nombre": "eva" },
+    { "wpUserId": 192, "user_login": "Anonimo", "nombre": "Anonimo" },
+    { "wpUserId": 203, "user_login": "revistaseda", "nombre": "revistaseda" },
+    { "wpUserId": 245, "user_login": "Evaristo Cultural", "nombre": "Evaristo Cultural" },
+    { "wpUserId": 279, "user_login": "Evaristo", "nombre": "Evaristo" },
+    { "wpUserId": 418, "user_login": "Encuentro Internacional de Cultura Japonesa", "nombre": "Encuentro Internacional de Cultura Japonesa" },
+    { "wpUserId": 419, "user_login": "EL FESTIVALON", "nombre": "EL FESTIVALON" }
+  ]
+}
