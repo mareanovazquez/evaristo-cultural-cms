@@ -1,0 +1,61 @@
+// Utilidades PURAS de la migración: sin base de datos ni sistema de archivos. Las usan la corrida en seco y,
+// más adelante, el armado y la escritura.
+import type { DocNode } from "../../../src/conversor/types.ts";
+
+// Caracteres invisibles que se buscan; solo U+200E se limpia (en slug y título).
+export const INVISIBLES: Array<[string, string]> = [["U+200B", "\u200B"], ["U+200E", "\u200E"], ["U+200F", "\u200F"], ["U+FEFF", "\uFEFF"], ["U+00AD", "\u00AD"]];
+
+/** decodeURIComponent que no lanza: si falla, conserva el texto crudo. */
+export const decodificar = (s: string) => { try { return decodeURIComponent(s); } catch { return s; } };
+/** Igual que `decodificar` pero dice si el decode falló (percent-encoding inválido). */
+export function decodificarPostName(postName: string): { valor: string; fallo: boolean } {
+  try { return { valor: decodeURIComponent(postName), fallo: false }; } catch { return { valor: postName, fallo: true }; }
+}
+export const aNFC = (s: string) => s.normalize("NFC");
+export const claveJs = (s: string) => decodificar(s).toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
+export const decEntidades = (s: string) => s.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
+
+export const quitarU200E = (s: string) => s.replace(/\u200E/g, "");
+
+/**
+ * Limpia el U+200E del slug ya decodificado. Solo si la limpieza CAMBIÓ el slug se colapsan los guiones consecutivos
+ * y se recortan los de los extremos; si no, el slug se devuelve tal cual (un "a--b" legítimo no se toca).
+ */
+export function limpiarSlug(slugDecodificado: string): { slug: string; limpio: boolean } {
+  const sin = quitarU200E(slugDecodificado);
+  if (sin === slugDecodificado) return { slug: slugDecodificado, limpio: false };
+  return { slug: sin.replace(/-{2,}/g, "-").replace(/^-+|-+$/g, ""), limpio: true };
+}
+
+export const slugBorrador = (wpId: number) => `borrador-${wpId}`;
+
+/** Slug final de un artículo: los borradores (y el privado aceptado) llevan `borrador-<wpId>`; el resto, el post_name limpio. */
+export function slugFinal(esBorrador: boolean, wpId: number, slugDecodificado: string): { slug: string; limpio: boolean } {
+  return esBorrador ? { slug: slugBorrador(wpId), limpio: false } : limpiarSlug(slugDecodificado);
+}
+
+/** Cuántas veces aparece cada carácter invisible buscado (solo los que aparecen). */
+export function contarInvisibles(texto: string): Record<string, number> {
+  const o: Record<string, number> = {};
+  for (const [nombre, ch] of INVISIBLES) { const n = texto.split(ch).length - 1; if (n) o[nombre] = n; }
+  return o;
+}
+export const cuentaDe = (xs: string[]) => { const o: Record<string, number> = {}; for (const x of xs) o[x] = (o[x] ?? 0) + 1; return o; };
+
+export function textoDe(n: DocNode, acc: string[] = []): string[] {
+  if (n.text) acc.push(n.text);
+  if (n.type === "footnote" && n.attrs?.["content"]) textoDe(n.attrs["content"] as DocNode, acc);
+  for (const c of n.content ?? []) textoDe(c, acc);
+  return acc;
+}
+export const textoPlanoDe = (doc: DocNode) => (doc.content ?? []).map((b) => textoDe(b).join("")).filter(Boolean).join("\n");
+
+export function contarAltPendiente(n: DocNode): number {
+  return (n.type === "imagen" && n.attrs?.["altPendiente"] === true ? 1 : 0) + (n.content ?? []).reduce((s, c) => s + contarAltPendiente(c), 0);
+}
+
+export function docDeTexto(texto: string): DocNode | null {
+  const parrafos = texto.split(/\r?\n\s*\r?\n/).map((p) => p.trim()).filter(Boolean);
+  if (!parrafos.length) return null;
+  return { type: "doc", content: parrafos.map((p) => ({ type: "paragraph", content: [{ type: "text", text: p }] })) };
+}

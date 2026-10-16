@@ -19,8 +19,10 @@ import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../../src/generated/prisma/client.js";
 import { convertWpPost } from "../../src/conversor/convert.ts";
 import { cargarMapeo } from "../../src/conversor/taxonomia.ts";
-import type { DocNode } from "../../src/conversor/types.ts";
 import { validateArticleBodyDetallado } from "../../src/schema/validate.ts";
+import {
+  INVISIBLES, aNFC, claveJs, contarAltPendiente, contarInvisibles, cuentaDe, decEntidades, decodificar, docDeTexto, limpiarSlug, quitarU200E, slugFinal, textoPlanoDe,
+} from "./lib/utilidades.ts";
 
 config({ path: fileURLToPath(new URL("../../../../.env", import.meta.url)), quiet: true });
 
@@ -43,8 +45,6 @@ const cuentaPorId = new Map(cuentas.map((c) => [c.wpUserId, c]));
 
 // Estados: solo estos se migran con regla. El 19300 es el único artículo privado que se acepta (decisión tomada).
 const ID_PRIVADO_ACEPTADO = 19300;
-// Caracteres invisibles que se buscan; solo U+200E se limpia (en slug y título).
-const INVISIBLES: Array<[string, string]> = [["U+200B", "\u200B"], ["U+200E", "\u200E"], ["U+200F", "\u200F"], ["U+FEFF", "\uFEFF"], ["U+00AD", "\u00AD"]];
 
 // ---------------------------------------------------------------------------------------------------------------
 // Conexiones de solo lectura
@@ -86,9 +86,6 @@ const marcas = (n: number) => Array.from({ length: n }, () => "?").join(",");
 // ---------------------------------------------------------------------------------------------------------------
 // Utilidades
 // ---------------------------------------------------------------------------------------------------------------
-const decodificar = (s: string) => { try { return decodeURIComponent(s); } catch { return s; } };
-const claveJs = (s: string) => decodificar(s).toLowerCase().normalize("NFD").replace(/\p{M}/gu, "");
-const decEntidades = (s: string) => s.replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#0?39;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">");
 
 /** ¿Son iguales según la intercalación del CMS? Siempre lo decide la base. */
 async function igualesEnBd(pares: Array<[string, string]>): Promise<boolean[]> {
@@ -102,39 +99,12 @@ async function igualesEnBd(pares: Array<[string, string]>): Promise<boolean[]> {
   return res;
 }
 
-function textoDe(n: DocNode, acc: string[] = []): string[] {
-  if (n.text) acc.push(n.text);
-  if (n.type === "footnote" && n.attrs?.["content"]) textoDe(n.attrs["content"] as DocNode, acc);
-  for (const c of n.content ?? []) textoDe(c, acc);
-  return acc;
-}
-const textoPlanoDe = (doc: DocNode) => (doc.content ?? []).map((b) => textoDe(b).join("")).filter(Boolean).join("\n");
-
-function contarAltPendiente(n: DocNode): number {
-  return (n.type === "imagen" && n.attrs?.["altPendiente"] === true ? 1 : 0) + (n.content ?? []).reduce((s, c) => s + contarAltPendiente(c), 0);
-}
-
-function docDeTexto(texto: string): DocNode | null {
-  const parrafos = texto.split(/\r?\n\s*\r?\n/).map((p) => p.trim()).filter(Boolean);
-  if (!parrafos.length) return null;
-  return { type: "doc", content: parrafos.map((p) => ({ type: "paragraph", content: [{ type: "text", text: p }] })) };
-}
-
 /** Lee ancho, alto y tamaño que WordPress declara en _wp_attachment_metadata (PHP serializado). No son medidas verificadas. */
 function metadatosAdjunto(serializado: string) {
   const ancho = serializado.match(/^a:\d+:\{s:5:"width";i:(\d+);s:6:"height";i:(\d+);/);
   const bytes = serializado.match(/s:4:"file";s:\d+:"[^"]*";s:8:"filesize";i:(\d+);/);
   return { ancho: ancho ? Number(ancho[1]) : null, alto: ancho ? Number(ancho[2]) : null, bytes: bytes ? Number(bytes[1]) : null };
 }
-
-/** Cuántas veces aparece cada carácter invisible buscado (solo los que aparecen). */
-function contarInvisibles(texto: string): Record<string, number> {
-  const o: Record<string, number> = {};
-  for (const [nombre, ch] of INVISIBLES) { const n = texto.split(ch).length - 1; if (n) o[nombre] = n; }
-  return o;
-}
-const cuentaDe = (xs: string[]) => { const o: Record<string, number> = {}; for (const x of xs) o[x] = (o[x] ?? 0) + 1; return o; };
-const sinU200E = (s: string) => s.replace(/\u200E/g, "");
 
 // ---------------------------------------------------------------------------------------------------------------
 // Lectura mínima de imágenes (sin dependencias): tipo por contenido y dimensiones del encabezado
@@ -322,8 +292,8 @@ for (const m of muestra) {
   const estado = estadoCms(m.id, str(p["estado"]));
   if (str(p["estado"]) === "private" && estado === "BORRADOR") avisosMigracion.push({ code: "origen_privado" });
   const esBorrador = estado === "BORRADOR";
-  const slug = esBorrador ? `borrador-${m.id}` : sinU200E(slugDecodificado);
-  const tituloEntrada = sinU200E(tituloWp);
+  const slug = slugFinal(esBorrador, m.id, slugDecodificado).slug;
+  const tituloEntrada = quitarU200E(tituloWp);
 
   const r = convertWpPost({ titulo: tituloEntrada, contenido_crudo: m.contenido_crudo }, { autor: nombreAutor || null, taxonomia: { id: m.id, slugs: cats.map((c) => c.slug), mapeo } });
   const val = validateArticleBodyDetallado(r.doc as any, { modo: "migracion" });
@@ -522,9 +492,9 @@ const corpus = await wp(`SELECT ID AS id, post_name AS nombre, post_status AS es
 const conSlug = corpus.filter((f) => str(f["nombre"]) !== "");
 const gruposJs = new Map<string, Array<{ id: number; slug: string }>>();
 for (const f of conSlug) {
-  const k = claveJs(sinU200E(decodificar(str(f["nombre"]))));
+  const k = claveJs(limpiarSlug(decodificar(str(f["nombre"]))).slug);
   const g = gruposJs.get(k) ?? [];
-  g.push({ id: num(f["id"]), slug: sinU200E(decodificar(str(f["nombre"]))) });
+  g.push({ id: num(f["id"]), slug: limpiarSlug(decodificar(str(f["nombre"]))).slug });
   gruposJs.set(k, g);
 }
 const candidatos = [...gruposJs.values()].filter((g) => g.length > 1);
@@ -536,7 +506,7 @@ const descartadosPorBd = paresCorpus.filter((_, i) => !igCorpus[i]).map(([a, b])
 // Control cruzado: que la base agrupe todo el corpus por su cuenta (sin pasar por la normalización de JS)
 let controlBd: { grupos: number; filas: number } | { error: string };
 try {
-  const valores = conSlug.map((f) => [num(f["id"]), sinU200E(decodificar(str(f["nombre"])))] as const);
+  const valores = conSlug.map((f) => [num(f["id"]), limpiarSlug(decodificar(str(f["nombre"]))).slug] as const);
   const sql = `SELECT COUNT(*) AS grupos, COALESCE(SUM(n), 0) AS filas FROM (SELECT COUNT(*) AS n FROM (VALUES ${valores.map(() => "ROW(?, ?)").join(",")}) AS t(i, s) GROUP BY s COLLATE ${COLACION} HAVING COUNT(*) > 1) x`;
   const [f] = await bd(sql, ...valores.flatMap(([i, s]) => [i, s]));
   controlBd = { grupos: num(f?.["grupos"]), filas: num(f?.["filas"]) };
@@ -599,7 +569,6 @@ const revisionC = {
 // ---------------------------------------------------------------------------------------------------------------
 // D. Medición de los archivos originales (solo lectura de disco)
 // ---------------------------------------------------------------------------------------------------------------
-const nfc = (x: string) => x.normalize("NFC");
 const cacheDir = new Map<string, string[]>();
 const listar = (d: string) => { if (!cacheDir.has(d)) cacheDir.set(d, readdirSync(d)); return cacheDir.get(d)!; };
 
@@ -626,8 +595,8 @@ const medir = (clave: string): Medicion => {
   let real = nombres.includes(nombre) ? nombre : null;
   let diferenciaDeNombre: Medicion["diferenciaDeNombre"] = null;
   if (!real) {
-    const u = nombres.find((n) => nfc(n) === nfc(nombre));
-    const m = u ?? nombres.find((n) => nfc(n).toLowerCase() === nfc(nombre).toLowerCase());
+    const u = nombres.find((n) => aNFC(n) === aNFC(nombre));
+    const m = u ?? nombres.find((n) => aNFC(n).toLowerCase() === aNFC(nombre).toLowerCase());
     if (m) { real = m; diferenciaDeNombre = u ? "normalizacion_unicode" : "mayusculas"; }
   }
   if (!real) return sinArchivo;
@@ -694,7 +663,7 @@ const diferenciasContraWp = completas.filter((x) => Object.values(x.coincide!).s
   campos: Object.entries(x.coincide!).filter(([, v]) => v === false).map(([k]) => k),
 }));
 const archivosEnLaCarpeta = (() => { try { return listar(CARPETA_ORIGINALES); } catch { return [] as string[]; } })();
-const usadosEnDisco = new Set(conArchivo.map((x) => nfc(x.medicion.archivo!)));
+const usadosEnDisco = new Set(conArchivo.map((x) => aNFC(x.medicion.archivo!)));
 const revisionD = {
   carpetaOriginales: CARPETA_ORIGINALES, archivosEnLaCarpeta: archivosEnLaCarpeta.length,
   contraLaListaDeRutas: contraLista,
@@ -709,7 +678,7 @@ const revisionD = {
   duplicadasDeContenido: duplicadas,
   contraWordPress: { ancho: campo("ancho"), alto: campo("alto"), bytes: campo("bytes"), mime: campo("mime"), imagenesConAlgunaDiferencia: diferenciasContraWp.length, diferencias: diferenciasContraWp },
   diferenciasDeNombre: conArchivo.filter((x) => x.medicion.diferenciaDeNombre).map((x) => ({ clave: x.clave, enDisco: x.medicion.archivo, tipo: x.medicion.diferenciaDeNombre })),
-  archivosEnDiscoSinUso: archivosEnLaCarpeta.filter((n) => !usadosEnDisco.has(nfc(n))),
+  archivosEnDiscoSinUso: archivosEnLaCarpeta.filter((n) => !usadosEnDisco.has(aNFC(n))),
   mimes: cuentaDe(completas.map((x) => x.medicion.mime ?? "(desconocido)")),
   totalBytes: conArchivo.reduce((t, x) => t + (x.medicion.bytes ?? 0), 0),
   imagenes: medidas,

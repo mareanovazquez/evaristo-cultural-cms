@@ -19,6 +19,7 @@
     "db:sembrar": "tsx scripts/db-sembrar.ts",
     "db:probar-modelo": "tsx scripts/db-probar-modelo.ts",
     "migracion:seco": "tsx scripts/migracion/corrida-en-seco.ts",
+    "test:migracion": "tsx scripts/migracion/tests/test-utilidades.ts",
     "test:conversor": "tsx src/conversor/tests/test.ts && tsx src/conversor/tests/test-titulos.ts && tsx src/conversor/tests/test-integracion-titulos.ts && tsx src/conversor/tests/test-taxonomia.ts"
   },
   "devDependencies": {
