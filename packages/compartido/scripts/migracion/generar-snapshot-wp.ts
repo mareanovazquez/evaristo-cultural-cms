@@ -51,7 +51,7 @@ try {
   const terminos = [
     ...(await leerTerminos(wp, "category", ids)).map((f) => ({ taxonomia: "category" as const, id: num(f["id"]), nombre: str(f["nombre"]), slug: str(f["slug"]) })),
     ...(await leerTerminos(wp, "post_tag", ids)).map((f) => ({ taxonomia: "post_tag" as const, id: num(f["id"]), nombre: str(f["nombre"]), slug: str(f["slug"]) })),
-  ].sort((a, b) => a.id - b.id || a.taxonomia.localeCompare(b.taxonomia) || (a.slug < b.slug ? -1 : a.slug > b.slug ? 1 : 0) || (a.nombre < b.nombre ? -1 : a.nombre > b.nombre ? 1 : 0));
+  ].sort((a, b) => a.id - b.id || a.taxonomia.localeCompare(b.taxonomia)); // estable: dentro de cada post y taxonomía queda el orden de la base
 
   // Usuarios: autores de los 35 posts. id + nicename + nombre salen de leerUsuarios; el login de leerCuentas (sin email).
   const idsAutores = [...new Set(posts.map((p) => p.autor))].sort((a, b) => a - b);

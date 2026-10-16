@@ -980,14 +980,14 @@
     {
       "taxonomia": "post_tag",
       "id": 620,
-      "nombre": "Chinas Expansion into the Western Hemis­phere. Implications for Latin America and the United States",
-      "slug": "chinas-expansion-into-the-western-hemis%c2%adphere-implications-for-latin-america-and-the-united-states"
+      "nombre": "Leandro Wolfson",
+      "slug": "leandro-wolfson"
     },
     {
       "taxonomia": "post_tag",
       "id": 620,
-      "nombre": "Leandro Wolfson",
-      "slug": "leandro-wolfson"
+      "nombre": "Chinas Expansion into the Western Hemis­phere. Implications for Latin America and the United States",
+      "slug": "chinas-expansion-into-the-western-hemis%c2%adphere-implications-for-latin-america-and-the-united-states"
     },
     {
       "taxonomia": "category",
@@ -1016,26 +1016,14 @@
     {
       "taxonomia": "category",
       "id": 1555,
-      "nombre": "México",
-      "slug": "mexico"
-    },
-    {
-      "taxonomia": "category",
-      "id": 1555,
       "nombre": "Seda",
       "slug": "seda"
     },
     {
-      "taxonomia": "post_tag",
+      "taxonomia": "category",
       "id": 1555,
-      "nombre": "Colegio de México",
-      "slug": "colegio-de-mexico"
-    },
-    {
-      "taxonomia": "post_tag",
-      "id": 1555,
-      "nombre": "Guillermo Quartucci",
-      "slug": "guillermo-quartucci"
+      "nombre": "México",
+      "slug": "mexico"
     },
     {
       "taxonomia": "post_tag",
@@ -1046,8 +1034,14 @@
     {
       "taxonomia": "post_tag",
       "id": 1555,
-      "nombre": "japonería",
-      "slug": "japoneria"
+      "nombre": "Guillermo Quartucci",
+      "slug": "guillermo-quartucci"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 1555,
+      "nombre": "Colegio de México",
+      "slug": "colegio-de-mexico"
     },
     {
       "taxonomia": "post_tag",
@@ -1068,6 +1062,12 @@
       "slug": "orientalismo"
     },
     {
+      "taxonomia": "post_tag",
+      "id": 1555,
+      "nombre": "japonería",
+      "slug": "japoneria"
+    },
+    {
       "taxonomia": "category",
       "id": 1569,
       "nombre": "Seda",
@@ -1082,8 +1082,8 @@
     {
       "taxonomia": "post_tag",
       "id": 1569,
-      "nombre": "confucianismo",
-      "slug": "confucianismo"
+      "nombre": "Ruta de la seda",
+      "slug": "ruta-de-la-seda"
     },
     {
       "taxonomia": "post_tag",
@@ -1094,14 +1094,14 @@
     {
       "taxonomia": "post_tag",
       "id": 1569,
-      "nombre": "Ruta de la seda",
-      "slug": "ruta-de-la-seda"
+      "nombre": "taoísmo",
+      "slug": "taoismo"
     },
     {
       "taxonomia": "post_tag",
       "id": 1569,
-      "nombre": "taoísmo",
-      "slug": "taoismo"
+      "nombre": "confucianismo",
+      "slug": "confucianismo"
     },
     {
       "taxonomia": "category",
@@ -1118,14 +1118,20 @@
     {
       "taxonomia": "post_tag",
       "id": 2462,
-      "nombre": "sexismo",
-      "slug": "sexismo"
+      "nombre": "sexualidad",
+      "slug": "sexualidad"
     },
     {
       "taxonomia": "post_tag",
       "id": 2462,
-      "nombre": "sexualidad",
-      "slug": "sexualidad"
+      "nombre": "sexismo",
+      "slug": "sexismo"
+    },
+    {
+      "taxonomia": "category",
+      "id": 3026,
+      "nombre": "Poesia",
+      "slug": "poesia"
     },
     {
       "taxonomia": "category",
@@ -1140,10 +1146,22 @@
       "slug": "mexico"
     },
     {
-      "taxonomia": "category",
+      "taxonomia": "post_tag",
       "id": 3026,
-      "nombre": "Poesia",
-      "slug": "poesia"
+      "nombre": "Carlos Fajardo Fajardo",
+      "slug": "carlos-fajardo-fajardo"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 3026,
+      "nombre": "Origen de Silencios",
+      "slug": "origen-de-silencios"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 3026,
+      "nombre": "Serenidad Sitiada",
+      "slug": "serenidad-sitiada"
     },
     {
       "taxonomia": "post_tag",
@@ -1154,8 +1172,8 @@
     {
       "taxonomia": "post_tag",
       "id": 3026,
-      "nombre": "Carlos Fajardo Fajardo",
-      "slug": "carlos-fajardo-fajardo"
+      "nombre": "Tierra de Sol",
+      "slug": "tierra-de-sol"
     },
     {
       "taxonomia": "post_tag",
@@ -1176,24 +1194,6 @@
       "slug": "navios-de-caronte"
     },
     {
-      "taxonomia": "post_tag",
-      "id": 3026,
-      "nombre": "Origen de Silencios",
-      "slug": "origen-de-silencios"
-    },
-    {
-      "taxonomia": "post_tag",
-      "id": 3026,
-      "nombre": "Serenidad Sitiada",
-      "slug": "serenidad-sitiada"
-    },
-    {
-      "taxonomia": "post_tag",
-      "id": 3026,
-      "nombre": "Tierra de Sol",
-      "slug": "tierra-de-sol"
-    },
-    {
       "taxonomia": "category",
       "id": 3306,
       "nombre": "Literatura",
@@ -1202,14 +1202,14 @@
     {
       "taxonomia": "post_tag",
       "id": 3306,
-      "nombre": "Muchacha punk",
-      "slug": "muchacha-punk"
+      "nombre": "Rodolfo Fogwill",
+      "slug": "rodolfo-fogwill"
     },
     {
       "taxonomia": "post_tag",
       "id": 3306,
-      "nombre": "Rodolfo Fogwill",
-      "slug": "rodolfo-fogwill"
+      "nombre": "Muchacha punk",
+      "slug": "muchacha-punk"
     },
     {
       "taxonomia": "category",
@@ -1256,14 +1256,14 @@
     {
       "taxonomia": "post_tag",
       "id": 4424,
-      "nombre": "Meiji",
-      "slug": "meiji"
+      "nombre": "Período de Tokugawa",
+      "slug": "periodo-de-tokugawa"
     },
     {
       "taxonomia": "post_tag",
       "id": 4424,
-      "nombre": "Período de Tokugawa",
-      "slug": "periodo-de-tokugawa"
+      "nombre": "Meiji",
+      "slug": "meiji"
     },
     {
       "taxonomia": "category",
@@ -1280,14 +1280,14 @@
     {
       "taxonomia": "category",
       "id": 5214,
-      "nombre": "México",
-      "slug": "mexico"
+      "nombre": "Seda",
+      "slug": "seda"
     },
     {
       "taxonomia": "category",
       "id": 5214,
-      "nombre": "Seda",
-      "slug": "seda"
+      "nombre": "México",
+      "slug": "mexico"
     },
     {
       "taxonomia": "category",
@@ -1316,8 +1316,8 @@
     {
       "taxonomia": "post_tag",
       "id": 10730,
-      "nombre": "Asia",
-      "slug": "asia"
+      "nombre": "China",
+      "slug": "china"
     },
     {
       "taxonomia": "post_tag",
@@ -1328,14 +1328,8 @@
     {
       "taxonomia": "post_tag",
       "id": 10730,
-      "nombre": "budismo tibetano",
-      "slug": "budismo-tibetano"
-    },
-    {
-      "taxonomia": "post_tag",
-      "id": 10730,
-      "nombre": "China",
-      "slug": "china"
+      "nombre": "taoísmo",
+      "slug": "taoismo"
     },
     {
       "taxonomia": "post_tag",
@@ -1346,14 +1340,20 @@
     {
       "taxonomia": "post_tag",
       "id": 10730,
-      "nombre": "Confucio",
-      "slug": "confucio"
+      "nombre": "Asia",
+      "slug": "asia"
     },
     {
       "taxonomia": "post_tag",
       "id": 10730,
-      "nombre": "taoísmo",
-      "slug": "taoismo"
+      "nombre": "budismo tibetano",
+      "slug": "budismo-tibetano"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 10730,
+      "nombre": "Confucio",
+      "slug": "confucio"
     },
     {
       "taxonomia": "post_tag",
@@ -1376,26 +1376,20 @@
     {
       "taxonomia": "category",
       "id": 12526,
-      "nombre": "Ensayo",
-      "slug": "ensayo"
+      "nombre": "Literatura",
+      "slug": "literatura"
     },
     {
       "taxonomia": "category",
       "id": 12526,
-      "nombre": "Literatura",
-      "slug": "literatura"
+      "nombre": "Ensayo",
+      "slug": "ensayo"
     },
     {
       "taxonomia": "post_tag",
       "id": 12526,
       "nombre": "Culpa",
       "slug": "culpa"
-    },
-    {
-      "taxonomia": "category",
-      "id": 12939,
-      "nombre": "México",
-      "slug": "mexico"
     },
     {
       "taxonomia": "category",
@@ -1410,22 +1404,22 @@
       "slug": "tv-cine"
     },
     {
-      "taxonomia": "post_tag",
+      "taxonomia": "category",
       "id": 12939,
-      "nombre": "anime",
-      "slug": "anime"
-    },
-    {
-      "taxonomia": "post_tag",
-      "id": 12939,
-      "nombre": "Hiroyuki Okiura",
-      "slug": "hiroyuki-okiura"
+      "nombre": "México",
+      "slug": "mexico"
     },
     {
       "taxonomia": "post_tag",
       "id": 12939,
       "nombre": "Japón",
       "slug": "japon"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 12939,
+      "nombre": "anime",
+      "slug": "anime"
     },
     {
       "taxonomia": "post_tag",
@@ -1440,6 +1434,12 @@
       "slug": "yokai"
     },
     {
+      "taxonomia": "post_tag",
+      "id": 12939,
+      "nombre": "Hiroyuki Okiura",
+      "slug": "hiroyuki-okiura"
+    },
+    {
       "taxonomia": "category",
       "id": 14791,
       "nombre": "Poesia",
@@ -1448,14 +1448,14 @@
     {
       "taxonomia": "post_tag",
       "id": 14791,
-      "nombre": "Mercedes Roffé",
-      "slug": "mercedes-roffe"
+      "nombre": "Poesía",
+      "slug": "poesia"
     },
     {
       "taxonomia": "post_tag",
       "id": 14791,
-      "nombre": "Poesía",
-      "slug": "poesia"
+      "nombre": "Mercedes Roffé",
+      "slug": "mercedes-roffe"
     },
     {
       "taxonomia": "category",
@@ -1466,8 +1466,8 @@
     {
       "taxonomia": "post_tag",
       "id": 15021,
-      "nombre": "Arístides Vargas",
-      "slug": "aristides-vargas"
+      "nombre": "teatro argentino",
+      "slug": "teatro-argentino"
     },
     {
       "taxonomia": "post_tag",
@@ -1484,23 +1484,11 @@
     {
       "taxonomia": "post_tag",
       "id": 15021,
-      "nombre": "teatro argentino",
-      "slug": "teatro-argentino"
+      "nombre": "Arístides Vargas",
+      "slug": "aristides-vargas"
     },
     {
       "taxonomia": "category",
-      "id": 15027,
-      "nombre": "Música",
-      "slug": "musica"
-    },
-    {
-      "taxonomia": "post_tag",
-      "id": 15027,
-      "nombre": "Bob Dylan",
-      "slug": "bob-dylan"
-    },
-    {
-      "taxonomia": "post_tag",
       "id": 15027,
       "nombre": "Música",
       "slug": "musica"
@@ -1514,14 +1502,26 @@
     {
       "taxonomia": "post_tag",
       "id": 15027,
-      "nombre": "rock",
-      "slug": "rock"
+      "nombre": "Bob Dylan",
+      "slug": "bob-dylan"
     },
     {
       "taxonomia": "post_tag",
       "id": 15027,
       "nombre": "rock and roll",
       "slug": "rock-and-roll"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 15027,
+      "nombre": "rock",
+      "slug": "rock"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 15027,
+      "nombre": "Música",
+      "slug": "musica"
     },
     {
       "taxonomia": "category",
@@ -1538,14 +1538,14 @@
     {
       "taxonomia": "post_tag",
       "id": 15244,
-      "nombre": "Cruz",
-      "slug": "cruz"
+      "nombre": "Nicolás Ferraro",
+      "slug": "nicolas-ferraro"
     },
     {
       "taxonomia": "post_tag",
       "id": 15244,
-      "nombre": "Nicolás Ferraro",
-      "slug": "nicolas-ferraro"
+      "nombre": "Cruz",
+      "slug": "cruz"
     },
     {
       "taxonomia": "category",
@@ -1562,12 +1562,6 @@
     {
       "taxonomia": "category",
       "id": 19660,
-      "nombre": "Fantástico",
-      "slug": "fantastico"
-    },
-    {
-      "taxonomia": "category",
-      "id": 19660,
       "nombre": "Historieta",
       "slug": "historieta"
     },
@@ -1578,10 +1572,10 @@
       "slug": "rastros"
     },
     {
-      "taxonomia": "post_tag",
+      "taxonomia": "category",
       "id": 19660,
-      "nombre": "A Culpa é da Noite",
-      "slug": "a-culpa-e-da-noite"
+      "nombre": "Fantástico",
+      "slug": "fantastico"
     },
     {
       "taxonomia": "post_tag",
@@ -1592,14 +1586,20 @@
     {
       "taxonomia": "post_tag",
       "id": 19660,
-      "nombre": "O Coração do Cão Negro",
-      "slug": "o-coracao-do-cao-negro"
+      "nombre": "Porto Alegre Noir",
+      "slug": "porto-alegre-noir"
     },
     {
       "taxonomia": "post_tag",
       "id": 19660,
-      "nombre": "Porto Alegre Noir",
-      "slug": "porto-alegre-noir"
+      "nombre": "A Culpa é da Noite",
+      "slug": "a-culpa-e-da-noite"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 19660,
+      "nombre": "O Coração do Cão Negro",
+      "slug": "o-coracao-do-cao-negro"
     },
     {
       "taxonomia": "category",
@@ -1610,8 +1610,8 @@
     {
       "taxonomia": "post_tag",
       "id": 19899,
-      "nombre": "Millie Jackson",
-      "slug": "millie-jackson"
+      "nombre": "soul",
+      "slug": "soul"
     },
     {
       "taxonomia": "post_tag",
@@ -1622,8 +1622,8 @@
     {
       "taxonomia": "post_tag",
       "id": 19899,
-      "nombre": "soul",
-      "slug": "soul"
+      "nombre": "Millie Jackson",
+      "slug": "millie-jackson"
     },
     {
       "taxonomia": "category",

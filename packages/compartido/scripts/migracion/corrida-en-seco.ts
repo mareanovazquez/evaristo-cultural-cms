@@ -15,16 +15,15 @@ import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
-import { convertWpPost } from "../../src/conversor/convert.ts";
-import { cargarMapeo } from "../../src/conversor/taxonomia.ts";
-import { validateArticleBodyDetallado } from "../../src/schema/validate.ts";
 import {
-  INVISIBLES, adjuntoDeUrl, aNFC, claveJs, contarAltPendiente, contarInvisibles, cuentaDe, decEntidades, decodificar, docDeTexto, limpiarSlug, num, quitarU200E, rutaUploads, slugFinal, str, textoPlanoDe,
+  INVISIBLES, aNFC, claveJs, cuentaDe, decodificar, limpiarSlug, num, rutaUploads, str,
 } from "./lib/utilidades.ts";
+import { armar } from "./lib/armar.ts";
+import { cargarDatosVersionados } from "./lib/entrada-snapshot.ts";
+import { entradaEnVivo } from "./lib/entrada-vivo.ts";
 import {
-  COLACION, abrirConexiones, agruparSlugsEnBd, contarArticulosCms, detalleAdjuntos, igualesEnBd, leerAdjuntosPorClave, leerArticulosPorSlug, leerArticulosPorWpId,
-  leerAutoresPorSlugOWpUserId, leerBios, leerCategoriasCms, leerCorpus, leerCuentas, leerFilasThumbnail, leerMeta, leerNombresDePosts, leerOpciones, leerPosts,
-  leerPostsConVariosThumbnails, leerSeccionesCms, leerTerminos, leerUsuarios,
+  COLACION, abrirConexiones, agruparSlugsEnBd, contarArticulosCms, detalleAdjuntos, igualesEnBd, leerArticulosPorSlug, leerArticulosPorWpId,
+  leerAutoresPorSlugOWpUserId, leerCorpus, leerCuentas, leerFilasThumbnail, leerNombresDePosts, leerPostsConVariosThumbnails,
 } from "./lib/leer-wordpress.ts";
 import type { Fila } from "./lib/leer-wordpress.ts";
 
@@ -36,15 +35,6 @@ const aRuta = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 const CARPETA_ORIGINALES = "C:\\Users\\Usuario\\Documents\\Proyectos frontend\\CMS-EVARISTO(ASSETS)\\uploads-muestra\\originales";
 const CARPETA_DERIVADAS = "C:\\Users\\Usuario\\Documents\\Proyectos frontend\\CMS-EVARISTO(ASSETS)\\uploads-muestra\\derivadas";
 const LISTA_IMAGENES = aRuta("../../out/imagenes-muestra-ampliada.txt");
-
-// Cuentas de WordPress que no son personas: se migran como autor de solo texto (sin página, sin bio).
-// La lista es un dato versionado (datos/migracion/cuentas.json) y se verifica contra wp_users más abajo.
-interface Cuenta { wpUserId: number; user_login: string; nombre: string }
-const cuentas: Cuenta[] = JSON.parse(readFileSync(aRuta("../../datos/migracion/cuentas.json"), "utf8")).cuentas;
-const cuentaPorId = new Map(cuentas.map((c) => [c.wpUserId, c]));
-
-// Estados: solo estos se migran con regla. El 19300 es el único artículo privado que se acepta (decisión tomada).
-const ID_PRIVADO_ACEPTADO = 19300;
 
 // ---------------------------------------------------------------------------------------------------------------
 // Conexiones de solo lectura (lib/leer-wordpress.ts)
@@ -90,35 +80,18 @@ function dimensiones(b: Buffer, mime: string | null): { ancho: number; alto: num
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Entrada
+// Entrada y lectura en vivo
 // ---------------------------------------------------------------------------------------------------------------
-interface Muestra { id: number; slug: string; titulo: string; autor: string; imagen_destacada: string; contenido_crudo: string }
-const fixture: Muestra[] = JSON.parse(readFileSync(aRuta("../../src/conversor/tests/fixtures/muestra-wordpress.json"), "utf8"));
-const extras: Array<{ id: number; casos: string[]; nota: string }> = JSON.parse(readFileSync(aRuta("../../datos/migracion/muestra-extra.json"), "utf8")).articulos;
+const { fixture, extras, cuentas, ids } = cargarDatosVersionados();
 const idsFixture = fixture.map((m) => m.id);
-const ids = [...idsFixture, ...extras.map((e) => e.id)];
-if (new Set(ids).size !== 35) throw new Error(`Se esperaban 35 artículos distintos y hay ${new Set(ids).size}`);
-const mapeo = cargarMapeo();
 
 // La comparación de slugs depende de la intercalación del CMS: se comprueba que se comporte como se espera.
 const [e1, e2, e3] = await igualesEnBd(bd, [["Mañana", "manana"], ["Café", "cafe"], ["CAFE", "cafe"]]);
 if (e1 !== false || e2 !== true || e3 !== true) throw new Error(`La intercalación ${COLACION} no se comporta como se esperaba (ñ/n=${e1}, é/e=${e2}, A/a=${e3})`);
 
-// ---------------------------------------------------------------------------------------------------------------
-// Lecturas de WordPress
-// ---------------------------------------------------------------------------------------------------------------
-const opciones = await leerOpciones(wp);
-const opcion = (k: string) => str(opciones.find((o) => o["k"] === k)?.["v"]);
-const permalink = opcion("permalink_structure");
-
-const filasPosts = await leerPosts(wp, ids);
-const postWp = new Map(filasPosts.map((f) => [num(f["id"]), f]));
-
-const autoresIds = [...new Set(filasPosts.map((f) => num(f["autor"])))];
-const filasUsuarios = await leerUsuarios(wp, autoresIds);
-const filasBio = await leerBios(wp, autoresIds);
-const usuarioWp = new Map(filasUsuarios.map((f) => [num(f["id"]), f]));
-const bioWp = new Map(filasBio.map((f) => [num(f["id"]), str(f["bio"])]));
+// Lo que armar() necesita, leído en vivo de WordPress y del CMS (lib/entrada-vivo.ts)
+const entrada = await entradaEnVivo(wp, bd);
+const permalink = entrada.opciones.permalink_structure;
 
 // Cuentas institucionales: cada una debe existir en wp_users con el mismo id, user_login y display_name del JSON.
 const filasCuentas = await leerCuentas(wp, cuentas.map((c) => c.wpUserId));
@@ -129,168 +102,13 @@ const cuentasVerificadas = cuentas.map((c) => {
 const cuentasQueNoCoinciden = cuentasVerificadas.filter((c) => !c.coincide);
 if (cuentasQueNoCoinciden.length) throw new Error(`Las cuentas de datos/migracion/cuentas.json no coinciden con WordPress: ${JSON.stringify(cuentasQueNoCoinciden)}`);
 
-// Los 35 artículos: los 30 de la fixture tal cual y los 5 extra armados desde WordPress.
-const muestra: Muestra[] = ids.map((id) => {
-  const p = postWp.get(id);
-  if (!p) throw new Error(`El artículo ${id} de la muestra no está en la base de WordPress`);
-  if (str(p["tipo"]) !== "post") throw new Error(`El ${id} no es un post (post_type=${str(p["tipo"])})`);
-  return fixture.find((f) => f.id === id) ?? { id, slug: str(p["nombre"]), titulo: str(p["titulo"]), autor: str(usuarioWp.get(num(p["autor"]))?.["nombre"]), imagen_destacada: "", contenido_crudo: str(p["contenido"]) };
-});
-const motivosExtra = new Map(extras.map((e) => [e.id, e.casos]));
-
-const filasMeta = await leerMeta(wp, ids);
-const metaDe = (id: number, k: string) => filasMeta.filter((f) => num(f["postId"]) === id && f["k"] === k).map((f) => ({ metaId: num(f["metaId"]), valor: str(f["v"]) }));
-
-const filasEtiquetas = await leerTerminos(wp, "post_tag", ids);
-const filasCategorias = await leerTerminos(wp, "category", ids);
-
-// Adjuntos: clave (_wp_attached_file) -> id del adjunto, de toda la base.
-const filasAdjuntos = await leerAdjuntosPorClave(wp);
-const adjuntoPorClave = new Map(filasAdjuntos.map((f) => [str(f["clave"]), num(f["id"])]));
-
 // ---------------------------------------------------------------------------------------------------------------
-// Conversión y armado de los registros
+// Armado de los registros (función pura, lib/armar.ts)
 // ---------------------------------------------------------------------------------------------------------------
-/** Estado del CMS según post_status: publish → PUBLICADO; draft y el privado 19300 → BORRADOR; cualquier otro → DESCONOCIDO. */
-function estadoCms(id: number, e: string): string {
-  if (e === "publish") return "PUBLICADO";
-  if (e === "draft") return "BORRADOR";
-  if (e === "private" && id === ID_PRIVADO_ACEPTADO) return "BORRADOR";
-  return `DESCONOCIDO(${e})`;
-}
-const utcDe = (gmt: string) => (gmt.startsWith("0000") ? null : `${gmt.replace(" ", "T")}.000Z`);
-
-function origenDe(fechaLocal: string, nombre: string): string {
-  const [fecha] = fechaLocal.split(" ") as [string];
-  const [a, m, d] = fecha.split("-") as [string, string, string];
-  const ruta = permalink.replace(/%([a-z_]+)%/g, (_, k: string) => {
-    if (k === "year") return a;
-    if (k === "monthnum") return m;
-    if (k === "day") return d;
-    if (k === "postname") return nombre;
-    throw new Error(`permalink_structure con una variable no soportada: %${k}%`);
-  });
-  return ruta;
-}
-
-const imagenesDeCuerpo = new Map<string, { url: string; articulos: Set<number> }>();
-const registros: any[] = [];
-const autores = new Map<number, any>();
-const detalleEnc = await detalleAdjuntos(wp, [...new Set(ids.flatMap((id) => metaDe(id, "_thumbnail_id").sort((a, b) => a.metaId - b.metaId).slice(0, 1).map((r) => Number(r.valor)).filter(Number.isInteger)))]);
-
-for (const m of muestra) {
-  const p = postWp.get(m.id);
-  if (!p) throw new Error(`El artículo ${m.id} de la muestra no está en la base de WordPress`);
-  const usuario = usuarioWp.get(num(p["autor"]));
-  const nombreAutor = str(usuario?.["nombre"]);
-  const cats = filasCategorias.filter((f) => num(f["id"]) === m.id).map((f) => ({ nombre: decEntidades(str(f["nombre"])), slug: str(f["slug"]) })).sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-
-  // Caracteres invisibles (medidos sobre lo crudo de WordPress) y limpieza de U+200E en título y slug
-  const nombrePost = str(p["nombre"]);
-  const slugDecodificado = decodificar(nombrePost);
-  const tituloWp = m.titulo;
-  const invisibles = { slug: contarInvisibles(slugDecodificado), titulo: contarInvisibles(tituloWp), cuerpo: contarInvisibles(m.contenido_crudo) };
-  const avisosMigracion: Array<{ code: string; detalle?: unknown }> = [];
-  const dondeU200E = (["slug", "titulo"] as const).filter((k) => invisibles[k]["U+200E"]);
-  if (dondeU200E.length) avisosMigracion.push({ code: "u200e_removido", detalle: { en: dondeU200E } });
-  const estado = estadoCms(m.id, str(p["estado"]));
-  if (str(p["estado"]) === "private" && estado === "BORRADOR") avisosMigracion.push({ code: "origen_privado" });
-  const esBorrador = estado === "BORRADOR";
-  const slug = slugFinal(esBorrador, m.id, slugDecodificado).slug;
-  const tituloEntrada = quitarU200E(tituloWp);
-
-  const r = convertWpPost({ titulo: tituloEntrada, contenido_crudo: m.contenido_crudo }, { autor: nombreAutor || null, taxonomia: { id: m.id, slugs: cats.map((c) => c.slug), mapeo } });
-  const val = validateArticleBodyDetallado(r.doc as any, { modo: "migracion" });
-  const erroresBio = r.bio ? validateArticleBodyDetallado({ type: "doc", content: r.bio } as any, { modo: "migracion" }).errores : [];
-
-  // Autor
-  const wpUserId = num(p["autor"]);
-  if (!autores.has(wpUserId)) {
-    const soloTexto = cuentaPorId.has(wpUserId);
-    const descripcion = bioWp.get(wpUserId)?.trim() ?? "";
-    autores.set(wpUserId, {
-      wpUserId, slug: str(usuario?.["nicename"]), nombre: nombreAutor, soloTexto,
-      bio: soloTexto ? null : docDeTexto(descripcion),
-      articulosEnMuestra: [] as number[],
-    });
-  }
-  autores.get(wpUserId).articulosEnMuestra.push(m.id);
-
-  // Imagen de encabezado: si hay varias filas de _thumbnail_id, la de menor meta_id
-  const filasThumb = metaDe(m.id, "_thumbnail_id").sort((a, b) => a.metaId - b.metaId);
-  const adjEnc = filasThumb.length ? detalleEnc.get(Number(filasThumb[0]!.valor)) : undefined;
-  const credito = metaDe(m.id, "cb_image_credit")[0]?.valor.trim() ?? "";
-  const imagenEncabezado = adjEnc && adjEnc.tipoPost === "attachment"
-    ? { wpId: adjEnc.id, clave: adjEnc.clave, nombreOriginal: adjEnc.clave ? adjEnc.clave.split("/").pop()! : null, tipoMime: adjEnc.tipoMime, ancho: adjEnc.ancho, alto: adjEnc.alto, bytes: adjEnc.bytes, hash: null }
-    : null;
-
-  // Datos para redes (solo si tienen contenido)
-  const og = (k: string) => metaDe(m.id, k)[0]?.valor.trim() ?? "";
-  const redesDescripcion = og("_webdados_fb_open_graph_specific_description") || null;
-  const redesImagenUrl = og("_webdados_fb_open_graph_specific_image") || null;
-  const redesAdjunto = redesImagenUrl ? adjuntoDeUrl(redesImagenUrl, adjuntoPorClave) : null;
-
-  // Imágenes del cuerpo
-  for (const im of r.assets.images) {
-    const clave = rutaUploads(im.url) ?? im.url;
-    const e = imagenesDeCuerpo.get(clave) ?? { url: im.url, articulos: new Set<number>() };
-    e.articulos.add(m.id);
-    imagenesDeCuerpo.set(clave, e);
-  }
-
-  const etiquetas = filasEtiquetas.filter((f) => num(f["id"]) === m.id).map((f) => decEntidades(str(f["nombre"])));
-  const visitas = metaDe(m.id, "cb_visit_counter")[0]?.valor;
-  const altCuerpo = contarAltPendiente(r.doc);
-  const encabezadoAlt = adjEnc && adjEnc.tipoPost === "attachment" ? adjEnc.alt : "";
-  // _wp_old_slug: se descartan los solo numéricos, los iguales al slug actual y los que terminan en __trashed
-  const viejosCrudos = [...new Set(metaDe(m.id, "_wp_old_slug").map((x) => x.valor.trim()))].filter(Boolean);
-  const motivoDescarte = (v: string) => /^\d+$/.test(v) ? "numerico" : v === nombrePost || decodificar(v) === slugDecodificado ? "igual_al_slug_actual" : v.endsWith("__trashed") ? "trashed" : null;
-  const viejos = viejosCrudos.filter((v) => motivoDescarte(v) === null);
-  const viejosDescartados = viejosCrudos.filter((v) => motivoDescarte(v) !== null).map((v) => ({ valor: v, motivo: motivoDescarte(v) }));
-  // Un borrador o privado nunca tuvo URL pública: no genera redirecciones de artículo ni de slug anterior.
-  const origen = origenDe(str(p["fecha"]), nombrePost);
-
-  const redirecciones = esBorrador || estado.startsWith("DESCONOCIDO") ? [] : [
-    { origen, tipo: "ARTICULO", codigo: 301, articuloWpId: m.id, autorWpUserId: null, destino: null },
-    ...viejos.map((v) => ({ origen: origenDe(str(p["fecha"]), v), tipo: "SLUG_ANTERIOR", codigo: 301, articuloWpId: m.id, autorWpUserId: null, destino: null })),
-  ];
-
-  registros.push({
-    wpId: m.id,
-    slug,
-    slugWp: nombrePost,
-    estadoWp: str(p["estado"]),
-    estado,
-    esExtra: motivosExtra.get(m.id) ?? null,
-    antesDeLimpiar: dondeU200E.length ? { slug: slugDecodificado, titulo: tituloWp } : null,
-    invisibles,
-    oldSlugs: { validos: viejos, descartados: viejosDescartados },
-    titulo: r.titulo, bajada: r.bajada || null,
-    cuerpo: r.doc, schemaVersion: 1, textoPlano: textoPlanoDe(r.doc),
-    publicadoEn: utcDe(str(p["fechaGmt"])),
-    postDateLocal: str(p["fecha"]), postDateGmt: str(p["fechaGmt"]),
-    novedadHasta: r.novedadHasta,
-    seccion: r.seccion, categorias: r.categorias, categoriaPrincipal: r.categoriaPrincipal,
-    categoriasWp: cats.map((c) => c.slug),
-    autores: [{ wpUserId, orden: 0 }],
-    imagenEncabezado, encabezadoAlt: encabezadoAlt || null, encabezadoCredito: credito || null,
-    encabezadoPuntoFocalX: 0.5, encabezadoPuntoFocalY: 0.5,
-    redesDescripcion, redesImagenUrl, redesImagenWpId: redesAdjunto?.id ?? null,
-    etiquetasWp: etiquetas.length ? etiquetas : null,
-    avisosMigracion: r.warnings.length || r.avisosTitulo.length || val.avisos.length || avisosMigracion.length ? { cuerpo: r.warnings, titulo: r.avisosTitulo, validador: val.avisos, migracion: avisosMigracion } : null,
-    altPendientes: altCuerpo + (imagenEncabezado && !encabezadoAlt ? 1 : 0),
-    altPendientesCuerpo: altCuerpo,
-    visitasWp: visitas !== undefined && /^\d+$/.test(visitas) ? Number(visitas) : null,
-    bioDelCuerpo: r.bio ? textoPlanoDe({ type: "doc", content: r.bio }) : null,
-    thumbnailFilas: filasThumb, imagenDestacadaFixture: m.imagen_destacada || adjEnc?.guid || "",
-    validacion: { errores: val.errores, erroresBio, avisos: val.avisos },
-    redirecciones,
-  });
-}
-
-// Redirecciones de autor: una por autor (el origen es único)
-const redireccionesAutor = [...autores.values()].map((a) => ({ origen: `/author/${a.slug}/`, tipo: "AUTOR", codigo: 301, articuloWpId: null, autorWpUserId: a.wpUserId, destino: null }));
-const redirecciones = [...registros.flatMap((r) => r.redirecciones), ...redireccionesAutor];
+const plan = armar(entrada);
+const registros = plan.articulos;
+const autores = new Map(plan.autores.map((a) => [a.wpUserId, a]));
+const redirecciones = plan.redirecciones;
 
 // ---------------------------------------------------------------------------------------------------------------
 // Validaciones
@@ -337,16 +155,11 @@ for (const a of listaAutores) {
 }
 validaciones["autoresYaPresentesEnCms"] = autoresEnCms;
 
-// Secciones y categorías que el artículo usa: ¿existen en el CMS?
-const seccionesCms = new Set((await leerSeccionesCms(bd)).map((f) => str(f["slug"])));
-const categoriasCms = new Set((await leerCategoriasCms(bd)).map((f) => str(f["slug"])));
-validaciones["seccionesQueNoExistenEnCms"] = [...new Set(registros.map((r) => r.seccion))].filter((s) => !seccionesCms.has(s));
-validaciones["categoriasUsadasQueNoExistenEnCms"] = [...new Set(registros.flatMap((r) => r.categorias as string[]))].filter((c) => !categoriasCms.has(c));
-validaciones["categoriasEnCms"] = categoriasCms.size;
-const nombreDeCategoria = new Map(mapeo.categorias.map((c) => [c.slug, c.nombre]));
-const categoriasACrear = (validaciones["categoriasUsadasQueNoExistenEnCms"] as string[]).map((slug) => ({
-  slug, nombre: nombreDeCategoria.get(slug) ?? null, articulos: registros.filter((r) => r.categorias.includes(slug)).map((r) => r.wpId),
-}));
+// Secciones y categorías que el artículo usa: ¿existen en el CMS? (lo calcula armar())
+validaciones["seccionesQueNoExistenEnCms"] = plan.seccionesFaltantes;
+const categoriasACrear = plan.categoriasACrear;
+validaciones["categoriasUsadasQueNoExistenEnCms"] = categoriasACrear.map((c) => c.slug);
+validaciones["categoriasEnCms"] = new Set(entrada.categoriasExistentes).size;
 validaciones["categoriasACrearSinNombreEnElMapeo"] = categoriasACrear.filter((c) => c.nombre === null).map((c) => c.slug);
 
 validaciones["idempotencia"] = {
@@ -426,21 +239,7 @@ const revisionB = {
 // ---------------------------------------------------------------------------------------------------------------
 // C. Imágenes de los 30 artículos
 // ---------------------------------------------------------------------------------------------------------------
-const distintas = new Map<string, { origen: string[]; url: string; articulos: number[]; adjuntoId: number | null; via: string | null }>();
-const sumar = (clave: string, url: string, origen: string, articulo: number, adjunto: { id: number; via: string } | null) => {
-  const e = distintas.get(clave) ?? { origen: [], url, articulos: [], adjuntoId: adjunto?.id ?? null, via: adjunto?.via ?? null };
-  if (!e.origen.includes(origen)) e.origen.push(origen);
-  if (!e.articulos.includes(articulo)) e.articulos.push(articulo);
-  distintas.set(clave, e);
-};
-for (const r of registros) {
-  if (r.imagenEncabezado) sumar(`adjunto:${r.imagenEncabezado.wpId}`, r.imagenDestacadaFixture, "encabezado", r.wpId, { id: r.imagenEncabezado.wpId, via: "_thumbnail_id" });
-  if (r.redesImagenUrl) sumar(r.redesImagenWpId ? `adjunto:${r.redesImagenWpId}` : `url:${r.redesImagenUrl}`, r.redesImagenUrl, "redes", r.wpId, r.redesImagenWpId ? { id: r.redesImagenWpId, via: "url" } : null);
-}
-for (const [, e] of imagenesDeCuerpo) {
-  const adj = adjuntoDeUrl(e.url, adjuntoPorClave);
-  for (const a of e.articulos) sumar(adj ? `adjunto:${adj.id}` : `url:${e.url}`, e.url, "cuerpo", a, adj);
-}
+const distintas = new Map(plan.imagenesReferenciadas.map((e) => [e.clave, e] as const));
 const idsAdjImg = [...new Set([...distintas.values()].map((e) => e.adjuntoId).filter((x): x is number => x !== null))];
 const detalleImg = await detalleAdjuntos(wp, idsAdjImg);
 const listaImg = [...distintas.entries()].map(([clave, e]) => {
@@ -614,7 +413,7 @@ const resumen = {
   estados: cuenta(registros, (r) => r.estado),
   estadosDesconocidos: registros.filter((r) => r.estado.startsWith("DESCONOCIDO")).map((r) => ({ wpId: r.wpId, postStatus: r.estadoWp })),
   slugsGenerados: registros.filter((r) => r.estado === "BORRADOR").map((r) => ({ wpId: r.wpId, postStatus: r.estadoWp, slugEnWordPress: r.slugWp, slug: r.slug })),
-  slugsLimpiados: registros.filter((r) => r.antesDeLimpiar).map((r) => ({ wpId: r.wpId, slugAntes: r.antesDeLimpiar.slug, slugDespues: r.slug, tituloAntes: r.antesDeLimpiar.titulo, tituloDespues: r.titulo })),
+  slugsLimpiados: registros.filter((r) => r.antesDeLimpiar).map((r) => ({ wpId: r.wpId, slugAntes: r.antesDeLimpiar!.slug, slugDespues: r.slug, tituloAntes: r.antesDeLimpiar!.titulo, tituloDespues: r.titulo })),
   invisiblesHallados,
   categoriasACrear,
   autores: listaAutores.length, autoresSoloTexto: listaAutores.filter((a) => a.soloTexto).map((a) => ({ wpUserId: a.wpUserId, nombre: a.nombre })),
@@ -631,7 +430,7 @@ const resumen = {
   conCredito: registros.filter((r) => r.encabezadoCredito).map((r) => r.wpId),
   publicadoEnDistintoDeFechaLocal: registros.filter((r) => r.publicadoEn !== null && r.publicadoEn !== `${r.postDateLocal.replace(" ", "T")}.000Z`).map((r) => r.wpId),
   slugsDistintosDeWordPress: registros.filter((r) => r.slug !== decodificar(r.slugWp)).map((r) => r.wpId),
-  gmtOffset: opcion("gmt_offset"), timezoneString: opcion("timezone_string"), permalinkStructure: permalink,
+  gmtOffset: entrada.opciones.gmt_offset, timezoneString: entrada.opciones.timezone_string, permalinkStructure: permalink,
   choquesDeSlug: { entreLos35: (validaciones["slugsChocanEntreLos35"] as unknown[]).length, contraCms: choquesCms.length, corpusCompleto: colisionesCorpus.length },
   imagenes: {
     distintas: revisionC.distintas, porOrigen: revisionC.porOrigen, conArchivo: revisionD.conArchivo, medidasCompletas: revisionD.medidasCompletas,
@@ -697,7 +496,7 @@ md.push("", "| adjunto | clave | MIME | ancho×alto | bytes | SHA-256 | WP ancho
 for (const x of revisionD.imagenes) md.push(`| ${x.adjuntoWpId} | ${x.clave} | ${x.medicion.mime ?? "—"} | ${x.medicion.ancho !== null ? `${x.medicion.ancho}×${x.medicion.alto}` : x.medicion.estado} | ${x.medicion.bytes ?? "—"} | ${x.medicion.sha256 ? x.medicion.sha256.slice(0, 16) + "…" : "—"} | ${x.wp.ancho ?? "?"}×${x.wp.alto ?? "?"} | ${x.wp.bytes ?? "?"} | ${x.articulos.join(", ")} |`);
 md.push("", "## Artículos", "");
 for (const r of registros) {
-  const a = autores.get(r.autores[0].wpUserId);
+  const a = autores.get(r.autores[0]!.wpUserId)!;
   const imgs = medidas.filter((x) => x.articulos.includes(r.wpId));
   md.push(`### ${r.wpId} — ${r.titulo}`, "");
   md.push(`- slug \`${r.slug}\`${r.slug !== decodificar(r.slugWp) || r.slugWp === "" ? ` (en WordPress: \`${r.slugWp}\`, post_status ${r.estadoWp})` : ""}; estado ${r.estado}; publicadoEn ${r.publicadoEn} (post_date local ${r.postDateLocal})${r.esExtra ? `; muestra extra: ${r.esExtra.join(", ")}` : ""}`);
