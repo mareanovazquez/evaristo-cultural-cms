@@ -125,7 +125,15 @@ export function estadoCms(id: number, e: string): string {
   if (e === "private" && id === ID_PRIVADO_ACEPTADO) return "BORRADOR";
   return `DESCONOCIDO(${e})`;
 }
-export const utcDe = (gmt: string) => (gmt.startsWith("0000") ? null : `${gmt.replace(" ", "T")}.000Z`);
+/**
+ * post_date_gmt ("YYYY-MM-DD HH:MM:SS") como ISO en UTC, o null si no es una fecha válida (por ejemplo "0000-00-00 00:00:00",
+ * que es lo que WordPress guarda en los borradores). Nunca se reemplaza por post_date, que es hora local.
+ */
+export function utcDe(gmt: string): string | null {
+  if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(gmt) || gmt.startsWith("0000")) return null;
+  const iso = `${gmt.replace(" ", "T")}.000Z`;
+  return Number.isNaN(Date.parse(iso)) ? null : iso;
+}
 
 /** Ruta vieja de WordPress según `permalink_structure`, con la fecha local del post. */
 export function origenDe(permalink: string, fechaLocal: string, nombre: string): string {
@@ -140,7 +148,36 @@ export function origenDe(permalink: string, fechaLocal: string, nombre: string):
   });
 }
 
-export function armar(entrada: EntradaArmar): Plan {
+/**
+ * La categoría principal (volanta), si existe, tiene que estar entre las categorías del artículo. Sin categoría principal es válido.
+ * Devuelve null si es válido o el motivo si no.
+ */
+export function validarCategoriaPrincipal(articulo: { categorias: readonly string[]; categoriaPrincipal: string | null }): string | null {
+  const { categoriaPrincipal, categorias } = articulo;
+  if (categoriaPrincipal === null || categoriaPrincipal === undefined) return null;
+  return categorias.includes(categoriaPrincipal) ? null : `la categoría principal "${categoriaPrincipal}" no está entre las categorías [${categorias.join(", ")}]`;
+}
+
+type ValorDestino = number | string | null | undefined;
+/**
+ * Una redirección apunta a exactamente un destino: un artículo (articuloId o articuloWpId), un autor (autorId o autorWpUserId)
+ * o un destino manual (`destino`). Devuelve null si es válida o el motivo si no.
+ */
+export function validarDestinoUnico(r: { articuloId?: ValorDestino; articuloWpId?: ValorDestino; autorId?: ValorDestino; autorWpUserId?: ValorDestino; destino?: ValorDestino }): string | null {
+  const presente = (v: ValorDestino) => v !== null && v !== undefined && v !== "";
+  const destinos = [
+    presente(r.articuloId) || presente(r.articuloWpId) ? "articulo" : null,
+    presente(r.autorId) || presente(r.autorWpUserId) ? "autor" : null,
+    presente(r.destino) ? "destino" : null,
+  ].filter((x): x is string => x !== null);
+  return destinos.length === 1 ? null : `la redirección tiene ${destinos.length} destinos (${destinos.join(", ") || "ninguno"}) y debe tener exactamente uno`;
+}
+
+/** Dependencias reemplazables, solo para los tests (por ejemplo, forzar una categoría principal inválida). */
+export interface DependenciasArmar { convertir?: typeof convertWpPost }
+
+export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan {
+  const convertir = deps.convertir ?? convertWpPost;
   const { ids, fixture, mapeo } = entrada;
   const permalink = entrada.opciones.permalink_structure;
   const cuentaPorId = new Map(entrada.cuentas.map((c) => [c.wpUserId, c]));
@@ -162,6 +199,7 @@ export function armar(entrada: EntradaArmar): Plan {
   const imagenesDeCuerpo = new Map<string, { url: string; articulos: Set<number> }>();
   const registros: RegistroArticulo[] = [];
   const autores = new Map<number, AutorPlan>();
+  const problemas: Problema[] = [];
 
   for (const m of muestra) {
     const p = postWp.get(m.id)!;
@@ -179,13 +217,44 @@ export function armar(entrada: EntradaArmar): Plan {
     if (dondeU200E.length) avisosMigracion.push({ code: "u200e_removido", detalle: { en: dondeU200E } });
     const estado = estadoCms(m.id, p.estado);
     if (p.estado === "private" && estado === "BORRADOR") avisosMigracion.push({ code: "origen_privado" });
+    if (estado.startsWith("DESCONOCIDO")) {
+      problemas.push({ wpId: m.id, codigo: "estado_desconocido", detalle: { postStatus: p.estado }, bloqueante: false });
+      continue;
+    }
     const esBorrador = estado === "BORRADOR";
     const slug = slugFinal(esBorrador, m.id, slugDecodificado).slug;
     const tituloEntrada = quitarU200E(tituloWp);
 
-    const r = convertWpPost({ titulo: tituloEntrada, contenido_crudo: m.contenido_crudo }, { autor: nombreAutor || null, taxonomia: { id: m.id, slugs: cats.map((c) => c.slug), mapeo } });
+    const r = convertir({ titulo: tituloEntrada, contenido_crudo: m.contenido_crudo }, { autor: nombreAutor || null, taxonomia: { id: m.id, slugs: cats.map((c) => c.slug), mapeo } });
     const val = validateArticleBodyDetallado(r.doc as any, { modo: "migracion" });
     const erroresBio = r.bio ? validateArticleBodyDetallado({ type: "doc", content: r.bio } as any, { modo: "migracion" }).errores : [];
+
+    // _wp_old_slug: se descartan los solo numéricos, los iguales al slug actual y los que terminan en __trashed
+    const viejosCrudos = [...new Set(metaDe(m.id, "_wp_old_slug").map((x) => x.valor.trim()))].filter(Boolean);
+    const motivoDescarte = (v: string) => /^\d+$/.test(v) ? "numerico" : v === nombrePost || decodificar(v) === slugDecodificado ? "igual_al_slug_actual" : v.endsWith("__trashed") ? "trashed" : null;
+    const viejos = viejosCrudos.filter((v) => motivoDescarte(v) === null);
+    const viejosDescartados = viejosCrudos.filter((v) => motivoDescarte(v) !== null).map((v) => ({ valor: v, motivo: motivoDescarte(v) }));
+    // Un borrador o privado nunca tuvo URL pública: no genera redirecciones de artículo ni de slug anterior.
+    const origen = origenDe(permalink, p.fecha, nombrePost);
+
+    const redirecciones: RedirecionPlan[] = esBorrador || estado.startsWith("DESCONOCIDO") ? [] : [
+      { origen, tipo: "ARTICULO", codigo: 301, articuloWpId: m.id, autorWpUserId: null, destino: null },
+      ...viejos.map((v) => ({ origen: origenDe(permalink, p.fecha, v), tipo: "SLUG_ANTERIOR" as const, codigo: 301, articuloWpId: m.id, autorWpUserId: null, destino: null })),
+    ];
+
+
+    // Validaciones puras: si alguna falla se registra el problema y el artículo se excluye del plan
+    const motivos: Array<{ codigo: string; motivo: string }> = [];
+    const motivoPrincipal = validarCategoriaPrincipal({ categorias: r.categorias, categoriaPrincipal: r.categoriaPrincipal });
+    if (motivoPrincipal) motivos.push({ codigo: "categoria_principal_invalida", motivo: motivoPrincipal });
+    for (const red of redirecciones) {
+      const motivoDestino = validarDestinoUnico(red);
+      if (motivoDestino) motivos.push({ codigo: "destino_redireccion_invalido", motivo: `${red.origen}: ${motivoDestino}` });
+    }
+    if (motivos.length) {
+      for (const x of motivos) problemas.push({ wpId: m.id, codigo: x.codigo, detalle: x.motivo, bloqueante: false });
+      continue;
+    }
 
     // Autor
     const wpUserId = p.autor;
@@ -226,19 +295,6 @@ export function armar(entrada: EntradaArmar): Plan {
     const visitas = metaDe(m.id, "cb_visit_counter")[0]?.valor;
     const altCuerpo = contarAltPendiente(r.doc);
     const encabezadoAlt = adjEnc && adjEnc.tipoPost === "attachment" ? adjEnc.alt ?? "" : "";
-    // _wp_old_slug: se descartan los solo numéricos, los iguales al slug actual y los que terminan en __trashed
-    const viejosCrudos = [...new Set(metaDe(m.id, "_wp_old_slug").map((x) => x.valor.trim()))].filter(Boolean);
-    const motivoDescarte = (v: string) => /^\d+$/.test(v) ? "numerico" : v === nombrePost || decodificar(v) === slugDecodificado ? "igual_al_slug_actual" : v.endsWith("__trashed") ? "trashed" : null;
-    const viejos = viejosCrudos.filter((v) => motivoDescarte(v) === null);
-    const viejosDescartados = viejosCrudos.filter((v) => motivoDescarte(v) !== null).map((v) => ({ valor: v, motivo: motivoDescarte(v) }));
-    // Un borrador o privado nunca tuvo URL pública: no genera redirecciones de artículo ni de slug anterior.
-    const origen = origenDe(permalink, p.fecha, nombrePost);
-
-    const redirecciones: RedirecionPlan[] = esBorrador || estado.startsWith("DESCONOCIDO") ? [] : [
-      { origen, tipo: "ARTICULO", codigo: 301, articuloWpId: m.id, autorWpUserId: null, destino: null },
-      ...viejos.map((v) => ({ origen: origenDe(permalink, p.fecha, v), tipo: "SLUG_ANTERIOR" as const, codigo: 301, articuloWpId: m.id, autorWpUserId: null, destino: null })),
-    ];
-
     registros.push({
       wpId: m.id,
       slug,
@@ -272,9 +328,9 @@ export function armar(entrada: EntradaArmar): Plan {
     });
   }
 
-  // Redirecciones de autor: una por autor (el origen es único)
+  // Redirecciones de autor: una por autor con página (el origen es único). Los autores de solo texto no tienen página.
   const listaAutores = [...autores.values()];
-  const redireccionesAutor: RedirecionPlan[] = listaAutores.map((a) => ({ origen: `/author/${a.slug}/`, tipo: "AUTOR", codigo: 301, articuloWpId: null, autorWpUserId: a.wpUserId, destino: null }));
+  const redireccionesAutor: RedirecionPlan[] = listaAutores.filter((a) => !a.soloTexto).map((a) => ({ origen: `/author/${a.slug}/`, tipo: "AUTOR", codigo: 301, articuloWpId: null, autorWpUserId: a.wpUserId, destino: null }));
   const redirecciones = [...registros.flatMap((r) => r.redirecciones), ...redireccionesAutor];
 
   // Secciones y categorías que los artículos usan y todavía no existen en el CMS
@@ -285,6 +341,9 @@ export function armar(entrada: EntradaArmar): Plan {
   const categoriasACrear: CategoriaACrear[] = [...new Set(registros.flatMap((r) => r.categorias))].filter((c) => !categoriasCms.has(c)).map((slug) => ({
     slug, nombre: nombreDeCategoria.get(slug) ?? null, articulos: registros.filter((r) => r.categorias.includes(slug)).map((r) => r.wpId),
   }));
+
+  // Una categoría a crear sin nombre en el mapeo no se puede crear: problema bloqueante
+  for (const c of categoriasACrear) if (c.nombre === null) problemas.push({ wpId: null, codigo: "categoria_sin_nombre_en_el_mapeo", detalle: { slug: c.slug, articulos: c.articulos }, bloqueante: true });
 
   // Imágenes distintas que usan los artículos (encabezado, redes y cuerpo), con el adjunto de WordPress que les corresponde
   const distintas = new Map<string, ImagenReferenciada>();
@@ -303,5 +362,5 @@ export function armar(entrada: EntradaArmar): Plan {
     for (const a of e.articulos) sumar(adj ? `adjunto:${adj.id}` : `url:${e.url}`, e.url, "cuerpo", a, adj);
   }
 
-  return { articulos: registros, autores: listaAutores, redirecciones, categoriasACrear, seccionesFaltantes, imagenesReferenciadas: [...distintas.values()], problemas: [] };
+  return { articulos: registros, autores: listaAutores, redirecciones, categoriasACrear, seccionesFaltantes, imagenesReferenciadas: [...distintas.values()], problemas };
 }
