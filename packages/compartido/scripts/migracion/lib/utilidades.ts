@@ -5,6 +5,11 @@ import type { DocNode } from "../../../src/conversor/types.ts";
 // Caracteres invisibles que se buscan; solo U+200E se limpia (en slug y título).
 export const INVISIBLES: Array<[string, string]> = [["U+200B", "\u200B"], ["U+200E", "\u200E"], ["U+200F", "\u200F"], ["U+FEFF", "\uFEFF"], ["U+00AD", "\u00AD"]];
 
+export const num = (v: unknown) => Number(v);
+export const str = (v: unknown) => (v === null || v === undefined ? "" : String(v));
+/** Marcas `?` separadas por coma para un IN (...) con n parámetros. */
+export const marcas = (n: number) => Array.from({ length: n }, () => "?").join(",");
+
 /** decodeURIComponent que no lanza: si falla, conserva el texto crudo. */
 export const decodificar = (s: string) => { try { return decodeURIComponent(s); } catch { return s; } };
 /** Igual que `decodificar` pero dice si el decode falló (percent-encoding inválido). */

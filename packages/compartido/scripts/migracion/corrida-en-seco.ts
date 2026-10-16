@@ -15,22 +15,22 @@ import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-import { PrismaClient } from "../../src/generated/prisma/client.js";
 import { convertWpPost } from "../../src/conversor/convert.ts";
 import { cargarMapeo } from "../../src/conversor/taxonomia.ts";
 import { validateArticleBodyDetallado } from "../../src/schema/validate.ts";
 import {
-  INVISIBLES, aNFC, claveJs, contarAltPendiente, contarInvisibles, cuentaDe, decEntidades, decodificar, docDeTexto, limpiarSlug, quitarU200E, slugFinal, textoPlanoDe,
+  INVISIBLES, aNFC, claveJs, contarAltPendiente, contarInvisibles, cuentaDe, decEntidades, decodificar, docDeTexto, limpiarSlug, num, quitarU200E, slugFinal, str, textoPlanoDe,
 } from "./lib/utilidades.ts";
+import {
+  COLACION, abrirConexiones, agruparSlugsEnBd, contarArticulosCms, detalleAdjuntos, igualesEnBd, leerAdjuntosPorClave, leerArticulosPorSlug, leerArticulosPorWpId,
+  leerAutoresPorSlugOWpUserId, leerBios, leerCategoriasCms, leerCorpus, leerCuentas, leerFilasThumbnail, leerMeta, leerNombresDePosts, leerOpciones, leerPosts,
+  leerPostsConVariosThumbnails, leerSeccionesCms, leerTerminos, leerUsuarios,
+} from "./lib/leer-wordpress.ts";
+import type { Fila } from "./lib/leer-wordpress.ts";
 
 config({ path: fileURLToPath(new URL("../../../../.env", import.meta.url)), quiet: true });
 
 const aRuta = (p: string) => fileURLToPath(new URL(p, import.meta.url));
-const SOLO_LECTURA = "SET SESSION TRANSACTION READ ONLY";
-const COLACION = "utf8mb4_es_0900_ai_ci";
-const PREFIJO = "wp_";
-const T = (tabla: string) => `\`${PREFIJO}${tabla}\``;
 
 // Carpetas de imágenes (solo lectura). Los originales se llaman como figuran en _wp_attached_file.
 const CARPETA_ORIGINALES = "C:\\Users\\Usuario\\Documents\\Proyectos frontend\\CMS-EVARISTO(ASSETS)\\uploads-muestra\\originales";
@@ -47,64 +47,13 @@ const cuentaPorId = new Map(cuentas.map((c) => [c.wpUserId, c]));
 const ID_PRIVADO_ACEPTADO = 19300;
 
 // ---------------------------------------------------------------------------------------------------------------
-// Conexiones de solo lectura
+// Conexiones de solo lectura (lib/leer-wordpress.ts)
 // ---------------------------------------------------------------------------------------------------------------
-type Fila = Record<string, unknown>;
-
-const clienteWp = new PrismaClient({
-  adapter: new PrismaMariaDb({ host: "127.0.0.1", port: 3307, user: "root", database: "evaristo_lectura", connectionLimit: 2, initSql: SOLO_LECTURA }),
-});
-
-function clienteCms(): PrismaClient {
-  const texto = process.env["DATABASE_URL"];
-  if (!texto) throw new Error("Falta DATABASE_URL en el entorno");
-  const u = new URL(texto);
-  if (u.hostname !== "127.0.0.1" || u.port !== "3308" || u.pathname !== "/evaristo_cms") {
-    throw new Error("DATABASE_URL no apunta a 127.0.0.1:3308/evaristo_cms: la corrida en seco se niega a seguir");
-  }
-  return new PrismaClient({
-    adapter: new PrismaMariaDb({
-      host: u.hostname, port: Number(u.port), user: decodeURIComponent(u.username), password: decodeURIComponent(u.password),
-      database: u.pathname.slice(1), connectionLimit: 2, initSql: SOLO_LECTURA,
-    }),
-  });
-}
-const cms = clienteCms();
-
-/** Única puerta de entrada a las bases: solo SELECT, una sentencia. */
-async function consultar(cliente: PrismaClient, sql: string, ...params: unknown[]): Promise<Fila[]> {
-  if (!/^\s*SELECT\b/i.test(sql) || sql.includes(";")) throw new Error(`Solo se permite un SELECT: ${sql.slice(0, 60)}`);
-  return cliente.$queryRawUnsafe<Fila[]>(sql, ...params);
-}
-const wp = (sql: string, ...p: unknown[]) => consultar(clienteWp, sql, ...p);
-const bd = (sql: string, ...p: unknown[]) => consultar(cms, sql, ...p);
-
-const num = (v: unknown) => Number(v);
-const str = (v: unknown) => (v === null || v === undefined ? "" : String(v));
-const marcas = (n: number) => Array.from({ length: n }, () => "?").join(",");
+const { wp, bd, cerrar } = await abrirConexiones();
 
 // ---------------------------------------------------------------------------------------------------------------
 // Utilidades
 // ---------------------------------------------------------------------------------------------------------------
-
-/** ¿Son iguales según la intercalación del CMS? Siempre lo decide la base. */
-async function igualesEnBd(pares: Array<[string, string]>): Promise<boolean[]> {
-  const res: boolean[] = [];
-  for (let i = 0; i < pares.length; i += 250) {
-    const lote = pares.slice(i, i + 250);
-    const sql = lote.map((_, k) => `SELECT ${k} AS i, (? = ? COLLATE ${COLACION}) AS eq`).join(" UNION ALL ");
-    const filas = await bd(sql, ...lote.flatMap(([a, b]) => [a, b]));
-    for (const f of filas) res[i + num(f["i"])] = num(f["eq"]) === 1;
-  }
-  return res;
-}
-
-/** Lee ancho, alto y tamaño que WordPress declara en _wp_attachment_metadata (PHP serializado). No son medidas verificadas. */
-function metadatosAdjunto(serializado: string) {
-  const ancho = serializado.match(/^a:\d+:\{s:5:"width";i:(\d+);s:6:"height";i:(\d+);/);
-  const bytes = serializado.match(/s:4:"file";s:\d+:"[^"]*";s:8:"filesize";i:(\d+);/);
-  return { ancho: ancho ? Number(ancho[1]) : null, alto: ancho ? Number(ancho[2]) : null, bytes: bytes ? Number(bytes[1]) : null };
-}
 
 // ---------------------------------------------------------------------------------------------------------------
 // Lectura mínima de imágenes (sin dependencias): tipo por contenido y dimensiones del encabezado
@@ -151,36 +100,28 @@ const ids = [...idsFixture, ...extras.map((e) => e.id)];
 if (new Set(ids).size !== 35) throw new Error(`Se esperaban 35 artículos distintos y hay ${new Set(ids).size}`);
 const mapeo = cargarMapeo();
 
-const [{ ro }] = (await bd("SELECT @@session.transaction_read_only AS ro")) as [Fila];
-const [{ ro: roWp }] = (await wp("SELECT @@session.transaction_read_only AS ro")) as [Fila];
-if (num(ro) !== 1 || num(roWp) !== 1) throw new Error("Las sesiones no están en solo lectura: se aborta");
-
 // La comparación de slugs depende de la intercalación del CMS: se comprueba que se comporte como se espera.
-const [e1, e2, e3] = await igualesEnBd([["Mañana", "manana"], ["Café", "cafe"], ["CAFE", "cafe"]]);
+const [e1, e2, e3] = await igualesEnBd(bd, [["Mañana", "manana"], ["Café", "cafe"], ["CAFE", "cafe"]]);
 if (e1 !== false || e2 !== true || e3 !== true) throw new Error(`La intercalación ${COLACION} no se comporta como se esperaba (ñ/n=${e1}, é/e=${e2}, A/a=${e3})`);
 
 // ---------------------------------------------------------------------------------------------------------------
 // Lecturas de WordPress
 // ---------------------------------------------------------------------------------------------------------------
-const marcaIds = marcas(ids.length);
-const opciones = await wp(`SELECT option_name AS k, option_value AS v FROM ${T("options")} WHERE option_name IN ('permalink_structure','gmt_offset','timezone_string')`);
+const opciones = await leerOpciones(wp);
 const opcion = (k: string) => str(opciones.find((o) => o["k"] === k)?.["v"]);
 const permalink = opcion("permalink_structure");
 
-const filasPosts = await wp(
-  `SELECT ID AS id, post_type AS tipo, post_status AS estado, post_author AS autor, post_name AS nombre, post_title AS titulo, post_content AS contenido,
-          DATE_FORMAT(post_date, '%Y-%m-%d %H:%i:%s') AS fecha, DATE_FORMAT(post_date_gmt, '%Y-%m-%d %H:%i:%s') AS fechaGmt
-   FROM ${T("posts")} WHERE ID IN (${marcaIds})`, ...ids);
+const filasPosts = await leerPosts(wp, ids);
 const postWp = new Map(filasPosts.map((f) => [num(f["id"]), f]));
 
 const autoresIds = [...new Set(filasPosts.map((f) => num(f["autor"])))];
-const filasUsuarios = await wp(`SELECT ID AS id, user_nicename AS nicename, display_name AS nombre FROM ${T("users")} WHERE ID IN (${marcas(autoresIds.length)})`, ...autoresIds);
-const filasBio = await wp(`SELECT user_id AS id, meta_value AS bio FROM ${T("usermeta")} WHERE meta_key='description' AND user_id IN (${marcas(autoresIds.length)})`, ...autoresIds);
+const filasUsuarios = await leerUsuarios(wp, autoresIds);
+const filasBio = await leerBios(wp, autoresIds);
 const usuarioWp = new Map(filasUsuarios.map((f) => [num(f["id"]), f]));
 const bioWp = new Map(filasBio.map((f) => [num(f["id"]), str(f["bio"])]));
 
 // Cuentas institucionales: cada una debe existir en wp_users con el mismo id, user_login y display_name del JSON.
-const filasCuentas = await wp(`SELECT ID AS id, user_login AS login, display_name AS nombre FROM ${T("users")} WHERE ID IN (${marcas(cuentas.length)})`, ...cuentas.map((c) => c.wpUserId));
+const filasCuentas = await leerCuentas(wp, cuentas.map((c) => c.wpUserId));
 const cuentasVerificadas = cuentas.map((c) => {
   const f = filasCuentas.find((x) => num(x["id"]) === c.wpUserId);
   return { ...c, existeEnWp: !!f, loginEnWp: f ? str(f["login"]) : null, nombreEnWp: f ? str(f["nombre"]) : null, coincide: !!f && str(f["login"]) === c.user_login && str(f["nombre"]) === c.nombre };
@@ -197,36 +138,15 @@ const muestra: Muestra[] = ids.map((id) => {
 });
 const motivosExtra = new Map(extras.map((e) => [e.id, e.casos]));
 
-const filasMeta = await wp(
-  `SELECT meta_id AS metaId, post_id AS postId, meta_key AS k, meta_value AS v FROM ${T("postmeta")}
-   WHERE post_id IN (${marcaIds}) AND (meta_key IN ('cb_visit_counter','_wp_old_slug','cb_image_credit','_thumbnail_id') OR meta_key LIKE '\\_webdados\\_fb\\_open\\_graph\\_%')
-   ORDER BY meta_id`, ...ids);
+const filasMeta = await leerMeta(wp, ids);
 const metaDe = (id: number, k: string) => filasMeta.filter((f) => num(f["postId"]) === id && f["k"] === k).map((f) => ({ metaId: num(f["metaId"]), valor: str(f["v"]) }));
 
-const terminos = async (taxonomia: string) => wp(
-  `SELECT tr.object_id AS id, t.name AS nombre, t.slug AS slug FROM ${T("term_relationships")} tr
-   JOIN ${T("term_taxonomy")} tt ON tt.term_taxonomy_id = tr.term_taxonomy_id AND tt.taxonomy = '${taxonomia}'
-   JOIN ${T("terms")} t ON t.term_id = tt.term_id WHERE tr.object_id IN (${marcaIds})`, ...ids);
-const filasEtiquetas = await terminos("post_tag");
-const filasCategorias = await terminos("category");
+const filasEtiquetas = await leerTerminos(wp, "post_tag", ids);
+const filasCategorias = await leerTerminos(wp, "category", ids);
 
 // Adjuntos: clave (_wp_attached_file) -> id del adjunto, de toda la base.
-const filasAdjuntos = await wp(`SELECT post_id AS id, meta_value AS clave FROM ${T("postmeta")} WHERE meta_key='_wp_attached_file'`);
+const filasAdjuntos = await leerAdjuntosPorClave(wp);
 const adjuntoPorClave = new Map(filasAdjuntos.map((f) => [str(f["clave"]), num(f["id"])]));
-
-async function detalleAdjuntos(idsAdj: number[]) {
-  const mapa = new Map<number, { id: number; tipoPost: string; tipoMime: string; guid: string; clave: string | null; alt: string; ancho: number | null; alto: number | null; bytes: number | null }>();
-  if (!idsAdj.length) return mapa;
-  const filas = await wp(`SELECT ID AS id, post_type AS tipoPost, post_mime_type AS mime, guid FROM ${T("posts")} WHERE ID IN (${marcas(idsAdj.length)})`, ...idsAdj);
-  const metas = await wp(`SELECT post_id AS id, meta_key AS k, meta_value AS v FROM ${T("postmeta")} WHERE post_id IN (${marcas(idsAdj.length)}) AND meta_key IN ('_wp_attached_file','_wp_attachment_image_alt','_wp_attachment_metadata')`, ...idsAdj);
-  for (const f of filas) {
-    const id = num(f["id"]);
-    const m = (k: string) => metas.find((x) => num(x["id"]) === id && x["k"] === k);
-    const md = m("_wp_attachment_metadata") ? metadatosAdjunto(str(m("_wp_attachment_metadata")!["v"])) : { ancho: null, alto: null, bytes: null };
-    mapa.set(id, { id, tipoPost: str(f["tipoPost"]), tipoMime: str(f["mime"]), guid: str(f["guid"]), clave: m("_wp_attached_file") ? str(m("_wp_attached_file")!["v"]) : null, alt: str(m("_wp_attachment_image_alt")?.["v"]).trim(), ...md });
-  }
-  return mapa;
-}
 
 /** Ruta de uploads de una URL, o null si no es de la biblioteca de medios propia. */
 function rutaUploads(url: string): string | null {
@@ -272,7 +192,7 @@ function origenDe(fechaLocal: string, nombre: string): string {
 const imagenesDeCuerpo = new Map<string, { url: string; articulos: Set<number> }>();
 const registros: any[] = [];
 const autores = new Map<number, any>();
-const detalleEnc = await detalleAdjuntos([...new Set(ids.flatMap((id) => metaDe(id, "_thumbnail_id").sort((a, b) => a.metaId - b.metaId).slice(0, 1).map((r) => Number(r.valor)).filter(Number.isInteger)))]);
+const detalleEnc = await detalleAdjuntos(wp, [...new Set(ids.flatMap((id) => metaDe(id, "_thumbnail_id").sort((a, b) => a.metaId - b.metaId).slice(0, 1).map((r) => Number(r.valor)).filter(Number.isInteger)))]);
 
 for (const m of muestra) {
   const p = postWp.get(m.id);
@@ -404,16 +324,16 @@ validaciones["origenesMasDe512"] = redirecciones.filter((d) => d.origen.length >
 // (a) choques de slug entre los 35 (la base decide)
 const paresMuestra: Array<[string, string]> = [];
 for (let i = 0; i < registros.length; i++) for (let j = i + 1; j < registros.length; j++) paresMuestra.push([registros[i].slug, registros[j].slug]);
-const igMuestra = await igualesEnBd(paresMuestra);
+const igMuestra = await igualesEnBd(bd, paresMuestra);
 validaciones["slugsChocanEntreLos35"] = paresMuestra.filter((_, i) => igMuestra[i]);
 // (b) contra lo que ya hay en articulos
-const [{ n: cantidadArticulosCms }] = (await bd("SELECT COUNT(*) AS n FROM articulos")) as [Fila];
+const [{ n: cantidadArticulosCms }] = (await contarArticulosCms(bd)) as [Fila];
 const choquesCms: unknown[] = [];
 const yaMigrados: number[] = [];
 for (const r of registros) {
-  const filas = await bd(`SELECT id, slug, wpId FROM articulos WHERE slug = ? COLLATE ${COLACION}`, r.slug);
+  const filas = await leerArticulosPorSlug(bd, r.slug);
   for (const f of filas) choquesCms.push({ wpId: r.wpId, slug: r.slug, existente: { id: num(f["id"]), slug: str(f["slug"]), wpId: f["wpId"] === null ? null : num(f["wpId"]) } });
-  const porWp = await bd("SELECT id FROM articulos WHERE wpId = ?", r.wpId);
+  const porWp = await leerArticulosPorWpId(bd, r.wpId);
   if (porWp.length) yaMigrados.push(r.wpId);
 }
 validaciones["articulosEnCms"] = num(cantidadArticulosCms);
@@ -424,18 +344,18 @@ validaciones["wpIdYaPresentesEnCms"] = yaMigrados;
 const listaAutores = [...autores.values()];
 const paresAutores: Array<[string, string]> = [];
 for (let i = 0; i < listaAutores.length; i++) for (let j = i + 1; j < listaAutores.length; j++) paresAutores.push([listaAutores[i].slug, listaAutores[j].slug]);
-const igAutores = await igualesEnBd(paresAutores);
+const igAutores = await igualesEnBd(bd, paresAutores);
 validaciones["slugsDeAutorQueChocanEntreSi"] = paresAutores.filter((_, i) => igAutores[i]);
 const autoresEnCms: unknown[] = [];
 for (const a of listaAutores) {
-  const filas = await bd(`SELECT id, slug, wpUserId FROM autores WHERE slug = ? COLLATE ${COLACION} OR wpUserId = ?`, a.slug, a.wpUserId);
+  const filas = await leerAutoresPorSlugOWpUserId(bd, a.slug, a.wpUserId);
   for (const f of filas) autoresEnCms.push({ wpUserId: a.wpUserId, slug: a.slug, existente: { id: num(f["id"]), slug: str(f["slug"]), wpUserId: f["wpUserId"] === null ? null : num(f["wpUserId"]) } });
 }
 validaciones["autoresYaPresentesEnCms"] = autoresEnCms;
 
 // Secciones y categorías que el artículo usa: ¿existen en el CMS?
-const seccionesCms = new Set((await bd("SELECT slug FROM secciones")).map((f) => str(f["slug"])));
-const categoriasCms = new Set((await bd("SELECT slug FROM categorias")).map((f) => str(f["slug"])));
+const seccionesCms = new Set((await leerSeccionesCms(bd)).map((f) => str(f["slug"])));
+const categoriasCms = new Set((await leerCategoriasCms(bd)).map((f) => str(f["slug"])));
 validaciones["seccionesQueNoExistenEnCms"] = [...new Set(registros.map((r) => r.seccion))].filter((s) => !seccionesCms.has(s));
 validaciones["categoriasUsadasQueNoExistenEnCms"] = [...new Set(registros.flatMap((r) => r.categorias as string[]))].filter((c) => !categoriasCms.has(c));
 validaciones["categoriasEnCms"] = categoriasCms.size;
@@ -465,13 +385,11 @@ validaciones["idempotencia"] = {
 // ---------------------------------------------------------------------------------------------------------------
 // A. Artículos con más de una fila de _thumbnail_id (todo el corpus)
 // ---------------------------------------------------------------------------------------------------------------
-const multiples = await wp(
-  `SELECT pm.post_id AS id FROM ${T("postmeta")} pm JOIN ${T("posts")} p ON p.ID = pm.post_id AND p.post_type='post' AND p.post_status IN ('publish','draft')
-   WHERE pm.meta_key='_thumbnail_id' GROUP BY pm.post_id HAVING COUNT(*) > 1 ORDER BY pm.post_id`);
+const multiples = await leerPostsConVariosThumbnails(wp);
 const idsMultiples = multiples.map((f) => num(f["id"]));
-const filasMulti = await wp(`SELECT meta_id AS metaId, post_id AS id, meta_value AS v FROM ${T("postmeta")} WHERE meta_key='_thumbnail_id' AND post_id IN (${marcas(idsMultiples.length)}) ORDER BY post_id, meta_id`, ...idsMultiples);
-const adjMulti = await detalleAdjuntos([...new Set(filasMulti.map((f) => Number(f["v"])).filter(Number.isInteger))]);
-const nombresMulti = await wp(`SELECT ID AS id, post_name AS nombre FROM ${T("posts")} WHERE ID IN (${marcas(idsMultiples.length)})`, ...idsMultiples);
+const filasMulti = await leerFilasThumbnail(wp, idsMultiples);
+const adjMulti = await detalleAdjuntos(wp, [...new Set(filasMulti.map((f) => Number(f["v"])).filter(Number.isInteger))]);
+const nombresMulti = await leerNombresDePosts(wp, idsMultiples);
 const revisionA = idsMultiples.map((id) => {
   const filas = filasMulti.filter((f) => num(f["id"]) === id).map((f) => {
     const valor = str(f["v"]);
@@ -488,7 +406,7 @@ const revisionA = idsMultiples.map((id) => {
 // ---------------------------------------------------------------------------------------------------------------
 // B. Colisiones de slug en todo el corpus (publicados + borradores)
 // ---------------------------------------------------------------------------------------------------------------
-const corpus = await wp(`SELECT ID AS id, post_name AS nombre, post_status AS estado FROM ${T("posts")} WHERE post_type='post' AND post_status IN ('publish','draft') ORDER BY ID`);
+const corpus = await leerCorpus(wp);
 const conSlug = corpus.filter((f) => str(f["nombre"]) !== "");
 const gruposJs = new Map<string, Array<{ id: number; slug: string }>>();
 for (const f of conSlug) {
@@ -500,15 +418,14 @@ for (const f of conSlug) {
 const candidatos = [...gruposJs.values()].filter((g) => g.length > 1);
 const paresCorpus: Array<[{ id: number; slug: string }, { id: number; slug: string }]> = [];
 for (const g of candidatos) for (let i = 0; i < g.length; i++) for (let j = i + 1; j < g.length; j++) paresCorpus.push([g[i]!, g[j]!]);
-const igCorpus = await igualesEnBd(paresCorpus.map(([a, b]) => [a.slug, b.slug]));
+const igCorpus = await igualesEnBd(bd, paresCorpus.map(([a, b]) => [a.slug, b.slug]));
 const colisionesCorpus = paresCorpus.filter((_, i) => igCorpus[i]).map(([a, b]) => ({ a, b }));
 const descartadosPorBd = paresCorpus.filter((_, i) => !igCorpus[i]).map(([a, b]) => ({ a, b }));
 // Control cruzado: que la base agrupe todo el corpus por su cuenta (sin pasar por la normalización de JS)
 let controlBd: { grupos: number; filas: number } | { error: string };
 try {
   const valores = conSlug.map((f) => [num(f["id"]), limpiarSlug(decodificar(str(f["nombre"]))).slug] as const);
-  const sql = `SELECT COUNT(*) AS grupos, COALESCE(SUM(n), 0) AS filas FROM (SELECT COUNT(*) AS n FROM (VALUES ${valores.map(() => "ROW(?, ?)").join(",")}) AS t(i, s) GROUP BY s COLLATE ${COLACION} HAVING COUNT(*) > 1) x`;
-  const [f] = await bd(sql, ...valores.flatMap(([i, s]) => [i, s]));
+  const f = await agruparSlugsEnBd(bd, valores);
   controlBd = { grupos: num(f?.["grupos"]), filas: num(f?.["filas"]) };
 } catch (e) {
   controlBd = { error: String((e as Error).message).slice(0, 200) };
@@ -541,7 +458,7 @@ for (const [, e] of imagenesDeCuerpo) {
   for (const a of e.articulos) sumar(adj ? `adjunto:${adj.id}` : `url:${e.url}`, e.url, "cuerpo", a, adj);
 }
 const idsAdjImg = [...new Set([...distintas.values()].map((e) => e.adjuntoId).filter((x): x is number => x !== null))];
-const detalleImg = await detalleAdjuntos(idsAdjImg);
+const detalleImg = await detalleAdjuntos(wp, idsAdjImg);
 const listaImg = [...distintas.entries()].map(([clave, e]) => {
   const d = e.adjuntoId !== null ? detalleImg.get(e.adjuntoId) : undefined;
   const propia = rutaUploads(e.url) !== null;
@@ -824,5 +741,4 @@ console.log("Imágenes:", JSON.stringify(resumen.imagenes));
 console.log("Revisión A:", revisionA.length, "artículos con varias _thumbnail_id (", revisionA.filter((x) => x.enLaMuestra).length, "en la muestra ) | B:", revisionB.colisionesReales.length, "colisiones");
 console.log(`Informe: ${salida}/corrida-en-seco-ampliada.md`);
 
-await clienteWp.$disconnect();
-await cms.$disconnect();
+await cerrar();
