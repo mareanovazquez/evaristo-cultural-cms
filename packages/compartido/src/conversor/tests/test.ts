@@ -115,4 +115,39 @@ t('estructura: lista vacía, texto vacío y padre no permitido', () => {
   assert.match(v({ type: 'paragraph', content: [{ type: 'text', text: '' }] })[0]!, /Texto vacío/)
   assert.match(v({ type: 'bulletList', content: [{ type: 'paragraph' }] })[0]!, /no permitido dentro de <bulletList>/)
 })
+t('imagenId: entero positivo válido en ambos modos; ausente sigue válido', () => {
+  for (const modo of ['estricto', 'migracion'] as const) {
+    const v = (attrs: object) => validateArticleBody({ type: 'doc', content: [{ type: 'imagen', attrs }] } as any, { modo })
+    assert.deepEqual(v({ src: 'https://x.com/a.jpg', alt: 'x', imagenId: 7 }), [], modo)
+    assert.deepEqual(v({ src: 'https://x.com/a.jpg', alt: 'x' }), [], modo)
+  }
+})
+t('imagenId inválido: 0, -1, 1.5, "7", true, null', () => {
+  for (const modo of ['estricto', 'migracion'] as const) {
+    for (const imagenId of [0, -1, 1.5, '7', true, null]) {
+      const doc = { type: 'doc', content: [{ type: 'imagen', attrs: { src: 'https://x.com/a.jpg', alt: 'x', imagenId } }] }
+      assert.match(validateArticleBody(doc as any, { modo })[0] ?? '', /imagenId/, `${JSON.stringify(imagenId)} en ${modo}`)
+    }
+  }
+})
+t('imagenId junto con altPendiente', () => {
+  const attrs = { src: '/media/a.jpg', alt: '', decorativa: false, altPendiente: true, imagenId: 3 }
+  const doc = { type: 'doc', content: [{ type: 'imagen', attrs }] }
+  assert.deepEqual(validateArticleBody(doc as any, { modo: 'migracion' }), [])
+  const mal = { type: 'doc', content: [{ type: 'imagen', attrs: { ...attrs, imagenId: 0 } }] }
+  assert.match(validateArticleBody(mal as any, { modo: 'migracion' })[0] ?? '', /imagenId/)
+})
+t('src /media/<clave>: simple, con percent-encoding y con espacios codificados', () => {
+  for (const modo of ['estricto', 'migracion'] as const) {
+    for (const src of ['/media/foto.jpg', '/media/C%C3%A3o.png', '/media/mi%20foto%20grande.jpg', '/media/2010/05/foto.jpg']) {
+      const doc = { type: 'doc', content: [{ type: 'imagen', attrs: { src, alt: 'x', imagenId: 5 } }] }
+      assert.deepEqual(validateArticleBody(doc as any, { modo }), [], `${src} en ${modo}`)
+      assert.deepEqual(validateArticleBodyDetallado(doc as any, { modo }).avisos, [], `${src} (avisos) en ${modo}`)
+    }
+  }
+})
+t('el conversor todavía no emite imagenId', () => {
+  const im = convertWpContent('<p><img src="http://x/a.jpg" alt="A" /></p>').doc.content![0]!
+  assert.equal(im.type, 'imagen'); assert.equal('imagenId' in im.attrs!, false)
+})
 console.log(`${ok} pruebas ok`)

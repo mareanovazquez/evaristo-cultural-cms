@@ -136,6 +136,13 @@ export function validateArticleBodyDetallado(doc: JSONNode, opts: OpcionesValida
           )
         }
       }
+      // imagenId (opcional): referencia a la biblioteca de imágenes. Ausente es válido; si está, entero positivo.
+      if (node.attrs && 'imagenId' in node.attrs) {
+        const imagenId = node.attrs.imagenId
+        if (typeof imagenId !== 'number' || !Number.isInteger(imagenId) || imagenId < 1) {
+          errores.push(`imagenId debe ser un entero positivo (se encontró ${JSON.stringify(imagenId) ?? 'undefined'}) en ${path}`)
+        }
+      }
       const alt = typeof node.attrs?.alt === 'string' ? node.attrs.alt.trim() : ''
       const decorativa = node.attrs?.decorativa === true
       const pendiente = node.attrs?.altPendiente
