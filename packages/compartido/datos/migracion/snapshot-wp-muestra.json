@@ -1,0 +1,4115 @@
+{
+  "version": 1,
+  "opciones": {
+    "gmt_offset": "0",
+    "permalink_structure": "/%year%/%monthnum%/%day%/%postname%/",
+    "timezone_string": ""
+  },
+  "posts": [
+    {
+      "id": 19,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 203,
+      "nombre": "historia-y-religion-a-traves-de-la-ruta-de-la-seda-i",
+      "titulo": "Historia y Religión a través de La Ruta de la Seda - I",
+      "fecha": "2008-10-28 01:22:06",
+      "fechaGmt": "2008-10-28 01:22:06"
+    },
+    {
+      "id": 620,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 53,
+      "nombre": "america-latina-y-el-surgimiento-de-china-en-un-contexto-global",
+      "titulo": "AMÉRICA LATINA Y EL SURGIMIENTO DE CHINA EN UN CONTEXTO GLOBAL",
+      "fecha": "2009-01-20 11:48:20",
+      "fechaGmt": "2009-01-20 11:48:20"
+    },
+    {
+      "id": 720,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 3,
+      "nombre": "las-aventuras-de-tintin-el-loto-azul",
+      "titulo": "LAS AVENTURAS DE TINTIN: EL LOTO AZUL",
+      "fecha": "2015-04-22 17:11:17",
+      "fechaGmt": "2015-04-22 17:11:17"
+    },
+    {
+      "id": 1555,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 3,
+      "nombre": "la-literatura-no-vuelve-mas-a-japon-entrevista-a-guillermo-quartucci",
+      "titulo": "LA LITERATURA NO VUELVE MÁS A JAPÓN | Entrevista a Guillermo Quartucci",
+      "fecha": "2006-07-18 01:44:26",
+      "fechaGmt": "2006-07-18 01:44:26"
+    },
+    {
+      "id": 1569,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 89,
+      "nombre": "historia-y-religion-a-traves-de-la-ruta-de-la-seda",
+      "titulo": "HISTORIA Y RELIGIÓN A TRAVÉS DE LA RUTA DE LA SEDA",
+      "fecha": "2006-10-21 17:34:19",
+      "fechaGmt": "2006-10-21 17:34:19"
+    },
+    {
+      "id": 2462,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 131,
+      "nombre": "tips-ganadores-para-que-te-digan-que-si-la-revista-hombre-como-manual-practico-de-la-nueva-masculinidad",
+      "titulo": "TIPS GANADORES PARA QUE TE DIGAN QUE SÍ: La revista Hombre como manual práctico de la nueva masculinidad",
+      "fecha": "2008-08-30 20:46:11",
+      "fechaGmt": "2008-08-30 20:46:11"
+    },
+    {
+      "id": 3026,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 5,
+      "nombre": "entre-las-ruinas-de-una-civilizacion-enferma-entrevista-a-carlos-fajardo-fajardo",
+      "titulo": "ENTRE LAS RUINAS DE UNA CIVILIZACIÓN ENFERMA | Entrevista a Carlos Fajardo Fajardo",
+      "fecha": "2009-04-11 02:43:40",
+      "fechaGmt": "2009-04-11 02:43:40"
+    },
+    {
+      "id": 3306,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 163,
+      "nombre": "muchacha-punk",
+      "titulo": "Dos cuentos",
+      "fecha": "2010-08-24 03:39:53",
+      "fechaGmt": "2010-08-24 03:39:53"
+    },
+    {
+      "id": 3433,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 169,
+      "nombre": "despojos-de-guerra-ha-jin",
+      "titulo": "DESPOJOS DE GUERRA | HA JIN",
+      "fecha": "2008-04-24 16:55:26",
+      "fechaGmt": "2008-04-24 16:55:26"
+    },
+    {
+      "id": 4262,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 186,
+      "nombre": "diario-de-un-fiscal-rural",
+      "titulo": "Diario de un fiscal rural",
+      "fecha": "2007-02-17 17:20:52",
+      "fechaGmt": "2007-02-17 17:20:52"
+    },
+    {
+      "id": 4265,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 89,
+      "nombre": "4265",
+      "titulo": "Bitácora de un viaje a Corea del Sur",
+      "fecha": "2007-02-17 17:25:55",
+      "fechaGmt": "2007-02-17 17:25:55"
+    },
+    {
+      "id": 4364,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 169,
+      "nombre": "sumer-y-el-aporte-semita-una-antropologia-pesimista",
+      "titulo": "Sumer y el aporte semita: una antropología pesimista",
+      "fecha": "2006-07-20 16:29:55",
+      "fechaGmt": "2006-07-20 16:29:55"
+    },
+    {
+      "id": 4424,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 89,
+      "nombre": "la-educacion-en-japon",
+      "titulo": "LA EDUCACIÓN EN JAPÓN",
+      "fecha": "2006-11-21 16:09:53",
+      "fechaGmt": "2006-11-21 16:09:53"
+    },
+    {
+      "id": 4507,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 197,
+      "nombre": "aspectos-de-la-geisha",
+      "titulo": "ASPECTOS DE LA GEISHA",
+      "fecha": "2006-12-22 14:08:30",
+      "fechaGmt": "2006-12-22 14:08:30"
+    },
+    {
+      "id": 4513,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 198,
+      "nombre": "prometeo-cia",
+      "titulo": "PROMETEO & Cía",
+      "fecha": "2006-12-22 14:24:28",
+      "fechaGmt": "2006-12-22 14:24:28"
+    },
+    {
+      "id": 5214,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 218,
+      "nombre": "jacob-dancona-un-viajero-judio-en-la-china-del-siglo-xiii",
+      "titulo": "Jacob D’Ancona | Un viajero judio en la China del Siglo XIII",
+      "fecha": "2007-09-04 16:53:18",
+      "fechaGmt": "2007-09-04 16:53:18"
+    },
+    {
+      "id": 5287,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 57,
+      "nombre": "el-proceso-de-indianizacion-del-sudeste-asiatico-como-elemento-revelador-de-las-culturas-que-le-precedian",
+      "titulo": "El proceso de indianización del Sudeste Asiático como elemento revelador de las culturas que le precedían",
+      "fecha": "2007-10-04 18:12:25",
+      "fechaGmt": "2007-10-04 18:12:25"
+    },
+    {
+      "id": 5296,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 222,
+      "nombre": "la-palabra-laberinto",
+      "titulo": "LA PALABRA LABERINTO",
+      "fecha": "2007-10-04 18:21:45",
+      "fechaGmt": "2007-10-04 18:21:45"
+    },
+    {
+      "id": 5372,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 3,
+      "nombre": "el-orientalismo-argentino-entrevista-a-axel-gasquet",
+      "titulo": "EL ORIENTALISMO ARGENTINO | Entrevista a Axel Gasquet",
+      "fecha": "2008-01-05 16:34:36",
+      "fechaGmt": "2008-01-05 16:34:36"
+    },
+    {
+      "id": 10730,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 235,
+      "nombre": "la-gran-imagen-no-tiene-forma-cuatro-templos-chinos",
+      "titulo": "LA GRAN IMAGEN NO TIENE FORMA | Cuatro templos chinos",
+      "fecha": "2016-12-02 00:05:26",
+      "fechaGmt": "2016-12-02 00:05:26"
+    },
+    {
+      "id": 10929,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 72,
+      "nombre": "san-martin-y-los-idiomas",
+      "titulo": "SAN MARTÍN Y LOS IDIOMAS",
+      "fecha": "2016-12-08 00:33:27",
+      "fechaGmt": "2016-12-08 00:33:27"
+    },
+    {
+      "id": 12526,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 278,
+      "nombre": "culpables-dellutri",
+      "titulo": "CULPABLES",
+      "fecha": "2017-06-19 00:50:25",
+      "fechaGmt": "2017-06-19 00:50:25",
+      "contenido": "“<em>Ojalá pudiera morir más veces para decirte cuánto lo siento</em>”. Entre las muchas palabras que un condenado a muerte en Texas, Estados Unidos, podría haber dicho antes de ser ejecutado, fueron estas las que eligió. Otro, más lacónico pero no menos duro, se despidió con un clarísimo “<em>Me lo merezco</em>”. Un tercero tuvo solo un deseo: “<em>Me gustaría pedir disculpas a la familia de la víctima</em>”.\r\n\r\nCulpa. Eso es lo que expresan estas frases dichas por hombres que se sabían responsables de los delitos de los que eran acusados y por los que estaban a punto de ser ejecutados. Sin dudas, se trata del sentimiento más desbastador que el ser humano pueda experimentar. Tan fuerte es su peso que los griegos lo inmortalizaron en la figura del trágico Edipo, rey de Tebas, quien habiendo asesinado a su padre y desposado a su madre sin saberlo, frente a la revelación de la verdad se sintió tan asfixiado, oprimido e irreversiblemente condenado por su propia conciencia que optó por la autoflagelación como forma de castigo por un delito que había cometido en la inconsciencia. Así, el rey incestuoso se arranca los ojos y se impone a sí mismo el exilio, castigo más severo que la muerte según la ética aquea.\r\n\r\nSé por experiencia, como tristemente lo averiguamos todos, que la culpa es uno de los sentimientos más devastadores que se puedan experimentar. Nuestra sociedad promulga con justeza que si hay un culpable, debe haber un castigo. Sucede que cuando nosotros mismos nos descubrimos responsables de actitudes o decisiones incorrectas, cuando asumimos el error cometido, ese mecanismo de condena funciona con precisión aplastante. Porque yo puedo perdonar la ofensa del otro, pero ¿cómo perdonar la que yo infrinjo, además, contra mí mismo?\r\n\r\nAdemás de la tragedia de Edipo, hay en la literatura muchas historias sobre la culpa. Tal vez la más famosa sea el relato bíblico de la traición de Judas: entregó a su propio maestro aunque, él lo sabía bien, nada malo había hecho. La envidia, el rencor y el desprecio fueron más fuertes. Lo vendió por poca cosa: treinta monedas que después, atormentado por la culpa, quiso devolver. No pudo y terminó colgándose, imponiéndose el castigo que creía merecer y que, sabía, la sociedad de su tiempo nunca le aplicaría. Porque Judas no había hecho nada malo ante la ley de los hombres; tarde, descubrió que no es el único tribunal frente al que rendir cuentas. Hay otro, personal e inexorable: la conciencia. Se la puede  engañar, acallar y hasta distorsionar. Pero cuando se pone en marcha, resulta capaz de los mayores castigos.\r\n\r\nAlgo de eso hay también en la célebre novela de Fiodor Dostoyevski <em>Crimen y castigo</em>, donde el autor ruso relata las peripecias del estudiante Rodión Raskólnikov, quien asesina a una anciana para luego sucumbir frente a la culpa. Hasta el día de hoy, no alcanzo a comprender cómo logra Dostoyevski meterse de tal modo en la cabeza de un criminal para llevarnos hasta el paroxismo de la culpa. Porque hay que decirlo: Rodión se merece el sufrimiento que padece, pero también la expiación. Políticamente incorrecto en un tiempo donde se justifica el crimen por su circunstancia, Dostoyevski es durísimo con su criatura, no le perdona nada y le hace encontrar la calma en el mismísimo infierno. <em>Crimen y castigo</em> es la más radical de las novelas criminales, porque la culpa es el detective más inexorable. Con su pluma certerísima, el ruso nos hace comprender que necesitamos la redención. Así, propone la pena frente al delito no como un castigo, sino como una forma de recuperar el equilibrio ético perdido.\r\n\r\nLa culpa es una señal de alto, un mecanismo primigenio que nos marca cuando estamos obrando mal; nos mueve al arrepentimiento y este, a la reparación del daño causado. En círculo parecería cerrar, pero lo cierto es que no basta. Lo que se arregla nunca queda igual, así que por más esfuerzo que hagamos, nunca podremos volver atrás.\r\n\r\nEntonces, la pregunta clave es cómo superar la culpa. Creo que el regodeo en la propia culpabilidad como proponen ciertas tendencias religiosas es tan pernicioso como relegarla a un segundo plano o considerarla un lastre para el avance personal. Cuando hemos hecho algo mal, la única forma de revertirlo es asumir el error. La culpa es una llamada a la introspección, al replanteo de las bases que sustentan nuestro accionar. Frente a ella, lo mejor que podemos hacer es detenernos sin inmovilizarnos, reflexionar, reparar el error cuando fuese posible y en cualquier caso, proponernos no volver a transitar por el sendero equivocado.\r\n\r\nSe dice fácil, claro, pero es difícil de poner en práctica. Por eso, es un desafío, uno de esos que debemos asumir con urgencia."
+    },
+    {
+      "id": 12939,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 3,
+      "nombre": "una-carta-para-momo",
+      "titulo": "UNA CARTA PARA MOMO",
+      "fecha": "2017-08-26 12:18:07",
+      "fechaGmt": "2017-08-26 12:18:07"
+    },
+    {
+      "id": 14791,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 342,
+      "nombre": "mercedes-roffe-poesia",
+      "titulo": "MERCEDES ROFFÉ | Poesía",
+      "fecha": "2018-07-30 00:43:56",
+      "fechaGmt": "2018-07-30 00:43:56"
+    },
+    {
+      "id": 15021,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 247,
+      "nombre": "no-pienso-moverme-a-pesar-del-hambre",
+      "titulo": "NO PIENSO MOVERME A PESAR DEL HAMBRE",
+      "fecha": "2018-09-10 19:02:09",
+      "fechaGmt": "2018-09-10 19:02:09"
+    },
+    {
+      "id": 15027,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 3,
+      "nombre": "15027",
+      "titulo": "LAS LETRAS DEL TÍO BOB",
+      "fecha": "2018-09-11 00:21:18",
+      "fechaGmt": "2018-09-11 00:21:18"
+    },
+    {
+      "id": 15244,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 353,
+      "nombre": "cruz-nicolas-ferraro",
+      "titulo": "CRUZ | Nicolás Ferraro",
+      "fecha": "2018-10-22 08:14:31",
+      "fechaGmt": "2018-10-22 08:14:31",
+      "contenido": "<strong>Las herencias traicionadas</strong>\r\n\r\nPodríamos comenzar a descifrar algunos sentidos de la novela de Ferraro preguntándonos cuántas veces es posible reescribir un clásico literario, ya que el título de la ficción nos instala en ese interrogante. La gauchesca pareciera ser esa “cruz” que pesa como un decodificador simbólico sobre los modos de recuperación de lo popular en la literatura actual (sino pensemos en la novela <em>Las aventuras de la China Iron</em>, de Gabriela Cabezón Cámara, o el cuento “El amor” de Martín Kohan). <em>Cruz</em> nos instala en el centro de esa expectativa que legitima el diálogo con el texto canónico por excelencia de la literatura nacional. Así es como la novela comienza a seducir a lectores que esperan encontrase con la historia de un traidor transformado en uno de los más crudos exponentes del ser nacional de frontera, para desengañarse luego con un relato que está muy lejos tanto de la reeducación del “gaucho malo” como de la denuncia social de Martín Fierro.\r\n\r\nLa literatura se transforma en una averiada máquina del tiempo cuando la ficción de <em>Cruz</em> -o la crucificción- instala en la contemporaneidad a un delincuente homónimo al amigo de Fierro (y a sus hijos), en plena guerra de fronteras narco. Estos Cruz transitan espacios delictivos que tienen su código propio de regulación económica y moral, una ética más bien opuesta a la amistad y al culto al valor de los legendarios personajes de Hernández, en la que no hay lealtades posibles. El anacronismo entonces resignifica la tradición de la literatura nacional porque reescribe una serie de modos de inserción en los bordes de lo social y lo territorial, de manera que ya no se trata de la exclusión de sujetos del proyecto nacional sino de la inmersión inescapable en un mundo tan oscuro como perverso proyectado sobre la obtención ilegal de dinero.\r\n\r\nPero no es el dinero solamente lo que está en juego en <em>Cruz</em>, son varias las dimensiones en las que el texto se toca con lo más profundo de la cuestión social. Primero porque desenmascara una dinámica familiar deficiente, oclusiva y transgresora, a partir de un delincuente que es también padre y debe criar a dos hijos en el vínculo inhumano y atroz que es capaz de crear en soledad. Y luego porque el narrador de esta historia busca escapar al llamado de lo oscuro, pero es acosado y amenazado por los pasos de un padre y un hermano que vendieron su alma al diablo para mantenerlo ajeno a lo horroroso de este mundo delictivo, y fracasaron. Así se actualiza el epígrafe de Yeats que Borges elige para su texto “Biografía de Tadeo Isidoro Cruz”: “<em>I'm looking for the face I had before the world was made</em>” (“Estoy buscando el rostro que tenía antes de que el mundo fuera mundo”, traducción mía). A la manera del héroe de Hernández, Cruz-hijo descubre una identidad renovada en el momento en que decide traicionar sus principios y avanzar hacia el delito.\r\n\r\nEn este sentido, la novela de Ferraro es doblemente paranoica, porque en el nivel exterior a la historia narrada, el autor parece eludir la herencia de la gauchesca invirtiéndola y violentándola, aunque solo logra hacerla más vigente; y en el interior del relato el narrador huye de la herencia de la abyección y la transgresión que signan su historia familiar, reencontrándose paradójicamente a cada paso con ella.\r\n\r\nNo obstante, hay peores transgresiones en la novela, por ejemplo, las que experimenta el lector que recorre estas páginas y a cada paso tropieza con descripciones crueles, estructuras del decir donde el lenguaje revela su potencialidad violenta más oculta, develada por una escritura que rompe con cualquier actitud de corrección ética. Y entonces ya no hay escapes posibles, estamos tan empapados de sangre y restos corporales como los tres Cruz, Tomás, Samuel y Sebastián, como las cervezas que los jefes delictivos sacan de una heladera que conserva también restos humanos. No podemos irnos de esta novela sin llenarnos de la sustancia negra que la impregna.\r\n\r\nFinalmente, el de Ferraro es un mundo donde las mujeres son el extremo más débil de la cadena de violencia social. Las más favorecidas están siempre a merced de las trayectorias delictivas de “sus” hombres (parejas, padres, tíos, cuñados), mientras las demás (pobres, prostitutas y huérfanas) son la carne de la que se alimenta el capitalismo delictivo de frontera, sus cuerpos están desnudos, arruinados, golpeados, penetrados y atestados de droga. Todas, sin excepción, están amenazadas permanentemente, en cualquier momento pueden ser secuestradas y violadas o pueden seguir los pasos de alguna de las menos favorecidas y transformarse en un cadáver abandonado y destripado en la selva.\r\n\r\nEn <em>Cruz</em> no hay rescates posibles, porque todos los personajes están salpicados por el caos y el horror que los inunda y los excede. El modo de resistencia no puede ser otro que una reapropiación del pasado (literario y familiar) que permita la modificación de las herencias de violencia, y el camino para esta transformación implica una bifurcación: se puede atravesar la tradición o ser atravesado por ella ¿qué hará cada Cruz? ¿y vos, lector?"
+    },
+    {
+      "id": 16691,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 245,
+      "nombre": "basado-en-hechos-reales-actividades-previas-al-festival",
+      "titulo": "BASADO EN HECHOS REALES | Actividades previas al festival",
+      "fecha": "2019-10-02 00:58:05",
+      "fechaGmt": "2019-10-02 00:58:05"
+    },
+    {
+      "id": 19660,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 4,
+      "nombre": "sin-mas-compania-que-la-muerte-entrevista-a-cesar-alcazar",
+      "titulo": "SIN MÁS COMPANÍA QUE LA MUERTE | Entrevista a Cesar Alcázar",
+      "fecha": "2020-12-01 06:31:02",
+      "fechaGmt": "2020-12-01 06:31:02",
+      "contenido": "<strong><em>(ENTREVISTA DISPONIBLE EN PORTUGUES MÁS ABAJO)</em></strong>\r\n\r\n<em>O</em> <em>Coração do Cão Negro </em>es la primera parte de una saga escrita por Cesar Alcázar, oriundo de Porto Alegre, y dibujada por Fred Rubim. En esta primera historia nos encontramos con Anrath, más conocido como O Cão Negro, un gaélico que se crió entre vikingos, y que parece no tener más patria que su escudo y espada, y que se desenvuelve como una especie de caza recompensas en la Irlanda circa 1022. En esta ocasión se encuentra detrás del Corazón de Tadg, un medallón que pertenecía a un druida y que posee un mapa que, se supone, conduce a una tierra lejana en la que los dioses enterraron sus tesoros.\r\n\r\nEn la travesía hacía esas latitudes no falta sangre, ni traiciones ni monstruos, y se entremezclan rasgos de la mitología celta, nórdica y sajona. El misticismo salpica el camino de estos hombres que se abren paso en una tierra de dioses dormidos, perseguidos por el pasado y por una espada, sin más brújula que la codicia y sin más compañía que la muerte.\r\n\r\n<a href=\"http://evaristocultural.com.ar/wp-content/uploads/o-coracao-do-cao-negro.jpg\"><img class=\"aligncenter wp-image-19665\" src=\"http://evaristocultural.com.ar/wp-content/uploads/o-coracao-do-cao-negro.jpg\" alt=\"\" width=\"375\" height=\"499\" /></a>\r\n\r\n<strong>Tengo entendido que <em>O Coração do Cão Negro</em> tiene su origen en los cuentos ahora recopilados en el libro <em>O Cão Negro de Clontarf</em>. ¿Quería saber cómo surgió este personaje?</strong>\r\n\r\nLa historia y el folclore de Irlanda me fascinan desde hace mucho tiempo. Precisamente desde 1996 cuando conocí la obra del guitarrista irlandés Rory Gallagher, que me introdujo a la cultura de Irlanda. Trece años más tarde, ya escritor, descubrí el Ciclo Celta de Robert E. Howard (que tiene cuentos como <em>The Grey God Passes</em> y <em>The Dark Man</em>, entre otros). En la misma época, leí el cuento <em>El Espejo y la Máscara</em> de Jorge Luis Borges. Quedé muy impresionada con la historia de la batalla de Clontarf, un enfrentamiento entre los irlandeses y los invasores vikingos que sucedió en el año 1014, y que fue abordado por estos autores, tan diferentes entre sí. El ambiente dividido y turbulento de Irlanda después de la batalla ofrecía unas posibilidades para reflexionar sobre los temas que me interesan, como la culpa, el aislamiento, los prejuicios. Así que decidí utilizar ese ambiente para inventar mis propias historias.\r\n\r\n<a href=\"http://evaristocultural.com.ar/wp-content/uploads/Cão.png\"><img class=\"aligncenter wp-image-19670\" src=\"http://evaristocultural.com.ar/wp-content/uploads/Cão.png\" alt=\"\" width=\"344\" height=\"498\" /></a>\r\n\r\n<strong>¿Cómo fue el proceso de adaptación de los cuentos a la historieta? ¿Introdujiste cambios a la hora de hacer esta traslación?</strong>\r\n\r\nLa adaptación quedó bien fiel al relato original. Comencé separando las escenas del cuento como si fuera un guión de cine, después dividí todo em tres partes de veinte páginas, prestando atención al ritmo y la fluidez de las viñetas. Pero mi guión, de cierta manera, es bastante libre y le di toda la libertad a Fred Rubim para crear o cambiar lo que creyese necesario. A fin de cuentas, Fred es un artista gráfico, él sabe mejor que yo lo que queda bien en la página terminada. Conversamos bastante durante el proceso, intercambiando ideas siempre.\r\n\r\nEl mayor desafío fue transformar la obra original literarario en una narrativa visual que pudiera prescindir de una narración en tercera persona. Quería que las imágenes expresaran los sentimientos, los pensamientos y los recuerdos. Resumiento, quería que el modo de representar lo que pasaba en la cabeza de los personajes sin utilizar globos de pensamientos o cartuchos de texto.\r\n\r\n<strong>La historia presenta elementos de la mitología celta, sajona y nórdica ¿Qué fue lo que más te interesó de estas mitologías? ¿Cómo fue el balance entre invención e investigación?</strong>\r\n\r\nIrlanda ejerce una fascinación sobre mí que consigo explicar. Muchas veces, en las ferias de historietas, vendemos ejemplares de “O Coração do Cão Negro” solamente por decir que “la historia sucede en Irlanda”. Desde que comencé a escribir las historias de Cão, em 2009, estuve investigando mucho sobre la cultura y el pasado de Irlanda, tanto em libros como em internet. La vestimenta, la comida, la costumbres, la organización social…todo eso está bien representando en el libro, de acuerdo con lo que se conoce. En cuanto a la ambientación, usamos muchas referencias fotográficas. Lo bueno es allá que todavía existen muchas construcciones del siglo XI, lo que da una buena de cómo eran las cosas. Al mismo tiempo, los elementos fantásticos que aparecen en las historias fueron, en su mayoría, tomados del folclore irlandés, incorporando algunos aspectos lovecraftianos. Claro que, también, hay algunas licencias poéticas, pero que no contradicen con el ambiente.\r\n\r\n<a href=\"http://evaristocultural.com.ar/wp-content/uploads/O-Coração-do-Cão-Negro-Cesar-Alcázar-Fred-Rubim-AVEC-Editora-Canto-do-Gárgula-05.jpg\"><img class=\"aligncenter size-full wp-image-19666\" src=\"http://evaristocultural.com.ar/wp-content/uploads/O-Coração-do-Cão-Negro-Cesar-Alcázar-Fred-Rubim-AVEC-Editora-Canto-do-Gárgula-05.jpg\" alt=\"\" width=\"384\" height=\"512\" /></a>\r\n\r\n<strong>En la primera escena, cuando un grupo de saqueadores de tumbas se enfrentan con O Cao negro, no podía dejar de pensar en un tiroteo de western, en esta figura del “outlaw”, que podríamos pensar como un predecesor del detective privado o del gángster. Una imagen que se ha vuelto icónica. ¿Dónde creés que radica su potencia? </strong>\r\n\r\nA decir verdad, la historia de <em>O Coração do Cão Negro</em> fue pensada inicialmente como un western. La creación de Cão Negro surgió de cuento de western (inacabado) que se transformó en una trama medieval.\r\n\r\nEl outlaw del western le debe mucho a los personajes de las novelas de caballería medievales, como las historias del Rey Arturo y los Caballeros de la Mesa Redonda. Esas historias son universales, podemos encontrar historias parecidas en China, por ejemplo (<em>Shuǐhǔ Zhuàn</em> - <em>A la orilla del agua</em>). Ellas están inscriptas en nuestro imaginario, en una especie de memoria genética, y dialogan con algo dentro de todos nosotros.\r\n\r\n<strong>Escribís tanto historias como esta, encuadradas dentro del apartado fantástico/histórico, y a la vez tenés una fuerte conexión con el noir. Me gustaría preguntar qué atractivo encontrás en las historias de género. </strong>\r\n\r\nCreo que la literatura de género ofrece la posibilidad de crear historia que tengan un atractivo popular, accesibles, y que al mismo tiempo abordan temas importantes de nuestra vida social y política. Una forma de unir entretenimiento y buen contenido.\r\n\r\n<strong>Howard y Borges aparecen como autores de referencia en tu biografía. ¿Quiénes fueron las principales influencias a la hora de escribir O Coração do Cão Negro?</strong>\r\n\r\nAdemás de Howard y Borges, otros dos autores influenciaron bastante las historias de Cão Negro: Karl Edward Wagner, el creador del guerrero inmortal Kane (inspirado en el Caín bíblico), y Marion Zimmer Bradley, autora del maravilloso Las Nieblas de Avalón. El tono nihilista de los cuentos vino de Wagner y la ambientación en el estilo Low Fantasy, con pocos elementos fantásticos, vino de Bradley. En cuanto a las historietas, <em>Slaine</em>, la creación de Pat Mills, y <em>Thorgal</em>, de Rosinki y Van Hamme, me inspiraron bastante.\r\n<a href=\"http://evaristocultural.com.ar/wp-content/uploads/Ep01_PT-17.jpg\"><img class=\"wp-image-19667 aligncenter\" src=\"http://evaristocultural.com.ar/wp-content/uploads/Ep01_PT-17.jpg\" alt=\"\" width=\"337\" height=\"476\" /></a><strong>Me gustaría aprovechar para preguntar por el estado de situación del comic brasilero, que desgraciadamente es difícil de encontrar acá en Argentina, salvo algunas excepciones.</strong>\r\n\r\nEl mercado de la historieta brasileira todavía está lejos del ideal. En el ambiente independiente hay una producción de excelente calidad, con muchos autores buscando con éxito la financiación de manera colectiva para conseguir publicar. Sin embargo, el mercado tradicional todavía no se profesionalizó ni se difundió lo suficiente para que los historietistas puedan dedicarse en exclusividad a el. Solo los artistas que trabajan para el exterior (en especial el mercado de Estados Unidos) pueden bancarse con la historieta. Sin mencionar la falta de incentivos gubernamentales para la producción cultural en general. Resumiendo: producción artística extraordinaria, poquísima plata.\r\n\r\n<strong>Vayamos al género negro. Sos uno de los creadores y coordinadores del Porto Alegre Noir, si no me equivoco, el primer festival de género negro en Brasil. ¿Cómo surge? ¿Cómo fueron las experiencias el año pasado, en su primera edición, y qué modificaron o profundizaron a la hora de organizar esta segunda edición?</strong>\r\n\r\nEl Porto Alegre Noir surgió como un intento de llenar el vacío de eventos culturales brasileros, en especial los literarios. Aunque hubiera algún espacio para el cine y la literatura policial en esos eventos, nunca había algo exlusivo del género. Así creé el Porto Alegre Noir junto con los productores Cristiane Marçal (Fio Produtora) y Jorge Ghiorzi (Cena Um). La primera edición contó con participantes de varias partes de Brasil —y nombres como Tabajara Ruas y Cláudia Lemes— y atrajo una buena audiencia. Ofrecimos debates, cursos, feria de libros y un festival de cine. En la segunda edición ampliamos la programación de películas, exhibiendo clásicos del cine negro, y también abarcamos el género en la historieta y la música.\r\n\r\n<a href=\"http://evaristocultural.com.ar/wp-content/uploads/CapaCulpa.jpg\"><img class=\"aligncenter wp-image-19668\" src=\"http://evaristocultural.com.ar/wp-content/uploads/CapaCulpa.jpg\" alt=\"\" width=\"389\" height=\"591\" /></a>\r\n\r\n<strong> </strong><strong>Rubem Fonseca, Patricia Melo, Marçal Aquino y poco más en lo que hace a autores de género negro brasileños que llegan al país. ¿Cuál es el panorama actual del género negro en Brasil?</strong>\r\n\r\nLa literatura policial vive um gran momento en Brasil, con un gran crecimiento. Surgieron muchos nuevos autores, hay un buen espacio independiente y algunas editoriales apostando al género. Antes de la pandemia, hasta los eventos estaban creciendo. Tuvimos dos ediciones del Porto Alegro Noir, surgió la ABERST — Associação Brasileira de Escritores de Romance Policial, Suspense e Terror— y algunos de los mayores nombres dentro de la literatura nacional escriben em la línea del policial y el suspenso. Si no fuese por la pandemia, en 2020 la escena se habría consolidado todavía más.\r\n\r\n<strong>Para cerrar, el año pasado salió tu primer libro noir, una compilación de cuentos llamado <em>A Culpa é da Noite e outras histórias de crime</em>. ¿Qué nos podés contar acerca de este libro?</strong>\r\n\r\nEn los últimos años, la mayor parte de mis textos fueron dedicados a la literatura policial. Mis primeras publicaciones dentro del género aparecieron en 2014 en la antología “Segredos de Famiglia”, de Editora Devir, parte del universo transmedia del juego de mesa “Don Capollo”. Como el título indica, son historias de mafia. Al poco de eso, comencé a escribir una serie de cuentos para un proyecto de cómics en conjunto con el artista español José Aguilar García. Son historias que suceden en Estados Unidos en la época de la Gran Depresión. José me pidió que escribiese algo con una ambientación “entre John Steinbeck y Dashiell Hammett”. Escribí unas historias más en el Brasil contemporáneo y decidí transformar todo ese conjunto en un libro. A la editorial Arte &amp; Letras le gustó la idea y publicó <em>A Culpa é da Noite </em>en septiembre de 2019.\r\n\r\n&nbsp;\r\n\r\n<hr />\r\n\r\nEntrevista em portugues.\r\n\r\n<strong>Tengo entendido que <em>O Coração do Cão Negro</em> tiene su origen en los cuentos ahora recopilados en el libro <em>O Cão Negro de Clontarf</em>. ¿Quería saber cómo surgió este personaje?</strong>\r\n\r\n<strong> </strong>A história e o folclore da Irlanda me fascinam há muito tempo. Desde 1996, mais precisamente, quando conheci a obra do guitarrista irlandês Rory Gallagher, que me apresentou à cultura da Irlanda. Treze anos mais tarde, já escritor, descobri o Ciclo Celta de Robert E. Howard (que tem contos como <em>The Grey God Passes</em> e <em>The Dark Man</em>, entre outros). Na mesma época, li o conto <em>O Espelho e a Máscara</em>, de Jorge Luis Borges. Fiquei muito impressionado com a história da Batalha de Clontarf, um confronto entre irlandeses e invasores vikings travado no ano de 1014, e abordado por esses autores tão diferentes um do outro. O cenário dividido e conturbado da Irlanda após a batalha oferecia possibilidades instigantes para desenvolver temas que me interessam, como culpa, isolamento, preconceito... Assim decidi inventar minhas próprias histórias utilizando esse cenário.\r\n\r\n<strong> </strong><strong>¿Cómo fue el proceso de adaptación de los cuentos a la historieta? ¿Introdujiste cambios a la hora de hacer esta traslación?</strong>\r\n\r\nA adaptação ficou bem fiel ao conto original. Comecei separando as cenas do conto como em um roteiro cinematográfico, depois dividi tudo em três partes e cada parte em 20 páginas, cuidando do ritmo e da fluência dos quadros. Mas meu roteiro, de certa forma, é bem solto, dei toda liberdade ao Fred Rubim para criar e mudar o que achasse necessário. Afinal, o Fred é um artista gráfico, ele sabe melhor do que eu o que fica bem na página final. Conversamos bastante durante todo o processo, sempre trocando ideias.\r\n\r\nO maior desafio foi transformar a obra original literária em uma narrativa visual que prescindisse de uma narração em 3ª pessoa. Eu queria que as imagens exprimissem sensações, pensamentos e lembranças. Em outras palavras, queria um modo de apresentar o que se passa na cabeça dos personagens sem precisar de balões de pensamento ou recordatórios.\r\n\r\n<strong>La historia presenta elementos de la mitología celta, sajona y nórdica ¿Qué fue lo que más te interesó de estas mitologías? ¿Cómo fue el balance entre invención e investigación?</strong>\r\n\r\nA Irlanda exerce um fascínio que não sei explicar. Muitas vezes, em eventos de quadrinhos, vendemos exemplares de “O Coração do Cão Negro” simplesmente por dizer “a história se passa na Irlanda”. Desde que comecei a escrever as histórias do Cão, em 2009, tenho pesquisado muito sobre a cultura e o passado da Irlanda, tanto em livros quanto na internet. Vestuário, culinária, costumes, organização social... tudo isso é bem representado no livro, de acordo com o que se conhece. Quanto à ambientação, usamos muitas referências fotográficas. O bom é que ainda existem muitas construções do século XI por lá, o que oferece uma bela ideia de como as coisas eram. Mesmo os elementos fantásticos que aparecem nas histórias foram quase todos retirados do folclore irlandês, mas com algumas adições Lovecraftianas. Também, claro, há algumas licenças poéticas, porém, nada que destoe do ambiente.\r\n\r\n<a href=\"http://evaristocultural.com.ar/wp-content/uploads/O-Coração-do-Cão-Negro-Cesar-Alcázar-Fred-Rubim-AVEC-Editora-Canto-do-Gárgula-05.jpg\"><img class=\"aligncenter size-full wp-image-19666\" src=\"http://evaristocultural.com.ar/wp-content/uploads/O-Coração-do-Cão-Negro-Cesar-Alcázar-Fred-Rubim-AVEC-Editora-Canto-do-Gárgula-05.jpg\" alt=\"\" width=\"384\" height=\"512\" /></a>\r\n\r\n<strong> </strong><strong>En la primera escena, cuando un grupo de saqueadores de tumbas se enfrentan con O Cao negro, no podía dejar de pensar en un tiroteo de western, en esta figura del “outlaw”, que podríamos pensar como un predecesor del detective privado o del gángster. Una imagen que se ha vuelto icónica. ¿Dónde creés que radica su potencia? </strong>\r\n\r\nNa verdade, a história de <em>O Coração do Cão Negro</em> foi concebia inicialmente como um western. Apenas após a criação do Cão Negro que esse conto western (inacabado) foi transformado em uma trama medieval.\r\n\r\nO “fora da lei” do western deve muito às personagens das Novelas de Cavalaria medievais, como as histórias do Rei Artur e os Cavaleiros da Távola Redonda. Essas histórias são universais, podemos encontrar narrativas semelhantes na China, por exemplo (<em>Shuǐhǔ Zhuàn</em> - <em>A la orilla del agua</em>). Elas estão gravadas no nosso imaginário, uma espécie de memória genética, e dialogam com algo dentro de todos nós.\r\n\r\n<strong>Escribís tanto historias como esta, encuadradas dentro del apartado fantástico/histórico, y a la vez tenés una fuerte conexión con el noir. Me gustaría preguntar qué atractivo encontrás en las historias de género. </strong>\r\n\r\nAcredito que a literatura de gênero ofereça a oportunidade de se criar histórias de apelo popular, acessíveis, e que ao mesmo tempo abordam temas importantes da nossa vida social e política. Uma forma de unir entretenimento e bom conteúdo.\r\n\r\n<strong>Howard y Borges aparecen como autores de referencia en tu biografía. ¿Quiénes fueron las principales influencias a la hora de escribir O Coração do Cão Negro?</strong>\r\n\r\n<strong> </strong>Além de Howard e Borges, outros dois autores influenciaram muito as histórias do Cão Negro: Karl Edward Wagner, o criador do guerreiro imortal Kane (inspirado no Caim bíblico), e Marion Zimmer Bradley, autora do maravilhoso <em>As Brumas de Avalon</em>. O tom niilista dos contos veio de Wagner, a ambientação no estilo “Baixa Fantasia” (Low Fantasy), com poucos elementos fantásticos, veio de Bradley. Nos quadrinhos, <em>Slaine</em>, criação de Pat Mills, e <em>Thorgal</em>, de Rosinski e Van Hamme, inspiraram bastante.\r\n\r\n<a href=\"http://evaristocultural.com.ar/wp-content/uploads/Ep01_PT-17.jpg\"><img class=\"aligncenter wp-image-19667\" src=\"http://evaristocultural.com.ar/wp-content/uploads/Ep01_PT-17.jpg\" alt=\"\" width=\"428\" height=\"605\" /></a>\r\n\r\n<strong> </strong><strong>Me gustaría aprovechar para preguntar por el estado de situación del comic brasilero, que desgraciadamente es difícil de encontrar acá en Argentina, salvo algunas excepciones.</strong>\r\n\r\nO mercado brasileiro de quadrinhos ainda está longe do ideal. Na cena independente, há uma produção autoral de excelente qualidade, com muitos autores buscando com sucesso os financiamentos coletivos para possibilitar suas publicações. Porém, o mercado tradicional ainda não se profissionalizou e se difundiu o suficiente para que os quadrinistas possam se dedicar a ele com exclusividade. Apenas artistas que trabalham para o exterior (em especial no mercado dos Estados Unidos) conseguem se sustentar com quadrinhos. Sem falar da falta de incentivos governamentais para a produção cultural em geral. Resumindo: produção artística extraordinária, pouquíssimo dinheiro.\r\n\r\n<strong>Vayamos al género negro. Sos uno de los creadores y coordinadores del Porto Alegre Noir, si no me equivoco, el primer festival de género negro en Brasil. ¿Cómo surge? ¿Cómo fueron las experiencias el año pasado, en su primera edición, y qué modificaron o profundizaron a la hora de organizar esta segunda edición?</strong>\r\n\r\nO Porto Alegre Noir surgiu com o intuito de preencher uma lacuna nos eventos culturais brasileiros, em especial os literários. Embora houvesse algum espaço para cinema e literatura policial nesses eventos, nunca houve algo exclusivo do gênero. Assim criei o Porto Alegre Noir junto com os produtores Cristiane Marçal (Fio Produtora) e Jorge Ghiorzi (Cena Um). A primeira edição, com participantes de várias partes do Brasil e nomes como Tabajara Ruas e Cláudia Lemes, atraiu um belo público. Oferecemos debates, cursos, feira de livros e festival de filmes. Na segunda edição, ampliamos a programação de filmes, exibindo clássicos do cinema <em>noir</em>, e também abordamos o gênero nos quadrinhos e na música.\r\n\r\n<strong>Rubem Fonseca, Patricia Melo, Marçal Aquino y poco más en lo que hace a autores de género negro brasileños que llegan al país. ¿Cuál es el panorama actual del género negro en Brasil?</strong>\r\n\r\nA Literatura Policial vive um momento excelente no Brasil, de grande crescimento. Muitos autores novos surgindo, há um bom cenário independente e mais editoras apostando no gênero. Antes da pandemia, também os eventos estavam crescendo. Tivemos as duas edições do Porto Alegre Noir, surgiu a ABERST - Associação Brasileira de Escritores de Romance Policial, Suspense e Terror, e alguns dos maiores nomes do cenário literário nacional escrevem na linha crime/suspense. Não fosse a pandemia, 2020 teria solidificado ainda mais a cena.\r\n\r\n<a href=\"http://evaristocultural.com.ar/wp-content/uploads/CapaCulpa.jpg\"><img class=\"aligncenter wp-image-19668\" src=\"http://evaristocultural.com.ar/wp-content/uploads/CapaCulpa.jpg\" alt=\"\" width=\"394\" height=\"599\" /></a>\r\n\r\n<strong>Para cerrar, este año</strong><strong> saldría publicado tu primer libro noir, una compilación de cuentos llamado <em>A Culpa é da Noite e outras histórias de crime</em>. ¿Qué nos podés contar acerca de este libro?</strong>\r\n\r\nNos últimos anos, a maior parte da minha escrita foi dedicada à literatura policial. Minhas primeiras publicações do gênero apareceram em 2014 na antologia “Segredos de Famiglia”, da Editora Devir, parte do universo transmídia do jogo de tabuleiro “Don Capollo”. Como o título já deixa claro, são histórias de máfia. Em seguida, comecei a escrever uma série de contos para um projeto de comics em parceria com o artista espanhol José Aguilar García. São histórias que se passam nos Estados Unidos na época da Grande Depressão. José pediu que eu escrevesse algo com uma ambientação “entre John Steinbeck e Dashiell Hammett”. Escrevi mais algumas histórias contemporâneas passadas no Brasil e resolvi transformar esse conjunto todo em livro. A editora Arte &amp; Letra gostou da ideia e publicou <em>A Culpa é da Noite</em> em setembro de 2019."
+    },
+    {
+      "id": 19899,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 245,
+      "nombre": "millie-jackson-%e2%80%8e-i-cry",
+      "titulo": "MILLIE JACKSON ‎| I Cry",
+      "fecha": "2021-01-28 00:02:24",
+      "fechaGmt": "2021-01-28 00:02:24",
+      "contenido": "Mildred Virginia Jackson (nacida el 15 de julio de 1944) es una artista estadounidense dedicada al soul y R&amp;B. Comenzando su carrera a principios de la década de 1960, tres de los álbumes de Jackson han sido certificados como oro por la RIAA por más de 500.000 copias vendidas. Las canciones de Jackson a menudo incluyen secciones largas, a veces chistosas, a veces explícitas. Grabó canciones en estilo disco o dance y ocasionalmente abordóel country.\r\n\r\nOcasionalmente se la ha llamado la \"madre del hip-hop\" o del propio rap. Esto tiene más que ver con las largas secciones habladas en muchas de sus canciones que con el rap real. Como siempre le gustó escribir poemas, a principios de los setenta, Jackson comenzó a crear sencillos de R&amp;B de proto-rap.\r\n\r\n[embed]https://www.youtube.com/watch?v=hfTPgkixNDo[/embed]\r\n\r\n<strong>I CRY</strong>\r\n\r\nUhm, uuhm, uhuhm; I Cry\r\n\r\nUhm, uuhm, uhuhm; I Cry\r\n\r\n&nbsp;\r\n\r\nI saw a man lying on the Street\r\n\r\nI could not figure it out why\r\n\r\nPeople walked pass without seeing\r\n\r\nThat the man was about to die\r\n\r\nWhen I called for help, no one came\r\n\r\nBecause they did not want to get involved\r\n\r\nThe problem seemed that no one believed\r\n\r\nThe situation can be solved and\r\n\r\n&nbsp;\r\n\r\n<a href=\"http://evaristocultural.com.ar/wp-content/uploads/bda35358b776072a280909b808fe2aac.1000x984x1.jpg\"><img class=\" wp-image-19901 alignright\" src=\"http://evaristocultural.com.ar/wp-content/uploads/bda35358b776072a280909b808fe2aac.1000x984x1.jpg\" alt=\"\" width=\"373\" height=\"367\" /></a>\r\n\r\nI cry - baby, I cry\r\n\r\nI cry - baby, I cry\r\n\r\n&nbsp;\r\n\r\nWhen you try to do for your child\r\n\r\nWhatever you can do\r\n\r\nThe problem is you cannot\r\n\r\nBecause you know,\r\n\r\nThe kids are not smiling to you\r\n\r\nNow, we bring our kids up here\r\n\r\nBecause we know that, they need education\r\n\r\nThey come home and telling us there are no schools\r\n\r\nBecause people do not want integration\r\n\r\n&nbsp;\r\n\r\nI cry - baby, I cry\r\n\r\nI cry - baby, I cry\r\n\r\n&nbsp;\r\n\r\nWe read the news everyday\r\n\r\nYou do not think that happens to you\r\n\r\nBut nobody reads about the blues\r\n\r\nThat heals the things that we go through\r\n\r\nWe did not ask to be on the Welfare\r\n\r\nWe did not ask to be on the streets\r\n\r\nOur babies did not ask us to come here\r\n\r\nBut here got to we - Now, I cry; I cannot help but cry\r\n\r\n&nbsp;\r\n\r\nI cry; I cry\r\n\r\nEvery morning I cry - why do not you see what is going on - you all?\r\n\r\nI cry, no - no; I cannot help but cry\r\n\r\nWhy do not you listen what I am saying this evening?\r\n\r\nWhy do not you get yourself together?\r\n\r\n&nbsp;\r\n\r\nI cry, no - no; I cry"
+    },
+    {
+      "id": 21382,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 245,
+      "nombre": "semana-negra-2",
+      "titulo": "SEMANA NEGRA | viernes 9",
+      "fecha": "2021-07-09 05:44:03",
+      "fechaGmt": "2021-07-09 05:44:03"
+    },
+    {
+      "id": 22024,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 245,
+      "nombre": "damian-vives-1978-2022",
+      "titulo": "DAMIÁN VIVES (1978 - 2022)",
+      "fecha": "2022-05-16 14:17:06",
+      "fechaGmt": "2022-05-16 14:17:06"
+    },
+    {
+      "id": 22255,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 39,
+      "nombre": "federico-racca-la-flor-del-diente-de-leon",
+      "titulo": "FEDERICO RACCA | LA FLOR DEL DIENTE DE LEÓN",
+      "fecha": "2022-12-06 20:01:20",
+      "fechaGmt": "2022-12-06 20:01:20"
+    },
+    {
+      "id": 22546,
+      "tipo": "post",
+      "estado": "draft",
+      "autor": 421,
+      "nombre": "",
+      "titulo": "Henning Mankell | Botas de lluvia suecas",
+      "fecha": "2023-06-29 23:38:10",
+      "fechaGmt": "0000-00-00 00:00:00",
+      "contenido": "<strong>El espesor del hielo por donde caminamos</strong>\r\n\r\nFredrik, un hombre sexagenario, austero, solitario y frío, se despierta una noche en medio de las llamas que degluten su casa. Logra salir del incendio. El fuego quemó la vivienda entera, la que era de sus abuelos. Se tragó su infancia, devoró su historia. Puede salir calzado con dos botas, pero del mismo pie. Las dos, del pie izquierdo.\r\n\r\nEn esta novela editada en el 2016 por Tusquets, Henning Mankell, su autor, nos hace navegar a través del mar helado, entre las formas del archipiélago, tanto geográfico como personal, y nos conduce hacia la pregunta por lo humano.\r\n\r\nEn lo que respecta a Fredrik, se sabe que es un médico (retirado por un error en su práctica médica), y que comienza un discurrir en su vida, bordeando cada roca del archipiélago. Después del incendio, es cuando recupera, en parte, la relación con su hija, que viene a acompañarlo frente a la pérdida de la casa. Debe afrontar lo que es sentirse ser padre de una mujer adulta por primera vez.\r\n\r\n<em>Botas de lluvias suecas</em> es una novela que nos lleva a confrontarnos con el miedo a la vejez, a la muerte. <strong><em>“Envejecer es como caminar sobre hielo cada vez más fino”,</em></strong> dice Mankell. Pero como contraparte, aparece el horror frente a la posible muerte de un bebé. Y esto nos conduce a preguntarnos si no será que, en realidad, nunca sabremos cuál es el espesor del hielo sobre el cual caminamos.\r\n\r\nEn ese recorrido por los archipiélagos, Fredrik se pregunta si conoce a las personas que cree conocer. Tal vez no. El mar oscuro y helado con su fondo fangoso puede tragarse las ideas como se tragó su propio estetoscopio y su vida como médico.\r\n\r\n<strong><em>“Un mar plomizo como el de aquel día se parecía a la esfera de un reloj sin agujas. O a una habitación donde se hubieran caído las paredes. A veces tenía la vaga impresión de que el mar era la fuerza que algún día me arrebataría la vida”.</em></strong>\r\n\r\nMientras su vida continúa, Fredrik juega al póker consigo mismo. Jugar al póker solo es el reflejo supremo de la soledad. Perder plata con uno mismo, es el ejemplo extremo de estar solo.\r\n\r\nEsta es una historia que habla del amor, del racismo, de la amistad incondicional, del miedo a la muerte, de los vínculos que parecen perdidos y pueden ser recuperados. Como sus botas de lluvia.\r\n\r\n&nbsp;\r\n\r\n<strong>Henning Mankell, <em>Botas de lluvia suecas, </em>Tusquets, 2016, 400 páginas.</strong>"
+    },
+    {
+      "id": 22590,
+      "tipo": "post",
+      "estado": "publish",
+      "autor": 472,
+      "nombre": "el-libro-en-la-mira-de-la-desregulacion",
+      "titulo": "El libro en la mira de la desregulación",
+      "fecha": "2026-07-25 13:28:43",
+      "fechaGmt": "2026-07-25 13:28:43"
+    }
+  ],
+  "meta": [
+    {
+      "metaId": 3402,
+      "postId": 620,
+      "k": "_thumbnail_id",
+      "v": "621"
+    },
+    {
+      "metaId": 3427,
+      "postId": 620,
+      "k": "cb_visit_counter",
+      "v": "2670"
+    },
+    {
+      "metaId": 3914,
+      "postId": 720,
+      "k": "_thumbnail_id",
+      "v": "18311"
+    },
+    {
+      "metaId": 3938,
+      "postId": 720,
+      "k": "cb_visit_counter",
+      "v": "1539"
+    },
+    {
+      "metaId": 7497,
+      "postId": 1555,
+      "k": "_thumbnail_id",
+      "v": "1556"
+    },
+    {
+      "metaId": 7519,
+      "postId": 1555,
+      "k": "cb_visit_counter",
+      "v": "2242"
+    },
+    {
+      "metaId": 7558,
+      "postId": 1569,
+      "k": "_thumbnail_id",
+      "v": "1570"
+    },
+    {
+      "metaId": 7600,
+      "postId": 1569,
+      "k": "cb_visit_counter",
+      "v": "7154"
+    },
+    {
+      "metaId": 11270,
+      "postId": 2462,
+      "k": "_thumbnail_id",
+      "v": "2464"
+    },
+    {
+      "metaId": 11302,
+      "postId": 2462,
+      "k": "cb_visit_counter",
+      "v": "2836"
+    },
+    {
+      "metaId": 13595,
+      "postId": 3026,
+      "k": "_thumbnail_id",
+      "v": "3030"
+    },
+    {
+      "metaId": 13615,
+      "postId": 3026,
+      "k": "cb_visit_counter",
+      "v": "1314"
+    },
+    {
+      "metaId": 14924,
+      "postId": 3306,
+      "k": "_thumbnail_id",
+      "v": "3307"
+    },
+    {
+      "metaId": 14925,
+      "postId": 3306,
+      "k": "_thumbnail_id",
+      "v": "3307"
+    },
+    {
+      "metaId": 14947,
+      "postId": 3306,
+      "k": "cb_visit_counter",
+      "v": "3618"
+    },
+    {
+      "metaId": 15604,
+      "postId": 3433,
+      "k": "_thumbnail_id",
+      "v": "3462"
+    },
+    {
+      "metaId": 16122,
+      "postId": 3433,
+      "k": "cb_visit_counter",
+      "v": "1585"
+    },
+    {
+      "metaId": 19505,
+      "postId": 4262,
+      "k": "_thumbnail_id",
+      "v": "4263"
+    },
+    {
+      "metaId": 19563,
+      "postId": 4262,
+      "k": "cb_visit_counter",
+      "v": "1426"
+    },
+    {
+      "metaId": 19586,
+      "postId": 4265,
+      "k": "cb_visit_counter",
+      "v": "1826"
+    },
+    {
+      "metaId": 19589,
+      "postId": 4265,
+      "k": "_thumbnail_id",
+      "v": "4286"
+    },
+    {
+      "metaId": 19974,
+      "postId": 4364,
+      "k": "_thumbnail_id",
+      "v": "4365"
+    },
+    {
+      "metaId": 19994,
+      "postId": 4364,
+      "k": "cb_visit_counter",
+      "v": "3564"
+    },
+    {
+      "metaId": 20292,
+      "postId": 4424,
+      "k": "_thumbnail_id",
+      "v": "4427"
+    },
+    {
+      "metaId": 20314,
+      "postId": 4424,
+      "k": "cb_visit_counter",
+      "v": "5221"
+    },
+    {
+      "metaId": 20703,
+      "postId": 4507,
+      "k": "_thumbnail_id",
+      "v": "4510"
+    },
+    {
+      "metaId": 20723,
+      "postId": 4507,
+      "k": "cb_visit_counter",
+      "v": "8321"
+    },
+    {
+      "metaId": 20730,
+      "postId": 4513,
+      "k": "_thumbnail_id",
+      "v": "4514"
+    },
+    {
+      "metaId": 20840,
+      "postId": 4513,
+      "k": "cb_visit_counter",
+      "v": "1477"
+    },
+    {
+      "metaId": 21288,
+      "postId": 19,
+      "k": "_wp_old_slug",
+      "v": "19"
+    },
+    {
+      "metaId": 21745,
+      "postId": 19,
+      "k": "cb_visit_counter",
+      "v": "2019"
+    },
+    {
+      "metaId": 23247,
+      "postId": 5214,
+      "k": "_thumbnail_id",
+      "v": "5217"
+    },
+    {
+      "metaId": 23552,
+      "postId": 5287,
+      "k": "_thumbnail_id",
+      "v": "5291"
+    },
+    {
+      "metaId": 23591,
+      "postId": 5296,
+      "k": "cb_visit_counter",
+      "v": "1099"
+    },
+    {
+      "metaId": 23594,
+      "postId": 5296,
+      "k": "_thumbnail_id",
+      "v": "5298"
+    },
+    {
+      "metaId": 23680,
+      "postId": 5287,
+      "k": "cb_visit_counter",
+      "v": "1275"
+    },
+    {
+      "metaId": 23945,
+      "postId": 5372,
+      "k": "_thumbnail_id",
+      "v": "5373"
+    },
+    {
+      "metaId": 23965,
+      "postId": 5372,
+      "k": "cb_visit_counter",
+      "v": "1951"
+    },
+    {
+      "metaId": 24141,
+      "postId": 5214,
+      "k": "cb_visit_counter",
+      "v": "1991"
+    },
+    {
+      "metaId": 24197,
+      "postId": 19,
+      "k": "_wp_old_slug",
+      "v": "19"
+    },
+    {
+      "metaId": 25209,
+      "postId": 19,
+      "k": "_thumbnail_id",
+      "v": "5531"
+    },
+    {
+      "metaId": 50161,
+      "postId": 10730,
+      "k": "_thumbnail_id",
+      "v": "10732"
+    },
+    {
+      "metaId": 50188,
+      "postId": 10730,
+      "k": "cb_visit_counter",
+      "v": "1310"
+    },
+    {
+      "metaId": 51060,
+      "postId": 10929,
+      "k": "_thumbnail_id",
+      "v": "10930"
+    },
+    {
+      "metaId": 51086,
+      "postId": 10929,
+      "k": "cb_visit_counter",
+      "v": "6128"
+    },
+    {
+      "metaId": 60012,
+      "postId": 12526,
+      "k": "_thumbnail_id",
+      "v": "12527"
+    },
+    {
+      "metaId": 60039,
+      "postId": 12526,
+      "k": "cb_visit_counter",
+      "v": "1356"
+    },
+    {
+      "metaId": 60044,
+      "postId": 12526,
+      "k": "_wp_old_slug",
+      "v": "culpables"
+    },
+    {
+      "metaId": 62245,
+      "postId": 12939,
+      "k": "_thumbnail_id",
+      "v": "12940"
+    },
+    {
+      "metaId": 62277,
+      "postId": 12939,
+      "k": "cb_visit_counter",
+      "v": "2233"
+    },
+    {
+      "metaId": 72701,
+      "postId": 14791,
+      "k": "cb_visit_counter",
+      "v": "1394"
+    },
+    {
+      "metaId": 72704,
+      "postId": 14791,
+      "k": "_thumbnail_id",
+      "v": "14793"
+    },
+    {
+      "metaId": 73966,
+      "postId": 15021,
+      "k": "_thumbnail_id",
+      "v": "15025"
+    },
+    {
+      "metaId": 73995,
+      "postId": 15021,
+      "k": "cb_visit_counter",
+      "v": "1099"
+    },
+    {
+      "metaId": 74062,
+      "postId": 15027,
+      "k": "_thumbnail_id",
+      "v": "15031"
+    },
+    {
+      "metaId": 74063,
+      "postId": 15027,
+      "k": "cb_visit_counter",
+      "v": "909"
+    },
+    {
+      "metaId": 75233,
+      "postId": 15244,
+      "k": "_thumbnail_id",
+      "v": "15247"
+    },
+    {
+      "metaId": 75263,
+      "postId": 15244,
+      "k": "cb_visit_counter",
+      "v": "1479"
+    },
+    {
+      "metaId": 75272,
+      "postId": 15244,
+      "k": "_wp_old_slug",
+      "v": "cruz-nicolas-ferraro__trashed"
+    },
+    {
+      "metaId": 84056,
+      "postId": 16691,
+      "k": "_thumbnail_id",
+      "v": "16692"
+    },
+    {
+      "metaId": 84086,
+      "postId": 16691,
+      "k": "_webdados_fb_open_graph_specific_image",
+      "v": ""
+    },
+    {
+      "metaId": 84087,
+      "postId": 16691,
+      "k": "_webdados_fb_open_graph_specific_description",
+      "v": ""
+    },
+    {
+      "metaId": 84092,
+      "postId": 16691,
+      "k": "cb_visit_counter",
+      "v": "730"
+    },
+    {
+      "metaId": 92637,
+      "postId": 720,
+      "k": "_webdados_fb_open_graph_specific_image",
+      "v": ""
+    },
+    {
+      "metaId": 92638,
+      "postId": 720,
+      "k": "_webdados_fb_open_graph_specific_description",
+      "v": ""
+    },
+    {
+      "metaId": 97627,
+      "postId": 3026,
+      "k": "_webdados_fb_open_graph_specific_image",
+      "v": ""
+    },
+    {
+      "metaId": 97628,
+      "postId": 3026,
+      "k": "_webdados_fb_open_graph_specific_description",
+      "v": ""
+    },
+    {
+      "metaId": 98789,
+      "postId": 12939,
+      "k": "_webdados_fb_open_graph_specific_image",
+      "v": ""
+    },
+    {
+      "metaId": 98790,
+      "postId": 12939,
+      "k": "_webdados_fb_open_graph_specific_description",
+      "v": ""
+    },
+    {
+      "metaId": 99250,
+      "postId": 1555,
+      "k": "_webdados_fb_open_graph_specific_image",
+      "v": ""
+    },
+    {
+      "metaId": 99251,
+      "postId": 1555,
+      "k": "_webdados_fb_open_graph_specific_description",
+      "v": ""
+    },
+    {
+      "metaId": 99304,
+      "postId": 5214,
+      "k": "_webdados_fb_open_graph_specific_image",
+      "v": ""
+    },
+    {
+      "metaId": 99305,
+      "postId": 5214,
+      "k": "_webdados_fb_open_graph_specific_description",
+      "v": ""
+    },
+    {
+      "metaId": 103079,
+      "postId": 19660,
+      "k": "_thumbnail_id",
+      "v": "19662"
+    },
+    {
+      "metaId": 103098,
+      "postId": 19660,
+      "k": "cb_image_credit",
+      "v": "Bethânia Helder"
+    },
+    {
+      "metaId": 103107,
+      "postId": 19660,
+      "k": "_webdados_fb_open_graph_specific_image",
+      "v": "http://evaristocultural.com.ar/wp-content/uploads/Cesar-Alcazar.jpg"
+    },
+    {
+      "metaId": 103108,
+      "postId": 19660,
+      "k": "_webdados_fb_open_graph_specific_description",
+      "v": "O Coração do Cão Negro es la primera parte de una saga escrita por Cesar Alcázar, oriundo de Porto Alegre, y dibujada por Fred Rubim. En esta primera historia nos encontramos con Anrath, más conocido como O Cão Negro, un gaélico que se crió entre vikingos, y que parece no tener más patria que su escudo y espada, y que se desenvuelve como una especie de caza recompensas en la Irlanda circa 1022."
+    },
+    {
+      "metaId": 103109,
+      "postId": 19660,
+      "k": "cb_visit_counter",
+      "v": "1261"
+    },
+    {
+      "metaId": 104681,
+      "postId": 19899,
+      "k": "_thumbnail_id",
+      "v": "19900"
+    },
+    {
+      "metaId": 104710,
+      "postId": 19899,
+      "k": "_webdados_fb_open_graph_specific_image",
+      "v": ""
+    },
+    {
+      "metaId": 104711,
+      "postId": 19899,
+      "k": "_webdados_fb_open_graph_specific_description",
+      "v": ""
+    },
+    {
+      "metaId": 104712,
+      "postId": 19899,
+      "k": "cb_visit_counter",
+      "v": "945"
+    },
+    {
+      "metaId": 115855,
+      "postId": 21382,
+      "k": "_thumbnail_id",
+      "v": "21383"
+    },
+    {
+      "metaId": 115882,
+      "postId": 21382,
+      "k": "_webdados_fb_open_graph_specific_image",
+      "v": ""
+    },
+    {
+      "metaId": 115883,
+      "postId": 21382,
+      "k": "_webdados_fb_open_graph_specific_description",
+      "v": ""
+    },
+    {
+      "metaId": 115884,
+      "postId": 21382,
+      "k": "cb_visit_counter",
+      "v": "445"
+    },
+    {
+      "metaId": 120191,
+      "postId": 22024,
+      "k": "_thumbnail_id",
+      "v": "22025"
+    },
+    {
+      "metaId": 120218,
+      "postId": 22024,
+      "k": "_webdados_fb_open_graph_specific_image",
+      "v": ""
+    },
+    {
+      "metaId": 120219,
+      "postId": 22024,
+      "k": "_webdados_fb_open_graph_specific_description",
+      "v": ""
+    },
+    {
+      "metaId": 120220,
+      "postId": 22024,
+      "k": "cb_visit_counter",
+      "v": "817"
+    },
+    {
+      "metaId": 121504,
+      "postId": 22255,
+      "k": "_webdados_fb_open_graph_specific_image",
+      "v": ""
+    },
+    {
+      "metaId": 121505,
+      "postId": 22255,
+      "k": "_webdados_fb_open_graph_specific_description",
+      "v": ""
+    },
+    {
+      "metaId": 121541,
+      "postId": 22255,
+      "k": "_thumbnail_id",
+      "v": "22259"
+    },
+    {
+      "metaId": 121542,
+      "postId": 22255,
+      "k": "cb_visit_counter",
+      "v": "651"
+    },
+    {
+      "metaId": 122849,
+      "postId": 22546,
+      "k": "_thumbnail_id",
+      "v": "22547"
+    },
+    {
+      "metaId": 122876,
+      "postId": 22546,
+      "k": "_webdados_fb_open_graph_specific_image",
+      "v": ""
+    },
+    {
+      "metaId": 122877,
+      "postId": 22546,
+      "k": "_webdados_fb_open_graph_specific_description",
+      "v": ""
+    },
+    {
+      "metaId": 122915,
+      "postId": 22546,
+      "k": "cb_visit_counter",
+      "v": "2"
+    },
+    {
+      "metaId": 123138,
+      "postId": 22590,
+      "k": "cb_visit_counter",
+      "v": "101"
+    }
+  ],
+  "terminos": [
+    {
+      "taxonomia": "category",
+      "id": 19,
+      "nombre": "Seda",
+      "slug": "seda"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 19,
+      "nombre": "Número 1",
+      "slug": "numero-1"
+    },
+    {
+      "taxonomia": "category",
+      "id": 620,
+      "nombre": "Seda",
+      "slug": "seda"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 620,
+      "nombre": "Chinas Expansion into the Western Hemis­phere. Implications for Latin America and the United States",
+      "slug": "chinas-expansion-into-the-western-hemis%c2%adphere-implications-for-latin-america-and-the-united-states"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 620,
+      "nombre": "Leandro Wolfson",
+      "slug": "leandro-wolfson"
+    },
+    {
+      "taxonomia": "category",
+      "id": 720,
+      "nombre": "Historieta",
+      "slug": "historieta"
+    },
+    {
+      "taxonomia": "category",
+      "id": 720,
+      "nombre": "Reseñas Historietas",
+      "slug": "resenas-historietas"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 720,
+      "nombre": "Hergé",
+      "slug": "herge"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 720,
+      "nombre": "Las aventuras de Tintín: El loto azul",
+      "slug": "las-aventuras-de-tintin-el-loto-azul"
+    },
+    {
+      "taxonomia": "category",
+      "id": 1555,
+      "nombre": "México",
+      "slug": "mexico"
+    },
+    {
+      "taxonomia": "category",
+      "id": 1555,
+      "nombre": "Seda",
+      "slug": "seda"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 1555,
+      "nombre": "Colegio de México",
+      "slug": "colegio-de-mexico"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 1555,
+      "nombre": "Guillermo Quartucci",
+      "slug": "guillermo-quartucci"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 1555,
+      "nombre": "Japón",
+      "slug": "japon"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 1555,
+      "nombre": "japonería",
+      "slug": "japoneria"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 1555,
+      "nombre": "Kobo Abe",
+      "slug": "kobo-abe"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 1555,
+      "nombre": "Murakami",
+      "slug": "murakami"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 1555,
+      "nombre": "Orientalismo",
+      "slug": "orientalismo"
+    },
+    {
+      "taxonomia": "category",
+      "id": 1569,
+      "nombre": "Seda",
+      "slug": "seda"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 1569,
+      "nombre": "budismo",
+      "slug": "budismo"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 1569,
+      "nombre": "confucianismo",
+      "slug": "confucianismo"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 1569,
+      "nombre": "maniqueísmo",
+      "slug": "maniqueismo"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 1569,
+      "nombre": "Ruta de la seda",
+      "slug": "ruta-de-la-seda"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 1569,
+      "nombre": "taoísmo",
+      "slug": "taoismo"
+    },
+    {
+      "taxonomia": "category",
+      "id": 2462,
+      "nombre": "Ensayo",
+      "slug": "ensayo"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 2462,
+      "nombre": "Revista Hombre",
+      "slug": "revista-hombre"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 2462,
+      "nombre": "sexismo",
+      "slug": "sexismo"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 2462,
+      "nombre": "sexualidad",
+      "slug": "sexualidad"
+    },
+    {
+      "taxonomia": "category",
+      "id": 3026,
+      "nombre": "Ensayo",
+      "slug": "ensayo"
+    },
+    {
+      "taxonomia": "category",
+      "id": 3026,
+      "nombre": "México",
+      "slug": "mexico"
+    },
+    {
+      "taxonomia": "category",
+      "id": 3026,
+      "nombre": "Poesia",
+      "slug": "poesia"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 3026,
+      "nombre": "Atlas de callejerías",
+      "slug": "atlas-de-callejerias"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 3026,
+      "nombre": "Carlos Fajardo Fajardo",
+      "slug": "carlos-fajardo-fajardo"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 3026,
+      "nombre": "Estética y posmodernidad. Nuevos contextos y sensibilidades",
+      "slug": "estetica-y-posmodernidad-nuevos-contextos-y-sensibilidades"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 3026,
+      "nombre": "Estética y sensibilidades posmodernas.",
+      "slug": "estetica-y-sensibilidades-posmodernas"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 3026,
+      "nombre": "Navíos de Caronte",
+      "slug": "navios-de-caronte"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 3026,
+      "nombre": "Origen de Silencios",
+      "slug": "origen-de-silencios"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 3026,
+      "nombre": "Serenidad Sitiada",
+      "slug": "serenidad-sitiada"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 3026,
+      "nombre": "Tierra de Sol",
+      "slug": "tierra-de-sol"
+    },
+    {
+      "taxonomia": "category",
+      "id": 3306,
+      "nombre": "Literatura",
+      "slug": "literatura"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 3306,
+      "nombre": "Muchacha punk",
+      "slug": "muchacha-punk"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 3306,
+      "nombre": "Rodolfo Fogwill",
+      "slug": "rodolfo-fogwill"
+    },
+    {
+      "taxonomia": "category",
+      "id": 3433,
+      "nombre": "Reseñas",
+      "slug": "resena"
+    },
+    {
+      "taxonomia": "category",
+      "id": 3433,
+      "nombre": "Reseñas Seda",
+      "slug": "resenas-seda"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 3433,
+      "nombre": "Ha Jin",
+      "slug": "ha-jin"
+    },
+    {
+      "taxonomia": "category",
+      "id": 4262,
+      "nombre": "Seda",
+      "slug": "seda"
+    },
+    {
+      "taxonomia": "category",
+      "id": 4265,
+      "nombre": "Seda",
+      "slug": "seda"
+    },
+    {
+      "taxonomia": "category",
+      "id": 4364,
+      "nombre": "Seda",
+      "slug": "seda"
+    },
+    {
+      "taxonomia": "category",
+      "id": 4424,
+      "nombre": "Seda",
+      "slug": "seda"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 4424,
+      "nombre": "Meiji",
+      "slug": "meiji"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 4424,
+      "nombre": "Período de Tokugawa",
+      "slug": "periodo-de-tokugawa"
+    },
+    {
+      "taxonomia": "category",
+      "id": 4507,
+      "nombre": "Seda",
+      "slug": "seda"
+    },
+    {
+      "taxonomia": "category",
+      "id": 4513,
+      "nombre": "Seda",
+      "slug": "seda"
+    },
+    {
+      "taxonomia": "category",
+      "id": 5214,
+      "nombre": "México",
+      "slug": "mexico"
+    },
+    {
+      "taxonomia": "category",
+      "id": 5214,
+      "nombre": "Seda",
+      "slug": "seda"
+    },
+    {
+      "taxonomia": "category",
+      "id": 5287,
+      "nombre": "Seda",
+      "slug": "seda"
+    },
+    {
+      "taxonomia": "category",
+      "id": 5296,
+      "nombre": "Seda",
+      "slug": "seda"
+    },
+    {
+      "taxonomia": "category",
+      "id": 5372,
+      "nombre": "Seda",
+      "slug": "seda"
+    },
+    {
+      "taxonomia": "category",
+      "id": 10730,
+      "nombre": "Seda",
+      "slug": "seda"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 10730,
+      "nombre": "Asia",
+      "slug": "asia"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 10730,
+      "nombre": "budismo",
+      "slug": "budismo"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 10730,
+      "nombre": "budismo tibetano",
+      "slug": "budismo-tibetano"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 10730,
+      "nombre": "China",
+      "slug": "china"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 10730,
+      "nombre": "confucianismo",
+      "slug": "confucianismo"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 10730,
+      "nombre": "Confucio",
+      "slug": "confucio"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 10730,
+      "nombre": "taoísmo",
+      "slug": "taoismo"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 10730,
+      "nombre": "Templos",
+      "slug": "templos"
+    },
+    {
+      "taxonomia": "category",
+      "id": 10929,
+      "nombre": "Ensayo",
+      "slug": "ensayo"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 10929,
+      "nombre": "San Martín",
+      "slug": "san-martin"
+    },
+    {
+      "taxonomia": "category",
+      "id": 12526,
+      "nombre": "Ensayo",
+      "slug": "ensayo"
+    },
+    {
+      "taxonomia": "category",
+      "id": 12526,
+      "nombre": "Literatura",
+      "slug": "literatura"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 12526,
+      "nombre": "Culpa",
+      "slug": "culpa"
+    },
+    {
+      "taxonomia": "category",
+      "id": 12939,
+      "nombre": "México",
+      "slug": "mexico"
+    },
+    {
+      "taxonomia": "category",
+      "id": 12939,
+      "nombre": "Seda",
+      "slug": "seda"
+    },
+    {
+      "taxonomia": "category",
+      "id": 12939,
+      "nombre": "TV &amp; CINE",
+      "slug": "tv-cine"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 12939,
+      "nombre": "anime",
+      "slug": "anime"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 12939,
+      "nombre": "Hiroyuki Okiura",
+      "slug": "hiroyuki-okiura"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 12939,
+      "nombre": "Japón",
+      "slug": "japon"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 12939,
+      "nombre": "Una carta para Momo",
+      "slug": "una-carta-para-momo"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 12939,
+      "nombre": "yokai",
+      "slug": "yokai"
+    },
+    {
+      "taxonomia": "category",
+      "id": 14791,
+      "nombre": "Poesia",
+      "slug": "poesia"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 14791,
+      "nombre": "Mercedes Roffé",
+      "slug": "mercedes-roffe"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 14791,
+      "nombre": "Poesía",
+      "slug": "poesia"
+    },
+    {
+      "taxonomia": "category",
+      "id": 15021,
+      "nombre": "Teatro",
+      "slug": "teatro"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 15021,
+      "nombre": "Arístides Vargas",
+      "slug": "aristides-vargas"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 15021,
+      "nombre": "Eduardo Graham",
+      "slug": "eduardo-graham"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 15021,
+      "nombre": "Pluma y la Tempestad de estos tiempos",
+      "slug": "pluma-y-la-tempestad-de-estos-tiempos"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 15021,
+      "nombre": "teatro argentino",
+      "slug": "teatro-argentino"
+    },
+    {
+      "taxonomia": "category",
+      "id": 15027,
+      "nombre": "Música",
+      "slug": "musica"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 15027,
+      "nombre": "Bob Dylan",
+      "slug": "bob-dylan"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 15027,
+      "nombre": "Música",
+      "slug": "musica"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 15027,
+      "nombre": "Poesía",
+      "slug": "poesia"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 15027,
+      "nombre": "rock",
+      "slug": "rock"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 15027,
+      "nombre": "rock and roll",
+      "slug": "rock-and-roll"
+    },
+    {
+      "taxonomia": "category",
+      "id": 15244,
+      "nombre": "Rastros",
+      "slug": "rastros"
+    },
+    {
+      "taxonomia": "category",
+      "id": 15244,
+      "nombre": "Reseñas",
+      "slug": "resena"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 15244,
+      "nombre": "Cruz",
+      "slug": "cruz"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 15244,
+      "nombre": "Nicolás Ferraro",
+      "slug": "nicolas-ferraro"
+    },
+    {
+      "taxonomia": "category",
+      "id": 16691,
+      "nombre": "Ensayo",
+      "slug": "ensayo"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 16691,
+      "nombre": "Basado en Hechos Reales",
+      "slug": "basado-en-hechos-reales"
+    },
+    {
+      "taxonomia": "category",
+      "id": 19660,
+      "nombre": "Fantástico",
+      "slug": "fantastico"
+    },
+    {
+      "taxonomia": "category",
+      "id": 19660,
+      "nombre": "Historieta",
+      "slug": "historieta"
+    },
+    {
+      "taxonomia": "category",
+      "id": 19660,
+      "nombre": "Rastros",
+      "slug": "rastros"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 19660,
+      "nombre": "A Culpa é da Noite",
+      "slug": "a-culpa-e-da-noite"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 19660,
+      "nombre": "Cesar Alcázar",
+      "slug": "cesar-alcazar"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 19660,
+      "nombre": "O Coração do Cão Negro",
+      "slug": "o-coracao-do-cao-negro"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 19660,
+      "nombre": "Porto Alegre Noir",
+      "slug": "porto-alegre-noir"
+    },
+    {
+      "taxonomia": "category",
+      "id": 19899,
+      "nombre": "Música",
+      "slug": "musica"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 19899,
+      "nombre": "Millie Jackson",
+      "slug": "millie-jackson"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 19899,
+      "nombre": "R&amp;B",
+      "slug": "rb"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 19899,
+      "nombre": "soul",
+      "slug": "soul"
+    },
+    {
+      "taxonomia": "category",
+      "id": 21382,
+      "nombre": "Rastros",
+      "slug": "rastros"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 21382,
+      "nombre": "Semana Negra de Gijón",
+      "slug": "semana-negra-de-gijon"
+    },
+    {
+      "taxonomia": "category",
+      "id": 22024,
+      "nombre": "Literatura",
+      "slug": "literatura"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 22024,
+      "nombre": "Damián Blas Vives",
+      "slug": "damian-blas-vives"
+    },
+    {
+      "taxonomia": "category",
+      "id": 22255,
+      "nombre": "Uncategorized",
+      "slug": "uncategorized"
+    },
+    {
+      "taxonomia": "category",
+      "id": 22546,
+      "nombre": "Literatura",
+      "slug": "literatura"
+    },
+    {
+      "taxonomia": "post_tag",
+      "id": 22546,
+      "nombre": "Tusquets",
+      "slug": "tusquets"
+    },
+    {
+      "taxonomia": "category",
+      "id": 22590,
+      "nombre": "Artículos",
+      "slug": "articulos"
+    }
+  ],
+  "usuarios": [
+    {
+      "id": 3,
+      "login": "Damian Vives",
+      "nicename": "damian-vives",
+      "nombre": "Damian Blas Vives",
+      "bio": "Damián Blas Vives es actualmente es Director de Gestión y Políticas Culturales de la Biblioteca Nacional Mariano Moreno. Entre 2016 y 2020 coordinó el Centro de Narrativa Policial H. Bustos Domecq de dicha institución y antes fue Coordinador del Programa de Literatura y editor de la revista literaria Abanico. Dirigió durante una década el taller de Literatura japonesa de la Biblioteca Nacional, que ahora continúa de manera privada.\r\nEn 2006 fundó Seda, revista de estudios asiáticos y en 2007 Evaristo Cultural. Coordina el Encuentro Internacional de Literatura Fantástica y Rastros, el Observatorio Hispanoamericano de Literatura Negra y Criminal. \r\nIdeó e impulsó el Encuentro Nacional de Escritura en Cárcel, co-coordinándolo en sus dos primeros años, 2014 y 2015. \r\nFue miembro fundador del Club Argentino de Kamishibai. \r\nIncursionó en radio, dramaturgia y colaboró en publicaciones tales como Complejidad, Tokonoma, Lea y LeMonde diplomatique. \r\nEn 2015 funda el sello Evaristo Editorial y es uno de sus editores."
+    },
+    {
+      "id": 4,
+      "login": "Nicolas Ferraro",
+      "nicename": "nicolas-ferraro",
+      "nombre": "Nicolas Ferraro",
+      "bio": "(Buenos Aires, 1986)\r\nTrabaja en la Biblioteca Nacional Mariano Moreno. \r\nDogo (2016, Del Nuevo Extremo), su primera novela, fue finalista del concurso Extremo Negro.\r\nEn 2017, Editorial Revólver publicó Cruz, finalista del premio Dashiell Hammett a mejor novela negra que otorga la Semana Negra de Gijón.\r\nSus últimos trabajos son El Cielo Que Nos Queda (2019) y Ámbar (2021)"
+    },
+    {
+      "id": 5,
+      "login": "Roxana Artal",
+      "nicename": "roxana-artal",
+      "nombre": "Roxana Artal",
+      "bio": "Licenciada y Profesora en Letras por la Universidad de Buenos Aires. Escribe poesía, literatura infanto juvenil, y se dedica también a la dramaturgia. Se formó como actriz con Carlos Gandolfo, Augusto Fernándes y Pompeyo Audivert, entre otros maestros. Da clases de literatura, talleres de escritura y de teatro. Co-fundadora y Jefa de Redacción del portal Evaristo cultural, es editora del sello Evaristo Editorial. Como periodista cultural, colaboró a su vez en diversas publicaciones (Revista Crítica de la Universidad Autónoma de Puebla -México-; Agulha Revista de Cultura -Brasil-; Hablar de Poesía -Argentina-, entre otras). Se dedica también al trabajo social. En 2019 recibió la Beca Creación del Fondo Nacional de las Artes para su proyecto Poéticas de la percepción / Entrevistas sobre poesía. Es parte del equipo de Gestión y políticas culturales de la Biblioteca Nacional Mariano Moreno."
+    },
+    {
+      "id": 39,
+      "login": "Osvaldo Gallone",
+      "nicename": "osvaldo-gallone",
+      "nombre": "Osvaldo Gallone",
+      "bio": "Osvaldo Gallone nació en Buenos Aires. Es escritor y periodista cultural. Publicó los libros de poemas Crónica de un poeta solo (Botella al Mar, 1975) y Ejercicios de ciego (Botella al Mar, 1976); los ensayos La ficción de la historia (Alción, 2002) y Lectura de seis cuentos argentinos (San Luis Libro, 2012; Primer premio en la Convocatoria Nacional Cuento y Ensayo, 2010). Y las siguientes novelas: Montaje por corte (Puntosur, 1985), La niña muerta (Alcobendas, España, 2011; Primer premio a la Mejor Novela en el III Premio de Novela Corta, 2011), Una muchacha predestinada (V.S. Ediciones, 2014; Primer premio a la Mejor Novela V.S. Editores, 2013), La boca del infierno (Evaristo Ediciones, 2016). Ha ganado diversos premios literarios tanto en España como en Argentina. Y colaborado, como periodista cultural, en medios nacionales e internacionales. Coordina desde hace tres décadas Seminarios de lectura y crítica literaria. [correo omitido]"
+    },
+    {
+      "id": 53,
+      "login": "Riordan Roett",
+      "nicename": "riordan-roett",
+      "nombre": "Riordan Roett",
+      "bio": ""
+    },
+    {
+      "id": 57,
+      "login": "Martin Lo Coco",
+      "nicename": "martin-lo-coco",
+      "nombre": "Martin Lo Coco",
+      "bio": ""
+    },
+    {
+      "id": 72,
+      "login": "Mario Tesler",
+      "nicename": "mario-tesler",
+      "nombre": "Mario Tesler",
+      "bio": "Porteño, nació en 1941. Historiador, licenciado en Bibliotecología y Documentación, fue docente en tres universidades. \r\nTrabaja sobre diversos temas  y protagonistas del pasado argentino, habiendo editado sobre éstos libros y folletos, algunos de los cuales fueron publicados por la Academia Nacional de la Historia, Biblioteca Nacional y la Academia Nacional de Periodismo. \r\nEs autor de varias bibliografías, bio-bibliografías y diccionarios de seudónimos, el último de estos es Colección de seudónimos utilizados en Argentina por anarquistas, comunistas, izquierdistas, peronistas, socialistas y trotskistas. \r\nSu incursión en el estudio sobre palabras y expresión que generaron el consumo del alcohol y las drogas los dio a conocer en dos libros editados por la Academia Porteña del Lunfardo y luego en un vocabulario titulado  ABC de la droga y el alcohol. \r\nColabora en publicaciones especializadas de Argentina, Uruguay, México, Italia, Inglaterra, Perú y Colombia. \r\nConfeccionó estudios para acompañar las reediciones del Calfucurá. La conquista de las pampas de Álvaro Yunque y la polémica Norberto Pinero-Paul Groussac sobre el Plan de Operaciones, atribuido a Mariano Moreno."
+    },
+    {
+      "id": 89,
+      "login": "Paula Fernandez",
+      "nicename": "paula-fernandez",
+      "nombre": "Paula Fernandez",
+      "bio": ""
+    },
+    {
+      "id": 131,
+      "login": "Federico Navarro",
+      "nicename": "federico-navarro",
+      "nombre": "Federico Navarro",
+      "bio": ""
+    },
+    {
+      "id": 163,
+      "login": "Rodolfo Fogwill",
+      "nicename": "rodolfo-fogwill",
+      "nombre": "Rodolfo Fogwill",
+      "bio": ""
+    },
+    {
+      "id": 169,
+      "login": "Dario Seb Durban",
+      "nicename": "dario-seb-durban",
+      "nombre": "Dario Seb Durban",
+      "bio": "Darío Seb Durban nació en Vicente López, provincia de Buenos Aires, un año maldito de la era de plomo. Cursó varios estudios, ninguno digno de mención, y se empeñó en no terminar ninguno. Entre los años 1995 y 2006 estudió música informalmente y compuso canciones y poesía jamás oídas. Entre los años 2001 y 2007 se desempeñó como dramaturgo en la compañía teatral Crisol Teatro, estrenando cinco obras entre las que se contaban Las noctámbulas, Factoría y Zozobra. A partir del año 2012 participó talleres literarios, donde se avocó a explorar la voz de distintos narradores, nunca encontrando la suya propia. Hoy trabaja de forma inconsecuente en industrias no literarias, y ocasionalmente escribe textos que reproducimos en Evaristo Cultural."
+    },
+    {
+      "id": 186,
+      "login": "Tawfiq Al-Haqim",
+      "nicename": "tawfiq-al-haqim",
+      "nombre": "Tawfiq Al-Haqim",
+      "bio": ""
+    },
+    {
+      "id": 197,
+      "login": "Leandro Natale",
+      "nicename": "leandro-natale",
+      "nombre": "Leandro Natale",
+      "bio": ""
+    },
+    {
+      "id": 198,
+      "login": "Eduardo Wilde",
+      "nicename": "eduardo-wilde",
+      "nombre": "Eduardo Wilde",
+      "bio": ""
+    },
+    {
+      "id": 203,
+      "login": "revistaseda",
+      "nicename": "revistaseda",
+      "nombre": "revistaseda",
+      "bio": ""
+    },
+    {
+      "id": 218,
+      "login": "Martin Checa Artasu",
+      "nicename": "martin-checa-artasu-2",
+      "nombre": "Martin Checa Artasu",
+      "bio": ""
+    },
+    {
+      "id": 222,
+      "login": "Magali Garcea",
+      "nicename": "magali-garcea",
+      "nombre": "Magali Garcea",
+      "bio": ""
+    },
+    {
+      "id": 235,
+      "login": "Juan Agustin Onis Conde",
+      "nicename": "juan-agustin-onis-conde",
+      "nombre": "Juan Agustin Onis Conde",
+      "bio": "Ex docente FFyL UBA;\r\nTraductor en Japón desde 2007."
+    },
+    {
+      "id": 245,
+      "login": "Evaristo Cultural",
+      "nicename": "evaristo-cultural",
+      "nombre": "Evaristo Cultural",
+      "bio": "Portal Digital de Cultura y Arte que incluye en sus secciones el material de Revista Seda, dedicada a los estudios asiáticos; de Rastros, el Observatorio Hispanoamericano de Género Negro y Criminal y del Encuentro Internacional de Literatura Fantástica."
+    },
+    {
+      "id": 247,
+      "login": "Candela Gomez",
+      "nicename": "candela-gomez",
+      "nombre": "Candelita Gomez",
+      "bio": "Nació en 1986, rata porteña del sur de la ciudad. Trabaja desde hace doce años en Museo Nacional de Bellas Artes, en la actualidad como educadora. Es profesora de teatro y se forma como Docente en Lengua y Literatura."
+    },
+    {
+      "id": 278,
+      "login": "Ezequiel Dellutri",
+      "nicename": "ezequiel-dellutri",
+      "nombre": "Ezequiel Dellutri",
+      "bio": "Escritor y docente, ha desarrollado una gran actividad enfocada en la promoción de la lectura y el estudio de géneros literarios. Ha publicado policiales para adultos, ensayos para adolescentes y relatos infatojuveniles. Obtuvo los premios Norma a Literatura Juvenil, Alija a Novela Infantil, Córdoba Mata a Novela Negra y el sello White Ravens.\r\n\r\nSus novelas infantojuveniles han cosechado el cariño de miles de lectores en toda Latinoamérica.\r\n\r\nSe lo puede encontrar en Instagram como @edellutri."
+    },
+    {
+      "id": 342,
+      "login": "Mercedes Roffe",
+      "nicename": "mercedes-roffe",
+      "nombre": "Mercedes Roffe",
+      "bio": "Mercedes Roffé es una de las voces de la poesía argentina actual de más reconocimiento internacional. Entre sus libros de poesía se destacan El tapiz (libro apócrifo atribuido a Ferdinand Oziel; Buenos Aires, 1983); Cámara baja (1987); Canto errante (2002); Memorial de agravios (2002), La ópera fantasma (2005) y Las linternas flotantes (2009), así como las antologías Antología poética (Caracas, Pequeña Venecia, 2000) y Milenios caen de su vuelo. Poemas 1977-2003 (Tenerife, Idea, 2005). En 2011, se reedita Canto errante seguido de Memorial de agravios (Madrid, Amargord, con prólogo de Raúl Zurita). Al año siguiente, Vaso Roto Editores reedita La ópera fantasma (Barcelona/México, 2012), libro que resulta elegido entre los mejores del año por dos prestigiosos periódicos mexicanos. En 2013 aparece La interrogación incesante, libro de entrevistas compilado y editado por Edwin M. Lamboy (Madrid, Amargord, 2013).  Durante el 2017 se publicaron libros suyos en España, México, Ecuador, Chile y Argentina.\r\n En traducción, libros suyos se han publicado en Italia, Quebec, Rumania, Inglaterra, Francia y los Estados Unidos.\r\n       Desde 1998, dirige el sello Ediciones Pen Press, dedicado a publicar plaquettes y pliegos de poesía contemporánea española y latinoamericana, y de otras lenguas en traducción al español. Entre otras distinciones, recibió una Beca de la Fundación John Simon Guggenheim, en poesía (2001) y una beca de la Fundación Civitella Ranieri (2012). Desde 1995 vive en la ciudad de Nueva York."
+    },
+    {
+      "id": 353,
+      "login": "Lucia Feuillet",
+      "nicename": "lucia-feuillet",
+      "nombre": "Lucia Feuillet",
+      "bio": "Lucía Feuillet es doctora en Letras Modernas, becaria de CONICET y profesora adscripta en la Universidad de Córdoba. Integra un equipo de investigación sobre Literatura Argentina en la Facultad de Filosofía y Humanidades de la UNC y es docente de Lengua y Literatura en la escuela media. Es parte de la Comisión Organizadora del Encuentro Internacional de Literatura Negra y Policial Córdoba Mata y co-editora de \"Tugurio\", revista de géneros."
+    },
+    {
+      "id": 421,
+      "login": "Veronica Kunzel",
+      "nicename": "veronica-kunzel",
+      "nombre": "Veronica Kunzel",
+      "bio": "Verónica Künzel nació en Mar del Plata, Provincia de Buenos Aires. Es Lic. en Psicología. Obtuvo el título de Psicoanalista en la Asociación Psicoanalítica Argentina, y en la Asociación Psicoanalítica Internacional. Realizó su experiencia clínica en el Hospital de San Isidro y en el Hospital  de Emergencias Psiquiátricas Torcuato de Alvear. Fue secretaria científica del claustro de candidatos de APA, promoviendo congresos y actividades científicas. Escribió diversos artículos psicoanalíticos y trabajos en congresos. Ejerce la psicología clínica desde el año 1992."
+    },
+    {
+      "id": 472,
+      "login": "mareanovazquez",
+      "nicename": "mareanovazquez",
+      "nombre": "Mariano Vazquez",
+      "bio": "Soy doctor y licenciado en comunicación social por la UNLP, con experiencia en medios gráficos, radiales y digitales. Ese recorrido me enseñó a leer mensajes, audiencias y contextos — habilidades que aplico directamente a cómo diseño y construyo productos web."
+    }
+  ],
+  "adjuntos": [
+    {
+      "id": 621,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/Latinchina.jpg",
+      "clave": "Latinchina.jpg",
+      "alt": null,
+      "ancho": 639,
+      "alto": 429,
+      "bytes": null
+    },
+    {
+      "id": 622,
+      "tipoPost": "attachment",
+      "mime": "image/gif",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/Riordan-Roett_FT_10091.gif",
+      "clave": "Riordan-Roett_FT_10091.gif",
+      "alt": null,
+      "ancho": 250,
+      "alto": 363,
+      "bytes": null
+    },
+    {
+      "id": 722,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/11166117_807610659333257_150663717_n.jpg",
+      "clave": "11166117_807610659333257_150663717_n.jpg",
+      "alt": null,
+      "ancho": 560,
+      "alto": 420,
+      "bytes": null
+    },
+    {
+      "id": 723,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/11169024_807610625999927_1917353732_n.jpg",
+      "clave": "11169024_807610625999927_1917353732_n.jpg",
+      "alt": null,
+      "ancho": 782,
+      "alto": 524,
+      "bytes": null
+    },
+    {
+      "id": 724,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/11173707_807610689333254_1995085584_n.jpg",
+      "clave": "11173707_807610689333254_1995085584_n.jpg",
+      "alt": null,
+      "ancho": 521,
+      "alto": 454,
+      "bytes": null
+    },
+    {
+      "id": 1556,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/nihon__by_silwenka-d3bxi1x.jpg",
+      "clave": "nihon__by_silwenka-d3bxi1x.jpg",
+      "alt": null,
+      "ancho": 1264,
+      "alto": 632,
+      "bytes": null
+    },
+    {
+      "id": 1557,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/satori-ficcion-001.jpg",
+      "clave": "satori-ficcion-001.jpg",
+      "alt": null,
+      "ancho": 757,
+      "alto": 426,
+      "bytes": null
+    },
+    {
+      "id": 1558,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/entrevista_foto_int01.jpg",
+      "clave": "entrevista_foto_int01.jpg",
+      "alt": null,
+      "ancho": 589,
+      "alto": 238,
+      "bytes": null
+    },
+    {
+      "id": 1559,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/entrevista_foto_int02.jpg",
+      "clave": "entrevista_foto_int02.jpg",
+      "alt": null,
+      "ancho": 589,
+      "alto": 242,
+      "bytes": null
+    },
+    {
+      "id": 1560,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/grf-concepto-jardin-japones.jpg",
+      "clave": "grf-concepto-jardin-japones.jpg",
+      "alt": null,
+      "ancho": 980,
+      "alto": 370,
+      "bytes": null
+    },
+    {
+      "id": 1570,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/ruta_seda.jpg",
+      "clave": "ruta_seda.jpg",
+      "alt": null,
+      "ancho": 650,
+      "alto": 475,
+      "bytes": null
+    },
+    {
+      "id": 1571,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/01300000157105121005043373734.jpg",
+      "clave": "01300000157105121005043373734.jpg",
+      "alt": null,
+      "ancho": 250,
+      "alto": 320,
+      "bytes": null
+    },
+    {
+      "id": 1572,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/el-gran-mapa-de-la-ruta-de-la-seda-1159.jpg",
+      "clave": "el-gran-mapa-de-la-ruta-de-la-seda-1159.jpg",
+      "alt": null,
+      "ancho": 500,
+      "alto": 313,
+      "bytes": null
+    },
+    {
+      "id": 1573,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/200px-Ohin_Tengry.jpg",
+      "clave": "200px-Ohin_Tengry.jpg",
+      "alt": null,
+      "ancho": 200,
+      "alto": 265,
+      "bytes": null
+    },
+    {
+      "id": 1574,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/ahura-mazda.jpg",
+      "clave": "ahura-mazda.jpg",
+      "alt": null,
+      "ancho": 626,
+      "alto": 480,
+      "bytes": null
+    },
+    {
+      "id": 1575,
+      "tipoPost": "attachment",
+      "mime": "image/png",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/mithraic_ahriman.png",
+      "clave": "mithraic_ahriman.png",
+      "alt": null,
+      "ancho": 185,
+      "alto": 466,
+      "bytes": null
+    },
+    {
+      "id": 1576,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/BuddhaShakyamuni.jpg",
+      "clave": "BuddhaShakyamuni.jpg",
+      "alt": null,
+      "ancho": 2082,
+      "alto": 2751,
+      "bytes": null
+    },
+    {
+      "id": 1577,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/xuanzang-world-traveler_52177_600x450.jpg",
+      "clave": "xuanzang-world-traveler_52177_600x450.jpg",
+      "alt": null,
+      "ancho": 274,
+      "alto": 580,
+      "bytes": null
+    },
+    {
+      "id": 1578,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/images2.jpg",
+      "clave": "images2.jpg",
+      "alt": null,
+      "ancho": 180,
+      "alto": 280,
+      "bytes": null
+    },
+    {
+      "id": 1579,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/wilderness-church-nestorian-emperor_taizong_gives_an_audience_to_the_ambassador_of_tibet.jpg",
+      "clave": "wilderness-church-nestorian-emperor_taizong_gives_an_audience_to_the_ambassador_of_tibet.jpg",
+      "alt": null,
+      "ancho": 1360,
+      "alto": 755,
+      "bytes": null
+    },
+    {
+      "id": 1580,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/Maniqueismo.jpg",
+      "clave": "Maniqueismo.jpg",
+      "alt": null,
+      "ancho": 511,
+      "alto": 358,
+      "bytes": null
+    },
+    {
+      "id": 1581,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/Evolucion-del-Islam.jpg",
+      "clave": "Evolucion-del-Islam.jpg",
+      "alt": null,
+      "ancho": 901,
+      "alto": 465,
+      "bytes": null
+    },
+    {
+      "id": 2464,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/escanear0006.jpg",
+      "clave": "escanear0006.jpg",
+      "alt": null,
+      "ancho": 1950,
+      "alto": 1257,
+      "bytes": null
+    },
+    {
+      "id": 2465,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/Federico-Navarro.jpg",
+      "clave": "Federico-Navarro.jpg",
+      "alt": null,
+      "ancho": 2048,
+      "alto": 1536,
+      "bytes": null
+    },
+    {
+      "id": 2466,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/gale_01.jpg",
+      "clave": "gale_01.jpg",
+      "alt": null,
+      "ancho": 450,
+      "alto": 301,
+      "bytes": null
+    },
+    {
+      "id": 2467,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/tapa2.jpg",
+      "clave": "tapa2.jpg",
+      "alt": null,
+      "ancho": 350,
+      "alto": 450,
+      "bytes": null
+    },
+    {
+      "id": 2468,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/tapa222.jpg",
+      "clave": "tapa222.jpg",
+      "alt": null,
+      "ancho": 300,
+      "alto": 395,
+      "bytes": null
+    },
+    {
+      "id": 2469,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/tapa22222222.jpg",
+      "clave": "tapa22222222.jpg",
+      "alt": null,
+      "ancho": 480,
+      "alto": 640,
+      "bytes": null
+    },
+    {
+      "id": 2470,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/12.jpg",
+      "clave": "12.jpg",
+      "alt": null,
+      "ancho": 480,
+      "alto": 640,
+      "bytes": null
+    },
+    {
+      "id": 2471,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/222222.jpg",
+      "clave": "222222.jpg",
+      "alt": null,
+      "ancho": 350,
+      "alto": 474,
+      "bytes": null
+    },
+    {
+      "id": 2472,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/revista-hombre-karina-jelinek-n-46-4197-MLA2663956680_052012-F.jpg",
+      "clave": "revista-hombre-karina-jelinek-n-46-4197-MLA2663956680_052012-F.jpg",
+      "alt": null,
+      "ancho": 873,
+      "alto": 1200,
+      "bytes": null
+    },
+    {
+      "id": 2473,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/13681-MLA3357021889_112012-O.jpg",
+      "clave": "13681-MLA3357021889_112012-O.jpg",
+      "alt": null,
+      "ancho": 364,
+      "alto": 500,
+      "bytes": null
+    },
+    {
+      "id": 2474,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/revista-hombre-n-26-carla-conte_MLA-F-4027624079_032013.jpg",
+      "clave": "revista-hombre-n-26-carla-conte_MLA-F-4027624079_032013.jpg",
+      "alt": null,
+      "ancho": 850,
+      "alto": 1168,
+      "bytes": null
+    },
+    {
+      "id": 2475,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/TAPA.jpg",
+      "clave": "TAPA.jpg",
+      "alt": null,
+      "ancho": 738,
+      "alto": 1000,
+      "bytes": null
+    },
+    {
+      "id": 2476,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/BMFEfs6CQAAjVvb.jpg-large.jpg",
+      "clave": "BMFEfs6CQAAjVvb.jpg-large.jpg",
+      "alt": null,
+      "ancho": 579,
+      "alto": 780,
+      "bytes": null
+    },
+    {
+      "id": 2477,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/revista-hombre-floppy-tesouro-n104-13540-MLA3357341830_112012-O.jpg",
+      "clave": "revista-hombre-floppy-tesouro-n104-13540-MLA3357341830_112012-O.jpg",
+      "alt": null,
+      "ancho": 381,
+      "alto": 500,
+      "bytes": null
+    },
+    {
+      "id": 2479,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/Magui-Bravi-en-H-de-noviembre-4.jpg",
+      "clave": "Magui-Bravi-en-H-de-noviembre-4.jpg",
+      "alt": null,
+      "ancho": 592,
+      "alto": 780,
+      "bytes": null
+    },
+    {
+      "id": 3027,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/fajardo.jpg",
+      "clave": "fajardo.jpg",
+      "alt": null,
+      "ancho": 277,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 3028,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/Nav-Â¡os-de-Caronte-Fajardo.jpg",
+      "clave": "Nav-Â¡os-de-Caronte-Fajardo.jpg",
+      "alt": null,
+      "ancho": 210,
+      "alto": 320,
+      "bytes": null
+    },
+    {
+      "id": 3029,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/ag70fajardo01.jpg",
+      "clave": "ag70fajardo01.jpg",
+      "alt": null,
+      "ancho": 375,
+      "alto": 186,
+      "bytes": null
+    },
+    {
+      "id": 3030,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/ee842e3019fee30e4ca87cc93974d54b_XL.jpg",
+      "clave": "ee842e3019fee30e4ca87cc93974d54b_XL.jpg",
+      "alt": null,
+      "ancho": 500,
+      "alto": 520,
+      "bytes": null
+    },
+    {
+      "id": 3031,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/carlos-fajardo.jpg",
+      "clave": "carlos-fajardo.jpg",
+      "alt": null,
+      "ancho": 250,
+      "alto": 333,
+      "bytes": null
+    },
+    {
+      "id": 3301,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/fogwill1.jpg",
+      "clave": "fogwill1.jpg",
+      "alt": null,
+      "ancho": 322,
+      "alto": 300,
+      "bytes": null
+    },
+    {
+      "id": 3307,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/fogwill_1.jpg",
+      "clave": "fogwill_1.jpg",
+      "alt": null,
+      "ancho": 600,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 3308,
+      "tipoPost": "attachment",
+      "mime": "image/gif",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/INTERPRETACION-SUENOS-FOGWILL_CLAIMA20110821_0110_8.gif",
+      "clave": "INTERPRETACION-SUENOS-FOGWILL_CLAIMA20110821_0110_8.gif",
+      "alt": null,
+      "ancho": 750,
+      "alto": 563,
+      "bytes": null
+    },
+    {
+      "id": 3309,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/Rodolfo-Enrique-Fogwill-d-006.jpg",
+      "clave": "Rodolfo-Enrique-Fogwill-d-006.jpg",
+      "alt": null,
+      "ancho": 460,
+      "alto": 276,
+      "bytes": null
+    },
+    {
+      "id": 3438,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/11227428_838699569557699_122979887_o.jpg",
+      "clave": "11227428_838699569557699_122979887_o.jpg",
+      "alt": null,
+      "ancho": 1000,
+      "alto": 1000,
+      "bytes": null
+    },
+    {
+      "id": 3462,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/despojos-de-guerra.jpg",
+      "clave": "despojos-de-guerra.jpg",
+      "alt": null,
+      "ancho": 1640,
+      "alto": 1385,
+      "bytes": null
+    },
+    {
+      "id": 4263,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/tawfiq-al-hakim-afp-getty-images_1.jpg",
+      "clave": "tawfiq-al-hakim-afp-getty-images_1.jpg",
+      "alt": null,
+      "ancho": 730,
+      "alto": 411,
+      "bytes": null
+    },
+    {
+      "id": 4266,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/texto-05-imagen-01.jpg",
+      "clave": "texto-05-imagen-01.jpg",
+      "alt": null,
+      "ancho": 589,
+      "alto": 698,
+      "bytes": null
+    },
+    {
+      "id": 4267,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/texto-05-imagen-02.jpg",
+      "clave": "texto-05-imagen-02.jpg",
+      "alt": null,
+      "ancho": 589,
+      "alto": 248,
+      "bytes": null
+    },
+    {
+      "id": 4269,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/texto-05-imagen-04.jpg",
+      "clave": "texto-05-imagen-04.jpg",
+      "alt": null,
+      "ancho": 589,
+      "alto": 784,
+      "bytes": null
+    },
+    {
+      "id": 4270,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/texto-05-imagen-05.jpg",
+      "clave": "texto-05-imagen-05.jpg",
+      "alt": null,
+      "ancho": 589,
+      "alto": 297,
+      "bytes": null
+    },
+    {
+      "id": 4271,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/texto-05-imagen-06.jpg",
+      "clave": "texto-05-imagen-06.jpg",
+      "alt": null,
+      "ancho": 589,
+      "alto": 784,
+      "bytes": null
+    },
+    {
+      "id": 4272,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/texto-05-imagen-07.jpg",
+      "clave": "texto-05-imagen-07.jpg",
+      "alt": null,
+      "ancho": 589,
+      "alto": 413,
+      "bytes": null
+    },
+    {
+      "id": 4273,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/texto-05-imagen-08.jpg",
+      "clave": "texto-05-imagen-08.jpg",
+      "alt": null,
+      "ancho": 589,
+      "alto": 329,
+      "bytes": null
+    },
+    {
+      "id": 4274,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/texto-05-imagen-09.jpg",
+      "clave": "texto-05-imagen-09.jpg",
+      "alt": null,
+      "ancho": 589,
+      "alto": 442,
+      "bytes": null
+    },
+    {
+      "id": 4275,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/texto-05-imagen-10.jpg",
+      "clave": "texto-05-imagen-10.jpg",
+      "alt": null,
+      "ancho": 589,
+      "alto": 298,
+      "bytes": null
+    },
+    {
+      "id": 4276,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/texto-05-imagen-11.jpg",
+      "clave": "texto-05-imagen-11.jpg",
+      "alt": null,
+      "ancho": 589,
+      "alto": 382,
+      "bytes": null
+    },
+    {
+      "id": 4277,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/texto-05-imagen-12.jpg",
+      "clave": "texto-05-imagen-12.jpg",
+      "alt": null,
+      "ancho": 589,
+      "alto": 342,
+      "bytes": null
+    },
+    {
+      "id": 4278,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/texto-05-imagen-13.jpg",
+      "clave": "texto-05-imagen-13.jpg",
+      "alt": null,
+      "ancho": 589,
+      "alto": 363,
+      "bytes": null
+    },
+    {
+      "id": 4279,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/texto-05-imagen-14.jpg",
+      "clave": "texto-05-imagen-14.jpg",
+      "alt": null,
+      "ancho": 589,
+      "alto": 248,
+      "bytes": null
+    },
+    {
+      "id": 4281,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/texto-05-imagen-17.jpg",
+      "clave": "texto-05-imagen-17.jpg",
+      "alt": null,
+      "ancho": 589,
+      "alto": 248,
+      "bytes": null
+    },
+    {
+      "id": 4282,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/texto-05-imagen-18.jpg",
+      "clave": "texto-05-imagen-18.jpg",
+      "alt": null,
+      "ancho": 416,
+      "alto": 328,
+      "bytes": null
+    },
+    {
+      "id": 4283,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/texto-05-imagen-19.jpg",
+      "clave": "texto-05-imagen-19.jpg",
+      "alt": null,
+      "ancho": 589,
+      "alto": 344,
+      "bytes": null
+    },
+    {
+      "id": 4286,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/baile-abanicos.jpg",
+      "clave": "baile-abanicos.jpg",
+      "alt": null,
+      "ancho": 700,
+      "alto": 406,
+      "bytes": null
+    },
+    {
+      "id": 4365,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/la-foto-31.jpg",
+      "clave": "la-foto-31.jpg",
+      "alt": null,
+      "ancho": 960,
+      "alto": 720,
+      "bytes": null
+    },
+    {
+      "id": 4425,
+      "tipoPost": "attachment",
+      "mime": "image/gif",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/nota_03_fotoint01.gif",
+      "clave": "nota_03_fotoint01.gif",
+      "alt": null,
+      "ancho": 589,
+      "alto": 430,
+      "bytes": null
+    },
+    {
+      "id": 4426,
+      "tipoPost": "attachment",
+      "mime": "image/gif",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/nota_03_fotoint02.gif",
+      "clave": "nota_03_fotoint02.gif",
+      "alt": null,
+      "ancho": 589,
+      "alto": 430,
+      "bytes": null
+    },
+    {
+      "id": 4427,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/p_terakoya.jpg",
+      "clave": "p_terakoya.jpg",
+      "alt": null,
+      "ancho": 500,
+      "alto": 346,
+      "bytes": null
+    },
+    {
+      "id": 4508,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/nota_03_foto_int021.jpg",
+      "clave": "nota_03_foto_int021.jpg",
+      "alt": null,
+      "ancho": 589,
+      "alto": 461,
+      "bytes": null
+    },
+    {
+      "id": 4509,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/nota_03_foto_int011.jpg",
+      "clave": "nota_03_foto_int011.jpg",
+      "alt": null,
+      "ancho": 258,
+      "alto": 316,
+      "bytes": null
+    },
+    {
+      "id": 4510,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/Geisha_51.jpg",
+      "clave": "Geisha_51.jpg",
+      "alt": null,
+      "ancho": 690,
+      "alto": 500,
+      "bytes": null
+    },
+    {
+      "id": 4514,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/Wilde.jpg",
+      "clave": "Wilde.jpg",
+      "alt": null,
+      "ancho": 526,
+      "alto": 296,
+      "bytes": null
+    },
+    {
+      "id": 5215,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/nota03_02.jpg",
+      "clave": "nota03_02.jpg",
+      "alt": null,
+      "ancho": 150,
+      "alto": 222,
+      "bytes": null
+    },
+    {
+      "id": 5216,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/nota03_011.jpg",
+      "clave": "nota03_011.jpg",
+      "alt": null,
+      "ancho": 150,
+      "alto": 222,
+      "bytes": null
+    },
+    {
+      "id": 5217,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/marco-polo-5.jpg",
+      "clave": "marco-polo-5.jpg",
+      "alt": null,
+      "ancho": 400,
+      "alto": 300,
+      "bytes": null
+    },
+    {
+      "id": 5288,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/nota04_07.jpg",
+      "clave": "nota04_07.jpg",
+      "alt": null,
+      "ancho": 400,
+      "alto": 265,
+      "bytes": null
+    },
+    {
+      "id": 5289,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/nota04_012.jpg",
+      "clave": "nota04_012.jpg",
+      "alt": null,
+      "ancho": 350,
+      "alto": 492,
+      "bytes": null
+    },
+    {
+      "id": 5290,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/nota04_022.jpg",
+      "clave": "nota04_022.jpg",
+      "alt": null,
+      "ancho": 350,
+      "alto": 485,
+      "bytes": null
+    },
+    {
+      "id": 5291,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/nota04_032.jpg",
+      "clave": "nota04_032.jpg",
+      "alt": null,
+      "ancho": 400,
+      "alto": 300,
+      "bytes": null
+    },
+    {
+      "id": 5292,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/nota04_04.jpg",
+      "clave": "nota04_04.jpg",
+      "alt": null,
+      "ancho": 350,
+      "alto": 345,
+      "bytes": null
+    },
+    {
+      "id": 5293,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/nota04_05.jpg",
+      "clave": "nota04_05.jpg",
+      "alt": null,
+      "ancho": 350,
+      "alto": 201,
+      "bytes": null
+    },
+    {
+      "id": 5294,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/nota04_06.jpg",
+      "clave": "nota04_06.jpg",
+      "alt": null,
+      "ancho": 220,
+      "alto": 535,
+      "bytes": null
+    },
+    {
+      "id": 5298,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/eco.jpg",
+      "clave": "eco.jpg",
+      "alt": null,
+      "ancho": 600,
+      "alto": 381,
+      "bytes": null
+    },
+    {
+      "id": 5373,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/805004.jpg",
+      "clave": "805004.jpg",
+      "alt": null,
+      "ancho": 500,
+      "alto": 333,
+      "bytes": null
+    },
+    {
+      "id": 5531,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/437482-690x350.jpg",
+      "clave": "437482-690x350.jpg",
+      "alt": null,
+      "ancho": 690,
+      "alto": 350,
+      "bytes": null
+    },
+    {
+      "id": 10403,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/9789502315904.jpg",
+      "clave": "9789502315904.jpg",
+      "alt": null,
+      "ancho": 163,
+      "alto": 250,
+      "bytes": null
+    },
+    {
+      "id": 10404,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/La_vuelta_del_malón_-_Ángel_Della_Valle_frag.jpg",
+      "clave": "La_vuelta_del_malón_-_Ángel_Della_Valle_frag.jpg",
+      "alt": null,
+      "ancho": 220,
+      "alto": 230,
+      "bytes": null
+    },
+    {
+      "id": 10405,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/005948.jpg",
+      "clave": "005948.jpg",
+      "alt": null,
+      "ancho": 260,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10732,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI2753.jpg",
+      "clave": "DSCI2753.jpg",
+      "alt": null,
+      "ancho": 700,
+      "alto": 525,
+      "bytes": null
+    },
+    {
+      "id": 10819,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI3298.jpg",
+      "clave": "DSCI3298.jpg",
+      "alt": null,
+      "ancho": 300,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10820,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI3299.jpg",
+      "clave": "DSCI3299.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10821,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI3300.jpg",
+      "clave": "DSCI3300.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10822,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI3301-1.jpg",
+      "clave": "DSCI3301-1.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10823,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI3303.jpg",
+      "clave": "DSCI3303.jpg",
+      "alt": null,
+      "ancho": 400,
+      "alto": 533,
+      "bytes": null
+    },
+    {
+      "id": 10824,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI3304.jpg",
+      "clave": "DSCI3304.jpg",
+      "alt": null,
+      "ancho": 300,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10825,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI3306.jpg",
+      "clave": "DSCI3306.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10826,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI3308.jpg",
+      "clave": "DSCI3308.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10827,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI3310.jpg",
+      "clave": "DSCI3310.jpg",
+      "alt": null,
+      "ancho": 600,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10828,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI3311.jpg",
+      "clave": "DSCI3311.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10831,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI3316.jpg",
+      "clave": "DSCI3316.jpg",
+      "alt": null,
+      "ancho": 300,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10832,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI3318.jpg",
+      "clave": "DSCI3318.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10833,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI3320.jpg",
+      "clave": "DSCI3320.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10835,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI3322.jpg",
+      "clave": "DSCI3322.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10836,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI3323.jpg",
+      "clave": "DSCI3323.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10837,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI3295.jpg",
+      "clave": "DSCI3295.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10847,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0213.jpg",
+      "clave": "DSCI0213.jpg",
+      "alt": null,
+      "ancho": 375,
+      "alto": 500,
+      "bytes": null
+    },
+    {
+      "id": 10848,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI2556.jpg",
+      "clave": "DSCI2556.jpg",
+      "alt": null,
+      "ancho": 601,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10849,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI2557.jpg",
+      "clave": "DSCI2557.jpg",
+      "alt": null,
+      "ancho": 600,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10850,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI2558.jpg",
+      "clave": "DSCI2558.jpg",
+      "alt": null,
+      "ancho": 600,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10851,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI2559.jpg",
+      "clave": "DSCI2559.jpg",
+      "alt": null,
+      "ancho": 600,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10852,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI2560.jpg",
+      "clave": "DSCI2560.jpg",
+      "alt": null,
+      "ancho": 600,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10853,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI2561.jpg",
+      "clave": "DSCI2561.jpg",
+      "alt": null,
+      "ancho": 600,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10854,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI2562.jpg",
+      "clave": "DSCI2562.jpg",
+      "alt": null,
+      "ancho": 600,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10855,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI2563.jpg",
+      "clave": "DSCI2563.jpg",
+      "alt": null,
+      "ancho": 400,
+      "alto": 600,
+      "bytes": null
+    },
+    {
+      "id": 10856,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI2564.jpg",
+      "clave": "DSCI2564.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10857,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI2565.jpg",
+      "clave": "DSCI2565.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10858,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI2566.jpg",
+      "clave": "DSCI2566.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10859,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI2624.jpg",
+      "clave": "DSCI2624.jpg",
+      "alt": null,
+      "ancho": 300,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10860,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI2625.jpg",
+      "clave": "DSCI2625.jpg",
+      "alt": null,
+      "ancho": 400,
+      "alto": 533,
+      "bytes": null
+    },
+    {
+      "id": 10861,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI2741.jpg",
+      "clave": "DSCI2741.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10862,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0211.jpg",
+      "clave": "DSCI0211.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10863,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0165.jpg",
+      "clave": "DSCI0165.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10864,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0167.jpg",
+      "clave": "DSCI0167.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10865,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0169.jpg",
+      "clave": "DSCI0169.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10866,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0172.jpg",
+      "clave": "DSCI0172.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10867,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0177.jpg",
+      "clave": "DSCI0177.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10868,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0178.jpg",
+      "clave": "DSCI0178.jpg",
+      "alt": null,
+      "ancho": 400,
+      "alto": 533,
+      "bytes": null
+    },
+    {
+      "id": 10869,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0179.jpg",
+      "clave": "DSCI0179.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10870,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0183.jpg",
+      "clave": "DSCI0183.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10871,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0184.jpg",
+      "clave": "DSCI0184.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10872,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0185.jpg",
+      "clave": "DSCI0185.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10874,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0188.jpg",
+      "clave": "DSCI0188.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10875,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0189.jpg",
+      "clave": "DSCI0189.jpg",
+      "alt": null,
+      "ancho": 400,
+      "alto": 533,
+      "bytes": null
+    },
+    {
+      "id": 10876,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0193.jpg",
+      "clave": "DSCI0193.jpg",
+      "alt": null,
+      "ancho": 400,
+      "alto": 533,
+      "bytes": null
+    },
+    {
+      "id": 10877,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0194.jpg",
+      "clave": "DSCI0194.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10878,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0195.jpg",
+      "clave": "DSCI0195.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10879,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0200.jpg",
+      "clave": "DSCI0200.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10881,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0202.jpg",
+      "clave": "DSCI0202.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10884,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0208.jpg",
+      "clave": "DSCI0208.jpg",
+      "alt": null,
+      "ancho": 400,
+      "alto": 533,
+      "bytes": null
+    },
+    {
+      "id": 10886,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0134.jpg",
+      "clave": "DSCI0134.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10887,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0137.jpg",
+      "clave": "DSCI0137.jpg",
+      "alt": null,
+      "ancho": 400,
+      "alto": 533,
+      "bytes": null
+    },
+    {
+      "id": 10888,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0142.jpg",
+      "clave": "DSCI0142.jpg",
+      "alt": null,
+      "ancho": 400,
+      "alto": 533,
+      "bytes": null
+    },
+    {
+      "id": 10889,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0143.jpg",
+      "clave": "DSCI0143.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10890,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0144.jpg",
+      "clave": "DSCI0144.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10891,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0150.jpg",
+      "clave": "DSCI0150.jpg",
+      "alt": null,
+      "ancho": 400,
+      "alto": 533,
+      "bytes": null
+    },
+    {
+      "id": 10892,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0151.jpg",
+      "clave": "DSCI0151.jpg",
+      "alt": null,
+      "ancho": 400,
+      "alto": 533,
+      "bytes": null
+    },
+    {
+      "id": 10893,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0105.jpg",
+      "clave": "DSCI0105.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10894,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0106.jpg",
+      "clave": "DSCI0106.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10895,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0107.jpg",
+      "clave": "DSCI0107.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10896,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0108.jpg",
+      "clave": "DSCI0108.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10897,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0110.jpg",
+      "clave": "DSCI0110.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10898,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0111.jpg",
+      "clave": "DSCI0111.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10901,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0114.jpg",
+      "clave": "DSCI0114.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10902,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0117.jpg",
+      "clave": "DSCI0117.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10903,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0118.jpg",
+      "clave": "DSCI0118.jpg",
+      "alt": null,
+      "ancho": 400,
+      "alto": 533,
+      "bytes": null
+    },
+    {
+      "id": 10904,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0120.jpg",
+      "clave": "DSCI0120.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10905,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0121.jpg",
+      "clave": "DSCI0121.jpg",
+      "alt": null,
+      "ancho": 400,
+      "alto": 533,
+      "bytes": null
+    },
+    {
+      "id": 10906,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0122.jpg",
+      "clave": "DSCI0122.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10907,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/DSCI0123.jpg",
+      "clave": "DSCI0123.jpg",
+      "alt": null,
+      "ancho": 533,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 10930,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/san-martin.jpg",
+      "clave": "san-martin.jpg",
+      "alt": null,
+      "ancho": 700,
+      "alto": 525,
+      "bytes": null
+    },
+    {
+      "id": 12527,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/culpa.jpg",
+      "clave": "culpa.jpg",
+      "alt": null,
+      "ancho": 750,
+      "alto": 500,
+      "bytes": null
+    },
+    {
+      "id": 12940,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/Una-lettera-per-Momo.jpg",
+      "clave": "Una-lettera-per-Momo.jpg",
+      "alt": null,
+      "ancho": 881,
+      "alto": 500,
+      "bytes": null
+    },
+    {
+      "id": 12941,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/20531405.jpg-r_1920_1080-f_jpg-q_x-xxyxx.jpg",
+      "clave": "20531405.jpg-r_1920_1080-f_jpg-q_x-xxyxx.jpg",
+      "alt": null,
+      "ancho": 600,
+      "alto": 337,
+      "bytes": null
+    },
+    {
+      "id": 12942,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/una-carta-para-momo.jpg",
+      "clave": "una-carta-para-momo.jpg",
+      "alt": null,
+      "ancho": 591,
+      "alto": 394,
+      "bytes": null
+    },
+    {
+      "id": 12943,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/586628.jpg-r_1920_1080-f_jpg-q_x-xxyxx.jpg",
+      "clave": "586628.jpg-r_1920_1080-f_jpg-q_x-xxyxx.jpg",
+      "alt": null,
+      "ancho": 350,
+      "alto": 466,
+      "bytes": null
+    },
+    {
+      "id": 12944,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/241131.jpg-r_1920_1080-f_jpg-q_x-xxyxx.jpg",
+      "clave": "241131.jpg-r_1920_1080-f_jpg-q_x-xxyxx.jpg",
+      "alt": null,
+      "ancho": 600,
+      "alto": 337,
+      "bytes": null
+    },
+    {
+      "id": 14793,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/2042753.jpg",
+      "clave": "2042753.jpg",
+      "alt": null,
+      "ancho": 900,
+      "alto": 600,
+      "bytes": null
+    },
+    {
+      "id": 15022,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/000162867.jpg",
+      "clave": "000162867.jpg",
+      "alt": null,
+      "ancho": 540,
+      "alto": 360,
+      "bytes": null
+    },
+    {
+      "id": 15023,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/40243159_1339231149545797_7575377782411100160_n.jpg",
+      "clave": "40243159_1339231149545797_7575377782411100160_n.jpg",
+      "alt": null,
+      "ancho": 709,
+      "alto": 709,
+      "bytes": null
+    },
+    {
+      "id": 15024,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/000162863.jpg",
+      "clave": "000162863.jpg",
+      "alt": null,
+      "ancho": 540,
+      "alto": 360,
+      "bytes": null
+    },
+    {
+      "id": 15025,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/21314442_1081370071998574_5555102263240483256_n.jpg",
+      "clave": "21314442_1081370071998574_5555102263240483256_n.jpg",
+      "alt": null,
+      "ancho": 960,
+      "alto": 667,
+      "bytes": null
+    },
+    {
+      "id": 15030,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/1-Bob-Dylan.jpg",
+      "clave": "1-Bob-Dylan.jpg",
+      "alt": null,
+      "ancho": 950,
+      "alto": 685,
+      "bytes": null
+    },
+    {
+      "id": 15031,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/bob.jpg",
+      "clave": "bob.jpg",
+      "alt": null,
+      "ancho": 888,
+      "alto": 500,
+      "bytes": null
+    },
+    {
+      "id": 15032,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/Bob_Dylan_-_Blonde_on_Blonde.jpg",
+      "clave": "Bob_Dylan_-_Blonde_on_Blonde.jpg",
+      "alt": null,
+      "ancho": 220,
+      "alto": 220,
+      "bytes": null
+    },
+    {
+      "id": 15033,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/Bob_Dylan_-_Pat_Garrett__Billy_the_Kid.jpg",
+      "clave": "Bob_Dylan_-_Pat_Garrett__Billy_the_Kid.jpg",
+      "alt": null,
+      "ancho": 220,
+      "alto": 220,
+      "bytes": null
+    },
+    {
+      "id": 15036,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/R-1365823-1363632032-9879.jpeg.jpg",
+      "clave": "R-1365823-1363632032-9879.jpeg.jpg",
+      "alt": null,
+      "ancho": 600,
+      "alto": 589,
+      "bytes": null
+    },
+    {
+      "id": 15037,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/220px-Bob_Dylan_-_Shot_of_Love.jpg",
+      "clave": "220px-Bob_Dylan_-_Shot_of_Love.jpg",
+      "alt": null,
+      "ancho": 220,
+      "alto": 220,
+      "bytes": null
+    },
+    {
+      "id": 15038,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/Bob_Dylan_-_Time_Out_of_Mind.jpg",
+      "clave": "Bob_Dylan_-_Time_Out_of_Mind.jpg",
+      "alt": null,
+      "ancho": 316,
+      "alto": 316,
+      "bytes": null
+    },
+    {
+      "id": 15039,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/220px-Bob_Dylan_-_Tempest.jpg",
+      "clave": "220px-Bob_Dylan_-_Tempest.jpg",
+      "alt": null,
+      "ancho": 220,
+      "alto": 220,
+      "bytes": null
+    },
+    {
+      "id": 15042,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/158493-L-LO.jpg",
+      "clave": "158493-L-LO.jpg",
+      "alt": null,
+      "ancho": 400,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 15247,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/cruz-nicolas-ferraro-1.jpg",
+      "clave": "cruz-nicolas-ferraro-1.jpg",
+      "alt": null,
+      "ancho": 607,
+      "alto": 500,
+      "bytes": null
+    },
+    {
+      "id": 16692,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/basadoenhechosreales.jpg",
+      "clave": "basadoenhechosreales.jpg",
+      "alt": null,
+      "ancho": 763,
+      "alto": 550,
+      "bytes": null
+    },
+    {
+      "id": 16694,
+      "tipoPost": "attachment",
+      "mime": "image/png",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/logo_bahr03-04.png",
+      "clave": "logo_bahr03-04.png",
+      "alt": null,
+      "ancho": 1035,
+      "alto": 400,
+      "bytes": null
+    },
+    {
+      "id": 18311,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/81RedvBPvKL.jpg",
+      "clave": "81RedvBPvKL.jpg",
+      "alt": null,
+      "ancho": 700,
+      "alto": 500,
+      "bytes": null
+    },
+    {
+      "id": 18313,
+      "tipoPost": "attachment",
+      "mime": "image/png",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/tintin2-751x1024.png",
+      "clave": "tintin2-751x1024.png",
+      "alt": null,
+      "ancho": 366,
+      "alto": 500,
+      "bytes": null
+    },
+    {
+      "id": 19662,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/Cesar-Alcazar.jpg",
+      "clave": "Cesar-Alcazar.jpg",
+      "alt": null,
+      "ancho": 1000,
+      "alto": 703,
+      "bytes": null
+    },
+    {
+      "id": 19665,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/o-coracao-do-cao-negro.jpg",
+      "clave": "o-coracao-do-cao-negro.jpg",
+      "alt": null,
+      "ancho": 473,
+      "alto": 630,
+      "bytes": null
+    },
+    {
+      "id": 19666,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/O-Coração-do-Cão-Negro-Cesar-Alcázar-Fred-Rubim-AVEC-Editora-Canto-do-Gárgula-05.jpg",
+      "clave": "O-Coração-do-Cão-Negro-Cesar-Alcázar-Fred-Rubim-AVEC-Editora-Canto-do-Gárgula-05.jpg",
+      "alt": null,
+      "ancho": 384,
+      "alto": 512,
+      "bytes": null
+    },
+    {
+      "id": 19667,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/Ep01_PT-17.jpg",
+      "clave": "Ep01_PT-17.jpg",
+      "alt": null,
+      "ancho": 1024,
+      "alto": 1448,
+      "bytes": null
+    },
+    {
+      "id": 19668,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/CapaCulpa.jpg",
+      "clave": "CapaCulpa.jpg",
+      "alt": null,
+      "ancho": 838,
+      "alto": 1274,
+      "bytes": null
+    },
+    {
+      "id": 19670,
+      "tipoPost": "attachment",
+      "mime": "image/png",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/Cão.png",
+      "clave": "Cão.png",
+      "alt": null,
+      "ancho": 615,
+      "alto": 890,
+      "bytes": null
+    },
+    {
+      "id": 19900,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/millie-jackson-steve-levine.jpg",
+      "clave": "millie-jackson-steve-levine.jpg",
+      "alt": null,
+      "ancho": 793,
+      "alto": 500,
+      "bytes": null
+    },
+    {
+      "id": 19901,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/bda35358b776072a280909b808fe2aac.1000x984x1.jpg",
+      "clave": "bda35358b776072a280909b808fe2aac.1000x984x1.jpg",
+      "alt": null,
+      "ancho": 1000,
+      "alto": 984,
+      "bytes": null
+    },
+    {
+      "id": 21383,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/gijon-portada-850x520-1.jpg",
+      "clave": "gijon-portada-850x520-1.jpg",
+      "alt": null,
+      "ancho": 980,
+      "alto": 600,
+      "bytes": null
+    },
+    {
+      "id": 22025,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/281076720_3198070117104770_4319895096067992175_n.jpg",
+      "clave": "281076720_3198070117104770_4319895096067992175_n.jpg",
+      "alt": null,
+      "ancho": 900,
+      "alto": 601,
+      "bytes": null
+    },
+    {
+      "id": 22028,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/280854281_3198070203771428_1237394805093833611_n.jpg",
+      "clave": "280854281_3198070203771428_1237394805093833611_n.jpg",
+      "alt": null,
+      "ancho": 900,
+      "alto": 601,
+      "bytes": null
+    },
+    {
+      "id": 22029,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/280895309_3198070280438087_1221281850492710582_n.jpg",
+      "clave": "280895309_3198070280438087_1221281850492710582_n.jpg",
+      "alt": null,
+      "ancho": 900,
+      "alto": 600,
+      "bytes": null
+    },
+    {
+      "id": 22259,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.ar/wp-content/uploads/racca-l.jpg",
+      "clave": "racca-l.jpg",
+      "alt": null,
+      "ancho": 1000,
+      "alto": 800,
+      "bytes": null
+    },
+    {
+      "id": 22547,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.ar/wp-content/uploads/mankell.jpg",
+      "clave": "mankell.jpg",
+      "alt": null,
+      "ancho": 1000,
+      "alto": 800,
+      "bytes": null
+    },
+    {
+      "id": 22597,
+      "tipoPost": "attachment",
+      "mime": "image/jpeg",
+      "guid": "http://evaristocultural.com.ar/wp-content/uploads/images-2.jpeg",
+      "clave": "images-2.jpeg",
+      "alt": null,
+      "ancho": 554,
+      "alto": 554,
+      "bytes": 54253
+    }
+  ],
+  "cuentas": [
+    {
+      "id": 1,
+      "login": "eva",
+      "nombre": "eva"
+    },
+    {
+      "id": 192,
+      "login": "Anonimo",
+      "nombre": "Anonimo"
+    },
+    {
+      "id": 203,
+      "login": "revistaseda",
+      "nombre": "revistaseda"
+    },
+    {
+      "id": 245,
+      "login": "Evaristo Cultural",
+      "nombre": "Evaristo Cultural"
+    },
+    {
+      "id": 279,
+      "login": "Evaristo",
+      "nombre": "Evaristo"
+    },
+    {
+      "id": 418,
+      "login": "Encuentro Internacional de Cultura Japonesa",
+      "nombre": "Encuentro Internacional de Cultura Japonesa"
+    },
+    {
+      "id": 419,
+      "login": "EL FESTIVALON",
+      "nombre": "EL FESTIVALON"
+    }
+  ]
+}

@@ -19,7 +19,7 @@ import { convertWpPost } from "../../src/conversor/convert.ts";
 import { cargarMapeo } from "../../src/conversor/taxonomia.ts";
 import { validateArticleBodyDetallado } from "../../src/schema/validate.ts";
 import {
-  INVISIBLES, aNFC, claveJs, contarAltPendiente, contarInvisibles, cuentaDe, decEntidades, decodificar, docDeTexto, limpiarSlug, num, quitarU200E, slugFinal, str, textoPlanoDe,
+  INVISIBLES, adjuntoDeUrl, aNFC, claveJs, contarAltPendiente, contarInvisibles, cuentaDe, decEntidades, decodificar, docDeTexto, limpiarSlug, num, quitarU200E, rutaUploads, slugFinal, str, textoPlanoDe,
 } from "./lib/utilidades.ts";
 import {
   COLACION, abrirConexiones, agruparSlugsEnBd, contarArticulosCms, detalleAdjuntos, igualesEnBd, leerAdjuntosPorClave, leerArticulosPorSlug, leerArticulosPorWpId,
@@ -148,22 +148,6 @@ const filasCategorias = await leerTerminos(wp, "category", ids);
 const filasAdjuntos = await leerAdjuntosPorClave(wp);
 const adjuntoPorClave = new Map(filasAdjuntos.map((f) => [str(f["clave"]), num(f["id"])]));
 
-/** Ruta de uploads de una URL, o null si no es de la biblioteca de medios propia. */
-function rutaUploads(url: string): string | null {
-  const m = decodificar(url).match(/\/wp-content\/uploads\/(.+?)(?:[?#].*)?$/);
-  return m ? m[1]! : null;
-}
-/** Id del adjunto que corresponde a una URL: exacta, o sin el sufijo de tamaño (-300x200) / -scaled / -eN. */
-function adjuntoDeUrl(url: string): { id: number; via: "exacta" | "sin-sufijo" } | null {
-  const ruta = rutaUploads(url);
-  if (ruta === null) return null;
-  const exacta = adjuntoPorClave.get(ruta);
-  if (exacta !== undefined) return { id: exacta, via: "exacta" };
-  const base = ruta.replace(/-(?:\d+x\d+|scaled|e\d+)(\.[A-Za-z0-9]+)$/, "$1");
-  const alt = base !== ruta ? adjuntoPorClave.get(base) : undefined;
-  return alt !== undefined ? { id: alt, via: "sin-sufijo" } : null;
-}
-
 // ---------------------------------------------------------------------------------------------------------------
 // Conversión y armado de los registros
 // ---------------------------------------------------------------------------------------------------------------
@@ -244,7 +228,7 @@ for (const m of muestra) {
   const og = (k: string) => metaDe(m.id, k)[0]?.valor.trim() ?? "";
   const redesDescripcion = og("_webdados_fb_open_graph_specific_description") || null;
   const redesImagenUrl = og("_webdados_fb_open_graph_specific_image") || null;
-  const redesAdjunto = redesImagenUrl ? adjuntoDeUrl(redesImagenUrl) : null;
+  const redesAdjunto = redesImagenUrl ? adjuntoDeUrl(redesImagenUrl, adjuntoPorClave) : null;
 
   // Imágenes del cuerpo
   for (const im of r.assets.images) {
@@ -454,7 +438,7 @@ for (const r of registros) {
   if (r.redesImagenUrl) sumar(r.redesImagenWpId ? `adjunto:${r.redesImagenWpId}` : `url:${r.redesImagenUrl}`, r.redesImagenUrl, "redes", r.wpId, r.redesImagenWpId ? { id: r.redesImagenWpId, via: "url" } : null);
 }
 for (const [, e] of imagenesDeCuerpo) {
-  const adj = adjuntoDeUrl(e.url);
+  const adj = adjuntoDeUrl(e.url, adjuntoPorClave);
   for (const a of e.articulos) sumar(adj ? `adjunto:${adj.id}` : `url:${e.url}`, e.url, "cuerpo", a, adj);
 }
 const idsAdjImg = [...new Set([...distintas.values()].map((e) => e.adjuntoId).filter((x): x is number => x !== null))];

@@ -64,3 +64,23 @@ export function docDeTexto(texto: string): DocNode | null {
   if (!parrafos.length) return null;
   return { type: "doc", content: parrafos.map((p) => ({ type: "paragraph", content: [{ type: "text", text: p }] })) };
 }
+
+/** Ruta de uploads de una URL, o null si no es de la biblioteca de medios propia. */
+export function rutaUploads(url: string): string | null {
+  const m = decodificar(url).match(/\/wp-content\/uploads\/(.+?)(?:[?#].*)?$/);
+  return m ? m[1]! : null;
+}
+
+/** Id del adjunto que corresponde a una URL: exacta, o sin el sufijo de tamaño (-300x200) / -scaled / -eN. `mapa` es clave (_wp_attached_file) -> id. */
+export function adjuntoDeUrl(url: string, mapa: ReadonlyMap<string, number>): { id: number; via: "exacta" | "sin-sufijo" } | null {
+  const ruta = rutaUploads(url);
+  if (ruta === null) return null;
+  const exacta = mapa.get(ruta);
+  if (exacta !== undefined) return { id: exacta, via: "exacta" };
+  const base = ruta.replace(/-(?:\d+x\d+|scaled|e\d+)(\.[A-Za-z0-9]+)$/, "$1");
+  const alt = base !== ruta ? mapa.get(base) : undefined;
+  return alt !== undefined ? { id: alt, via: "sin-sufijo" } : null;
+}
+
+/** Reemplaza las direcciones de correo de un texto por "[correo omitido]" (para que no viajen en los snapshots versionados). */
+export const ocultarCorreos = (texto: string) => texto.replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, "[correo omitido]");
