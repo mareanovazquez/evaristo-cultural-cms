@@ -6,7 +6,7 @@ let ok = 0;
 const t = (name: string, fn: () => void) => { fn(); ok++; console.log("ok", name); };
 const L = "\u200E";
 
-t("19899: post_name crudo con %e2%80%8e -> millie-jackson-i-cry y hubo limpieza", () => {
+t("T05: 19899: post_name crudo con %e2%80%8e -> millie-jackson-i-cry y hubo limpieza", () => {
   const d = decodificarPostName("millie-jackson-%e2%80%8e-i-cry");
   assert.equal(d.fallo, false);
   assert.equal(d.valor, `millie-jackson-${L}-i-cry`);

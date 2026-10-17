@@ -1,6 +1,7 @@
 // Utilidades PURAS de la migración: sin base de datos ni sistema de archivos. Las usan la corrida en seco y,
 // más adelante, el armado y la escritura.
 import type { DocNode } from "../../../src/conversor/types.ts";
+import { MARCADOR_CORREO_OMITIDO } from "./snapshot-tipos.ts";
 
 // Caracteres invisibles que se buscan; solo U+200E se limpia (en slug y título).
 export const INVISIBLES: Array<[string, string]> = [["U+200B", "\u200B"], ["U+200E", "\u200E"], ["U+200F", "\u200F"], ["U+FEFF", "\uFEFF"], ["U+00AD", "\u00AD"]];
@@ -82,5 +83,10 @@ export function adjuntoDeUrl(url: string, mapa: ReadonlyMap<string, number>): { 
   return alt !== undefined ? { id: alt, via: "sin-sufijo" } : null;
 }
 
-/** Reemplaza las direcciones de correo de un texto por "[correo omitido]" (para que no viajen en los snapshots versionados). */
-export const ocultarCorreos = (texto: string) => texto.replace(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g, "[correo omitido]");
+const REGEX_CORREO = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/;
+
+/** Reemplaza las direcciones de correo de un texto por el marcador (para que no viajen en los snapshots versionados). */
+export const ocultarCorreos = (texto: string) => texto.replace(new RegExp(REGEX_CORREO.source, "g"), MARCADOR_CORREO_OMITIDO);
+
+/** ¿Hay una dirección de correo en el texto, o el marcador que la reemplazó en el snapshot? */
+export const contieneCorreo = (texto: string) => REGEX_CORREO.test(texto) || texto.includes(MARCADOR_CORREO_OMITIDO);

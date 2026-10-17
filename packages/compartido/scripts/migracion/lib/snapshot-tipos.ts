@@ -2,6 +2,9 @@
 // scripts/migracion/generar-snapshot-wp.ts y lo lee lib/entrada-snapshot.ts. No contiene datos personales de usuarios
 // (nada de email, contraseña, url, clave de activación ni fechas de registro).
 
+/** Lo que reemplaza a una dirección de correo dentro de una bio (lo usa el generador del snapshot y lo reconoce el armado). */
+export const MARCADOR_CORREO_OMITIDO = "[correo omitido]";
+
 export interface PostSnapshot {
   id: number;
   tipo: string;

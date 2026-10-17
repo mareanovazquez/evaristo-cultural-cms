@@ -6,7 +6,7 @@ import type { MapeoTaxonomias } from "../../../src/conversor/taxonomia.ts";
 import { validateArticleBodyDetallado } from "../../../src/schema/validate.ts";
 import type { AdjuntoSnapshot, MetaSnapshot, PostSnapshot, SnapshotWp, TerminoSnapshot, UsuarioSnapshot } from "./snapshot-tipos.ts";
 import {
-  adjuntoDeUrl, contarAltPendiente, contarInvisibles, decEntidades, decodificar, docDeTexto, quitarU200E, rutaUploads, slugFinal, textoPlanoDe,
+  adjuntoDeUrl, contarAltPendiente, contarInvisibles, contieneCorreo, decEntidades, decodificar, docDeTexto, quitarU200E, rutaUploads, slugFinal, textoPlanoDe,
 } from "./utilidades.ts";
 
 // Estados: solo estos se migran con regla. El 19300 es el único artículo privado que se acepta (decisión tomada).
@@ -98,6 +98,8 @@ export interface RegistroArticulo {
 
 export interface AutorPlan {
   wpUserId: number; slug: string; nombre: string; soloTexto: boolean; bio: unknown; articulosEnMuestra: number[];
+  /** La bio (de un autor que no es de solo texto) contiene un correo. Nunca se guarda el correo. */
+  bioConCorreo: boolean;
 }
 
 export interface CategoriaACrear { slug: string; nombre: string | null; articulos: number[] }
@@ -217,6 +219,10 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
     if (dondeU200E.length) avisosMigracion.push({ code: "u200e_removido", detalle: { en: dondeU200E } });
     const estado = estadoCms(m.id, p.estado);
     if (p.estado === "private" && estado === "BORRADOR") avisosMigracion.push({ code: "origen_privado" });
+    // Un borrador o privado sin post_date_gmt válida no tiene fecha de publicación: se avisa con el post_date local de WordPress.
+    if (estado === "BORRADOR" && utcDe(p.fechaGmt) === null) avisosMigracion.push({ code: "fecha_borrador", detalle: { postDate: p.fecha } });
+    const bioConCorreo = !cuentaPorId.has(p.autor) && contieneCorreo(usuario?.bio ?? "");
+    if (bioConCorreo) avisosMigracion.push({ code: "bio_con_correo", detalle: { wpUserId: p.autor, nombre: nombreAutor } });
     if (estado.startsWith("DESCONOCIDO")) {
       problemas.push({ wpId: m.id, codigo: "estado_desconocido", detalle: { postStatus: p.estado }, bloqueante: false });
       continue;
@@ -264,6 +270,7 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
       autores.set(wpUserId, {
         wpUserId, slug: usuario?.nicename ?? "", nombre: nombreAutor, soloTexto,
         bio: soloTexto ? null : docDeTexto(descripcion),
+        bioConCorreo: !soloTexto && contieneCorreo(descripcion),
         articulosEnMuestra: [],
       });
     }

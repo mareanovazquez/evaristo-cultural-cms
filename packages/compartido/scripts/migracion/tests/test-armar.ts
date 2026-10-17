@@ -7,6 +7,7 @@ import { convertWpPost } from "../../../src/conversor/convert.ts";
 import { armar, validarCategoriaPrincipal, validarDestinoUnico } from "../lib/armar.ts";
 import type { EntradaArmar } from "../lib/armar.ts";
 import { entradaDesdeSnapshot } from "../lib/entrada-snapshot.ts";
+import { MARCADOR_CORREO_OMITIDO } from "../lib/snapshot-tipos.ts";
 import type { MetaSnapshot, PostSnapshot, TerminoSnapshot, UsuarioSnapshot } from "../lib/snapshot-tipos.ts";
 
 let ok = 0;
@@ -46,8 +47,9 @@ if (!existsSync(BASELINE)) {
       for (const k of ["slug", "estado", "seccion", "categorias", "categoriaPrincipal", "autores", "redirecciones", "publicadoEn"] as const) {
         assert.deepEqual(a[k], b[k], `${b.wpId}.${k}`);
       }
-      assert.deepEqual(a.avisosMigracion?.cuerpo ?? null, b.avisosMigracion?.cuerpo ?? null, `${b.wpId}.avisos.cuerpo`);
-      assert.deepEqual(a.avisosMigracion?.titulo ?? null, b.avisosMigracion?.titulo ?? null, `${b.wpId}.avisos.titulo`);
+      for (const k of ["cuerpo", "titulo", "validador", "migracion"] as const) {
+        assert.deepEqual(a.avisosMigracion?.[k] ?? [], b.avisosMigracion?.[k] ?? [], `${b.wpId}.avisos.${k}`);
+      }
     }
     // única diferencia decidida: las cuentas de solo texto ya no tienen redirección /author/<slug>/ (el baseline las tiene)
     const soloTexto = new Set(base.autores.filter((x: { soloTexto: boolean }) => x.soloTexto).map((x: { wpUserId: number }) => x.wpUserId));
@@ -182,6 +184,59 @@ t("T12: categorías a crear: las 8 con su nombre del mapeo; las existentes no se
   const sin = armar(sintetica([post({ id: 41 })], { mapeo, terminos }));
   assert.deepEqual(sin.categoriasACrear, [{ slug: "categoria-fantasma", nombre: null, articulos: [41] }]);
   assert.deepEqual(sin.problemas, [{ wpId: null, codigo: "categoria_sin_nombre_en_el_mapeo", detalle: { slug: "categoria-fantasma", articulos: [41] }, bloqueante: true }]);
+});
+
+t("T05 (armado): 19899 -> millie-jackson-i-cry (guiones colapsados), título sin U+200E y aviso u200e_removido", () => {
+  const a = articulo(19899);
+  assert.equal(a.slug, "millie-jackson-i-cry");
+  assert.ok(!a.titulo.includes("\u200E"));
+  assert.deepEqual(a.avisosMigracion?.migracion.find((x) => x.code === "u200e_removido"), { code: "u200e_removido", detalle: { en: ["slug", "titulo"] } });
+  // un doble guion legítimo, sin U+200E, no se toca
+  assert.equal(armar(sintetica([post({ id: 6, nombre: "a--b" })])).articulos[0]!.slug, "a--b");
+});
+
+const aviso = (a: { avisosMigracion: { migracion: Array<{ code: string; detalle?: unknown }> } | null }, code: string) => a.avisosMigracion?.migracion.filter((x) => x.code === code) ?? [];
+
+t("T18: fecha_borrador: el 22546 (2023-06-29), un borrador con fecha válida no, un privado con ceros sí", () => {
+  assert.deepEqual(aviso(articulo(22546), "fecha_borrador"), [{ code: "fecha_borrador", detalle: { postDate: "2023-06-29 23:38:10" } }]);
+  assert.ok(articulo(22546).publicadoEn === null);
+  assert.deepEqual(plan.articulos.filter((a) => aviso(a, "fecha_borrador").length).map((a) => a.wpId), [22546]);
+  const conFecha = armar(sintetica([post({ id: 555, estado: "draft", fechaGmt: "2022-03-04 05:06:07" })])).articulos[0]!;
+  assert.deepEqual(aviso(conFecha, "fecha_borrador"), []);
+  const privado = armar(sintetica([post({ id: 19300, estado: "private", nombre: "19300", fecha: "2021-05-06 04:08:09", fechaGmt: "0000-00-00 00:00:00" })])).articulos[0]!;
+  assert.deepEqual(aviso(privado, "fecha_borrador"), [{ code: "fecha_borrador", detalle: { postDate: "2021-05-06 04:08:09" } }]);
+  assert.equal(privado.publicadoEn, null);
+  assert.equal(aviso(privado, "origen_privado").length, 1, "conserva el aviso origen_privado");
+  // un publicado nunca lleva este aviso
+  assert.deepEqual(aviso(armar(sintetica([post({ id: 556 })])).articulos[0]!, "fecha_borrador"), []);
+});
+
+t("T19: bio_con_correo: con correo, con marcador, sin correo y autor de solo texto; el correo nunca viaja", () => {
+  const CORREO = "alguien@ejemplo.com";
+  const porBio = (bio: string | null, autor = 9001) => armar(sintetica([post({ id: 70, autor }), post({ id: 71, autor })], { usuarios: [usuario(autor, { bio })] }));
+  const conCorreo = porBio(`Escribe desde siempre. Contacto: ${CORREO}`);
+  assert.deepEqual(conCorreo.articulos.map((a) => aviso(a, "bio_con_correo")), [
+    [{ code: "bio_con_correo", detalle: { wpUserId: 9001, nombre: "Autor 9001" } }],
+    [{ code: "bio_con_correo", detalle: { wpUserId: 9001, nombre: "Autor 9001" } }],
+  ]);
+  assert.ok(!JSON.stringify(conCorreo.articulos.map((a) => a.avisosMigracion)).includes(CORREO), "el aviso no contiene el correo");
+  assert.equal(conCorreo.autores[0]!.bioConCorreo, true);
+  assert.ok(!JSON.stringify(conCorreo.autores.map((a) => ({ ...a, bio: null }))).includes(CORREO));
+  // el marcador que deja el snapshot cuenta igual
+  assert.equal(aviso(porBio(`Escribe. ${MARCADOR_CORREO_OMITIDO}`).articulos[0]!, "bio_con_correo").length, 1);
+  assert.equal(MARCADOR_CORREO_OMITIDO, "[correo omitido]");
+  // sin correo, sin bio
+  assert.equal(aviso(porBio("Escribe desde siempre.").articulos[0]!, "bio_con_correo").length, 0);
+  assert.equal(aviso(porBio(null).articulos[0]!, "bio_con_correo").length, 0);
+  // autor de solo texto: no hay bio que migrar, no hay aviso
+  const cuenta7 = base.cuentas[0]!.wpUserId;
+  const soloTexto = porBio(`Contacto: ${CORREO}`, cuenta7);
+  assert.equal(soloTexto.autores[0]!.soloTexto, true);
+  assert.deepEqual(soloTexto.articulos.map((a) => aviso(a, "bio_con_correo").length), [0, 0]);
+  // en la muestra: solo el usuario 39 (bio redactada en el snapshot)
+  const usuarios = new Set(plan.articulos.filter((a) => aviso(a, "bio_con_correo").length).map((a) => a.autores[0]!.wpUserId));
+  assert.deepEqual([...usuarios], [39]);
+  assert.ok(!JSON.stringify(plan.articulos.map((a) => a.avisosMigracion)).match(/@/));
 });
 
 console.log(`${ok} pruebas de armar ok`);
