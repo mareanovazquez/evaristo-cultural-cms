@@ -46,6 +46,11 @@ export interface EntradaArmar {
    * Sin mediciones no se resuelven imágenes: el encabezado conserva lo que declara WordPress, no hay filas de imagen y el cuerpo no se toca.
    */
   mediciones?: ReadonlyMap<string, Medicion>;
+  /**
+   * Artículos que lib/validar.ts decidió dejar afuera (longitudes, fecha, colisiones...). armar() los saltea para que redirecciones,
+   * autores, categorías e imágenes del plan queden coherentes con los artículos que sí migran. Sus problemas los registra quien valida.
+   */
+  excluidos?: ReadonlySet<number>;
 }
 
 export interface Problema { wpId: number | null; codigo: string; detalle?: unknown; bloqueante: boolean }
@@ -232,6 +237,7 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
   const problemas: Problema[] = [];
 
   for (const m of muestra) {
+    if (entrada.excluidos?.has(m.id)) continue;
     const p = postWp.get(m.id)!;
     const usuario = usuarioWp.get(p.autor);
     const nombreAutor = usuario?.nombre ?? "";
