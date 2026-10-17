@@ -22,7 +22,7 @@
     "migrar": "tsx scripts/migracion/migrar.ts",
     "snapshot:wp": "tsx scripts/migracion/generar-snapshot-wp.ts",
     "test:migracion": "tsx scripts/migracion/tests/test-utilidades.ts && tsx scripts/migracion/tests/test-leer-wordpress.ts && tsx scripts/migracion/tests/test-imagenes.ts && tsx scripts/migracion/tests/test-validar.ts && tsx scripts/migracion/tests/test-conexiones.ts && tsx scripts/migracion/tests/test-simulacion.ts && tsx scripts/migracion/tests/test-armar.ts",
-    "test:migracion-db": "tsx scripts/migracion/tests/test-db-base.ts",
+    "test:migracion-db": "tsx scripts/migracion/tests/test-db-base.ts && tsx scripts/migracion/tests/test-db-articulos.ts",
     "test:conversor": "tsx src/conversor/tests/test.ts && tsx src/conversor/tests/test-titulos.ts && tsx src/conversor/tests/test-integracion-titulos.ts && tsx src/conversor/tests/test-taxonomia.ts"
   },
   "devDependencies": {

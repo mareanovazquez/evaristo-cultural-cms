@@ -5,8 +5,12 @@
 // identidad del objeto, no una copia con los mismos valores). De la variable DATABASE_URL solo se toman el usuario y la clave.
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { Prisma, PrismaClient } from "../../../src/generated/prisma/client.js";
-import type { Plan } from "./armar.ts";
+import type { DocNode } from "../../../src/conversor/types.ts";
+import { validateArticleBodyDetallado } from "../../../src/schema/validate.ts";
+import { validarDestinoUnico } from "./armar.ts";
+import type { Plan, RedirecionPlan, RegistroArticulo } from "./armar.ts";
 import { DESTINO_PRUEBAS, DESTINO_REAL, ESCRITURA_REAL_HABILITADA } from "./destinos.ts";
+import { nodosImagen, reescribirImagenes } from "./enlaces-imagenes.ts";
 import { num, str } from "./utilidades.ts";
 
 export type DestinoEscritura = typeof DESTINO_REAL | typeof DESTINO_PRUEBAS;
@@ -142,4 +146,195 @@ export async function escribirBase(prisma: PrismaClient, plan: Plan): Promise<Re
     if (existia) r.imagenes.existentes++; else r.imagenes.creadas++;
   }
   return r;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Artículos, relaciones y redirecciones
+// ---------------------------------------------------------------------------------------------------------------
+/** Tiempo máximo de la transacción de un artículo. */
+export const TIMEOUT_ARTICULO_MS = 30_000;
+
+export interface OpcionesEscritura {
+  /** Corta en el primer artículo que falla (no se escriben los siguientes ni las redirecciones de autor). */
+  abortarAlPrimerError: boolean;
+}
+
+/** Solo para los tests: se llama dentro de la transacción del artículo, después de escribir todo y antes de confirmar. */
+export interface DependenciasEscritura {
+  alFinalDelArticulo?: (wpId: number, tx: Prisma.TransactionClient) => Promise<void> | void;
+}
+
+export interface ResultadoArticulo {
+  wpId: number;
+  slug: string;
+  resultado: "escrito" | "omitido" | "fallido";
+  /** "ya existe (sin comparar)" para los omitidos; el motivo del error para los fallidos. */
+  motivo?: string;
+}
+
+export interface ResultadoEscritura {
+  /** "error" si algún artículo falló (se deshizo solo ese artículo); "ok" si no. Los conflictos de redirección no cambian el estado: se listan aparte. */
+  estado: "ok" | "error";
+  abortado: boolean;
+  base: ResultadoBase;
+  articulos: ResultadoArticulo[];
+  conteos: { escritos: number; omitidos: number; fallidos: number };
+  redirecciones: { creadas: number; conflictos: number };
+  conflictos: ConflictoEscritura[];
+}
+
+/**
+ * Reemplaza `imagenWpId` por `imagenId` (id de la fila de imagenes con ese wpId) en cada nodo imagen del cuerpo y quita `imagenWpId`.
+ * Un nodo que apunta a un adjunto sin fila es un error del artículo. Los nodos sin `imagenWpId` (sin original) quedan como están.
+ */
+export function enlazarImagenesDelCuerpo(cuerpo: DocNode, idDe: (wpId: number) => number | undefined): DocNode {
+  return reescribirImagenes(cuerpo, (attrs) => {
+    if (!("imagenWpId" in attrs)) return attrs;
+    const { imagenWpId, ...resto } = attrs;
+    const id = typeof imagenWpId === "number" ? idDe(imagenWpId) : undefined;
+    if (id === undefined) throw new Error(`el cuerpo apunta al adjunto ${JSON.stringify(imagenWpId)}, que no tiene fila en imagenes`);
+    return { ...resto, imagenId: id };
+  });
+}
+
+/** El cuerpo que se guarda: sin ningún imagenWpId y válido para el validador en modo migración. Lanza si no. */
+export function cuerpoParaGuardar(cuerpo: DocNode, idDe: (wpId: number) => number | undefined): DocNode {
+  const enlazado = enlazarImagenesDelCuerpo(cuerpo, idDe);
+  if (nodosImagen(enlazado).some((n) => "imagenWpId" in (n.attrs ?? {}))) throw new Error("el cuerpo conserva un imagenWpId");
+  const { errores } = validateArticleBodyDetallado(enlazado as never, { modo: "migracion" });
+  if (errores.length) throw new Error(`el cuerpo no valida (${errores.length}): ${errores.slice(0, 3).join(" | ")}`);
+  return enlazado;
+}
+
+const json = (v: unknown): Prisma.InputJsonValue | typeof Prisma.DbNull => (v === null || v === undefined ? Prisma.DbNull : (v as Prisma.InputJsonValue));
+const fecha = (iso: string | null): Date | null => (iso === null ? null : new Date(iso));
+
+async function crearRedireccion(tx: Prisma.TransactionClient, r: RedirecionPlan, destino: { articuloId?: number; autorId?: number }, conflictos: ConflictoEscritura[]): Promise<boolean> {
+  const motivo = validarDestinoUnico({ articuloId: destino.articuloId, autorId: destino.autorId, destino: r.destino });
+  if (motivo) throw new Error(`${r.origen}: ${motivo}`);
+  const existente = await tx.redireccion.findUnique({ where: { origen: r.origen }, select: { id: true, tipo: true, articuloId: true, autorId: true, destino: true } });
+  if (existente) {
+    conflictos.push({ tabla: "redirecciones", clave: r.origen, detalle: { tipoDelPlan: r.tipo, existente } });
+    return false;
+  }
+  await tx.redireccion.create({ data: { origen: r.origen, tipo: r.tipo, codigo: r.codigo, articuloId: destino.articuloId ?? null, autorId: destino.autorId ?? null, destino: r.destino } });
+  return true;
+}
+
+/** Una transacción por artículo. Devuelve el resultado y lo que dejó por reportar (solo si la transacción se confirmó). */
+async function escribirArticulo(prisma: PrismaClient, a: RegistroArticulo, base: ResultadoBase, deps: DependenciasEscritura) {
+  const conflictos: ConflictoEscritura[] = [];
+  let creadas = 0;
+  const resultado = await prisma.$transaction(async (tx) => {
+    if ((await tx.articulo.findUnique({ where: { wpId: a.wpId }, select: { id: true } })) !== null) return "omitido" as const;
+
+    const seccion = await tx.seccion.findUnique({ where: { slug: a.seccion }, select: { id: true } });
+    if (!seccion) throw new Error(`la sección "${a.seccion}" no existe`);
+    const idCategoria = async (slug: string) => {
+      const id = base.idsCategorias.get(slug) ?? (await tx.categoria.findUnique({ where: { slug }, select: { id: true } }))?.id;
+      if (id === undefined) throw new Error(`la categoría "${slug}" no existe`);
+      return id;
+    };
+    const categoriaIds = [...new Set(await Promise.all(a.categorias.map(idCategoria)))];
+    const categoriaPrincipalId = a.categoriaPrincipal === null ? null : await idCategoria(a.categoriaPrincipal);
+    const autorIds = await Promise.all(a.autores.map(async (x) => {
+      const id = base.idsAutores.get(x.wpUserId) ?? (await tx.autor.findUnique({ where: { wpUserId: x.wpUserId }, select: { id: true } }))?.id;
+      if (id === undefined) throw new Error(`el autor ${x.wpUserId} no tiene fila`);
+      return { autorId: id, orden: x.orden };
+    }));
+
+    // imágenes: los ids salen de las filas de imagenes (por wpId), nunca se inventan
+    const idsImagen = new Map<number, number>();
+    const wpIds = new Set<number>([
+      ...(a.encabezadoAdjuntoWpId !== null ? [a.encabezadoAdjuntoWpId] : []),
+      ...(a.redesImagenWpId !== null ? [a.redesImagenWpId] : []),
+      ...nodosImagen(a.cuerpo).flatMap((n) => (typeof n.attrs?.["imagenWpId"] === "number" ? [n.attrs["imagenWpId"] as number] : [])),
+    ]);
+    for (const wpId of wpIds) {
+      const id = base.idsImagenes.get(wpId) ?? (await tx.imagen.findUnique({ where: { wpId }, select: { id: true } }))?.id;
+      if (id !== undefined) idsImagen.set(wpId, id);
+    }
+    const cuerpo = cuerpoParaGuardar(a.cuerpo as DocNode, (wpId) => idsImagen.get(wpId));
+
+    const creado = await tx.articulo.create({
+      data: {
+        wpId: a.wpId, slug: a.slug, titulo: a.titulo, bajada: a.bajada, cuerpo: cuerpo as unknown as Prisma.InputJsonValue, schemaVersion: a.schemaVersion, textoPlano: a.textoPlano,
+        estado: a.estado as "PUBLICADO" | "BORRADOR", publicadoEn: fecha(a.publicadoEn), novedadHasta: fecha(a.novedadHasta),
+        seccionId: seccion.id, categoriaPrincipalId, etiquetasWp: json(a.etiquetasWp), avisosMigracion: json(a.avisosMigracion), visitasWp: a.visitasWp,
+        imagenEncabezadoId: a.encabezadoAdjuntoWpId === null ? null : idsImagen.get(a.encabezadoAdjuntoWpId) ?? null,
+        encabezadoAlt: a.encabezadoAlt, encabezadoCredito: a.encabezadoCredito, encabezadoPuntoFocalX: a.encabezadoPuntoFocalX, encabezadoPuntoFocalY: a.encabezadoPuntoFocalY,
+        redesDescripcion: a.redesDescripcion, redesImagenId: a.redesImagenWpId === null ? null : idsImagen.get(a.redesImagenWpId) ?? null,
+        altPendientes: a.altPendientes,
+      },
+      select: { id: true },
+    });
+
+    // relaciones: se sincronizan con lo que dice el plan (en un artículo nuevo no hay nada que borrar)
+    await tx.articuloCategoria.deleteMany({ where: { articuloId: creado.id } });
+    await tx.articuloCategoria.createMany({ data: categoriaIds.map((categoriaId) => ({ articuloId: creado.id, categoriaId })) });
+    await tx.articuloAutor.deleteMany({ where: { articuloId: creado.id } });
+    await tx.articuloAutor.createMany({ data: autorIds.map((x) => ({ articuloId: creado.id, ...x })) });
+    await tx.galeriaItem.deleteMany({ where: { articuloId: creado.id } });
+    await tx.galeriaItem.createMany({ data: [] });
+
+    for (const r of a.redirecciones) if (await crearRedireccion(tx, r, { articuloId: creado.id }, conflictos)) creadas++;
+    await deps.alFinalDelArticulo?.(a.wpId, tx);
+    return "escrito" as const;
+  }, { timeout: TIMEOUT_ARTICULO_MS, maxWait: TIMEOUT_ARTICULO_MS });
+  return { resultado, conflictos, creadas };
+}
+
+/**
+ * Escribe todo el plan: categorías, autores e imágenes (escribirBase), después una transacción por artículo y al final las redirecciones
+ * de autor. En este tramo, un artículo cuyo wpId ya existe se omite ("ya existe (sin comparar)"). Si un artículo falla se deshace solo
+ * ese artículo, se reporta y la corrida sigue; con `abortarAlPrimerError` corta ahí. El estado devuelto es "error" si hubo algún fallido.
+ */
+export async function escribirPlan(prisma: PrismaClient, plan: Plan, opciones: OpcionesEscritura, deps: DependenciasEscritura = {}): Promise<ResultadoEscritura> {
+  const base = await escribirBase(prisma, plan);
+  const articulos: ResultadoArticulo[] = [];
+  const conflictos: ConflictoEscritura[] = [...base.conflictos];
+  const redirecciones = { creadas: 0, conflictos: 0 };
+  let abortado = false;
+
+  for (const a of plan.articulos) {
+    const dependencia = base.fallidos.get(a.wpId);
+    if (dependencia !== undefined) {
+      articulos.push({ wpId: a.wpId, slug: a.slug, resultado: "fallido", motivo: dependencia });
+    } else {
+      try {
+        const r = await escribirArticulo(prisma, a, base, deps);
+        conflictos.push(...r.conflictos);
+        redirecciones.creadas += r.creadas;
+        redirecciones.conflictos += r.conflictos.length;
+        articulos.push({ wpId: a.wpId, slug: a.slug, resultado: r.resultado, ...(r.resultado === "omitido" ? { motivo: "ya existe (sin comparar)" } : {}) });
+        continue;
+      } catch (e) {
+        articulos.push({ wpId: a.wpId, slug: a.slug, resultado: "fallido", motivo: e instanceof Error ? e.message : String(e) });
+      }
+    }
+    if (opciones.abortarAlPrimerError) { abortado = true; break; }
+  }
+
+  // redirecciones de autor, al final (no se escriben si se abortó)
+  if (!abortado) {
+    for (const r of plan.redirecciones.filter((x) => x.tipo === "AUTOR")) {
+      const autorId = r.autorWpUserId === null ? undefined : base.idsAutores.get(r.autorWpUserId);
+      if (autorId === undefined) {
+        conflictos.push({ tabla: "redirecciones", clave: r.origen, detalle: { motivo: "el autor no tiene fila (en conflicto o sin escribir)", autorWpUserId: r.autorWpUserId } });
+        redirecciones.conflictos++;
+        continue;
+      }
+      const delAutor: ConflictoEscritura[] = [];
+      if (await prisma.$transaction((tx) => crearRedireccion(tx, r, { autorId }, delAutor), { timeout: TIMEOUT_ARTICULO_MS })) redirecciones.creadas++;
+      conflictos.push(...delAutor);
+      redirecciones.conflictos += delAutor.length;
+    }
+  }
+
+  const conteos = {
+    escritos: articulos.filter((x) => x.resultado === "escrito").length,
+    omitidos: articulos.filter((x) => x.resultado === "omitido").length,
+    fallidos: articulos.filter((x) => x.resultado === "fallido").length,
+  };
+  return { estado: conteos.fallidos > 0 ? "error" : "ok", abortado, base, articulos, conteos, redirecciones, conflictos };
 }
