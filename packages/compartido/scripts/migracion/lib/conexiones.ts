@@ -1,13 +1,13 @@
 // Guarda del destino de la migración y verificación de las conexiones. El destino permitido son constantes de este módulo: ningún
 // flag ni variable de entorno las cambia (DATABASE_URL solo se COMPARA contra ellas; si no coincide, la corrida se niega).
 // No crea ningún cliente por su cuenta: abre las conexiones con abrirConexiones() de leer-wordpress.ts (sesiones READ ONLY, solo SELECT).
-import { DESTINO_PERMITIDO, guardaDestino } from "./destinos.ts";
+import { DESTINO_REAL, guardaDestino } from "./destinos.ts";
 import type { DestinoUrl } from "./destinos.ts";
 import { abrirConexiones } from "./leer-wordpress.ts";
 import type { Conexiones, Consulta, Fila } from "./leer-wordpress.ts";
 import { num, str } from "./utilidades.ts";
 
-export { DESTINO_PERMITIDO, guardaDestino };
+export { DESTINO_REAL, guardaDestino };
 export type { DestinoUrl };
 export const ORIGEN_WORDPRESS = Object.freeze({ host: "127.0.0.1", puerto: 3307, base: "evaristo_lectura" });
 /** Versión mayor.menor que tiene que informar el servidor del CMS. */
@@ -24,8 +24,8 @@ export async function leerDestinoServidor(consulta: Consulta): Promise<DestinoSe
 /** El servidor del CMS tiene que ser el esperado: puerto 3308, base evaristo_cms, escribible (@@read_only = 0) y MySQL 8.4.x. Lanza si no. */
 export function verificarServidorCms(s: DestinoServidor): DestinoServidor {
   const problemas: string[] = [];
-  if (s.puerto !== DESTINO_PERMITIDO.puerto) problemas.push(`@@port = ${s.puerto}`);
-  if (s.base !== DESTINO_PERMITIDO.base) problemas.push(`DATABASE() = ${s.base || "NULL"}`);
+  if (s.puerto !== DESTINO_REAL.puerto) problemas.push(`@@port = ${s.puerto}`);
+  if (s.base !== DESTINO_REAL.base) problemas.push(`DATABASE() = ${s.base || "NULL"}`);
   if (s.readOnly !== 0) problemas.push(`@@read_only = ${s.readOnly}`);
   if (s.version !== VERSION_CMS && !s.version.startsWith(`${VERSION_CMS}.`)) problemas.push(`@@version = ${s.version}`);
   if (problemas.length) throw new Error(`El servidor del CMS no es el esperado (${problemas.join("; ")}): la corrida se niega a seguir.`);

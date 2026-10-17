@@ -63,6 +63,15 @@ export interface Conexiones {
   cerrar: () => Promise<void>;
 }
 
+/** Abre solo la conexión de lectura al CMS real (para comprobar que nada lo cambió), sin WordPress. Sesión READ ONLY verificada. */
+export async function abrirSoloCms(): Promise<{ bd: Consulta; cerrar: () => Promise<void> }> {
+  const cms = clienteCms();
+  const bd: Consulta = (sql, ...p) => consultar(cms, sql, ...p);
+  const [{ ro }] = (await bd("SELECT @@session.transaction_read_only AS ro")) as [Fila];
+  if (num(ro) !== 1) { await cms.$disconnect(); throw new Error("La sesión no está en solo lectura: se aborta"); }
+  return { bd, cerrar: () => cms.$disconnect() };
+}
+
 /** Abre las dos conexiones de solo lectura y comprueba que las sesiones lo estén; si no, aborta. */
 export async function abrirConexiones(): Promise<Conexiones> {
   const clienteWp = clienteWordPress();

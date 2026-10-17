@@ -1,6 +1,6 @@
 // La simulación de la migración: lee, arma, mide, valida y cuenta lo que se haría, sin escribir en ninguna base.
 // Recibe las conexiones ya abiertas (de solo lectura) y devuelve el informe; escribirlo en disco es cosa de quien llama.
-import { DESTINO_PERMITIDO } from "./conexiones.ts";
+import { DESTINO_REAL } from "./conexiones.ts";
 import type { ConexionesVerificadas, OpcionesCli } from "./conexiones.ts";
 import { EjecutorNulo } from "./ejecutor.ts";
 import type { ResumenEjecucion } from "./ejecutor.ts";
@@ -39,7 +39,7 @@ export async function simular(
   const filasCuentasWp = cuentasDeFilas(await leerCuentas(wp, entrada.cuentas.map((c) => c.wpUserId)));
   const preparado = await prepararPlan({
     entrada, carpetaOriginales: opciones.originales, bd, largos: deps.largos ?? leerLargosSchema(), cuentas: entrada.cuentas, filasCuentasWp,
-    destino: { host: conexiones.destino.host, puerto: conexiones.servidorCms.puerto, base: conexiones.servidorCms.base }, destinoPermitido: DESTINO_PERMITIDO,
+    destino: { host: conexiones.destino.host, puerto: conexiones.servidorCms.puerto, base: conexiones.servidorCms.base }, destinoPermitido: DESTINO_REAL,
     ...(deps.medir ? { medir: deps.medir } : {}),
   });
   const ejecucion = await new EjecutorNulo(bd).ejecutar(preparado.plan);

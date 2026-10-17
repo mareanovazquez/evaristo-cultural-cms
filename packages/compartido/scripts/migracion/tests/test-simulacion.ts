@@ -2,10 +2,10 @@
 // real, que solo admite SELECT) y comprueba que no hay nada que no sea SELECT; además recorre el grafo de imports de migrar.ts y
 // comprueba que no alcanza ningún cliente Prisma con permiso de escritura.
 import assert from "node:assert/strict";
-import { existsSync, readFileSync } from "node:fs";
-import { dirname, join, relative, resolve } from "node:path";
+import { readFileSync } from "node:fs";
+import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
-import { DESTINO_PERMITIDO } from "../lib/conexiones.ts";
+import { DESTINO_REAL } from "../lib/conexiones.ts";
 import type { OpcionesCli } from "../lib/conexiones.ts";
 import { entradaDesdeSnapshot } from "../lib/entrada-snapshot.ts";
 import { informeAMarkdown, nombreDeInforme } from "../lib/informe.ts";
@@ -13,6 +13,7 @@ import type { Medicion } from "../lib/imagenes.ts";
 import { COLACION, SOLO_LECTURA, consultar, validarSoloSelect } from "../lib/leer-wordpress.ts";
 import type { Consulta, Fila } from "../lib/leer-wordpress.ts";
 import { simular } from "../lib/simular.ts";
+import { grafo } from "./grafo-imports.ts";
 import { leerLargosSchema } from "../lib/validar.ts";
 
 let ok = 0;
@@ -54,7 +55,7 @@ const servidorWordPress = { puerto: 3307, base: "evaristo_lectura", readOnly: 0,
 
 await ta("T16: la simulación de los 35 solo emite SELECT y devuelve el informe esperado", async () => {
   const bd = clienteSimulado({ categorias: ["ensayo"] }), wp = clienteSimulado();
-  const { informe } = await simular(opciones, { wp: wp.consulta, bd: bd.consulta, destino: { ...DESTINO_PERMITIDO }, servidorCms, servidorWordPress }, {
+  const { informe } = await simular(opciones, { wp: wp.consulta, bd: bd.consulta, destino: { ...DESTINO_REAL }, servidorCms, servidorWordPress }, {
     leerEntrada: async () => entradaDesdeSnapshot(), largos: leerLargosSchema(), medir: medirFalso, ahora: () => new Date("2026-10-17T14:03:22.123Z"),
   });
   const todo = [...bd.sql, ...wp.sql];
@@ -91,7 +92,7 @@ await ta("T16: la simulación de los 35 solo emite SELECT y devuelve el informe 
 
 await ta("T16: lo que ya existe por clave natural se informa como \"ya existe (sin comparar)\" y no se actualiza", async () => {
   const bd = clienteSimulado({ articulos: ["22546", "2462"], categorias: ["poesia", "ensayo"], redirecciones: [] });
-  const { informe } = await simular(opciones, { wp: clienteSimulado().consulta, bd: bd.consulta, destino: { ...DESTINO_PERMITIDO }, servidorCms, servidorWordPress }, {
+  const { informe } = await simular(opciones, { wp: clienteSimulado().consulta, bd: bd.consulta, destino: { ...DESTINO_REAL }, servidorCms, servidorWordPress }, {
     leerEntrada: async () => entradaDesdeSnapshot(), largos: leerLargosSchema(), medir: medirFalso,
   });
   const art = informe.tablas.find((t) => t.tabla === "articulos")!;
@@ -104,20 +105,20 @@ await ta("T16: lo que ya existe por clave natural se informa como \"ya existe (s
 
 await ta("T16: --ids limita la simulación; un bloqueante queda en el informe sin escribir nada", async () => {
   const bd = clienteSimulado();
-  const una = await simular({ ...opciones, alcance: { tipo: "ids", ids: [22546] } }, { wp: clienteSimulado().consulta, bd: bd.consulta, destino: { ...DESTINO_PERMITIDO }, servidorCms, servidorWordPress }, {
+  const una = await simular({ ...opciones, alcance: { tipo: "ids", ids: [22546] } }, { wp: clienteSimulado().consulta, bd: bd.consulta, destino: { ...DESTINO_REAL }, servidorCms, servidorWordPress }, {
     leerEntrada: async () => entradaDesdeSnapshot(), largos: leerLargosSchema(), medir: medirFalso,
   });
   assert.deepEqual(una.informe.ids, [22546]);
   assert.equal(una.informe.resumen.convertidos, 1);
   assert.equal(una.informe.articulos[0]!.slug, "borrador-22546");
   // destino equivocado en el servidor: bloqueante
-  const mal = await simular(opciones, { wp: clienteSimulado().consulta, bd: clienteSimulado().consulta, destino: { ...DESTINO_PERMITIDO }, servidorCms: { ...servidorCms, puerto: 3307 }, servidorWordPress }, {
+  const mal = await simular(opciones, { wp: clienteSimulado().consulta, bd: clienteSimulado().consulta, destino: { ...DESTINO_REAL }, servidorCms: { ...servidorCms, puerto: 3307 }, servidorWordPress }, {
     leerEntrada: async () => entradaDesdeSnapshot(), largos: leerLargosSchema(), medir: medirFalso,
   });
   assert.deepEqual(mal.informe.bloqueantes.map((b) => b.codigo), ["destino_no_permitido"]);
-  await assert.rejects(() => simular({ ...opciones, originales: null }, { wp: bd.consulta, bd: bd.consulta, destino: { ...DESTINO_PERMITIDO }, servidorCms, servidorWordPress }), /--originales/);
-  await assert.rejects(() => simular({ ...opciones, modo: "escribir" }, { wp: bd.consulta, bd: bd.consulta, destino: { ...DESTINO_PERMITIDO }, servidorCms, servidorWordPress }), /solo corre en modo simular/);
-  await assert.rejects(() => simular({ ...opciones, alcance: { tipo: "todos" } }, { wp: bd.consulta, bd: bd.consulta, destino: { ...DESTINO_PERMITIDO }, servidorCms, servidorWordPress }), /no implementado/);
+  await assert.rejects(() => simular({ ...opciones, originales: null }, { wp: bd.consulta, bd: bd.consulta, destino: { ...DESTINO_REAL }, servidorCms, servidorWordPress }), /--originales/);
+  await assert.rejects(() => simular({ ...opciones, modo: "escribir" }, { wp: bd.consulta, bd: bd.consulta, destino: { ...DESTINO_REAL }, servidorCms, servidorWordPress }), /solo corre en modo simular/);
+  await assert.rejects(() => simular({ ...opciones, alcance: { tipo: "todos" } }, { wp: bd.consulta, bd: bd.consulta, destino: { ...DESTINO_REAL }, servidorCms, servidorWordPress }), /no implementado/);
 });
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -125,26 +126,6 @@ await ta("T16: --ids limita la simulación; un bloqueante queda en el informe si
 // ---------------------------------------------------------------------------------------------------------------
 const RAIZ = fileURLToPath(new URL("../../..", import.meta.url));   // packages/compartido
 const MIGRAR = join(RAIZ, "scripts", "migracion", "migrar.ts");
-
-function grafo(entrada: string) {
-  const archivos = new Set<string>(), externos = new Set<string>(), generados = new Set<string>();
-  const pendientes = [entrada];
-  while (pendientes.length) {
-    const f = pendientes.pop()!;
-    if (archivos.has(f)) continue;
-    archivos.add(f);
-    const texto = readFileSync(f, "utf8");
-    for (const m of texto.matchAll(/(?:^|\n)\s*(?:import|export)\b[^;]*?\bfrom\s+"([^"]+)"|import\(\s*"([^"]+)"\s*\)|(?:^|\n)\s*import\s+"([^"]+)"/g)) {
-      const dest = m[1] ?? m[2] ?? m[3]!;
-      if (!dest.startsWith(".")) { externos.add(dest); continue; }
-      const ruta = resolve(dirname(f), dest);
-      if (ruta.includes(`${join("src", "generated")}`)) { generados.add(ruta); continue; }
-      if (existsSync(ruta)) pendientes.push(ruta);
-      else throw new Error(`${f} importa ${dest}, que no existe`);
-    }
-  }
-  return { archivos, externos, generados };
-}
 
 await ta("T16: las dos conexiones abren la sesión en READ ONLY y la verifican", async () => {
   assert.equal(SOLO_LECTURA, "SET SESSION TRANSACTION READ ONLY");

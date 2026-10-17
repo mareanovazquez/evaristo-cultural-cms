@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { cargarDatosVersionados } from "../lib/entrada-snapshot.ts";
 import {
-  DESTINO_PERMITIDO, ErrorDeArgumentos, guardaDestino, leerDestinoServidor, parsearArgumentos, verificarServidorCms, verificarServidorWordPress,
+  DESTINO_REAL, ErrorDeArgumentos, guardaDestino, leerDestinoServidor, parsearArgumentos, verificarServidorCms, verificarServidorWordPress,
 } from "../lib/conexiones.ts";
 import type { OpcionesCli } from "../lib/conexiones.ts";
 
@@ -15,7 +15,7 @@ const BUENA = "mysql://evaristo:secreto@127.0.0.1:3308/evaristo_cms";
 t("T13: la guarda acepta solo 127.0.0.1:3308/evaristo_cms", () => {
   assert.deepEqual(guardaDestino(BUENA), { host: "127.0.0.1", puerto: 3308, base: "evaristo_cms" });
   assert.deepEqual(guardaDestino("mysql://u@127.0.0.1:3308/evaristo_cms"), { host: "127.0.0.1", puerto: 3308, base: "evaristo_cms" });
-  assert.deepEqual(DESTINO_PERMITIDO, { host: "127.0.0.1", puerto: 3308, base: "evaristo_cms" });
+  assert.deepEqual(DESTINO_REAL, { host: "127.0.0.1", puerto: 3308, base: "evaristo_cms" });
 });
 
 t("T13: se niega ante localhost, ::1, el puerto 3306 o 3307, otra base, parámetros, sin base o sin puerto", () => {
@@ -46,16 +46,16 @@ t("T13: se niega ante localhost, ::1, el puerto 3306 o 3307, otra base, parámet
 });
 
 t("T13: ni flags ni variables de entorno cambian el destino permitido", () => {
-  assert.ok(Object.isFrozen(DESTINO_PERMITIDO));
+  assert.ok(Object.isFrozen(DESTINO_REAL));
   const previas = { DATABASE_URL: process.env["DATABASE_URL"], DESTINO: process.env["DESTINO"], DB_PORT: process.env["DB_PORT"] };
   try {
     process.env["DESTINO"] = "127.0.0.1:3306/evaristo_cms_test";
     process.env["DB_PORT"] = "3306";
     process.env["DATABASE_URL"] = "mysql://evaristo:x@127.0.0.1:3306/evaristo_cms_test";
-    assert.deepEqual(DESTINO_PERMITIDO, { host: "127.0.0.1", puerto: 3308, base: "evaristo_cms" });
+    assert.deepEqual(DESTINO_REAL, { host: "127.0.0.1", puerto: 3308, base: "evaristo_cms" });
     assert.throws(() => guardaDestino(process.env["DATABASE_URL"]), /Destino no permitido/);
-    assert.throws(() => { (DESTINO_PERMITIDO as { puerto: number }).puerto = 3306; }, TypeError);
-    assert.equal(DESTINO_PERMITIDO.puerto, 3308);
+    assert.throws(() => { (DESTINO_REAL as { puerto: number }).puerto = 3306; }, TypeError);
+    assert.equal(DESTINO_REAL.puerto, 3308);
     // los argumentos del CLI no tienen ninguna opción de destino
     for (const flag of ["--puerto=3306", "--base=evaristo_cms_test", "--host=localhost", "--destino=otro", "--database-url=mysql://x"]) {
       assert.throws(() => parsearArgumentos(["--muestra", flag], [1]), /argumento desconocido/, flag);
