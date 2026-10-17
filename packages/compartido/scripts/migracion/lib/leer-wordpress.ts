@@ -4,6 +4,7 @@
 // solo ejecuta las consultas y devuelve las filas con los mismos nombres de campo de siempre.
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../../../src/generated/prisma/client.js";
+import { guardaDestino } from "./destinos.ts";
 import { marcas, num, str } from "./utilidades.ts";
 
 export type Fila = Record<string, unknown>;
@@ -25,12 +26,9 @@ function clienteWordPress(): PrismaClient {
 }
 
 function clienteCms(): PrismaClient {
-  const texto = process.env["DATABASE_URL"];
-  if (!texto) throw new Error("Falta DATABASE_URL en el entorno");
-  const u = new URL(texto);
-  if (u.hostname !== "127.0.0.1" || u.port !== "3308" || u.pathname !== "/evaristo_cms") {
-    throw new Error("DATABASE_URL no apunta a 127.0.0.1:3308/evaristo_cms: la corrida en seco se niega a seguir");
-  }
+  // Misma guarda que la de conexiones.ts: solo 127.0.0.1:3308/evaristo_cms
+  guardaDestino(process.env["DATABASE_URL"]);
+  const u = new URL(process.env["DATABASE_URL"]!);
   return new PrismaClient({
     adapter: new PrismaMariaDb({
       host: u.hostname, port: Number(u.port), user: decodeURIComponent(u.username), password: decodeURIComponent(u.password),

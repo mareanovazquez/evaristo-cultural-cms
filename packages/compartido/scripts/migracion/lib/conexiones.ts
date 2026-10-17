@@ -1,33 +1,17 @@
 // Guarda del destino de la migración y verificación de las conexiones. El destino permitido son constantes de este módulo: ningún
 // flag ni variable de entorno las cambia (DATABASE_URL solo se COMPARA contra ellas; si no coincide, la corrida se niega).
 // No crea ningún cliente por su cuenta: abre las conexiones con abrirConexiones() de leer-wordpress.ts (sesiones READ ONLY, solo SELECT).
+import { DESTINO_PERMITIDO, guardaDestino } from "./destinos.ts";
+import type { DestinoUrl } from "./destinos.ts";
 import { abrirConexiones } from "./leer-wordpress.ts";
 import type { Conexiones, Consulta, Fila } from "./leer-wordpress.ts";
 import { num, str } from "./utilidades.ts";
 
-export const DESTINO_PERMITIDO = Object.freeze({ host: "127.0.0.1", puerto: 3308, base: "evaristo_cms" });
+export { DESTINO_PERMITIDO, guardaDestino };
+export type { DestinoUrl };
 export const ORIGEN_WORDPRESS = Object.freeze({ host: "127.0.0.1", puerto: 3307, base: "evaristo_lectura" });
 /** Versión mayor.menor que tiene que informar el servidor del CMS. */
 export const VERSION_CMS = "8.4";
-
-export interface DestinoUrl { host: string; puerto: number; base: string }
-
-/**
- * Comprueba que una URL de conexión apunte exactamente a 127.0.0.1:3308/evaristo_cms, sin parámetros. Se niega ante cualquier otro destino
- * (localhost, ::1, el puerto 3306, evaristo_cms_test, evaristo_cms_shadow...). Lanza un Error; si todo coincide devuelve el destino.
- */
-export function guardaDestino(url: string | undefined): DestinoUrl {
-  const negar = (motivo: string): never => { throw new Error(`Destino no permitido (${motivo}): solo se acepta ${DESTINO_PERMITIDO.host}:${DESTINO_PERMITIDO.puerto}/${DESTINO_PERMITIDO.base}. La corrida se niega a seguir.`); };
-  if (!url) return negar("falta DATABASE_URL");
-  let u: URL;
-  try { u = new URL(url); } catch { return negar("DATABASE_URL no es una URL válida"); }
-  if (u.protocol !== "mysql:") negar(`protocolo ${u.protocol}`);
-  if (u.hostname !== DESTINO_PERMITIDO.host) negar(`host ${u.hostname || "(vacío)"}`);
-  if (u.port !== String(DESTINO_PERMITIDO.puerto)) negar(`puerto ${u.port || "(el predeterminado)"}`);
-  if (u.pathname !== `/${DESTINO_PERMITIDO.base}`) negar(`base ${u.pathname.slice(1) || "(ninguna)"}`);
-  if (u.search || u.hash) negar("la URL trae parámetros");
-  return { host: u.hostname, puerto: Number(u.port), base: u.pathname.slice(1) };
-}
 
 export interface DestinoServidor { puerto: number; base: string; readOnly: number; version: string }
 

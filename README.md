@@ -78,6 +78,8 @@ Prisma recrea la base shadow (`evaristo_cms_shadow`) con la intercalación por d
 6. Correr `npm run db:verificar` para confirmar la intercalación.
 7. Opcional: `npm run db:probar` para comprobar la conexión y la codificación.
 
+> **Clon nuevo y `typecheck`:** el cliente de Prisma y los tipos de Astro no se versionan. Antes de correr `npm run typecheck` hay que correr `npm run db:generate` (genera `packages/compartido/src/generated/`) y `npx astro sync` dentro de `apps/sitio` (genera los tipos de `.astro/`). Sin eso el typecheck falla con errores de módulos que no existen.
+
 ## Modelo de datos
 
 Hoy el esquema tiene el núcleo del contenido y sus complementos:
