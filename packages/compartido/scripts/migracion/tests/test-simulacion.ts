@@ -49,7 +49,7 @@ const medirFalso = (_carpeta: string, claves: Iterable<string>) => new Map<strin
     ? { estado: "original faltante", archivo: null, diferenciaDeNombre: null, bytes: null, sha256: null, mime: null, ancho: null, alto: null }
     : { estado: "medida", archivo: c, diferenciaDeNombre: null, bytes: 1000, sha256: "e".repeat(64), mime: "image/jpeg", ancho: 800, alto: 600 }] as const));
 
-const opciones: OpcionesCli = { alcance: { tipo: "muestra" }, modo: "simular", esperarArticulos: null, abortarAlPrimerError: false, sobrescribir: false, originales: "carpeta-que-no-se-abre" };
+const opciones: OpcionesCli = { alcance: { tipo: "muestra" }, modo: "simular", esperarArticulos: null, esperarSobrescribir: null, abortarAlPrimerError: false, sobrescribir: false, originales: "carpeta-que-no-se-abre" };
 const servidorCms = { puerto: 3308, base: "evaristo_cms", readOnly: 0, version: "8.4.3" };
 const servidorWordPress = { puerto: 3307, base: "evaristo_lectura", readOnly: 0, version: "10.11.2-MariaDB" };
 

@@ -89,7 +89,7 @@ const parsear = (...a: string[]): OpcionesCli => parsearArgumentos(a, MUESTRA);
 const falla = (args: string[], texto: RegExp) => assert.throws(() => parsearArgumentos(args, MUESTRA), (e: Error) => e instanceof ErrorDeArgumentos && texto.test(e.message), args.join(" "));
 
 t("T14: --muestra por defecto simula; --simular es lo mismo; los extras se leen", () => {
-  assert.deepEqual(parsear("--muestra"), { alcance: { tipo: "muestra" }, modo: "simular", esperarArticulos: null, abortarAlPrimerError: false, sobrescribir: false, originales: null });
+  assert.deepEqual(parsear("--muestra"), { alcance: { tipo: "muestra" }, modo: "simular", esperarArticulos: null, esperarSobrescribir: null, abortarAlPrimerError: false, sobrescribir: false, originales: null });
   assert.deepEqual(parsear("--muestra", "--simular"), parsear("--muestra"));
   const o = parsear("--simular", "--muestra", "--abortar-al-primer-error", "--originales=C:\\Mis Fotos\\originales");
   assert.equal(o.abortarAlPrimerError, true);
@@ -120,14 +120,23 @@ t("T14: exactamente uno de --ids | --muestra | --todos", () => {
   falla(["--ids=22546", "--todos"], /exactamente uno/);
 });
 
-t("T14: --esperar-articulos y --sobrescribir exigen --escribir; --simular y --escribir no van juntos", () => {
+t("T14: --esperar-articulos exige --escribir; --sobrescribir exige --escribir y --esperar-sobrescribir=N; --simular y --escribir no van juntos", () => {
   falla(["--muestra", "--esperar-articulos=35"], /solo se usa con --escribir/);
   falla(["--muestra", "--sobrescribir"], /--sobrescribir solo se usa con --escribir/);
+  falla(["--muestra", "--sobrescribir", "--esperar-sobrescribir=1"], /--sobrescribir solo se usa con --escribir/);
   falla(["--muestra", "--simular", "--escribir", "--esperar-articulos=35"], /no se pueden usar juntos/);
   falla(["--muestra", "--escribir"], /necesita --esperar-articulos/);
   for (const n of ["abc", "0", "-1", "3.5", "1e3", " 5", "5 ", "035x"]) falla(["--muestra", "--escribir", `--esperar-articulos=${n}`], /entero positivo/);
   falla(["--muestra", "--escribir", "--esperar-articulos="], /necesita un valor/);
   falla(["--muestra", "--escribir", "--esperar-articulos"], /necesita un valor/);
+  // sobrescritura
+  falla(["--muestra", "--escribir", "--esperar-articulos=35", "--sobrescribir"], /--sobrescribir necesita --esperar-sobrescribir=N/);
+  falla(["--muestra", "--escribir", "--esperar-articulos=35", "--esperar-sobrescribir=2"], /--esperar-sobrescribir solo se usa con --sobrescribir/);
+  falla(["--muestra", "--esperar-sobrescribir=2"], /--esperar-sobrescribir solo se usa con --sobrescribir/);
+  for (const n of ["abc", "-1", "3.5", "1e3", " 5", "5 ", "x"]) falla(["--muestra", "--escribir", "--esperar-articulos=35", "--sobrescribir", `--esperar-sobrescribir=${n}`], /entero/);
+  falla(["--muestra", "--escribir", "--esperar-articulos=35", "--sobrescribir", "--esperar-sobrescribir="], /necesita un valor/);
+  falla(["--muestra", "--escribir", "--esperar-articulos=35", "--sobrescribir", "--esperar-sobrescribir"], /necesita un valor/);
+  falla(["--muestra", "--escribir", "--esperar-articulos=35", "--sobrescribir", "--esperar-sobrescribir=1", "--esperar-sobrescribir=2"], /repetido/);
 });
 
 t("T14: argumentos desconocidos, repetidos o con valor de más", () => {
@@ -143,11 +152,15 @@ t("T14: argumentos desconocidos, repetidos o con valor de más", () => {
   falla(["--muestra", "--abortar-al-primer-error=1"], /no lleva valor/);
 });
 
-t("T14: en este tramo --escribir y --todos se rechazan con un mensaje claro", () => {
+t("T14: --escribir se acepta al parsear (no lo habilita: eso lo decide confirmaciones.ts) y --todos se rechaza", () => {
+  assert.deepEqual(parsear("--muestra", "--escribir", "--esperar-articulos=35"), {
+    alcance: { tipo: "muestra" }, modo: "escribir", esperarArticulos: 35, esperarSobrescribir: null, abortarAlPrimerError: false, sobrescribir: false, originales: null,
+  });
+  const o = parsear("--ids=22546", "--escribir", "--esperar-articulos=1", "--sobrescribir", "--esperar-sobrescribir=0", "--abortar-al-primer-error", "--originales=x");
+  assert.deepEqual([o.modo, o.esperarArticulos, o.sobrescribir, o.esperarSobrescribir, o.abortarAlPrimerError], ["escribir", 1, true, 0, true]);
   falla(["--todos"], /--todos: no implementado en este tramo/);
   falla(["--todos", "--simular"], /no implementado en este tramo/);
-  falla(["--muestra", "--escribir", "--esperar-articulos=35"], /--escribir: no implementado en este tramo/);
-  falla(["--ids=22546", "--escribir", "--esperar-articulos=1", "--sobrescribir", "--abortar-al-primer-error"], /no implementado en este tramo/);
+  falla(["--todos", "--escribir", "--esperar-articulos=3"], /--todos: no implementado en este tramo/);
   // el error de combinación gana al de "no implementado" (se dice primero lo que está mal escrito)
   falla(["--todos", "--esperar-articulos=3"], /solo se usa con --escribir/);
 });

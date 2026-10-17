@@ -84,6 +84,42 @@ Prisma recrea la base shadow (`evaristo_cms_shadow`) con la intercalación por d
 
 Desde la raíz: `npm run test:conversor` (conversor de WordPress a TipTap) y `npm run test:migracion` (migración, sin base de datos ni WordPress). Los dos delegan en `@evaristo/compartido`.
 
+## Migración desde WordPress
+
+El programa vive en `packages/compartido/scripts/migracion/`. Hoy el CLI **solo simula**; la escritura existe y está probada, pero únicamente contra la base de pruebas.
+
+### Cómo se ejecuta cada modo
+
+| Modo | Comando | Qué hace |
+| --- | --- | --- |
+| Simular | `npm run migrar -w @evaristo/compartido -- --muestra --simular --originales=<carpeta>` | Lee WordPress (`127.0.0.1:3307`, solo lectura) y el CMS (`127.0.0.1:3308`, sesión `READ ONLY`), arma y valida el plan, mide las imágenes y escribe un informe en `packages/compartido/out/migracion/<fecha>-simular.json` y `.md` (ignorado por git). No escribe en ninguna base. Necesita los dos servidores arriba. |
+| Escribir | `... -- --muestra --escribir --esperar-articulos=35 [--sobrescribir --esperar-sobrescribir=N] --originales=<carpeta>` | Se acepta, pero hoy se **niega** con salida 2 y un mensaje claro, antes de abrir ninguna conexión: `ESCRITURA_REAL_HABILITADA` vale `false`. |
+| Tests sin base | `npm run test:migracion` | Puros: sin base de datos ni WordPress. |
+| Tests con base | `npm run test:migracion-db` | Vacían y cargan **solo `evaristo_cms_test`**. No usan WordPress ni la carpeta de originales (mediciones sintéticas desde el snapshot). Antes y después de cada test comprueban que `evaristo_cms` no cambió. |
+
+`--todos` sigue sin estar implementado. Los informes de escritura (`<fecha>-escribir.json` y `.md`) listan las filas por tabla (insertadas, sin cambios, difieren, sobrescritas), los conflictos, los artículos fallidos con su motivo y los ids reescritos; nunca llevan correos, bios ni valores de campos. La salida es distinta de 0 si hay artículos fallidos o conflictos.
+
+### Modelo de seguridad
+
+- **Destinos fijos.** Hay dos constantes en `lib/destinos.ts`: `DESTINO_REAL` (`127.0.0.1:3308`, `evaristo_cms`) y `DESTINO_PRUEBAS` (`127.0.0.1:3308`, `evaristo_cms_test`). Ningún flag, variable de entorno, argumento ni archivo construye un destino. De `DATABASE_URL` solo se comparan el destino (si no coincide con el real, la corrida se niega) y se toman el usuario y la clave. El CLI solo puede producir el destino real.
+- **Interruptor.** `ESCRITURA_REAL_HABILITADA = false` es una constante de código. Mientras valga `false`, abrir una conexión de escritura al destino real se niega siempre. Cambiarla es un cambio de código que se revisa y se commitea.
+- **Un solo lugar escribe.** `lib/escribir.ts` es el único archivo que crea un cliente con escritura, y `migrar.ts` no lo alcanza ni indirectamente (lo comprueba un test). La lógica de confirmación vive en `lib/confirmaciones.ts`, que no lo importa. Tras conectar se verifican `@@port`, `DATABASE()`, la versión (8.4) y `@@session.transaction_read_only`.
+- **Confirmaciones.** `--esperar-articulos=N` tiene que ser igual a la cantidad de artículos del plan; si no, no se escribe nada (ni categorías). Para el destino real se exige además una terminal interactiva y tipear el nombre de la base; sin terminal interactiva se niega.
+- **No se pisa lo existente.** Categorías, autores, imágenes y artículos que ya existen se comparan con el plan: iguales, no se tocan (ni `actualizadoEn`); distintos, se omiten y se informan los **nombres** de los campos. Una clave de imagen de otro `wpId`, un slug de autor de otra fila y una redirección con otro destino son conflictos y no se pisan nunca, ni siquiera con sobrescritura.
+- **Sobrescritura.** Solo `--sobrescribir --esperar-sobrescribir=N` reescribe lo que difiere, y solo si N es la cantidad exacta de artículos que se reescribirían; si no coincide, no se escribe nada. El informe lista los ids afectados.
+- **Un artículo, una transacción** (30 s). Si uno falla se deshace solo ese y la corrida sigue (o corta ahí con `--abortar-al-primer-error`).
+
+### Orden recomendado para la primera escritura real
+
+1. Hacer un respaldo de `evaristo_cms` (`mysqldump`) y guardarlo fuera del repositorio.
+2. `npm run db:verificar` y `npm run test:migracion` y `npm run test:migracion-db`: todo verde.
+3. `--simular` con los dos servidores arriba y la carpeta de originales; revisar el informe (cero bloqueantes, cero problemas de artículo, conflictos entendidos).
+4. Ensayar la misma carga contra `evaristo_cms_test` y comprobar que una segunda corrida lo informa todo como "sin cambios".
+5. Recién entonces, en un commit propio y revisado: poner `ESCRITURA_REAL_HABILITADA = true` y cablear la ejecución en el CLI (hoy `migrar.ts` no puede llamar a `correr-escritura.ts` sin alcanzar `escribir.ts`, y el test T16 lo impide a propósito; habrá que decidir cómo se relaja).
+6. Primera escritura con `--muestra --escribir --esperar-articulos=35` desde una terminal interactiva, tipeando el nombre de la base. Revisar el informe `-escribir` y correr `db:verificar`.
+7. Repetir el mismo comando: tiene que informar todo como "sin cambios".
+8. Volver `ESCRITURA_REAL_HABILITADA` a `false` y commitearlo.
+
 ## Modelo de datos
 
 Hoy el esquema tiene el núcleo del contenido y sus complementos:

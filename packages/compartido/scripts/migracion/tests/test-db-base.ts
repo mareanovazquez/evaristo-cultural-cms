@@ -82,7 +82,10 @@ try {
     assert.deepEqual(alcanzados.filter((a) => /escribir|tests\//.test(a)), []);
     const mencionan = (patron: RegExp) => [...archivos].filter((a) => patron.test(readFileSync(a, "utf8"))).map(rel);
     assert.deepEqual(mencionan(/DESTINO_PRUEBAS/), ["scripts/migracion/lib/destinos.ts"]);
-    assert.deepEqual(mencionan(/ESCRITURA_REAL_HABILITADA/), ["scripts/migracion/lib/destinos.ts"]);
+    // el interruptor se define en destinos.ts y solo se LEE en confirmaciones.ts (la decisión del CLI): nadie más lo menciona ni lo asigna
+    assert.deepEqual(mencionan(/ESCRITURA_REAL_HABILITADA/).sort(), ["scripts/migracion/lib/confirmaciones.ts", "scripts/migracion/lib/destinos.ts"]);
+    assert.deepEqual(mencionan(/^\s*(?:export\s+)?(?:const|let|var)\s+ESCRITURA_REAL_HABILITADA\b|^\s*ESCRITURA_REAL_HABILITADA\s*=[^=]/m), ["scripts/migracion/lib/destinos.ts"]);
+    assert.deepEqual(mencionan(/DESTINO_PRUEBAS|abrirConexion(?:Escritura|Lectura)/), ["scripts/migracion/lib/destinos.ts"]);
     // y escribir.ts es el único archivo de scripts/migracion/ que crea un cliente de escritura
     const todos: string[] = [];
     const recorrer = (d: string) => { for (const e of readdirSync(d, { withFileTypes: true })) { const p = join(d, e.name); if (e.isDirectory()) recorrer(p); else if (p.endsWith(".ts")) todos.push(p); } };

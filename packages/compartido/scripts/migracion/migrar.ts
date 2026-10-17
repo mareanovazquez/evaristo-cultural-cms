@@ -1,4 +1,4 @@
-// Migración de la muestra de WordPress al CMS. En este tramo SOLO SIMULA: lee WordPress (127.0.0.1:3307) y el CMS (127.0.0.1:3308),
+// Migración de la muestra de WordPress al CMS. En este tramo SOLO SIMULA (--escribir se acepta pero se niega, sin abrir ninguna conexión): lee WordPress (127.0.0.1:3307) y el CMS (127.0.0.1:3308),
 // arma y valida el plan, mide las imágenes originales y escribe un informe. No escribe en ninguna base: las dos conexiones abren la
 // sesión en READ ONLY, todo pasa por consultar() (solo SELECT) y este programa no importa ningún cliente con permiso de escritura.
 //
@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import { cargarDatosVersionados } from "./lib/entrada-snapshot.ts";
 import { abrirConexionesVerificadas, ErrorDeArgumentos, parsearArgumentos } from "./lib/conexiones.ts";
+import { decidirEscrituraCli } from "./lib/confirmaciones.ts";
 import { escribirInforme } from "./lib/informe.ts";
 import { simular } from "./lib/simular.ts";
 
@@ -18,12 +19,18 @@ const CARPETA_INFORMES = fileURLToPath(new URL("../../out/migracion", import.met
 let opciones;
 try {
   opciones = parsearArgumentos(process.argv.slice(2), cargarDatosVersionados().ids);
+  // --escribir se acepta al parsear, pero este programa no escribe: se niega ANTES de abrir ninguna conexión (ni siquiera de lectura)
+  if (opciones.modo === "escribir") {
+    console.error(decidirEscrituraCli().mensaje);
+    process.exit(2);
+  }
   if (opciones.originales === null) throw new ErrorDeArgumentos("--originales=<carpeta> es obligatorio para medir las imágenes");
   try { readdirSync(opciones.originales); } catch { throw new ErrorDeArgumentos(`--originales: no se puede leer la carpeta ${opciones.originales}`); }
 } catch (e) {
   if (!(e instanceof ErrorDeArgumentos)) throw e;
   console.error(`Error en los argumentos: ${e.message}`);
   console.error("Uso: migrar.ts (--muestra | --ids=a,b) [--simular] --originales=<carpeta> [--abortar-al-primer-error]");
+  console.error("     migrar.ts (--muestra | --ids=a,b) --escribir --esperar-articulos=N [--sobrescribir --esperar-sobrescribir=N] --originales=<carpeta>   (hoy se niega)");
   process.exit(2);
 }
 

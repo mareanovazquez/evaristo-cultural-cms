@@ -72,6 +72,8 @@ export interface OpcionesCli {
   alcance: Alcance;
   modo: "simular" | "escribir";
   esperarArticulos: number | null;
+  /** Cantidad exacta de artículos que se reescribirían (solo con --sobrescribir). */
+  esperarSobrescribir: number | null;
   abortarAlPrimerError: boolean;
   sobrescribir: boolean;
   originales: string | null;
@@ -80,12 +82,13 @@ export interface OpcionesCli {
 export class ErrorDeArgumentos extends Error {}
 
 /** Lo que este tramo todavía no implementa. */
-export const NO_IMPLEMENTADO: readonly string[] = ["--escribir", "--todos"];
+export const NO_IMPLEMENTADO: readonly string[] = ["--todos"];
 
 /**
  * Interpreta los argumentos. `idsMuestra` son los 35 ids de la muestra, en el orden en que se arman.
  * Exactamente uno de --ids=a,b | --muestra | --todos; --simular (por defecto) o --escribir con --esperar-articulos=N;
- * --abortar-al-primer-error; --sobrescribir (solo con --escribir); --originales=<carpeta>. Todo lo demás se rechaza.
+ * --abortar-al-primer-error; --sobrescribir (solo con --escribir, y con --esperar-sobrescribir=N); --originales=<carpeta>.
+ * Todo lo demás se rechaza. Que --escribir se acepte al parsear no la habilita: la decisión es de confirmaciones.ts.
  */
 export function parsearArgumentos(argv: readonly string[], idsMuestra: readonly number[]): OpcionesCli {
   const rechazar = (m: string): never => { throw new ErrorDeArgumentos(m); };
@@ -94,7 +97,7 @@ export function parsearArgumentos(argv: readonly string[], idsMuestra: readonly 
     const v = arg.slice(nombre.length + 1);
     return v === "" ? rechazar(`${nombre} necesita un valor (${nombre}=...)`) : v;
   };
-  let ids: string | null = null, muestra = false, todos = false, simular = false, escribir = false, esperar: string | null = null;
+  let ids: string | null = null, muestra = false, todos = false, simular = false, escribir = false, esperar: string | null = null, esperarSobre: string | null = null;
   let abortar = false, sobrescribir = false, originales: string | null = null;
   for (const arg of argv) {
     const nombre = arg.includes("=") ? arg.slice(0, arg.indexOf("=")) : arg;
@@ -110,6 +113,7 @@ export function parsearArgumentos(argv: readonly string[], idsMuestra: readonly 
       case "--simular": sinValor(nombre); simular = true; break;
       case "--escribir": sinValor(nombre); escribir = true; break;
       case "--esperar-articulos": if (!conValor) rechazar("--esperar-articulos necesita un valor (--esperar-articulos=N)"); esperar = valor(arg, nombre); break;
+      case "--esperar-sobrescribir": if (!conValor) rechazar("--esperar-sobrescribir necesita un valor (--esperar-sobrescribir=N)"); esperarSobre = valor(arg, nombre); break;
       case "--abortar-al-primer-error": sinValor(nombre); abortar = true; break;
       case "--sobrescribir": sinValor(nombre); sobrescribir = true; break;
       case "--originales": if (!conValor) rechazar("--originales necesita un valor (--originales=<carpeta>)"); originales = valor(arg, nombre); break;
@@ -122,6 +126,13 @@ export function parsearArgumentos(argv: readonly string[], idsMuestra: readonly 
   if (simular && escribir) rechazar("--simular y --escribir no se pueden usar juntos");
   if (esperar !== null && !escribir) rechazar("--esperar-articulos solo se usa con --escribir");
   if (sobrescribir && !escribir) rechazar("--sobrescribir solo se usa con --escribir");
+  if (sobrescribir && esperarSobre === null) rechazar("--sobrescribir necesita --esperar-sobrescribir=N");
+  if (esperarSobre !== null && !sobrescribir) rechazar("--esperar-sobrescribir solo se usa con --sobrescribir");
+  let esperarSobrescribir: number | null = null;
+  if (esperarSobre !== null) {
+    if (!/^\d+$/.test(esperarSobre)) rechazar(`--esperar-sobrescribir tiene que ser un entero (se recibió "${esperarSobre}")`);
+    esperarSobrescribir = Number(esperarSobre);
+  }
   let esperarArticulos: number | null = null;
   if (esperar !== null) {
     if (!/^\d+$/.test(esperar) || Number(esperar) < 1) rechazar(`--esperar-articulos tiene que ser un entero positivo (se recibió "${esperar}")`);
@@ -140,8 +151,8 @@ export function parsearArgumentos(argv: readonly string[], idsMuestra: readonly 
   } else alcance = muestra ? { tipo: "muestra" } : { tipo: "todos" };
 
   // Los argumentos son válidos, pero estas opciones todavía no hacen nada en este tramo
-  const pedidosSinImplementar = NO_IMPLEMENTADO.filter((n) => (n === "--escribir" ? escribir : todos));
+  const pedidosSinImplementar = todos ? NO_IMPLEMENTADO : [];
   if (pedidosSinImplementar.length) rechazar(`${pedidosSinImplementar.join(" y ")}: no implementado en este tramo`);
 
-  return { alcance, modo: escribir ? "escribir" : "simular", esperarArticulos, abortarAlPrimerError: abortar, sobrescribir, originales };
+  return { alcance, modo: escribir ? "escribir" : "simular", esperarArticulos, esperarSobrescribir, abortarAlPrimerError: abortar, sobrescribir, originales };
 }
