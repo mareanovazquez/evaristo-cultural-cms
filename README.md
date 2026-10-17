@@ -80,6 +80,10 @@ Prisma recrea la base shadow (`evaristo_cms_shadow`) con la intercalación por d
 
 > **Clon nuevo y `typecheck`:** el cliente de Prisma y los tipos de Astro no se versionan. Antes de correr `npm run typecheck` hay que correr `npm run db:generate` (genera `packages/compartido/src/generated/`) y `npx astro sync` dentro de `apps/sitio` (genera los tipos de `.astro/`). Sin eso el typecheck falla con errores de módulos que no existen.
 
+### Pruebas
+
+Desde la raíz: `npm run test:conversor` (conversor de WordPress a TipTap) y `npm run test:migracion` (migración, sin base de datos ni WordPress). Los dos delegan en `@evaristo/compartido`.
+
 ## Modelo de datos
 
 Hoy el esquema tiene el núcleo del contenido y sus complementos:

@@ -16,6 +16,7 @@
     "dev:sitio": "npm run dev --workspace=@evaristo/sitio",
     "db:generate": "npm run db:generate --workspace=@evaristo/compartido",
     "db:migrate": "npm run db:migrate --workspace=@evaristo/compartido",
+    "test:migracion": "npm run test:migracion --workspace=@evaristo/compartido",
     "test:conversor": "npm run test:conversor --workspace=@evaristo/compartido",
     "db:probar": "npm run db:probar --workspace=@evaristo/compartido",
     "db:deploy": "npm run db:deploy --workspace=@evaristo/compartido",
