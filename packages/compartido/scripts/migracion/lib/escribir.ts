@@ -11,6 +11,8 @@ import { validarDestinoUnico } from "./armar.ts";
 import type { Plan, RedirecionPlan, RegistroArticulo } from "./armar.ts";
 import { DESTINO_PRUEBAS, DESTINO_REAL, ESCRITURA_REAL_HABILITADA } from "./destinos.ts";
 import { nodosImagen, reescribirImagenes } from "./enlaces-imagenes.ts";
+import { SOLO_LECTURA, consultar } from "./leer-wordpress.ts";
+import type { Consulta } from "./leer-wordpress.ts";
 import { num, str } from "./utilidades.ts";
 
 export type DestinoEscritura = typeof DESTINO_REAL | typeof DESTINO_PRUEBAS;
@@ -74,14 +76,64 @@ export async function abrirConexionEscritura(destino: unknown): Promise<Conexion
 }
 
 // ---------------------------------------------------------------------------------------------------------------
+// Conexión de LECTURA a la base de pruebas (sesión READ ONLY): para probar la simulación contra evaristo_cms_test
+// ---------------------------------------------------------------------------------------------------------------
+/** Solo acepta la constante DESTINO_PRUEBAS (por identidad). La lectura del destino real sigue siendo la de leer-wordpress.ts. */
+export function elegirDestinoLectura(destino: unknown): typeof DESTINO_PRUEBAS {
+  if (destino !== DESTINO_PRUEBAS) throw new Error("Destino de lectura no permitido: esta conexión solo se abre con DESTINO_PRUEBAS");
+  return destino as typeof DESTINO_PRUEBAS;
+}
+
+export interface ConexionLectura {
+  /** Consulta de solo SELECT (pasa por consultar()). */
+  bd: Consulta;
+  destino: typeof DESTINO_PRUEBAS;
+  servidor: ServidorEscritura;
+  cerrar: () => Promise<void>;
+}
+
+/** Abre el cliente con la sesión en READ ONLY y comprueba @@port, DATABASE(), la versión y @@session.transaction_read_only = 1. */
+export async function abrirConexionLectura(destino: unknown): Promise<ConexionLectura> {
+  const elegido = elegirDestinoLectura(destino);
+  const { user, password } = credenciales();
+  const prisma = new PrismaClient({ adapter: new PrismaMariaDb({ host: elegido.host, port: elegido.puerto, user, password, database: elegido.base, connectionLimit: 2, initSql: SOLO_LECTURA }) });
+  const bd: Consulta = (sql, ...p) => consultar(prisma, sql, ...p);
+  try {
+    const [f] = await bd("SELECT @@port AS puerto, DATABASE() AS base, @@version AS version, @@session.transaction_read_only AS ro");
+    const servidor = verificarServidorEscritura({ puerto: num(f?.["puerto"]), base: str(f?.["base"]), version: str(f?.["version"]), soloLectura: 0 }, elegido);
+    if (num(f?.["ro"]) !== 1) throw new Error("La sesión de lectura no está en solo lectura: se aborta");
+    return { bd, destino: elegido, servidor: { ...servidor, soloLectura: 1 }, cerrar: () => prisma.$disconnect() };
+  } catch (e) {
+    await prisma.$disconnect();
+    throw e;
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Comparaciones (nunca se informan valores, solo nombres de campos)
+// ---------------------------------------------------------------------------------------------------------------
+const ordenar = (v: unknown): unknown => {
+  if (Array.isArray(v)) return v.map(ordenar);
+  if (v !== null && typeof v === "object" && !(v instanceof Date)) return Object.fromEntries(Object.entries(v as Record<string, unknown>).sort(([a], [b]) => (a < b ? -1 : 1)).map(([k, x]) => [k, ordenar(x)]));
+  return v;
+};
+/** Forma comparable de un valor: los JSON sin importar el orden de las claves, las fechas por su instante, undefined como null. */
+export const comparable = (v: unknown): string => JSON.stringify(v instanceof Date ? v.getTime() : ordenar(v ?? null));
+const camposDistintos = (plan: Record<string, unknown>, fila: Record<string, unknown>): string[] => Object.keys(plan).filter((k) => comparable(plan[k]) !== comparable(fila[k]));
+
+// ---------------------------------------------------------------------------------------------------------------
 // Base de la escritura: categorías, autores e imágenes (en ese orden)
 // ---------------------------------------------------------------------------------------------------------------
 export interface ConflictoEscritura { tabla: string; clave: string; detalle: unknown }
 
+/** Una fila de autores o imagenes que ya existe y difiere del plan: solo los nombres de los campos. */
+export interface FilaQueDifiere { tabla: "autores" | "imagenes"; clave: string; campos: string[]; sobrescrita: boolean }
+
 export interface ResultadoBase {
   categorias: { enElPlan: number; creadas: number; existentes: number };
-  autores: { enElPlan: number; creados: number; existentes: number; conflictos: number };
-  imagenes: { enElPlan: number; creadas: number; existentes: number; conflictos: number };
+  autores: { enElPlan: number; creados: number; sinCambios: number; difieren: number; sobrescritos: number; conflictos: number };
+  imagenes: { enElPlan: number; creadas: number; sinCambios: number; difieren: number; sobrescritas: number; conflictos: number };
+  difieren: FilaQueDifiere[];
   conflictos: ConflictoEscritura[];
   /** Artículos que no se escriben porque dependen de algo en conflicto (wpId -> motivo). */
   fallidos: Map<number, string>;
@@ -92,16 +144,19 @@ export interface ResultadoBase {
 }
 
 /**
- * Escribe categorías (upsert por slug con update vacío), autores (upsert por wpUserId) e imágenes (upsert por wpId).
- * `bioConCorreo` del plan no es una columna: no se escribe. Una clave de imagen o un slug de autor que ya pertenecen a otra fila no se pisan:
- * se reportan como conflicto y los artículos que dependen de eso quedan como fallidos.
+ * Escribe categorías (upsert por slug con update vacío), autores (por wpUserId) e imágenes (por wpId). `bioConCorreo` del plan no es una columna.
+ * Una fila de autor o de imagen que ya existe se compara con el plan: igual, no se toca (ni siquiera se llama a update, para no cambiar
+ * actualizadoEn); distinta, NO se pisa y se informan los nombres de los campos que difieren. Con `sobrescribir` sí se reescribe.
+ * Una clave de imagen o un slug de autor que ya pertenecen a otra fila son conflicto siempre, también con sobrescritura: no se pisan y los
+ * artículos que dependen de eso quedan como fallidos.
  */
-export async function escribirBase(prisma: PrismaClient, plan: Plan): Promise<ResultadoBase> {
+export async function escribirBase(prisma: PrismaClient, plan: Plan, opciones: { sobrescribir?: boolean } = {}): Promise<ResultadoBase> {
+  const sobrescribir = opciones.sobrescribir === true;
   const r: ResultadoBase = {
     categorias: { enElPlan: plan.categoriasACrear.length, creadas: 0, existentes: 0 },
-    autores: { enElPlan: plan.autores.length, creados: 0, existentes: 0, conflictos: 0 },
-    imagenes: { enElPlan: plan.imagenes.length, creadas: 0, existentes: 0, conflictos: 0 },
-    conflictos: [], fallidos: new Map(), idsCategorias: new Map(), idsAutores: new Map(), idsImagenes: new Map(),
+    autores: { enElPlan: plan.autores.length, creados: 0, sinCambios: 0, difieren: 0, sobrescritos: 0, conflictos: 0 },
+    imagenes: { enElPlan: plan.imagenes.length, creadas: 0, sinCambios: 0, difieren: 0, sobrescritas: 0, conflictos: 0 },
+    difieren: [], conflictos: [], fallidos: new Map(), idsCategorias: new Map(), idsAutores: new Map(), idsImagenes: new Map(),
   };
 
   // 1. categorías (el nombre sale del mapeo; sin nombre no hay categoría: el plan lo marca como bloqueante)
@@ -122,12 +177,23 @@ export async function escribirBase(prisma: PrismaClient, plan: Plan): Promise<Re
       for (const wpId of a.articulosEnMuestra) r.fallidos.set(wpId, `el slug de autor "${a.slug}" ya pertenece a otra fila`);
       continue;
     }
-    const existia = (await prisma.autor.findUnique({ where: { wpUserId: a.wpUserId }, select: { id: true } })) !== null;
-    const bio = a.bio === null || a.bio === undefined ? Prisma.DbNull : (a.bio as Prisma.InputJsonValue);
-    const datos = { slug: a.slug, nombre: a.nombre, soloTexto: a.soloTexto, bio };
-    const fila = await prisma.autor.upsert({ where: { wpUserId: a.wpUserId }, update: datos, create: { wpUserId: a.wpUserId, ...datos }, select: { id: true } });
-    r.idsAutores.set(a.wpUserId, fila.id);
-    if (existia) r.autores.existentes++; else r.autores.creados++;
+    const datos = { slug: a.slug, nombre: a.nombre, soloTexto: a.soloTexto, bio: a.bio ?? null };
+    const existente = await prisma.autor.findUnique({ where: { wpUserId: a.wpUserId } });
+    const bio = datos.bio === null ? Prisma.DbNull : (datos.bio as Prisma.InputJsonValue);
+    if (!existente) {
+      const fila = await prisma.autor.upsert({ where: { wpUserId: a.wpUserId }, update: {}, create: { wpUserId: a.wpUserId, ...datos, bio }, select: { id: true } });
+      r.idsAutores.set(a.wpUserId, fila.id);
+      r.autores.creados++;
+      continue;
+    }
+    r.idsAutores.set(a.wpUserId, existente.id);
+    const campos = camposDistintos(datos, existente);
+    if (!campos.length) { r.autores.sinCambios++; continue; }
+    if (sobrescribir) {
+      await prisma.autor.update({ where: { id: existente.id }, data: { ...datos, bio } });
+      r.autores.sobrescritos++;
+    } else r.autores.difieren++;
+    r.difieren.push({ tabla: "autores", clave: String(a.wpUserId), campos, sobrescrita: sobrescribir });
   }
 
   // 3. imágenes
@@ -139,24 +205,45 @@ export async function escribirBase(prisma: PrismaClient, plan: Plan): Promise<Re
       for (const wpId of i.articulos) r.fallidos.set(wpId, `la clave de imagen "${i.clave}" ya pertenece a otro wpId (${mismaClave.wpId ?? "ninguno"})`);
       continue;
     }
-    const existia = (await prisma.imagen.findUnique({ where: { wpId: i.wpId }, select: { id: true } })) !== null;
     const datos = { clave: i.clave, nombreOriginal: i.nombreOriginal, tipoMime: i.tipoMime, ancho: i.ancho, alto: i.alto, bytes: i.bytes, hash: i.hash };
-    const fila = await prisma.imagen.upsert({ where: { wpId: i.wpId }, update: datos, create: { wpId: i.wpId, ...datos }, select: { id: true } });
-    r.idsImagenes.set(i.wpId, fila.id);
-    if (existia) r.imagenes.existentes++; else r.imagenes.creadas++;
+    const existente = await prisma.imagen.findUnique({ where: { wpId: i.wpId } });
+    if (!existente) {
+      const fila = await prisma.imagen.upsert({ where: { wpId: i.wpId }, update: {}, create: { wpId: i.wpId, ...datos }, select: { id: true } });
+      r.idsImagenes.set(i.wpId, fila.id);
+      r.imagenes.creadas++;
+      continue;
+    }
+    r.idsImagenes.set(i.wpId, existente.id);
+    const campos = camposDistintos(datos, existente);
+    if (!campos.length) { r.imagenes.sinCambios++; continue; }
+    if (sobrescribir) {
+      await prisma.imagen.update({ where: { id: existente.id }, data: datos });
+      r.imagenes.sobrescritas++;
+    } else r.imagenes.difieren++;
+    r.difieren.push({ tabla: "imagenes", clave: String(i.wpId), campos, sobrescrita: sobrescribir });
   }
   return r;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Artículos, relaciones y redirecciones
+// Artículos, relaciones, galería y redirecciones
 // ---------------------------------------------------------------------------------------------------------------
 /** Tiempo máximo de la transacción de un artículo. */
 export const TIMEOUT_ARTICULO_MS = 30_000;
 
+/** Una imagen de la galería de un artículo. Los 35 de la muestra no tienen galería: se usa con datos sintéticos en los tests. */
+export interface GaleriaPlan { imagenWpId: number; orden: number; alt: string | null; epigrafe: string | null }
+export type ArticuloEscribible = RegistroArticulo & { galeria?: readonly GaleriaPlan[] };
+export type PlanEscribible = Omit<Plan, "articulos"> & { articulos: ArticuloEscribible[] };
+
+/** Lo que el usuario confirmó para reescribir artículos que ya existen y difieren: la cantidad exacta y la lista de sus wpId. */
+export interface Sobrescritura { cantidad: number; wpIds: readonly number[] }
+
 export interface OpcionesEscritura {
   /** Corta en el primer artículo que falla (no se escriben los siguientes ni las redirecciones de autor). */
   abortarAlPrimerError: boolean;
+  /** Sin esto no se reescribe nada. Si la cantidad o la lista no coinciden con lo calculado, no se escribe nada. */
+  sobrescribir?: Sobrescritura | null;
 }
 
 /** Solo para los tests: se llama dentro de la transacción del artículo, después de escribir todo y antes de confirmar. */
@@ -164,23 +251,36 @@ export interface DependenciasEscritura {
   alFinalDelArticulo?: (wpId: number, tx: Prisma.TransactionClient) => Promise<void> | void;
 }
 
+export type EstadoArticulo = "escrito" | "sin_cambios" | "difiere" | "sobrescrito" | "fallido";
+
 export interface ResultadoArticulo {
   wpId: number;
   slug: string;
-  resultado: "escrito" | "omitido" | "fallido";
-  /** "ya existe (sin comparar)" para los omitidos; el motivo del error para los fallidos. */
+  resultado: EstadoArticulo;
+  /** Nombres de las columnas o conjuntos que difieren (solo para "difiere" y "sobrescrito"). Nunca valores. */
+  campos?: string[];
+  /** El motivo del error para los fallidos. */
   motivo?: string;
 }
 
 export interface ResultadoEscritura {
-  /** "error" si algún artículo falló (se deshizo solo ese artículo); "ok" si no. Los conflictos de redirección no cambian el estado: se listan aparte. */
+  /** "error" si algún artículo falló (se deshizo solo ese artículo); "ok" si no. Los conflictos y las diferencias se listan aparte. */
   estado: "ok" | "error";
   abortado: boolean;
   base: ResultadoBase;
   articulos: ResultadoArticulo[];
-  conteos: { escritos: number; omitidos: number; fallidos: number };
-  redirecciones: { creadas: number; conflictos: number };
+  conteos: { escritos: number; sinCambios: number; difieren: number; sobrescritos: number; fallidos: number };
+  redirecciones: { creadas: number; sinCambios: number; conflictos: number };
   conflictos: ConflictoEscritura[];
+  /** wpId de los artículos que se reescribieron (sobrescritura). */
+  idsSobrescritos: number[];
+}
+
+/** La cantidad o la lista de artículos a sobrescribir no coincide con lo calculado: no se escribió nada. */
+export class ErrorDeSobrescritura extends Error {
+  constructor(readonly pedidos: Sobrescritura, readonly calculados: readonly number[]) {
+    super(`La sobrescritura no coincide: se pidieron ${pedidos.cantidad} artículos (${pedidos.wpIds.join(", ") || "ninguno"}) y se reescribirían ${calculados.length} (${calculados.join(", ") || "ninguno"}). No se escribió nada.`);
+  }
 }
 
 /**
@@ -208,92 +308,196 @@ export function cuerpoParaGuardar(cuerpo: DocNode, idDe: (wpId: number) => numbe
 
 const json = (v: unknown): Prisma.InputJsonValue | typeof Prisma.DbNull => (v === null || v === undefined ? Prisma.DbNull : (v as Prisma.InputJsonValue));
 const fecha = (iso: string | null): Date | null => (iso === null ? null : new Date(iso));
+const viaJson = <T>(v: T): T => (v === null || v === undefined ? v : JSON.parse(JSON.stringify(v)));
 
-async function crearRedireccion(tx: Prisma.TransactionClient, r: RedirecionPlan, destino: { articuloId?: number; autorId?: number }, conflictos: ConflictoEscritura[]): Promise<boolean> {
+/** Cómo se resuelven las claves naturales del plan a ids de filas. Devuelve undefined si no hay fila. */
+interface Resolvedor {
+  seccion: (slug: string) => Promise<number | undefined>;
+  categoria: (slug: string) => Promise<number | undefined>;
+  autor: (wpUserId: number) => Promise<number | undefined>;
+  imagen: (wpId: number) => Promise<number | undefined>;
+}
+
+function resolvedorDe(c: Prisma.TransactionClient, base?: ResultadoBase): Resolvedor {
+  return {
+    seccion: async (slug) => (await c.seccion.findUnique({ where: { slug }, select: { id: true } }))?.id,
+    categoria: async (slug) => base?.idsCategorias.get(slug) ?? (await c.categoria.findUnique({ where: { slug }, select: { id: true } }))?.id,
+    autor: async (wpUserId) => base?.idsAutores.get(wpUserId) ?? (await c.autor.findUnique({ where: { wpUserId }, select: { id: true } }))?.id,
+    imagen: async (wpId) => base?.idsImagenes.get(wpId) ?? (await c.imagen.findUnique({ where: { wpId }, select: { id: true } }))?.id,
+  };
+}
+
+/** Todo lo que el script escribiría para un artículo, con los ids ya resueltos. */
+interface Produccion {
+  /** Las columnas del artículo (valores planos: los JSON sin envolver en Prisma.DbNull). */
+  columnas: Record<string, unknown>;
+  categoriaIds: number[];
+  autores: Array<{ autorId: number; orden: number }>;
+  galeria: Array<{ imagenId: number; orden: number; alt: string | null; epigrafe: string | null }>;
+}
+
+/** Arma la producción de un artículo. Si falta alguna fila de la que depende, devuelve los nombres de lo que falta (y no produce nada). */
+async function producir(a: ArticuloEscribible, res: Resolvedor): Promise<{ produccion: Produccion | null; faltan: string[] }> {
+  const faltan: string[] = [];
+  const seccionId = await res.seccion(a.seccion);
+  if (seccionId === undefined) faltan.push("seccionId");
+  const categoriaIds: number[] = [];
+  for (const slug of a.categorias) { const id = await res.categoria(slug); if (id === undefined) faltan.push("categorias"); else if (!categoriaIds.includes(id)) categoriaIds.push(id); }
+  const categoriaPrincipalId = a.categoriaPrincipal === null ? null : (await res.categoria(a.categoriaPrincipal)) ?? null;
+  if (a.categoriaPrincipal !== null && categoriaPrincipalId === null) faltan.push("categoriaPrincipalId");
+  const autores: Produccion["autores"] = [];
+  for (const x of a.autores) { const id = await res.autor(x.wpUserId); if (id === undefined) faltan.push("autores"); else autores.push({ autorId: id, orden: x.orden }); }
+
+  // imágenes: los ids salen de las filas de imagenes (por wpId), nunca se inventan
+  const idsImagen = new Map<number, number>();
+  const wpIds = new Set<number>([
+    ...(a.encabezadoAdjuntoWpId !== null ? [a.encabezadoAdjuntoWpId] : []),
+    ...(a.redesImagenWpId !== null ? [a.redesImagenWpId] : []),
+    ...nodosImagen(a.cuerpo).flatMap((n) => (typeof n.attrs?.["imagenWpId"] === "number" ? [n.attrs["imagenWpId"] as number] : [])),
+  ]);
+  for (const wpId of wpIds) { const id = await res.imagen(wpId); if (id !== undefined) idsImagen.set(wpId, id); }
+  const cuerpoSinFila = nodosImagen(a.cuerpo).some((n) => typeof n.attrs?.["imagenWpId"] === "number" && !idsImagen.has(n.attrs["imagenWpId"] as number));
+  if (cuerpoSinFila) faltan.push("cuerpo");
+  const galeria: Produccion["galeria"] = [];
+  for (const g of a.galeria ?? []) { const id = await res.imagen(g.imagenWpId); if (id === undefined) faltan.push("galeria"); else galeria.push({ imagenId: id, orden: g.orden, alt: g.alt, epigrafe: g.epigrafe }); }
+  if (faltan.length) return { produccion: null, faltan: [...new Set(faltan)] };
+
+  const cuerpo = viaJson(cuerpoParaGuardar(a.cuerpo as DocNode, (wpId) => idsImagen.get(wpId)));
+  const columnas: Record<string, unknown> = {
+    wpId: a.wpId, slug: a.slug, titulo: a.titulo, bajada: a.bajada, cuerpo, schemaVersion: a.schemaVersion, textoPlano: a.textoPlano,
+    estado: a.estado, publicadoEn: fecha(a.publicadoEn), novedadHasta: fecha(a.novedadHasta),
+    seccionId, categoriaPrincipalId, etiquetasWp: viaJson(a.etiquetasWp ?? null), avisosMigracion: viaJson(a.avisosMigracion ?? null), visitasWp: a.visitasWp,
+    imagenEncabezadoId: a.encabezadoAdjuntoWpId === null ? null : idsImagen.get(a.encabezadoAdjuntoWpId) ?? null,
+    encabezadoAlt: a.encabezadoAlt, encabezadoCredito: a.encabezadoCredito, encabezadoPuntoFocalX: a.encabezadoPuntoFocalX, encabezadoPuntoFocalY: a.encabezadoPuntoFocalY,
+    redesDescripcion: a.redesDescripcion, redesImagenId: a.redesImagenWpId === null ? null : idsImagen.get(a.redesImagenWpId) ?? null,
+    altPendientes: a.altPendientes,
+  };
+  return { produccion: { columnas, categoriaIds, autores, galeria }, faltan: [] };
+}
+
+/** Las columnas tal como se pasan a Prisma: los JSON nulos como DbNull. */
+const datosDeColumnas = (c: Record<string, unknown>) => ({ ...c, etiquetasWp: json(c["etiquetasWp"]), avisosMigracion: json(c["avisosMigracion"]) }) as unknown as Prisma.ArticuloUncheckedCreateInput;
+
+type FilaArticulo = Prisma.ArticuloGetPayload<{ include: { categorias: true; autores: true; galeria: true } }>;
+const leerFila = (c: Prisma.TransactionClient, wpId: number) => c.articulo.findUnique({ where: { wpId }, include: { categorias: true, autores: true, galeria: true } });
+
+/** Nombres de las columnas y de los conjuntos (categorias, autores, galeria) en los que la fila difiere de lo que produciría el script. */
+function diferencias(p: Produccion, fila: FilaArticulo): string[] {
+  const campos = camposDistintos(p.columnas, fila as unknown as Record<string, unknown>);
+  const ordenCat = (xs: number[]) => [...xs].sort((a, b) => a - b);
+  if (comparable(ordenCat(p.categoriaIds)) !== comparable(ordenCat(fila.categorias.map((x) => x.categoriaId)))) campos.push("categorias");
+  const aut = (xs: Array<{ autorId: number; orden: number }>) => [...xs].sort((a, b) => a.autorId - b.autorId).map((x) => [x.autorId, x.orden]);
+  if (comparable(aut(p.autores)) !== comparable(aut(fila.autores))) campos.push("autores");
+  const gal = (xs: Array<{ imagenId: number; orden: number; alt: string | null; epigrafe: string | null }>) =>
+    [...xs].sort((a, b) => a.orden - b.orden || a.imagenId - b.imagenId).map((x) => [x.imagenId, x.orden, x.alt ?? null, x.epigrafe ?? null]);
+  if (comparable(gal(p.galeria)) !== comparable(gal(fila.galeria))) campos.push("galeria");
+  return campos;
+}
+
+/** Artículos de `plan` que ya existen y difieren de lo que escribiría el script: son los que una sobrescritura reescribiría. Solo lectura. */
+export async function calcularSobrescrituras(prisma: PrismaClient, plan: PlanEscribible): Promise<number[]> {
+  const res = resolvedorDe(prisma);
+  const ids: number[] = [];
+  for (const a of plan.articulos) {
+    const fila = await leerFila(prisma, a.wpId);
+    if (!fila) continue;
+    let campos: string[];
+    try {
+      const { produccion, faltan } = await producir(a, res);
+      campos = produccion ? diferencias(produccion, fila) : faltan;
+    } catch { continue; }   // un artículo que no se puede armar falla al escribir; no es una sobrescritura
+    if (campos.length) ids.push(a.wpId);
+  }
+  return ids;
+}
+
+type Redireccion = "creada" | "sin_cambios" | "conflicto";
+
+/** Una redirección: igual (mismo origen y mismo destino) no es conflicto; mismo origen y otro destino sí, y no se pisa nunca. */
+async function crearRedireccion(tx: Prisma.TransactionClient, r: RedirecionPlan, destino: { articuloId?: number; autorId?: number }, conflictos: ConflictoEscritura[]): Promise<Redireccion> {
   const motivo = validarDestinoUnico({ articuloId: destino.articuloId, autorId: destino.autorId, destino: r.destino });
   if (motivo) throw new Error(`${r.origen}: ${motivo}`);
   const existente = await tx.redireccion.findUnique({ where: { origen: r.origen }, select: { id: true, tipo: true, articuloId: true, autorId: true, destino: true } });
   if (existente) {
+    const mismoDestino = existente.articuloId === (destino.articuloId ?? null) && existente.autorId === (destino.autorId ?? null) && existente.destino === (r.destino ?? null);
+    if (mismoDestino) return "sin_cambios";
     conflictos.push({ tabla: "redirecciones", clave: r.origen, detalle: { tipoDelPlan: r.tipo, existente } });
-    return false;
+    return "conflicto";
   }
   await tx.redireccion.create({ data: { origen: r.origen, tipo: r.tipo, codigo: r.codigo, articuloId: destino.articuloId ?? null, autorId: destino.autorId ?? null, destino: r.destino } });
-  return true;
+  return "creada";
 }
 
 /** Una transacción por artículo. Devuelve el resultado y lo que dejó por reportar (solo si la transacción se confirmó). */
-async function escribirArticulo(prisma: PrismaClient, a: RegistroArticulo, base: ResultadoBase, deps: DependenciasEscritura) {
+async function escribirArticulo(prisma: PrismaClient, a: ArticuloEscribible, base: ResultadoBase, permitidos: ReadonlySet<number>, deps: DependenciasEscritura) {
   const conflictos: ConflictoEscritura[] = [];
-  let creadas = 0;
-  const resultado = await prisma.$transaction(async (tx) => {
-    if ((await tx.articulo.findUnique({ where: { wpId: a.wpId }, select: { id: true } })) !== null) return "omitido" as const;
+  const redirecciones = { creadas: 0, sinCambios: 0 };
+  const salida = await prisma.$transaction(async (tx) => {
+    const { produccion, faltan } = await producir(a, resolvedorDe(tx, base));
+    const fila = await leerFila(tx, a.wpId);
+    let resultado: EstadoArticulo;
+    let campos: string[] | undefined;
+    let articuloId: number;
 
-    const seccion = await tx.seccion.findUnique({ where: { slug: a.seccion }, select: { id: true } });
-    if (!seccion) throw new Error(`la sección "${a.seccion}" no existe`);
-    const idCategoria = async (slug: string) => {
-      const id = base.idsCategorias.get(slug) ?? (await tx.categoria.findUnique({ where: { slug }, select: { id: true } }))?.id;
-      if (id === undefined) throw new Error(`la categoría "${slug}" no existe`);
-      return id;
-    };
-    const categoriaIds = [...new Set(await Promise.all(a.categorias.map(idCategoria)))];
-    const categoriaPrincipalId = a.categoriaPrincipal === null ? null : await idCategoria(a.categoriaPrincipal);
-    const autorIds = await Promise.all(a.autores.map(async (x) => {
-      const id = base.idsAutores.get(x.wpUserId) ?? (await tx.autor.findUnique({ where: { wpUserId: x.wpUserId }, select: { id: true } }))?.id;
-      if (id === undefined) throw new Error(`el autor ${x.wpUserId} no tiene fila`);
-      return { autorId: id, orden: x.orden };
-    }));
-
-    // imágenes: los ids salen de las filas de imagenes (por wpId), nunca se inventan
-    const idsImagen = new Map<number, number>();
-    const wpIds = new Set<number>([
-      ...(a.encabezadoAdjuntoWpId !== null ? [a.encabezadoAdjuntoWpId] : []),
-      ...(a.redesImagenWpId !== null ? [a.redesImagenWpId] : []),
-      ...nodosImagen(a.cuerpo).flatMap((n) => (typeof n.attrs?.["imagenWpId"] === "number" ? [n.attrs["imagenWpId"] as number] : [])),
-    ]);
-    for (const wpId of wpIds) {
-      const id = base.idsImagenes.get(wpId) ?? (await tx.imagen.findUnique({ where: { wpId }, select: { id: true } }))?.id;
-      if (id !== undefined) idsImagen.set(wpId, id);
+    if (!fila) {
+      if (!produccion) throw new Error(`faltan filas de las que depende el artículo (${faltan.join(", ")})`);
+      const creado = await tx.articulo.create({ data: datosDeColumnas(produccion.columnas), select: { id: true } });
+      articuloId = creado.id;
+      resultado = "escrito";
+    } else {
+      articuloId = fila.id;
+      campos = produccion ? diferencias(produccion, fila) : faltan;
+      if (!campos.length) resultado = "sin_cambios";
+      else if (!produccion || !permitidos.has(a.wpId)) resultado = "difiere";
+      else {
+        // se reescribe conservando id y creadoEn (actualizadoEn lo mueve Prisma)
+        await tx.articulo.update({ where: { id: fila.id }, data: datosDeColumnas(produccion.columnas) });
+        resultado = "sobrescrito";
+      }
     }
-    const cuerpo = cuerpoParaGuardar(a.cuerpo as DocNode, (wpId) => idsImagen.get(wpId));
 
-    const creado = await tx.articulo.create({
-      data: {
-        wpId: a.wpId, slug: a.slug, titulo: a.titulo, bajada: a.bajada, cuerpo: cuerpo as unknown as Prisma.InputJsonValue, schemaVersion: a.schemaVersion, textoPlano: a.textoPlano,
-        estado: a.estado as "PUBLICADO" | "BORRADOR", publicadoEn: fecha(a.publicadoEn), novedadHasta: fecha(a.novedadHasta),
-        seccionId: seccion.id, categoriaPrincipalId, etiquetasWp: json(a.etiquetasWp), avisosMigracion: json(a.avisosMigracion), visitasWp: a.visitasWp,
-        imagenEncabezadoId: a.encabezadoAdjuntoWpId === null ? null : idsImagen.get(a.encabezadoAdjuntoWpId) ?? null,
-        encabezadoAlt: a.encabezadoAlt, encabezadoCredito: a.encabezadoCredito, encabezadoPuntoFocalX: a.encabezadoPuntoFocalX, encabezadoPuntoFocalY: a.encabezadoPuntoFocalY,
-        redesDescripcion: a.redesDescripcion, redesImagenId: a.redesImagenWpId === null ? null : idsImagen.get(a.redesImagenWpId) ?? null,
-        altPendientes: a.altPendientes,
-      },
-      select: { id: true },
-    });
+    // relaciones y galería: solo cuando se escribió el artículo (nuevo o reescrito). Se sincronizan con el plan.
+    if ((resultado === "escrito" || resultado === "sobrescrito") && produccion) {
+      await tx.articuloCategoria.deleteMany({ where: { articuloId } });
+      await tx.articuloCategoria.createMany({ data: produccion.categoriaIds.map((categoriaId) => ({ articuloId, categoriaId })) });
+      await tx.articuloAutor.deleteMany({ where: { articuloId } });
+      await tx.articuloAutor.createMany({ data: produccion.autores.map((x) => ({ articuloId, ...x })) });
+      await tx.galeriaItem.deleteMany({ where: { articuloId } });
+      await tx.galeriaItem.createMany({ data: produccion.galeria.map((g) => ({ articuloId, ...g })) });
+    }
 
-    // relaciones: se sincronizan con lo que dice el plan (en un artículo nuevo no hay nada que borrar)
-    await tx.articuloCategoria.deleteMany({ where: { articuloId: creado.id } });
-    await tx.articuloCategoria.createMany({ data: categoriaIds.map((categoriaId) => ({ articuloId: creado.id, categoriaId })) });
-    await tx.articuloAutor.deleteMany({ where: { articuloId: creado.id } });
-    await tx.articuloAutor.createMany({ data: autorIds.map((x) => ({ articuloId: creado.id, ...x })) });
-    await tx.galeriaItem.deleteMany({ where: { articuloId: creado.id } });
-    await tx.galeriaItem.createMany({ data: [] });
-
-    for (const r of a.redirecciones) if (await crearRedireccion(tx, r, { articuloId: creado.id }, conflictos)) creadas++;
-    await deps.alFinalDelArticulo?.(a.wpId, tx);
-    return "escrito" as const;
+    // redirecciones del artículo: las que faltan se crean; las iguales no cuentan como conflicto; las que apuntan a otro lado no se pisan
+    for (const r of a.redirecciones) {
+      const x = await crearRedireccion(tx, r, { articuloId }, conflictos);
+      if (x === "creada") redirecciones.creadas++; else if (x === "sin_cambios") redirecciones.sinCambios++;
+    }
+    if (resultado === "escrito" || resultado === "sobrescrito") await deps.alFinalDelArticulo?.(a.wpId, tx);
+    return { resultado, campos };
   }, { timeout: TIMEOUT_ARTICULO_MS, maxWait: TIMEOUT_ARTICULO_MS });
-  return { resultado, conflictos, creadas };
+  return { ...salida, conflictos, redirecciones };
 }
+
+const mismoConjunto = (a: readonly number[], b: readonly number[]) => a.length === b.length && [...a].sort((x, y) => x - y).every((x, i) => x === [...b].sort((p, q) => p - q)[i]);
 
 /**
  * Escribe todo el plan: categorías, autores e imágenes (escribirBase), después una transacción por artículo y al final las redirecciones
- * de autor. En este tramo, un artículo cuyo wpId ya existe se omite ("ya existe (sin comparar)"). Si un artículo falla se deshace solo
+ * de autor. Un artículo que ya existe se compara con lo que escribiría el script: igual, "sin cambios"; distinto, se omite y se informan los
+ * nombres de los campos que difieren; solo con `sobrescribir` (cantidad y lista exactas) se reescribe. Si un artículo falla se deshace solo
  * ese artículo, se reporta y la corrida sigue; con `abortarAlPrimerError` corta ahí. El estado devuelto es "error" si hubo algún fallido.
+ * Con `sobrescribir`, si la cantidad o la lista no coinciden con el cálculo no se escribe NADA (lanza ErrorDeSobrescritura antes de empezar).
  */
-export async function escribirPlan(prisma: PrismaClient, plan: Plan, opciones: OpcionesEscritura, deps: DependenciasEscritura = {}): Promise<ResultadoEscritura> {
-  const base = await escribirBase(prisma, plan);
+export async function escribirPlan(prisma: PrismaClient, plan: PlanEscribible, opciones: OpcionesEscritura, deps: DependenciasEscritura = {}): Promise<ResultadoEscritura> {
+  let permitidos: ReadonlySet<number> = new Set();
+  if (opciones.sobrescribir) {
+    const calculados = await calcularSobrescrituras(prisma, plan);
+    if (opciones.sobrescribir.cantidad !== calculados.length || !mismoConjunto(opciones.sobrescribir.wpIds, calculados)) throw new ErrorDeSobrescritura(opciones.sobrescribir, calculados);
+    permitidos = new Set(calculados);
+  }
+
+  const base = await escribirBase(prisma, plan, { sobrescribir: !!opciones.sobrescribir });
   const articulos: ResultadoArticulo[] = [];
   const conflictos: ConflictoEscritura[] = [...base.conflictos];
-  const redirecciones = { creadas: 0, conflictos: 0 };
+  const redirecciones = { creadas: 0, sinCambios: 0, conflictos: 0 };
   let abortado = false;
 
   for (const a of plan.articulos) {
@@ -302,11 +506,12 @@ export async function escribirPlan(prisma: PrismaClient, plan: Plan, opciones: O
       articulos.push({ wpId: a.wpId, slug: a.slug, resultado: "fallido", motivo: dependencia });
     } else {
       try {
-        const r = await escribirArticulo(prisma, a, base, deps);
+        const r = await escribirArticulo(prisma, a, base, permitidos, deps);
         conflictos.push(...r.conflictos);
-        redirecciones.creadas += r.creadas;
+        redirecciones.creadas += r.redirecciones.creadas;
+        redirecciones.sinCambios += r.redirecciones.sinCambios;
         redirecciones.conflictos += r.conflictos.length;
-        articulos.push({ wpId: a.wpId, slug: a.slug, resultado: r.resultado, ...(r.resultado === "omitido" ? { motivo: "ya existe (sin comparar)" } : {}) });
+        articulos.push({ wpId: a.wpId, slug: a.slug, resultado: r.resultado, ...(r.resultado === "difiere" || r.resultado === "sobrescrito" ? { campos: r.campos } : {}) });
         continue;
       } catch (e) {
         articulos.push({ wpId: a.wpId, slug: a.slug, resultado: "fallido", motivo: e instanceof Error ? e.message : String(e) });
@@ -325,16 +530,17 @@ export async function escribirPlan(prisma: PrismaClient, plan: Plan, opciones: O
         continue;
       }
       const delAutor: ConflictoEscritura[] = [];
-      if (await prisma.$transaction((tx) => crearRedireccion(tx, r, { autorId }, delAutor), { timeout: TIMEOUT_ARTICULO_MS })) redirecciones.creadas++;
+      const x = await prisma.$transaction((tx) => crearRedireccion(tx, r, { autorId }, delAutor), { timeout: TIMEOUT_ARTICULO_MS });
+      if (x === "creada") redirecciones.creadas++; else if (x === "sin_cambios") redirecciones.sinCambios++;
       conflictos.push(...delAutor);
       redirecciones.conflictos += delAutor.length;
     }
   }
 
-  const conteos = {
-    escritos: articulos.filter((x) => x.resultado === "escrito").length,
-    omitidos: articulos.filter((x) => x.resultado === "omitido").length,
-    fallidos: articulos.filter((x) => x.resultado === "fallido").length,
+  const cuenta = (e: EstadoArticulo) => articulos.filter((x) => x.resultado === e).length;
+  const conteos = { escritos: cuenta("escrito"), sinCambios: cuenta("sin_cambios"), difieren: cuenta("difiere"), sobrescritos: cuenta("sobrescrito"), fallidos: cuenta("fallido") };
+  return {
+    estado: conteos.fallidos > 0 ? "error" : "ok", abortado, base, articulos, conteos, redirecciones, conflictos,
+    idsSobrescritos: articulos.filter((x) => x.resultado === "sobrescrito").map((x) => x.wpId),
   };
-  return { estado: conteos.fallidos > 0 ? "error" : "ok", abortado, base, articulos, conteos, redirecciones, conflictos };
 }

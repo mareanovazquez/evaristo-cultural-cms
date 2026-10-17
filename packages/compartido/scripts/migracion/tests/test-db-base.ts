@@ -106,8 +106,8 @@ try {
 
     const r = await escribirBase(prisma, plan);
     assert.deepEqual(r.categorias, { enElPlan: 8, creadas: 8, existentes: 0 });
-    assert.deepEqual(r.autores, { enElPlan: plan.autores.length, creados: plan.autores.length, existentes: 0, conflictos: 0 });
-    assert.deepEqual(r.imagenes, { enElPlan: 200, creadas: 200, existentes: 0, conflictos: 0 });
+    assert.deepEqual(r.autores, { enElPlan: plan.autores.length, creados: plan.autores.length, sinCambios: 0, difieren: 0, sobrescritos: 0, conflictos: 0 });
+    assert.deepEqual(r.imagenes, { enElPlan: 200, creadas: 200, sinCambios: 0, difieren: 0, sobrescritas: 0, conflictos: 0 });
     assert.deepEqual(r.conflictos, []);
     assert.equal(r.fallidos.size, 0);
 
@@ -141,8 +141,8 @@ try {
     // segunda corrida: nada se duplica
     const otra = await escribirBase(prisma, plan);
     assert.deepEqual(otra.categorias, { enElPlan: 8, creadas: 0, existentes: 8 });
-    assert.equal(otra.autores.creados, 0);
-    assert.equal(otra.imagenes.creadas, 0);
+    assert.deepEqual([otra.autores.creados, otra.autores.sinCambios, otra.autores.difieren], [0, plan.autores.length, 0]);
+    assert.deepEqual([otra.imagenes.creadas, otra.imagenes.sinCambios, otra.imagenes.difieren], [0, 200, 0]);
     assert.deepEqual([await prisma.categoria.count(), await prisma.autor.count(), await prisma.imagen.count()], [8, plan.autores.length, 200]);
   });
 

@@ -117,7 +117,7 @@ try {
     });
     assert.equal(r.estado, "error");
     assert.equal(r.abortado, false);
-    assert.deepEqual(r.conteos, { escritos: 34, omitidos: 0, fallidos: 1 });
+    assert.deepEqual(r.conteos, { escritos: 34, sinCambios: 0, difieren: 0, sobrescritos: 0, fallidos: 1 });
     const mal = r.articulos.find((x) => x.resultado === "fallido")!;
     assert.deepEqual([mal.wpId, mal.motivo], [fallar.wpId, "falla inyectada"]);
 
@@ -197,9 +197,9 @@ try {
     const r = await escribirPlan(prisma, plan, SIN_ABORTAR);
     assert.equal(r.estado, "ok");
     assert.equal(r.abortado, false);
-    assert.deepEqual(r.conteos, { escritos: 35, omitidos: 0, fallidos: 0 });
+    assert.deepEqual(r.conteos, { escritos: 35, sinCambios: 0, difieren: 0, sobrescritos: 0, fallidos: 0 });
     assert.deepEqual(r.conflictos, []);
-    assert.deepEqual(r.redirecciones, { creadas: 58, conflictos: 0 });
+    assert.deepEqual(r.redirecciones, { creadas: 58, sinCambios: 0, conflictos: 0 });
 
     // conteos por tabla contra el plan
     const c = await conteos();
@@ -260,11 +260,11 @@ try {
     assert.equal(conImagenId, sumar(plan.articulos.map((a) => nodosDe(a.cuerpo).filter((n) => "imagenWpId" in (n.attrs ?? {})).length)));
     assert.equal((await prisma.articulo.findUnique({ where: { wpId: 22546 } }))!.publicadoEn, null);
 
-    // una segunda corrida omite todo: "ya existe (sin comparar)"
+    // una segunda corrida lo informa todo como sin cambios
     const otra = await escribirPlan(prisma, plan, SIN_ABORTAR);
     assert.equal(otra.estado, "ok");
-    assert.deepEqual(otra.conteos, { escritos: 0, omitidos: 35, fallidos: 0 });
-    assert.ok(otra.articulos.every((x) => x.motivo === "ya existe (sin comparar)"));
+    assert.deepEqual(otra.conteos, { escritos: 0, sinCambios: 35, difieren: 0, sobrescritos: 0, fallidos: 0 });
+    assert.deepEqual(otra.redirecciones, { creadas: 0, sinCambios: 58, conflictos: 0 });
     assert.deepEqual(await conteos(), c);
   });
 
