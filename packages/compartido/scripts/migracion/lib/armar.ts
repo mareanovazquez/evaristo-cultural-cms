@@ -4,6 +4,8 @@ import { convertWpPost } from "../../../src/conversor/convert.ts";
 import type { Warning } from "../../../src/conversor/types.ts";
 import type { MapeoTaxonomias } from "../../../src/conversor/taxonomia.ts";
 import { validateArticleBodyDetallado } from "../../../src/schema/validate.ts";
+import { reescribirImagenes, resolverImagen, srcDeClave, verificarEnlacesCuerpo } from "./enlaces-imagenes.ts";
+import type { Medicion } from "./enlaces-imagenes.ts";
 import type { AdjuntoSnapshot, MetaSnapshot, PostSnapshot, SnapshotWp, TerminoSnapshot, UsuarioSnapshot } from "./snapshot-tipos.ts";
 import {
   adjuntoDeUrl, contarAltPendiente, contarInvisibles, contieneCorreo, decEntidades, decodificar, docDeTexto, quitarU200E, rutaUploads, slugFinal, textoPlanoDe,
@@ -38,6 +40,12 @@ export interface EntradaArmar {
   seccionesExistentes: string[];
   /** Slugs de las categorías que ya existen en el CMS. */
   categoriasExistentes: string[];
+  /**
+   * Mediciones de los originales (clave en NFC -> medición), hechas antes por lib/imagenes.ts: armar() no toca el disco. Tienen que
+   * cubrir todas las imágenes que referencia el plan (la primera pasada, sin mediciones, las lista en `imagenesReferenciadas`).
+   * Sin mediciones no se resuelven imágenes: el encabezado conserva lo que declara WordPress, no hay filas de imagen y el cuerpo no se toca.
+   */
+  mediciones?: ReadonlyMap<string, Medicion>;
 }
 
 export interface Problema { wpId: number | null; codigo: string; detalle?: unknown; bloqueante: boolean }
@@ -45,7 +53,7 @@ export interface Problema { wpId: number | null; codigo: string; detalle?: unkno
 export interface AvisoMigracion { code: string; detalle?: unknown }
 
 export interface ImagenEncabezado {
-  wpId: number; clave: string | null; nombreOriginal: string | null; tipoMime: string; ancho: number | null; alto: number | null; bytes: number | null; hash: null;
+  wpId: number; clave: string | null; nombreOriginal: string | null; tipoMime: string; ancho: number | null; alto: number | null; bytes: number | null; hash: string | null;
 }
 
 export interface RedirecionPlan {
@@ -77,6 +85,8 @@ export interface RegistroArticulo {
   categoriasWp: string[];
   autores: Array<{ wpUserId: number; orden: number }>;
   imagenEncabezado: ImagenEncabezado | null;
+  /** Adjunto de WordPress del encabezado (el de menor meta_id de _thumbnail_id), tenga o no fila de imagen. */
+  encabezadoAdjuntoWpId: number | null;
   encabezadoAlt: string | null;
   encabezadoCredito: string | null;
   encabezadoPuntoFocalX: number;
@@ -107,6 +117,18 @@ export interface CategoriaACrear { slug: string; nombre: string | null; articulo
 /** Una imagen distinta que usa algún artículo (encabezado, cuerpo o redes), todavía sin los datos del adjunto. */
 export interface ImagenReferenciada {
   clave: string; url: string; origen: string[]; articulos: number[]; adjuntoId: number | null; via: string | null;
+  /** _wp_attached_file del adjunto (la clave de la fila de imagenes), si hay adjunto. */
+  claveAdjunto: string | null;
+}
+
+/** Una fila de `imagenes` a crear: todo medido del archivo original. La clave natural es `wpId` (el id del adjunto). */
+export interface ImagenPlan {
+  wpId: number; clave: string; nombreOriginal: string; tipoMime: string; ancho: number; alto: number; bytes: number; hash: string; usos: string[]; articulos: number[];
+}
+
+/** Una imagen referenciada que no tiene fila: no hay original, o existe y no se pudo medir. */
+export interface ImagenSinFila {
+  adjuntoWpId: number; clave: string | null; codigo: "original_faltante" | "imagen_sin_medir"; motivo?: string; usos: string[]; articulos: number[];
 }
 
 export interface Plan {
@@ -117,6 +139,9 @@ export interface Plan {
   /** Secciones que usan los artículos y no existen en el CMS. */
   seccionesFaltantes: string[];
   imagenesReferenciadas: ImagenReferenciada[];
+  /** Filas de imagenes a crear (vacío si no se pasaron mediciones). */
+  imagenes: ImagenPlan[];
+  imagenesSinFila: ImagenSinFila[];
   problemas: Problema[];
 }
 
@@ -187,6 +212,9 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
   const usuarioWp = new Map(entrada.usuarios.map((u) => [u.id, u]));
   const adjuntoPorClave = new Map(entrada.adjuntoPorClave);
   const adjuntoWp = new Map(entrada.adjuntos.map((a) => [a.id, a]));
+  const mediciones = entrada.mediciones;
+  const clavePorAdjunto = new Map<number, string>([...entrada.adjuntoPorClave].map(([c, id]) => [id, c] as const));
+  for (const a of entrada.adjuntos) if (a.clave !== null) clavePorAdjunto.set(a.id, a.clave);
   const motivosExtra = new Map(entrada.extras.map((e) => [e.id, e.casos]));
   const metaDe = (id: number, k: string) => entrada.meta.filter((f) => f.postId === id && f.k === k).map((f) => ({ metaId: f.metaId, valor: f.v }));
 
@@ -232,7 +260,27 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
     const tituloEntrada = quitarU200E(tituloWp);
 
     const r = convertir({ titulo: tituloEntrada, contenido_crudo: m.contenido_crudo }, { autor: nombreAutor || null, taxonomia: { id: m.id, slugs: cats.map((c) => c.slug), mapeo } });
-    const val = validateArticleBodyDetallado(r.doc as any, { modo: "migracion" });
+
+    // Imágenes del cuerpo con fila: imagenWpId (clave natural; el ejecutor la cambia por imagenId) y src /media/<clave>.
+    // Sin original o sin poder medir: el nodo queda como está y se avisa (una vez por src).
+    const filasDelCuerpo = new Map<number, string>();
+    let cuerpo = r.doc;
+    if (mediciones) {
+      const avisados = new Set<string>();
+      cuerpo = reescribirImagenes(r.doc, (attrs) => {
+        const src = attrs["src"];
+        const adj = typeof src === "string" ? adjuntoDeUrl(src, adjuntoPorClave) : null;
+        if (!adj || typeof src !== "string") return attrs;
+        const res = resolverImagen(clavePorAdjunto.get(adj.id) ?? null, mediciones);
+        if (res.codigo === "con_fila") { filasDelCuerpo.set(adj.id, res.clave); return { ...attrs, src: srcDeClave(res.clave), imagenWpId: adj.id }; }
+        if (!avisados.has(src)) {
+          avisados.add(src);
+          avisosMigracion.push({ code: res.codigo, detalle: { contexto: "cuerpo", src, adjuntoWpId: adj.id, clave: res.clave, ...(res.codigo === "imagen_sin_medir" ? { motivo: res.motivo } : {}) } });
+        }
+        return attrs;
+      });
+    }
+    const val = validateArticleBodyDetallado(cuerpo as any, { modo: "migracion" });
     const erroresBio = r.bio ? validateArticleBodyDetallado({ type: "doc", content: r.bio } as any, { modo: "migracion" }).errores : [];
 
     // _wp_old_slug: se descartan los solo numéricos, los iguales al slug actual y los que terminan en __trashed
@@ -251,6 +299,7 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
 
     // Validaciones puras: si alguna falla se registra el problema y el artículo se excluye del plan
     const motivos: Array<{ codigo: string; motivo: string }> = [];
+    for (const motivo of verificarEnlacesCuerpo(cuerpo, filasDelCuerpo)) motivos.push({ codigo: "imagen_cuerpo_inconsistente", motivo });
     const motivoPrincipal = validarCategoriaPrincipal({ categorias: r.categorias, categoriaPrincipal: r.categoriaPrincipal });
     if (motivoPrincipal) motivos.push({ codigo: "categoria_principal_invalida", motivo: motivoPrincipal });
     for (const red of redirecciones) {
@@ -280,15 +329,37 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
     const filasThumb = metaDe(m.id, "_thumbnail_id").sort((a, b) => a.metaId - b.metaId);
     const adjEnc = filasThumb.length ? adjuntoWp.get(Number(filasThumb[0]!.valor)) : undefined;
     const credito = metaDe(m.id, "cb_image_credit")[0]?.valor.trim() ?? "";
-    const imagenEncabezado: ImagenEncabezado | null = adjEnc && adjEnc.tipoPost === "attachment"
-      ? { wpId: adjEnc.id, clave: adjEnc.clave, nombreOriginal: adjEnc.clave ? adjEnc.clave.split("/").pop()! : null, tipoMime: adjEnc.mime, ancho: adjEnc.ancho, alto: adjEnc.alto, bytes: adjEnc.bytes, hash: null }
+    const adjuntoEncabezado = adjEnc && adjEnc.tipoPost === "attachment" ? adjEnc : null;
+    let imagenEncabezado: ImagenEncabezado | null = adjuntoEncabezado
+      ? { wpId: adjuntoEncabezado.id, clave: adjuntoEncabezado.clave, nombreOriginal: adjuntoEncabezado.clave ? adjuntoEncabezado.clave.split("/").pop()! : null, tipoMime: adjuntoEncabezado.mime, ancho: adjuntoEncabezado.ancho, alto: adjuntoEncabezado.alto, bytes: adjuntoEncabezado.bytes, hash: null }
       : null;
+    // Con mediciones, el encabezado lleva lo medido del archivo. Sin original o sin poder medir: no hay fila, el artículo migra
+    // sin encabezado, alt y crédito quedan null en las columnas y viajan dentro del aviso.
+    let encabezadoSinFila = false;
+    if (mediciones && adjuntoEncabezado) {
+      const res = resolverImagen(adjuntoEncabezado.clave, mediciones);
+      if (res.codigo === "con_fila") {
+        const md = res.medicion;
+        imagenEncabezado = { wpId: adjuntoEncabezado.id, clave: res.clave, nombreOriginal: res.clave.split("/").pop()!, tipoMime: md.mime, ancho: md.ancho, alto: md.alto, bytes: md.bytes, hash: md.sha256 };
+      } else {
+        imagenEncabezado = null;
+        encabezadoSinFila = true;
+        avisosMigracion.push({ code: res.codigo, detalle: {
+          contexto: "encabezado", adjuntoWpId: adjuntoEncabezado.id, clave: res.clave, anchoDeclaradoPorWp: adjuntoEncabezado.ancho, altoDeclaradoPorWp: adjuntoEncabezado.alto,
+          alt: adjuntoEncabezado.alt || null, credito: credito || null, ...(res.codigo === "imagen_sin_medir" ? { motivo: res.motivo } : {}),
+        } });
+      }
+    }
 
     // Datos para redes (solo si tienen contenido)
     const og = (k: string) => metaDe(m.id, k)[0]?.valor.trim() ?? "";
     const redesDescripcion = og("_webdados_fb_open_graph_specific_description") || null;
     const redesImagenUrl = og("_webdados_fb_open_graph_specific_image") || null;
     const redesAdjunto = redesImagenUrl ? adjuntoDeUrl(redesImagenUrl, adjuntoPorClave) : null;
+    if (mediciones && redesAdjunto) {
+      const res = resolverImagen(clavePorAdjunto.get(redesAdjunto.id) ?? null, mediciones);
+      if (res.codigo !== "con_fila") avisosMigracion.push({ code: res.codigo, detalle: { contexto: "redes", src: redesImagenUrl, adjuntoWpId: redesAdjunto.id, clave: res.clave, ...(res.codigo === "imagen_sin_medir" ? { motivo: res.motivo } : {}) } });
+    }
 
     // Imágenes del cuerpo
     for (const im of r.assets.images) {
@@ -300,8 +371,8 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
 
     const etiquetas = entrada.terminos.filter((f) => f.taxonomia === "post_tag" && f.id === m.id).map((f) => decEntidades(f.nombre));
     const visitas = metaDe(m.id, "cb_visit_counter")[0]?.valor;
-    const altCuerpo = contarAltPendiente(r.doc);
-    const encabezadoAlt = adjEnc && adjEnc.tipoPost === "attachment" ? adjEnc.alt ?? "" : "";
+    const altCuerpo = contarAltPendiente(cuerpo);
+    const encabezadoAlt = adjuntoEncabezado && !encabezadoSinFila ? adjuntoEncabezado.alt ?? "" : "";
     registros.push({
       wpId: m.id,
       slug,
@@ -313,14 +384,15 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
       invisibles,
       oldSlugs: { validos: viejos, descartados: viejosDescartados },
       titulo: r.titulo, bajada: r.bajada || null,
-      cuerpo: r.doc, schemaVersion: 1, textoPlano: textoPlanoDe(r.doc),
+      cuerpo, schemaVersion: 1, textoPlano: textoPlanoDe(cuerpo),
       publicadoEn: utcDe(p.fechaGmt),
       postDateLocal: p.fecha, postDateGmt: p.fechaGmt,
       novedadHasta: r.novedadHasta,
       seccion: r.seccion as string, categorias: r.categorias, categoriaPrincipal: r.categoriaPrincipal,
       categoriasWp: cats.map((c) => c.slug),
       autores: [{ wpUserId, orden: 0 }],
-      imagenEncabezado, encabezadoAlt: encabezadoAlt || null, encabezadoCredito: credito || null,
+      imagenEncabezado, encabezadoAdjuntoWpId: adjuntoEncabezado?.id ?? null,
+      encabezadoAlt: encabezadoAlt || null, encabezadoCredito: encabezadoSinFila ? null : credito || null,
       encabezadoPuntoFocalX: 0.5, encabezadoPuntoFocalY: 0.5,
       redesDescripcion, redesImagenUrl, redesImagenWpId: redesAdjunto?.id ?? null,
       etiquetasWp: etiquetas.length ? etiquetas : null,
@@ -355,13 +427,13 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
   // Imágenes distintas que usan los artículos (encabezado, redes y cuerpo), con el adjunto de WordPress que les corresponde
   const distintas = new Map<string, ImagenReferenciada>();
   const sumar = (clave: string, url: string, origen: string, articulo: number, adjunto: { id: number; via: string } | null) => {
-    const e = distintas.get(clave) ?? { clave, origen: [], url, articulos: [], adjuntoId: adjunto?.id ?? null, via: adjunto?.via ?? null };
+    const e = distintas.get(clave) ?? { clave, origen: [], url, articulos: [], adjuntoId: adjunto?.id ?? null, via: adjunto?.via ?? null, claveAdjunto: adjunto ? clavePorAdjunto.get(adjunto.id) ?? null : null };
     if (!e.origen.includes(origen)) e.origen.push(origen);
     if (!e.articulos.includes(articulo)) e.articulos.push(articulo);
     distintas.set(clave, e);
   };
   for (const r of registros) {
-    if (r.imagenEncabezado) sumar(`adjunto:${r.imagenEncabezado.wpId}`, r.imagenDestacadaFixture, "encabezado", r.wpId, { id: r.imagenEncabezado.wpId, via: "_thumbnail_id" });
+    if (r.encabezadoAdjuntoWpId !== null) sumar(`adjunto:${r.encabezadoAdjuntoWpId}`, r.imagenDestacadaFixture, "encabezado", r.wpId, { id: r.encabezadoAdjuntoWpId, via: "_thumbnail_id" });
     if (r.redesImagenUrl) sumar(r.redesImagenWpId ? `adjunto:${r.redesImagenWpId}` : `url:${r.redesImagenUrl}`, r.redesImagenUrl, "redes", r.wpId, r.redesImagenWpId ? { id: r.redesImagenWpId, via: "url" } : null);
   }
   for (const [, e] of imagenesDeCuerpo) {
@@ -369,5 +441,21 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
     for (const a of e.articulos) sumar(adj ? `adjunto:${adj.id}` : `url:${e.url}`, e.url, "cuerpo", a, adj);
   }
 
-  return { articulos: registros, autores: listaAutores, redirecciones, categoriasACrear, seccionesFaltantes, imagenesReferenciadas: [...distintas.values()], problemas };
+  // Filas de imagenes: una por adjunto con original medido; las demás quedan como imagenesSinFila (ya avisadas en cada artículo)
+  const imagenes: ImagenPlan[] = [];
+  const imagenesSinFila: ImagenSinFila[] = [];
+  if (mediciones) {
+    for (const e of distintas.values()) {
+      if (e.adjuntoId === null) continue;
+      const res = resolverImagen(e.claveAdjunto, mediciones);
+      if (res.codigo === "con_fila") {
+        const md = res.medicion;
+        imagenes.push({ wpId: e.adjuntoId, clave: res.clave, nombreOriginal: res.clave.split("/").pop()!, tipoMime: md.mime, ancho: md.ancho, alto: md.alto, bytes: md.bytes, hash: md.sha256, usos: e.origen, articulos: e.articulos });
+      } else {
+        imagenesSinFila.push({ adjuntoWpId: e.adjuntoId, clave: res.clave, codigo: res.codigo, ...(res.codigo === "imagen_sin_medir" ? { motivo: res.motivo } : {}), usos: e.origen, articulos: e.articulos });
+      }
+    }
+  }
+
+  return { articulos: registros, autores: listaAutores, redirecciones, categoriasACrear, seccionesFaltantes, imagenesReferenciadas: [...distintas.values()], imagenes, imagenesSinFila, problemas };
 }

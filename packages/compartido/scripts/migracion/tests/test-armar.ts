@@ -7,6 +7,8 @@ import { convertWpPost } from "../../../src/conversor/convert.ts";
 import { armar, validarCategoriaPrincipal, validarDestinoUnico } from "../lib/armar.ts";
 import type { EntradaArmar } from "../lib/armar.ts";
 import { entradaDesdeSnapshot } from "../lib/entrada-snapshot.ts";
+import { nodosImagen, srcDeClave } from "../lib/enlaces-imagenes.ts";
+import type { Medicion } from "../lib/enlaces-imagenes.ts";
 import { MARCADOR_CORREO_OMITIDO } from "../lib/snapshot-tipos.ts";
 import type { MetaSnapshot, PostSnapshot, TerminoSnapshot, UsuarioSnapshot } from "../lib/snapshot-tipos.ts";
 
@@ -55,6 +57,43 @@ if (!existsSync(BASELINE)) {
     const soloTexto = new Set(base.autores.filter((x: { soloTexto: boolean }) => x.soloTexto).map((x: { wpUserId: number }) => x.wpUserId));
     assert.deepEqual(plan.redirecciones, base.redirecciones.filter((r: { tipo: string; autorWpUserId: number | null }) => !(r.tipo === "AUTOR" && soloTexto.has(r.autorWpUserId as number))));
     assert.deepEqual(plan.autores.map((x) => x.wpUserId), base.autores.map((x: { wpUserId: number }) => x.wpUserId));
+
+    // Con las mediciones del baseline (la corrida real sobre los originales) el cuerpo solo cambia en imagenWpId y src de los nodos imagen.
+    const mediciones = new Map<string, Medicion>(base.revisionD.imagenes.map((x: { clave: string; medicion: Medicion }) => [x.clave.normalize("NFC"), x.medicion]));
+    const medido = armar({ ...entradaDesdeSnapshot(), mediciones });
+    const sinEnlace = (doc: unknown) => JSON.parse(JSON.stringify(doc, (k, v) => (k === "imagenWpId" || (k === "src" && typeof v === "string") ? undefined : v)));
+    let nodosEnlazados = 0;
+    for (const b of base.articulos) {
+      const a = medido.articulos.find((x) => x.wpId === b.wpId)!;
+      assert.deepEqual(sinEnlace(a.cuerpo), sinEnlace(b.cuerpo), `${b.wpId}.cuerpo (salvo imagenWpId y src)`);
+      assert.equal(a.textoPlano, b.textoPlano, `${b.wpId}.textoPlano`);
+      const antes = nodosImagen(b.cuerpo), despues = nodosImagen(a.cuerpo);
+      assert.equal(antes.length, despues.length);
+      despues.forEach((n, i) => {
+        // todas las imágenes del cuerpo de la muestra tienen original: cada una recibe su adjunto y su /media/<clave>
+        assert.equal(typeof n.attrs!["imagenWpId"], "number", `${b.wpId} imagen ${i}`);
+        const clave = [...mediciones.keys()].find((c) => srcDeClave(c) === n.attrs!["src"]);
+        assert.ok(clave, `${b.wpId}: ${String(n.attrs!["src"])} es la clave de una imagen medida`);
+        assert.equal(n.attrs!["alt"], antes[i]!.attrs!["alt"]);
+        nodosEnlazados++;
+      });
+      // encabezado: mismo adjunto y misma clave; lo medido reemplaza lo que declaraba WordPress, salvo en los dos sin original
+      if (b.wpId === 2462 || b.wpId === 22546) {
+        assert.equal(a.imagenEncabezado, null);
+        assert.equal(a.encabezadoAlt, null);
+        assert.equal(a.encabezadoCredito, null);
+        assert.ok(a.avisosMigracion!.migracion.some((x) => x.code === "original_faltante"));
+      } else {
+        assert.equal(a.imagenEncabezado?.wpId, b.imagenEncabezado?.wpId);
+        assert.equal(a.imagenEncabezado?.clave, b.imagenEncabezado?.clave);
+        assert.equal(a.encabezadoAlt, b.encabezadoAlt);
+        assert.equal(a.encabezadoCredito, b.encabezadoCredito);
+        assert.deepEqual(a.avisosMigracion?.migracion ?? [], b.avisosMigracion?.migracion ?? []);
+      }
+    }
+    assert.equal(nodosEnlazados, 172);
+    assert.equal(medido.imagenes.length, 200);
+    assert.deepEqual(medido.imagenesSinFila.map((x) => [x.adjuntoWpId, x.codigo]), [[2464, "original_faltante"], [22547, "original_faltante"]]);
   });
 }
 
@@ -193,6 +232,53 @@ t("T05 (armado): 19899 -> millie-jackson-i-cry (guiones colapsados), título sin
   assert.deepEqual(a.avisosMigracion?.migracion.find((x) => x.code === "u200e_removido"), { code: "u200e_removido", detalle: { en: ["slug", "titulo"] } });
   // un doble guion legítimo, sin U+200E, no se toca
   assert.equal(armar(sintetica([post({ id: 6, nombre: "a--b" })])).articulos[0]!.slug, "a--b");
+});
+
+t("T07: 2462 y 22546 de punta a punta: sin encabezado, aviso original_faltante y columnas null", () => {
+  const sinOriginal: Medicion = { estado: "original faltante", archivo: null, diferenciaDeNombre: null, bytes: null, sha256: null, mime: null, ancho: null, alto: null };
+  const medicionesDe = (e: EntradaArmar, faltantes: string[]) => new Map<string, Medicion>(e.adjuntos.filter((a) => a.clave).map((a) => [a.clave!, faltantes.includes(a.clave!)
+    ? sinOriginal
+    : { estado: "medida", archivo: a.clave!, diferenciaDeNombre: null, bytes: 1234, sha256: "c".repeat(64), mime: "image/jpeg", ancho: a.ancho ?? 10, alto: a.alto ?? 10 }] as const));
+  const entrada = entradaDesdeSnapshot();
+  const p = armar({ ...entrada, mediciones: medicionesDe(entrada, ["escanear0006.jpg", "mankell.jpg"]) });
+  assert.equal(p.articulos.length, 35);
+  const faltantes: Array<[number, number, string]> = [[2462, 2464, "escanear0006.jpg"], [22546, 22547, "mankell.jpg"]];
+  for (const [id, adjuntoWpId, clave] of faltantes) {
+    const a = p.articulos.find((x) => x.wpId === id)!;
+    assert.equal(a.imagenEncabezado, null, `${id} migra sin encabezado`);
+    assert.equal(a.encabezadoAlt, null);
+    assert.equal(a.encabezadoCredito, null);
+    assert.equal(a.encabezadoAdjuntoWpId, adjuntoWpId);
+    assert.equal(a.altPendientes, a.altPendientesCuerpo, "el encabezado ausente no suma alt pendiente");
+    const av = a.avisosMigracion!.migracion.find((x) => x.code === "original_faltante")!;
+    assert.deepEqual(av.detalle, { contexto: "encabezado", adjuntoWpId, clave, anchoDeclaradoPorWp: id === 2462 ? 1950 : 1000, altoDeclaradoPorWp: id === 2462 ? 1257 : 800, alt: null, credito: null });
+    assert.ok(!p.imagenes.some((i) => i.wpId === adjuntoWpId), "sin fila de imagen");
+  }
+  assert.deepEqual(p.imagenesSinFila.map((x) => x.adjuntoWpId), [2464, 22547]);
+  assert.equal(p.imagenes.length, 200);
+  assert.ok(p.imagenes.every((i) => i.hash.length === 64 && i.bytes > 0 && i.ancho > 0 && i.alto > 0));
+  // el resto conserva su encabezado, con lo medido
+  assert.equal(p.articulos.find((x) => x.wpId === 22590)!.imagenEncabezado, null, "22590 no tiene _thumbnail_id");
+  assert.equal(p.articulos.filter((x) => x.imagenEncabezado === null).length, 3);
+  const con = p.articulos.find((x) => x.wpId === 19660)!.imagenEncabezado!;
+  assert.equal(con.hash, "c".repeat(64));
+  assert.equal(con.bytes, 1234);
+  // alt y crédito del encabezado ausente viajan dentro del aviso (adjunto con alt y artículo con crédito, sintético)
+  const adj = { id: 9700, tipoPost: "attachment", mime: "image/jpeg", guid: "http://x/wp-content/uploads/falta.jpg", clave: "falta.jpg", alt: "Un texto alternativo", ancho: 400, alto: 300, bytes: null };
+  const s = armar(sintetica([post({ id: 800 })], {
+    meta: [meta(1, 800, "_thumbnail_id", "9700"), meta(2, 800, "cb_image_credit", "Foto: Alguien")], adjuntos: [adj], adjuntoPorClave: [["falta.jpg", 9700]],
+    mediciones: new Map<string, Medicion>([["falta.jpg", sinOriginal]]),
+  })).articulos[0]!;
+  assert.deepEqual([s.imagenEncabezado, s.encabezadoAlt, s.encabezadoCredito], [null, null, null]);
+  assert.deepEqual(s.avisosMigracion!.migracion[0], { code: "original_faltante", detalle: { contexto: "encabezado", adjuntoWpId: 9700, clave: "falta.jpg", anchoDeclaradoPorWp: 400, altoDeclaradoPorWp: 300, alt: "Un texto alternativo", credito: "Foto: Alguien" } });
+  // existe pero no se pudo medir: mismo tratamiento, con otro código
+  const sm = armar(sintetica([post({ id: 801 })], {
+    meta: [meta(1, 801, "_thumbnail_id", "9700")], adjuntos: [adj], adjuntoPorClave: [["falta.jpg", 9700]],
+    mediciones: new Map<string, Medicion>([["falta.jpg", { estado: "ilegible", archivo: "falta.jpg", diferenciaDeNombre: null, bytes: 5, sha256: "d".repeat(64), mime: "image/webp", ancho: null, alto: null, motivo: "formato no soportado: image/webp" }]]),
+  })).articulos[0]!;
+  assert.equal(sm.imagenEncabezado, null);
+  assert.equal(sm.avisosMigracion!.migracion[0]!.code, "imagen_sin_medir");
+  assert.equal((sm.avisosMigracion!.migracion[0]!.detalle as { motivo: string }).motivo, "formato no soportado: image/webp");
 });
 
 const aviso = (a: { avisosMigracion: { migracion: Array<{ code: string; detalle?: unknown }> } | null }, code: string) => a.avisosMigracion?.migracion.filter((x) => x.code === code) ?? [];
