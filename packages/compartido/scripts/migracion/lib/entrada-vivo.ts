@@ -9,9 +9,10 @@ import type { Consulta } from "./leer-wordpress.ts";
 import type { AdjuntoSnapshot, TerminoSnapshot } from "./snapshot-tipos.ts";
 import { num, str } from "./utilidades.ts";
 
-export async function entradaEnVivo(wp: Consulta, bd: Consulta): Promise<EntradaArmar> {
+/** Con `soloIds` lee de WordPress únicamente esos artículos de la muestra (un subconjunto no arrastra los demás). */
+export async function entradaEnVivo(wp: Consulta, bd: Consulta, soloIds?: readonly number[]): Promise<EntradaArmar> {
   const datos = cargarDatosVersionados();
-  const { ids } = datos;
+  const ids = soloIds ? datos.ids.filter((id) => soloIds.includes(id)) : datos.ids;
 
   const opciones = await leerOpciones(wp);
   const opcion = (k: string) => str(opciones.find((o) => o["k"] === k)?.["v"]);

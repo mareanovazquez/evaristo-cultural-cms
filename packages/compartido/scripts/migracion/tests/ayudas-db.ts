@@ -117,9 +117,13 @@ export function medirSintetico(_carpeta: string, claves: Iterable<string>): Map<
   return res;
 }
 
-/** El plan de los 35 desde el snapshot, validado contra la base de pruebas. No usa WordPress ni la carpeta de originales. */
-export async function planDePruebas(prisma: PrismaClient): Promise<Preparado> {
+/**
+ * El plan desde el snapshot, validado contra la base de pruebas. Sin `ids`, los 35 de la muestra; con `ids`, solo esos artículos (el subconjunto
+ * que arma el comando con --ids). No usa WordPress ni la carpeta de originales.
+ */
+export async function planDePruebas(prisma: PrismaClient, ids?: readonly number[]): Promise<Preparado> {
   const entrada = entradaDesdeSnapshot();
+  if (ids) entrada.ids = entrada.ids.filter((id) => ids.includes(id));
   return prepararPlan({
     entrada, carpetaOriginales: "(sin carpeta: mediciones sintéticas)", bd: consultaDe(prisma), largos: leerLargosSchema(), cuentas: entrada.cuentas,
     filasCuentasWp: entrada.cuentas.map((c) => ({ id: c.wpUserId, login: c.user_login, nombre: c.nombre })),

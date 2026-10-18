@@ -16,7 +16,7 @@ import { leerLargosSchema, cuentasDeFilas } from "./validar.ts";
 
 export interface DependenciasSimular {
   /** Cómo se lee la entrada de armar(). Por defecto, en vivo de WordPress y del CMS. */
-  leerEntrada?: (wp: Consulta, bd: Consulta) => Promise<EntradaArmar>;
+  leerEntrada?: (wp: Consulta, bd: Consulta, ids?: readonly number[]) => Promise<EntradaArmar>;
   largos?: ReadonlyMap<string, number>;
   medir?: OpcionesPreparar["medir"];
   ahora?: () => Date;
@@ -32,7 +32,7 @@ export async function simular(
   if (opciones.alcance.tipo === "todos") throw new Error("--todos: no implementado en este tramo");
   const { wp, bd } = conexiones;
 
-  const entrada = await (deps.leerEntrada ?? entradaEnVivo)(wp, bd);
+  const entrada = await (deps.leerEntrada ?? entradaEnVivo)(wp, bd, opciones.alcance.tipo === "ids" ? opciones.alcance.ids : undefined);
   const ids = opciones.alcance.tipo === "ids" ? entrada.ids.filter((id) => (opciones.alcance as { ids: number[] }).ids.includes(id)) : entrada.ids;
   entrada.ids = ids;
 
