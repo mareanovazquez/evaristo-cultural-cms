@@ -52,12 +52,22 @@ export function confirmarAntesDeConectar(e: EntradaConfirmacion): ResultadoConfi
   return resultado(motivos);
 }
 
+/** Las filas que una sobrescritura reescribiría, por tipo: wpId de artículos, wpUserId de autores y wpId de imágenes (solo ids, nunca valores). */
+export interface IdsSobrescritura { articulos: number[]; autores: number[]; imagenes: number[] }
+
+/** El total de filas que se reescribirían: artículos + autores + imágenes. */
+export const totalSobrescritura = (i: IdsSobrescritura): number => i.articulos.length + i.autores.length + i.imagenes.length;
+
 /**
- * La cantidad de --esperar-sobrescribir tiene que ser igual a la de artículos que se reescribirían (los que ya existen y difieren del plan).
- * Si no coincide no se escribe nada.
+ * El N de --esperar-sobrescribir es el TOTAL de filas que se reescribirían (artículos + autores + imágenes que ya existen y difieren del plan).
+ * Si no coincide con el cálculo no se escribe nada. El mensaje trae las cantidades por tipo y los ids, nunca valores.
  */
-export function confirmarSobrescritura(esperar: number | null, calculados: readonly number[]): ResultadoConfirmacion {
+export function confirmarSobrescritura(esperar: number | null, calculados: IdsSobrescritura): ResultadoConfirmacion {
   if (esperar === null) return resultado(["falta --esperar-sobrescribir=N"]);
-  if (esperar !== calculados.length) return resultado([`--esperar-sobrescribir=${esperar} no coincide con los ${calculados.length} artículos que se reescribirían (${calculados.join(", ") || "ninguno"})`]);
+  const total = totalSobrescritura(calculados);
+  if (esperar !== total) {
+    const lista = (nombre: string, ids: number[]) => `${nombre} ${ids.length} (${ids.join(", ") || "ninguno"})`;
+    return resultado([`--esperar-sobrescribir=${esperar} no coincide con las ${total} filas que se reescribirían: ${lista("artículos", calculados.articulos)}; ${lista("autores", calculados.autores)}; ${lista("imágenes", calculados.imagenes)}`]);
+  }
   return { ok: true };
 }

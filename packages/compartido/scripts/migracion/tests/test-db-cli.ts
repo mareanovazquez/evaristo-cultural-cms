@@ -71,9 +71,15 @@ try {
     assert.equal(confirmarAntesDeConectar({ ...ok, sobrescribir: true }).ok, false);
     assert.equal(confirmarAntesDeConectar({ ...ok, sobrescribir: true, esperarSobrescribir: 2 }).ok, true);
     assert.equal(confirmarAntesDeConectar({ ...ok, esperarSobrescribir: 2 }).ok, false);
-    assert.deepEqual(confirmarSobrescritura(2, [10, 20]), { ok: true });
-    assert.deepEqual(confirmarSobrescritura(0, []), { ok: true });
-    for (const [n, calc] of [[1, [10, 20]], [3, [10, 20]], [0, [10]], [null, []]] as const) assert.equal(confirmarSobrescritura(n, calc).ok, false, `${n} vs ${calc}`);
+    // el N de la sobrescritura es el TOTAL de filas (artículos + autores + imágenes), no solo de artículos
+    const ids = (articulos: number[], autores: number[] = [], imagenes: number[] = []) => ({ articulos, autores, imagenes });
+    assert.deepEqual(confirmarSobrescritura(2, ids([10, 20])), { ok: true });
+    assert.deepEqual(confirmarSobrescritura(0, ids([])), { ok: true });
+    assert.deepEqual(confirmarSobrescritura(4, ids([10], [5, 6], [7])), { ok: true });
+    for (const [n, calc] of [[1, ids([10, 20])], [3, ids([10, 20])], [0, ids([10])], [null, ids([])], [1, ids([10], [5], [7])], [0, ids([], [5])], [0, ids([], [], [7])], [2, ids([10], [5], [7])]] as const) {
+      assert.equal(confirmarSobrescritura(n, calc).ok, false, `${n} vs ${JSON.stringify(calc)}`);
+    }
+    assert.match((confirmarSobrescritura(1, ids([10], [5], [7])) as { motivos: string[] }).motivos.join(), /3 filas.*artículos 1 \(10\).*autores 1 \(5\).*imágenes 1 \(7\)/);
     // destino real: sin terminal interactiva se niega; con terminal hay que tipear la base; y además el interruptor
     const real = { ...ok, destino: DESTINO_REAL };
     const motivos = (e: Parameters<typeof confirmarAntesDeConectar>[0]) => { const r = confirmarAntesDeConectar(e); return r.ok ? [] : r.motivos; };
@@ -125,14 +131,76 @@ try {
     for (const n of [0, 2, null]) {
       const r = await correrEscritura(base({ plan, abrir, sobrescribir: true, esperarSobrescribir: n }));
       assert.equal(r.rechazada, true, String(n));
-      if (r.rechazada) assert.match(r.motivos.join(), /(1 artículos que se reescribirían|falta --esperar-sobrescribir)/);
+      if (r.rechazada) assert.match(r.motivos.join(), /(1 filas que se reescribirían|falta --esperar-sobrescribir)/);
     }
     assert.deepEqual(await foto(), editado, "no se escribió nada");
     // la cantidad exacta sí reescribe ese artículo
     const ok = await correrEscritura(base({ plan, abrir, sobrescribir: true, esperarSobrescribir: 1 }));
     assert.equal(ok.rechazada, false);
-    if (!ok.rechazada) { assert.deepEqual(ok.resultado.idsSobrescritos, [a.wpId]); assert.deepEqual(ok.informe.idsSobrescritos, [a.wpId]); }
+    if (!ok.rechazada) { const ids = { articulos: [a.wpId], autores: [], imagenes: [] }; assert.deepEqual(ok.resultado.idsSobrescritos, ids); assert.deepEqual(ok.informe.idsSobrescritos, ids); }
     assert.equal((await prisma.articulo.findUnique({ where: { wpId: a.wpId } }))!.titulo, a.titulo);
+  });
+
+  await ta("T21: autor o imagen que difiere: con N=0 o con N de solo artículos no se escribe nada; con el total correcto sí, y el informe lista los ids por tipo", async () => {
+    await vaciarYSembrarPruebas(prisma);
+    const { plan } = await planDePruebas(prisma);
+    assert.equal((await correrEscritura(base({ plan }))).codigoDeSalida, 0);
+    const a = plan.articulos[5]!;
+    const autor = plan.autores.find((x) => !x.soloTexto)!;
+    const imagen = plan.imagenes[9]!;
+    await prisma.autor.update({ where: { wpUserId: autor.wpUserId }, data: { nombre: "Nombre editado a mano" } });
+    await prisma.imagen.update({ where: { wpId: imagen.wpId }, data: { alto: imagen.alto + 3 } });
+    const solo = await foto();   // difieren solo un autor y una imagen: ningún artículo
+    const { espia, abrir } = aperturaEspia();
+
+    // sin --sobrescribir no se reescribe ninguna fila de ningún tipo: el autor y la imagen se informan como que difieren
+    const sin = await correrEscritura(base({ plan, abrir }));
+    assert.equal(sin.rechazada, false);
+    if (!sin.rechazada) {
+      assert.deepEqual(sin.resultado.idsSobrescritos, { articulos: [], autores: [], imagenes: [] });
+      assert.deepEqual(sin.informe.difieren.map((d) => [d.tabla, d.clave, d.sobrescrita]), [["autores", String(autor.wpUserId), false], ["imagenes", String(imagen.wpId), false]]);
+    }
+    assert.deepEqual(await foto(), solo);
+
+    // con --sobrescribir y N=0 (o cualquier otro N): hay 2 filas que se reescribirían, así que se rechaza y no se escribe nada
+    const detalle = new RegExp(`no coincide con las 2 filas.*artículos 0 \\(ninguno\\); autores 1 \\(${autor.wpUserId}\\); imágenes 1 \\(${imagen.wpId}\\)`);
+    for (const n of [0, 1, 3]) {
+      const r = await correrEscritura(base({ plan, abrir, sobrescribir: true, esperarSobrescribir: n }));
+      assert.equal(r.rechazada, true, String(n));
+      if (r.rechazada) assert.match(r.motivos.join(), detalle);
+    }
+    assert.deepEqual(await foto(), solo, "no se escribió nada");
+    assert.equal((await prisma.autor.findUnique({ where: { wpUserId: autor.wpUserId } }))!.nombre, "Nombre editado a mano");
+    assert.equal((await prisma.imagen.findUnique({ where: { wpId: imagen.wpId } }))!.alto, imagen.alto + 3);
+
+    // ahora también difiere un artículo: el N de solo artículos (1) no alcanza; el total (3) sí
+    await prisma.articulo.update({ where: { wpId: a.wpId }, data: { titulo: "editado a mano" } });
+    const tres = await foto();
+    const soloArticulos = await correrEscritura(base({ plan, abrir, sobrescribir: true, esperarSobrescribir: 1 }));
+    assert.equal(soloArticulos.rechazada, true);
+    if (soloArticulos.rechazada) assert.match(soloArticulos.motivos.join(), /no coincide con las 3 filas/);
+    assert.deepEqual(await foto(), tres);
+    const carpeta = mkdtempSync(join(tmpdir(), "informe-sobrescribir-"));
+    try {
+      const ok = await correrEscritura(base({ plan, abrir, sobrescribir: true, esperarSobrescribir: 3, carpetaInformes: carpeta }));
+      assert.equal(ok.rechazada, false);
+      if (ok.rechazada) return;
+      const ids = { articulos: [a.wpId], autores: [autor.wpUserId], imagenes: [imagen.wpId] };
+      assert.deepEqual(ok.resultado.idsSobrescritos, ids);
+      assert.deepEqual(ok.informe.idsSobrescritos, ids);
+      assert.deepEqual(ok.informe.tablas.map((t) => [t.tabla, t.sobrescritas]).filter(([, n]) => n), [["autores", 1], ["imagenes", 1], ["articulos", 1]]);
+      // el informe lista los ids por tipo y ningún valor
+      for (const archivo of readdirSync(carpeta)) {
+        const texto = readFileSync(join(carpeta, archivo), "utf8");
+        assert.ok(texto.includes(String(autor.wpUserId)) && texto.includes(String(imagen.wpId)) && texto.includes(String(a.wpId)), `${archivo}: trae los ids`);
+        assert.ok(!texto.includes("editado a mano") && !texto.includes(a.titulo) && !texto.includes(autor.nombre), `${archivo}: sin valores`);
+      }
+      assert.deepEqual(JSON.parse(readFileSync(join(carpeta, readdirSync(carpeta).find((x) => x.endsWith(".json"))!), "utf8")).idsSobrescritos, ids);
+    } finally { rmSync(carpeta, { recursive: true, force: true }); }
+    assert.equal((await prisma.autor.findUnique({ where: { wpUserId: autor.wpUserId } }))!.nombre, autor.nombre);
+    assert.equal((await prisma.imagen.findUnique({ where: { wpId: imagen.wpId } }))!.alto, imagen.alto);
+    assert.equal((await prisma.articulo.findUnique({ where: { wpId: a.wpId } }))!.titulo, a.titulo);
+    assert.ok(espia.llamadas > 0);
   });
 
   await ta("T21: el destino real se niega sin terminal interactiva y nunca abre una conexión", async () => {
@@ -194,7 +262,7 @@ try {
       // los correos se tachan en cualquier texto del informe
       assert.equal(sinCorreos("falló con a.b+c@dominio.com.ar y listo"), "falló con [correo omitido] y listo");
       const falso = { estado: "error", abortado: false, base: mal.resultado.base, articulos: [{ wpId: 1, slug: "x", resultado: "fallido", motivo: "no se pudo para persona@ejemplo.org" }],
-        conteos: { escritos: 0, sinCambios: 0, difieren: 0, sobrescritos: 0, fallidos: 1 }, redirecciones: { creadas: 0, sinCambios: 0, conflictos: 0 }, conflictos: [], idsSobrescritos: [] } as ResultadoEscritura;
+        conteos: { escritos: 0, sinCambios: 0, difieren: 0, sobrescritos: 0, fallidos: 1 }, redirecciones: { creadas: 0, sinCambios: 0, conflictos: 0 }, conflictos: [], idsSobrescritos: { articulos: [], autores: [], imagenes: [] } } as ResultadoEscritura;
       const i2 = construirInformeEscritura({ generadoEn: "2026-10-18T00:00:00.000Z", destino: { ...DESTINO_PRUEBAS }, servidor: mal.informe.servidor, opciones: mal.informe.opciones, plan, resultado: falso });
       assert.equal(i2.fallidos[0]!.motivo, "no se pudo para [correo omitido]");
     } finally { rmSync(carpeta, { recursive: true, force: true }); }

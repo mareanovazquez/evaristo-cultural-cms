@@ -9,6 +9,10 @@ import type { DocNode } from "../../../src/conversor/types.ts";
 import { validateArticleBodyDetallado } from "../../../src/schema/validate.ts";
 import { validarDestinoUnico } from "./armar.ts";
 import type { Plan, RedirecionPlan, RegistroArticulo } from "./armar.ts";
+import { totalSobrescritura } from "./confirmaciones.ts";
+import type { IdsSobrescritura } from "./confirmaciones.ts";
+import { credencialesDeUrl } from "./credenciales.ts";
+import type { Credenciales } from "./credenciales.ts";
 import { DESTINO_PRUEBAS, DESTINO_REAL, ESCRITURA_REAL_HABILITADA } from "./destinos.ts";
 import { nodosImagen, reescribirImagenes } from "./enlaces-imagenes.ts";
 import { SOLO_LECTURA, consultar } from "./leer-wordpress.ts";
@@ -30,15 +34,8 @@ export function elegirDestinoEscritura(destino: unknown): DestinoEscritura {
   return destino as DestinoEscritura;
 }
 
-/** Usuario y clave de DATABASE_URL. El host, el puerto y la base no se leen de ahí. */
-function credenciales(): { user: string; password: string } {
-  const texto = process.env["DATABASE_URL"];
-  if (!texto) throw new Error("Falta DATABASE_URL en el entorno (de ahí se toman el usuario y la clave)");
-  let u: URL;
-  try { u = new URL(texto); } catch { throw new Error("DATABASE_URL no es una URL válida"); }
-  if (u.protocol !== "mysql:" || !u.username) throw new Error("DATABASE_URL no trae un usuario de MySQL");
-  return { user: decodeURIComponent(u.username), password: decodeURIComponent(u.password) };
-}
+/** Usuario y clave de DATABASE_URL: las credenciales de los tests, contra la base de pruebas. El host, el puerto y la base no se leen de ahí. */
+const credencialesDePruebas = (): Credenciales => credencialesDeUrl(process.env["DATABASE_URL"], "DATABASE_URL", false);
 
 export interface ServidorEscritura { puerto: number; base: string; version: string; soloLectura: number }
 
@@ -60,10 +57,13 @@ export function verificarServidorEscritura(s: ServidorEscritura, destino: Destin
   return s;
 }
 
-/** Abre el cliente con escritura. Tras conectar comprueba @@port, DATABASE(), la versión y @@session.transaction_read_only = 0. */
-export async function abrirConexionEscritura(destino: unknown): Promise<ConexionEscritura> {
+/**
+ * Abre el cliente con escritura. Tras conectar comprueba @@port, DATABASE(), la versión y @@session.transaction_read_only = 0.
+ * Sin `credenciales` usa las de DATABASE_URL (las de los tests); el comando de escritura pasa siempre las suyas y nunca cae en esas.
+ */
+export async function abrirConexionEscritura(destino: unknown, credenciales?: Credenciales): Promise<ConexionEscritura> {
   const elegido = elegirDestinoEscritura(destino);
-  const { user, password } = credenciales();
+  const { user, password } = credenciales ?? credencialesDePruebas();
   const prisma = new PrismaClient({ adapter: new PrismaMariaDb({ host: elegido.host, port: elegido.puerto, user, password, database: elegido.base, connectionLimit: 3 }) });
   try {
     const [f] = await prisma.$queryRaw<Array<Record<string, unknown>>>`SELECT @@port AS puerto, DATABASE() AS base, @@version AS version, @@session.transaction_read_only AS ro`;
@@ -95,7 +95,7 @@ export interface ConexionLectura {
 /** Abre el cliente con la sesión en READ ONLY y comprueba @@port, DATABASE(), la versión y @@session.transaction_read_only = 1. */
 export async function abrirConexionLectura(destino: unknown): Promise<ConexionLectura> {
   const elegido = elegirDestinoLectura(destino);
-  const { user, password } = credenciales();
+  const { user, password } = credencialesDePruebas();
   const prisma = new PrismaClient({ adapter: new PrismaMariaDb({ host: elegido.host, port: elegido.puerto, user, password, database: elegido.base, connectionLimit: 2, initSql: SOLO_LECTURA }) });
   const bd: Consulta = (sql, ...p) => consultar(prisma, sql, ...p);
   try {
@@ -143,15 +143,19 @@ export interface ResultadoBase {
   idsImagenes: Map<number, number>;
 }
 
+const datosDeAutor = (a: Plan["autores"][number]) => ({ slug: a.slug, nombre: a.nombre, soloTexto: a.soloTexto, bio: a.bio ?? null });
+const datosDeImagen = (i: Plan["imagenes"][number]) => ({ clave: i.clave, nombreOriginal: i.nombreOriginal, tipoMime: i.tipoMime, ancho: i.ancho, alto: i.alto, bytes: i.bytes, hash: i.hash });
+
 /**
  * Escribe categorías (upsert por slug con update vacío), autores (por wpUserId) e imágenes (por wpId). `bioConCorreo` del plan no es una columna.
  * Una fila de autor o de imagen que ya existe se compara con el plan: igual, no se toca (ni siquiera se llama a update, para no cambiar
- * actualizadoEn); distinta, NO se pisa y se informan los nombres de los campos que difieren. Con `sobrescribir` sí se reescribe.
+ * actualizadoEn); distinta, NO se pisa y se informan los nombres de los campos que difieren. Solo se reescribe la fila cuyo id está en `permitidos`
+ * (los ids que la sobrescritura confirmada calculó); sin `permitidos` no se reescribe ninguna.
  * Una clave de imagen o un slug de autor que ya pertenecen a otra fila son conflicto siempre, también con sobrescritura: no se pisan y los
  * artículos que dependen de eso quedan como fallidos.
  */
-export async function escribirBase(prisma: PrismaClient, plan: Plan, opciones: { sobrescribir?: boolean } = {}): Promise<ResultadoBase> {
-  const sobrescribir = opciones.sobrescribir === true;
+export async function escribirBase(prisma: PrismaClient, plan: Plan, opciones: { permitidos?: { autores: ReadonlySet<number>; imagenes: ReadonlySet<number> } } = {}): Promise<ResultadoBase> {
+  const permitidos = opciones.permitidos ?? { autores: new Set<number>(), imagenes: new Set<number>() };
   const r: ResultadoBase = {
     categorias: { enElPlan: plan.categoriasACrear.length, creadas: 0, existentes: 0 },
     autores: { enElPlan: plan.autores.length, creados: 0, sinCambios: 0, difieren: 0, sobrescritos: 0, conflictos: 0 },
@@ -177,7 +181,7 @@ export async function escribirBase(prisma: PrismaClient, plan: Plan, opciones: {
       for (const wpId of a.articulosEnMuestra) r.fallidos.set(wpId, `el slug de autor "${a.slug}" ya pertenece a otra fila`);
       continue;
     }
-    const datos = { slug: a.slug, nombre: a.nombre, soloTexto: a.soloTexto, bio: a.bio ?? null };
+    const datos = datosDeAutor(a);
     const existente = await prisma.autor.findUnique({ where: { wpUserId: a.wpUserId } });
     const bio = datos.bio === null ? Prisma.DbNull : (datos.bio as Prisma.InputJsonValue);
     if (!existente) {
@@ -189,11 +193,12 @@ export async function escribirBase(prisma: PrismaClient, plan: Plan, opciones: {
     r.idsAutores.set(a.wpUserId, existente.id);
     const campos = camposDistintos(datos, existente);
     if (!campos.length) { r.autores.sinCambios++; continue; }
-    if (sobrescribir) {
+    const reescribir = permitidos.autores.has(a.wpUserId);
+    if (reescribir) {
       await prisma.autor.update({ where: { id: existente.id }, data: { ...datos, bio } });
       r.autores.sobrescritos++;
     } else r.autores.difieren++;
-    r.difieren.push({ tabla: "autores", clave: String(a.wpUserId), campos, sobrescrita: sobrescribir });
+    r.difieren.push({ tabla: "autores", clave: String(a.wpUserId), campos, sobrescrita: reescribir });
   }
 
   // 3. imágenes
@@ -205,7 +210,7 @@ export async function escribirBase(prisma: PrismaClient, plan: Plan, opciones: {
       for (const wpId of i.articulos) r.fallidos.set(wpId, `la clave de imagen "${i.clave}" ya pertenece a otro wpId (${mismaClave.wpId ?? "ninguno"})`);
       continue;
     }
-    const datos = { clave: i.clave, nombreOriginal: i.nombreOriginal, tipoMime: i.tipoMime, ancho: i.ancho, alto: i.alto, bytes: i.bytes, hash: i.hash };
+    const datos = datosDeImagen(i);
     const existente = await prisma.imagen.findUnique({ where: { wpId: i.wpId } });
     if (!existente) {
       const fila = await prisma.imagen.upsert({ where: { wpId: i.wpId }, update: {}, create: { wpId: i.wpId, ...datos }, select: { id: true } });
@@ -216,11 +221,12 @@ export async function escribirBase(prisma: PrismaClient, plan: Plan, opciones: {
     r.idsImagenes.set(i.wpId, existente.id);
     const campos = camposDistintos(datos, existente);
     if (!campos.length) { r.imagenes.sinCambios++; continue; }
-    if (sobrescribir) {
+    const reescribir = permitidos.imagenes.has(i.wpId);
+    if (reescribir) {
       await prisma.imagen.update({ where: { id: existente.id }, data: datos });
       r.imagenes.sobrescritas++;
     } else r.imagenes.difieren++;
-    r.difieren.push({ tabla: "imagenes", clave: String(i.wpId), campos, sobrescrita: sobrescribir });
+    r.difieren.push({ tabla: "imagenes", clave: String(i.wpId), campos, sobrescrita: reescribir });
   }
   return r;
 }
@@ -236,13 +242,16 @@ export interface GaleriaPlan { imagenWpId: number; orden: number; alt: string | 
 export type ArticuloEscribible = RegistroArticulo & { galeria?: readonly GaleriaPlan[] };
 export type PlanEscribible = Omit<Plan, "articulos"> & { articulos: ArticuloEscribible[] };
 
-/** Lo que el usuario confirmó para reescribir artículos que ya existen y difieren: la cantidad exacta y la lista de sus wpId. */
-export interface Sobrescritura { cantidad: number; wpIds: readonly number[] }
+/**
+ * Lo que el usuario confirmó para reescribir filas que ya existen y difieren: el TOTAL exacto (artículos + autores + imágenes) y la lista de ids
+ * por tipo (wpId de artículos, wpUserId de autores, wpId de imágenes).
+ */
+export interface Sobrescritura { cantidad: number; articulos: readonly number[]; autores: readonly number[]; imagenes: readonly number[] }
 
 export interface OpcionesEscritura {
   /** Corta en el primer artículo que falla (no se escriben los siguientes ni las redirecciones de autor). */
   abortarAlPrimerError: boolean;
-  /** Sin esto no se reescribe nada. Si la cantidad o la lista no coinciden con lo calculado, no se escribe nada. */
+  /** Sin esto no se reescribe ninguna fila de ningún tipo. Si el total o alguna lista no coinciden con lo calculado, no se escribe nada. */
   sobrescribir?: Sobrescritura | null;
 }
 
@@ -272,14 +281,15 @@ export interface ResultadoEscritura {
   conteos: { escritos: number; sinCambios: number; difieren: number; sobrescritos: number; fallidos: number };
   redirecciones: { creadas: number; sinCambios: number; conflictos: number };
   conflictos: ConflictoEscritura[];
-  /** wpId de los artículos que se reescribieron (sobrescritura). */
-  idsSobrescritos: number[];
+  /** Ids de las filas que la sobrescritura reescribió, por tipo. */
+  idsSobrescritos: IdsSobrescritura;
 }
 
-/** La cantidad o la lista de artículos a sobrescribir no coincide con lo calculado: no se escribió nada. */
+/** El total o las listas de la sobrescritura no coinciden con lo calculado: no se escribió nada. */
 export class ErrorDeSobrescritura extends Error {
-  constructor(readonly pedidos: Sobrescritura, readonly calculados: readonly number[]) {
-    super(`La sobrescritura no coincide: se pidieron ${pedidos.cantidad} artículos (${pedidos.wpIds.join(", ") || "ninguno"}) y se reescribirían ${calculados.length} (${calculados.join(", ") || "ninguno"}). No se escribió nada.`);
+  constructor(readonly pedidos: Sobrescritura, readonly calculados: IdsSobrescritura) {
+    const lista = (n: string, ids: readonly number[]) => `${n} ${ids.length} (${ids.join(", ") || "ninguno"})`;
+    super(`La sobrescritura no coincide: se pidieron ${pedidos.cantidad} filas (${lista("artículos", pedidos.articulos)}; ${lista("autores", pedidos.autores)}; ${lista("imágenes", pedidos.imagenes)}) y se reescribirían ${totalSobrescritura(calculados)} (${lista("artículos", calculados.articulos)}; ${lista("autores", calculados.autores)}; ${lista("imágenes", calculados.imagenes)}). No se escribió nada.`);
   }
 }
 
@@ -394,10 +404,25 @@ function diferencias(p: Produccion, fila: FilaArticulo): string[] {
   return campos;
 }
 
-/** Artículos de `plan` que ya existen y difieren de lo que escribiría el script: son los que una sobrescritura reescribiría. Solo lectura. */
-export async function calcularSobrescrituras(prisma: PrismaClient, plan: PlanEscribible): Promise<number[]> {
+/**
+ * Filas de `plan` que ya existen y difieren de lo que escribiría el script: las que una sobrescritura reescribiría (artículos, autores e imágenes).
+ * Un slug de autor o una clave de imagen que pertenecen a otra fila son conflicto y nunca entran. Solo lectura.
+ */
+export async function calcularSobrescrituras(prisma: PrismaClient, plan: PlanEscribible): Promise<IdsSobrescritura> {
   const res = resolvedorDe(prisma);
-  const ids: number[] = [];
+  const ids: IdsSobrescritura = { articulos: [], autores: [], imagenes: [] };
+  for (const a of plan.autores) {
+    const mismoSlug = await prisma.autor.findUnique({ where: { slug: a.slug }, select: { wpUserId: true } });
+    if (mismoSlug && mismoSlug.wpUserId !== a.wpUserId) continue;
+    const existente = await prisma.autor.findUnique({ where: { wpUserId: a.wpUserId } });
+    if (existente && camposDistintos(datosDeAutor(a), existente).length) ids.autores.push(a.wpUserId);
+  }
+  for (const i of plan.imagenes) {
+    const mismaClave = await prisma.imagen.findUnique({ where: { clave: i.clave }, select: { wpId: true } });
+    if (mismaClave && mismaClave.wpId !== i.wpId) continue;
+    const existente = await prisma.imagen.findUnique({ where: { wpId: i.wpId } });
+    if (existente && camposDistintos(datosDeImagen(i), existente).length) ids.imagenes.push(i.wpId);
+  }
   for (const a of plan.articulos) {
     const fila = await leerFila(prisma, a.wpId);
     if (!fila) continue;
@@ -406,7 +431,7 @@ export async function calcularSobrescrituras(prisma: PrismaClient, plan: PlanEsc
       const { produccion, faltan } = await producir(a, res);
       campos = produccion ? diferencias(produccion, fila) : faltan;
     } catch { continue; }   // un artículo que no se puede armar falla al escribir; no es una sobrescritura
-    if (campos.length) ids.push(a.wpId);
+    if (campos.length) ids.articulos.push(a.wpId);
   }
   return ids;
 }
@@ -488,13 +513,17 @@ const mismoConjunto = (a: readonly number[], b: readonly number[]) => a.length =
  */
 export async function escribirPlan(prisma: PrismaClient, plan: PlanEscribible, opciones: OpcionesEscritura, deps: DependenciasEscritura = {}): Promise<ResultadoEscritura> {
   let permitidos: ReadonlySet<number> = new Set();
+  let permitidosBase = { autores: new Set<number>(), imagenes: new Set<number>() };
   if (opciones.sobrescribir) {
+    const pedidos = opciones.sobrescribir;
     const calculados = await calcularSobrescrituras(prisma, plan);
-    if (opciones.sobrescribir.cantidad !== calculados.length || !mismoConjunto(opciones.sobrescribir.wpIds, calculados)) throw new ErrorDeSobrescritura(opciones.sobrescribir, calculados);
-    permitidos = new Set(calculados);
+    if (pedidos.cantidad !== totalSobrescritura(calculados) || !mismoConjunto(pedidos.articulos, calculados.articulos)
+      || !mismoConjunto(pedidos.autores, calculados.autores) || !mismoConjunto(pedidos.imagenes, calculados.imagenes)) throw new ErrorDeSobrescritura(pedidos, calculados);
+    permitidos = new Set(calculados.articulos);
+    permitidosBase = { autores: new Set(calculados.autores), imagenes: new Set(calculados.imagenes) };
   }
 
-  const base = await escribirBase(prisma, plan, { sobrescribir: !!opciones.sobrescribir });
+  const base = await escribirBase(prisma, plan, { permitidos: permitidosBase });
   const articulos: ResultadoArticulo[] = [];
   const conflictos: ConflictoEscritura[] = [...base.conflictos];
   const redirecciones = { creadas: 0, sinCambios: 0, conflictos: 0 };
@@ -541,6 +570,10 @@ export async function escribirPlan(prisma: PrismaClient, plan: PlanEscribible, o
   const conteos = { escritos: cuenta("escrito"), sinCambios: cuenta("sin_cambios"), difieren: cuenta("difiere"), sobrescritos: cuenta("sobrescrito"), fallidos: cuenta("fallido") };
   return {
     estado: conteos.fallidos > 0 ? "error" : "ok", abortado, base, articulos, conteos, redirecciones, conflictos,
-    idsSobrescritos: articulos.filter((x) => x.resultado === "sobrescrito").map((x) => x.wpId),
+    idsSobrescritos: {
+      articulos: articulos.filter((x) => x.resultado === "sobrescrito").map((x) => x.wpId),
+      autores: base.difieren.filter((d) => d.tabla === "autores" && d.sobrescrita).map((d) => Number(d.clave)),
+      imagenes: base.difieren.filter((d) => d.tabla === "imagenes" && d.sobrescrita).map((d) => Number(d.clave)),
+    },
   };
 }

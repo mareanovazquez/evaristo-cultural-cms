@@ -2,6 +2,7 @@
 // de los campos (nunca con sus valores) y todo el texto pasa por sinCorreos() antes de guardarse. Lo único que escribe es la carpeta de salida.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import type { IdsSobrescritura } from "./confirmaciones.ts";
 import type { PlanEscribible, ResultadoEscritura, ServidorEscritura } from "./escribir.ts";
 
 const REGEX_CORREO = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
@@ -24,8 +25,8 @@ export interface InformeEscritura {
   difieren: Array<{ tabla: string; clave: string; campos: string[]; sobrescrita: boolean }>;
   conflictos: Array<{ tabla: string; clave: string; detalle: unknown }>;
   fallidos: Array<{ wpId: number; slug: string; motivo: string }>;
-  /** wpId de los artículos que la sobrescritura reescribió. */
-  idsSobrescritos: number[];
+  /** Ids de las filas que la sobrescritura reescribió, por tipo: wpId de artículos, wpUserId de autores y wpId de imágenes (nunca valores). */
+  idsSobrescritos: IdsSobrescritura;
   /** Cuántos artículos del plan llevan cada aviso (solo el código). */
   avisosPorCodigo: Record<string, number>;
 }
@@ -79,7 +80,8 @@ export function informeEscrituraAMarkdown(i: InformeEscritura): string {
   md.push(`- Generado: ${i.generadoEn}; estado ${i.estado}${i.abortado ? " (abortada al primer error)" : ""}; código de salida ${i.codigoDeSalida}`);
   md.push(`- Destino verificado: ${i.destino.host}:${i.destino.puerto}/${i.destino.base}; servidor ${j(i.servidor)}`);
   md.push(`- Opciones: ${j(i.opciones)}`);
-  md.push(`- Artículos reescritos por la sobrescritura: ${i.idsSobrescritos.length ? j(i.idsSobrescritos) : "ninguno"}`);
+  const total = i.idsSobrescritos.articulos.length + i.idsSobrescritos.autores.length + i.idsSobrescritos.imagenes.length;
+  md.push(`- Filas reescritas por la sobrescritura (solo ids): ${total ? j(i.idsSobrescritos) : "ninguna"}`);
   md.push(`- Conflictos: ${i.conflictos.length ? j(i.conflictos) : "ninguno"}`);
   md.push(`- Artículos fallidos: ${i.fallidos.length ? j(i.fallidos) : "ninguno"}`);
   md.push(`- Avisos por código (artículos): ${j(i.avisosPorCodigo)}`, "");

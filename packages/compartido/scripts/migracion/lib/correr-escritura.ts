@@ -1,7 +1,7 @@
 // Una corrida de escritura de punta a punta: confirmar -> abrir la conexión -> (confirmar la sobrescritura) -> escribir -> informe.
 // Este módulo importa escribir.ts, así que migrar.ts NO lo alcanza: hoy solo lo usan los tests, contra DESTINO_PRUEBAS.
 // Las confirmaciones que no necesitan la base van ANTES de abrir ninguna conexión, y la de la sobrescritura antes de escribir la primera fila.
-import { confirmarAntesDeConectar, confirmarSobrescritura } from "./confirmaciones.ts";
+import { confirmarAntesDeConectar, confirmarSobrescritura, totalSobrescritura } from "./confirmaciones.ts";
 import { abrirConexionEscritura, calcularSobrescrituras, escribirPlan } from "./escribir.ts";
 import type { ConexionEscritura, PlanEscribible, ResultadoEscritura, Sobrescritura } from "./escribir.ts";
 import { codigoDeSalida, construirInformeEscritura, escribirInformeEscritura } from "./informe-escritura.ts";
@@ -44,7 +44,7 @@ export async function correrEscritura(o: OpcionesCorrida): Promise<ResultadoCorr
       const calculados = await calcularSobrescrituras(conexion.prisma, o.plan);
       const c = confirmarSobrescritura(o.esperarSobrescribir, calculados);
       if (!c.ok) return { rechazada: true, motivos: c.motivos, codigoDeSalida: 2 };
-      sobrescribir = { cantidad: calculados.length, wpIds: calculados };
+      sobrescribir = { cantidad: totalSobrescritura(calculados), articulos: calculados.articulos, autores: calculados.autores, imagenes: calculados.imagenes };
     }
     // 3. escribir
     const resultado = await escribirPlan(conexion.prisma, o.plan, { abortarAlPrimerError: o.abortarAlPrimerError, sobrescribir });
