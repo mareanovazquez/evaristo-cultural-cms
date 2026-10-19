@@ -231,6 +231,78 @@ t("T22: el comando no tiene otra vía a un destino ni a las credenciales: solo D
   assert.ok(!/process\.(env|argv)/.test(readFileSync(join(MIGRACION, "lib", "comando-escribir.ts"), "utf8")));
 });
 
+t("T22: el verificador (lib/verificar.ts y verificar-escritura.ts) solo lee: no alcanza el código de escritura y nadie de producción lo importa salvo su script", () => {
+  const VERIFICAR = join(MIGRACION, "lib", "verificar.ts"), SCRIPT = join(MIGRACION, "verificar-escritura.ts");
+  const prohibidos = ["scripts/migracion/lib/escribir.ts", "scripts/migracion/lib/correr-escritura.ts", "scripts/migracion/lib/flujo-escribir.ts", "scripts/migracion/lib/comando-escribir.ts", "scripts/migracion/lib/informe-escritura.ts", "scripts/migracion/migrar-escribir.ts"];
+  for (const entrada of [VERIFICAR, SCRIPT]) {
+    const alcanzados = [...grafo(entrada).archivos].map(rel);
+    for (const p of prohibidos) assert.ok(!alcanzados.includes(p), `${rel(entrada)} no debe alcanzar ${p}`);
+    assert.ok(!alcanzados.some((a) => /tests\//.test(a)), `${rel(entrada)} no alcanza los tests`);
+  }
+  // migrar.ts y migrar-escribir.ts no lo alcanzan
+  for (const programa of ["migrar.ts", "migrar-escribir.ts"]) {
+    const alcanzados = [...grafo(join(MIGRACION, programa)).archivos].map(rel);
+    assert.ok(!alcanzados.includes("scripts/migracion/lib/verificar.ts") && !alcanzados.includes("scripts/migracion/verificar-escritura.ts"), `${programa} no debe alcanzar el verificador`);
+  }
+  // quién alcanza la función central y el script (grafo calculado por el test sobre todos los módulos fuera de tests/)
+  const modulos = ts(MIGRACION).filter((a) => !rel(a).startsWith("scripts/migracion/tests/"));
+  const alcanzan = (objetivo: string) => modulos.filter((m) => grafo(m).archivos.has(join(MIGRACION, objetivo))).map(rel).sort();
+  assert.deepEqual(alcanzan("lib/verificar.ts"), ["scripts/migracion/lib/verificar.ts", "scripts/migracion/verificar-escritura.ts"]);
+  assert.deepEqual(alcanzan("verificar-escritura.ts"), ["scripts/migracion/verificar-escritura.ts"]);
+  // nadie de producción importa ni la función ni el script; los importan solo el script (la función) y los tests
+  const raizRepo = join(RAIZ, "..", "..");
+  const unicos = [...new Set([RAIZ, join(raizRepo, "apps"), join(raizRepo, "packages")].flatMap((d) => { try { return ts(d); } catch { return []; } }))];
+  const importan = (patron: string) => unicos.filter((f) => new RegExp(`(?:from|import)\\s*\\(?\\s*["'][^"']*${patron}["']`).test(readFileSync(f, "utf8"))).map((f) => relative(raizRepo, f).replace(/\\/g, "/"));
+  const deProduccion = (xs: string[]) => xs.filter((x) => !x.startsWith("packages/compartido/scripts/migracion/tests/"));
+  assert.deepEqual(deProduccion(importan("verificar(?:\\.ts)?")), ["packages/compartido/scripts/migracion/verificar-escritura.ts"], "la función central solo la importa su script");
+  assert.deepEqual(deProduccion(importan("verificar-escritura(?:\\.ts)?")), [], "nadie de producción importa el script");
+  // el script npm lo corre directamente
+  const paquete = JSON.parse(readFileSync(join(RAIZ, "package.json"), "utf8")) as { scripts: Record<string, string> };
+  assert.equal(paquete.scripts["verificar:escritura"], "tsx scripts/migracion/verificar-escritura.ts");
+  // y no tiene otra vía a una base: ni clientes propios, ni escritura, ni el destino de pruebas, ni sentencias que no sean SELECT
+  for (const archivo of [VERIFICAR, SCRIPT]) {
+    const codigo = readFileSync(archivo, "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+    assert.ok(!/new PrismaClient\(|createConnection|createPool|PrismaMariaDb/.test(codigo), `${rel(archivo)}: no abre conexiones propias`);
+    assert.ok(!/abrirConexionEscritura|abrirConexionLectura|escribirPlan|DESTINO_PRUEBAS|ESCRITURA_REAL_HABILITADA/.test(codigo), `${rel(archivo)}: no conoce la escritura ni el destino de pruebas`);
+    assert.ok(!/\b(?:INSERT|UPDATE|DELETE|DROP|ALTER|TRUNCATE|CREATE|REPLACE|GRANT|REVOKE|LOCK|CALL)\b/.test(codigo), `${rel(archivo)}: ninguna sentencia que no sea SELECT`);
+    assert.ok(!/\$executeRaw|\$queryRawUnsafe|\.query\(|\$transaction/.test(codigo), `${rel(archivo)}: solo pasa por la consulta de solo lectura que recibe`);
+    assert.ok(!/DATABASE_URL_MIGRACION|process\.env/.test(codigo), `${rel(archivo)}: no toca el entorno ni las credenciales de migración`);
+  }
+  const script = readFileSync(SCRIPT, "utf8");
+  assert.deepEqual(script.match(/abrirSoloCms\(\)|abrirSoloWordPress\(\)/g), ["abrirSoloCms()", "abrirSoloWordPress()"], "el script abre solo las dos conexiones de solo lectura que ya existen");
+  assert.ok(!/--base/.test(script.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "")), "no hay argumento de base");
+  assert.equal((script.match(/destino: DESTINO_REAL/g) ?? []).length, 1, "apunta siempre a DESTINO_REAL");
+});
+
+t("T26: verificar-escritura.ts rechaza los argumentos inválidos con 2, antes de abrir ninguna conexión (no hay --base ni otra base)", () => {
+  // DATABASE_URL apunta a un puerto sin servidor: si el script intentara conectar, la salida sería otra
+  const env = { ...process.env, DATABASE_URL: "mysql://nadie:nada@127.0.0.1:1/evaristo_cms" };
+  const correr = (...args: string[]) => spawnSync(process.execPath, ["--import", "tsx", join(MIGRACION, "verificar-escritura.ts"), ...args], { env, encoding: "utf8", cwd: RAIZ, timeout: 60_000 });
+  for (const [args, texto] of [
+    [[], /hay que indicar uno de --id, --ids o --muestra/],
+    [["--solo-estos"], /hay que indicar uno de --id, --ids o --muestra/],
+    [["--base=evaristo_cms", "--muestra"], /argumento desconocido: --base=evaristo_cms/],
+    [["--base=evaristo_cms_test", "--id=12526"], /argumento desconocido: --base=evaristo_cms_test/],
+    [["--id=12526", "--ids=12526,1555"], /exactamente uno de --id, --ids o --muestra/],
+    [["--muestra", "--id=12526"], /exactamente uno de --id, --ids o --muestra/],
+    [["--id=12526,1555"], /--id lleva un solo número/],
+    [["--id=abc"], /tiene que ser un número/],
+    [["--ids=1,2"], /ids que no son de la muestra/],
+    [["--id"], /necesita un valor/],
+    [["--muestra", "--muestra"], /--muestra está repetido/],
+    [["--muestra=1"], /--muestra no lleva valor/],
+    [["--muestra", "--solo-estos=1"], /--solo-estos no lleva valor/],
+    [["--muestra", "--destino=pruebas"], /argumento desconocido/],
+    [["--id=12526", "--originales=carpeta-que-no-existe"], /no se puede leer la carpeta de originales/],
+  ] as Array<[string[], RegExp]>) {
+    const r = correr(...args);
+    assert.equal(r.status, 2, `${args.join(" ")}: ${r.stdout}${r.stderr}`);
+    assert.match(r.stderr, texto, args.join(" "));
+    assert.match(r.stderr, /^Error en los argumentos/);
+    assert.ok(!/ECONNREFUSED|Base:|comprobaciones/.test(r.stdout + r.stderr), "no intentó conectar");
+  }
+});
+
 t("T22: ninguna exportación del flujo expone el registro de dependencias reales (comportamiento)", () => {
   const real = dependenciasReales();
   const exportadas = Object.entries(flujoEscribir as Record<string, unknown>);
