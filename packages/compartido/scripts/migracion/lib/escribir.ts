@@ -64,7 +64,10 @@ export function verificarServidorEscritura(s: ServidorEscritura, destino: Destin
 export async function abrirConexionEscritura(destino: unknown, credenciales?: Credenciales): Promise<ConexionEscritura> {
   const elegido = elegirDestinoEscritura(destino);
   const { user, password } = credenciales ?? credencialesDePruebas();
-  const prisma = new PrismaClient({ adapter: new PrismaMariaDb({ host: elegido.host, port: elegido.puerto, user, password, database: elegido.base, connectionLimit: 3 }) });
+  // allowPublicKeyRetrieval SOLO en esta conexión de escritura: con la caché de autenticación fría de caching_sha2_password (MySQL 8.4) la primera
+  // conexión de un usuario necesita la clave pública RSA del servidor y, sin esto, falla con "RSA public key is not available client side". Es aceptable
+  // porque el host es la constante 127.0.0.1 (elegirDestinoEscritura solo admite DESTINO_REAL y DESTINO_PRUEBAS): el pedido de la clave pública no sale de esta máquina.
+  const prisma = new PrismaClient({ adapter: new PrismaMariaDb({ host: elegido.host, port: elegido.puerto, user, password, database: elegido.base, connectionLimit: 3, allowPublicKeyRetrieval: true }) });
   try {
     const [f] = await prisma.$queryRaw<Array<Record<string, unknown>>>`SELECT @@port AS puerto, DATABASE() AS base, @@version AS version, @@session.transaction_read_only AS ro`;
     const servidor = verificarServidorEscritura({ puerto: num(f?.["puerto"]), base: str(f?.["base"]), version: str(f?.["version"]), soloLectura: num(f?.["ro"]) }, elegido);
