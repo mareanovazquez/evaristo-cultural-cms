@@ -41,3 +41,54 @@ export function dependenciasDePrueba(cambios: Partial<DependenciasFlujo> = {}, r
   };
   return { deps, llamadas, log, error, preguntas };
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// Dependencias de prueba EN VIVO: WordPress (3307) en solo lectura, el CMS de lectura = evaristo_cms_test (usuario evaristo, READ ONLY) y la
+// escritura con las credenciales que reciba el flujo (las de evaristo_migracion) contra DESTINO_PRUEBAS.
+// ---------------------------------------------------------------------------------------------------------------
+import { leerDestinoServidor, verificarServidorWordPress } from "../lib/conexiones.ts";
+import { abrirConexionEscritura, abrirConexionLectura } from "../lib/escribir.ts";
+import { abrirSoloWordPress } from "../lib/leer-wordpress.ts";
+
+export interface RastroEnVivo extends RastroDePrueba {
+  /** CURRENT_USER() de cada conexión de escritura que abrió el flujo, y el error (textual) si alguna falló. */
+  usuariosDeEscritura: string[];
+  erroresDeApertura: string[];
+}
+
+export function dependenciasDePruebaEnVivo(cambios: Partial<DependenciasFlujo> = {}, respuestas: string[] = []): RastroEnVivo {
+  const rastro = dependenciasDePrueba({}, respuestas) as RastroEnVivo;
+  rastro.usuariosDeEscritura = [];
+  rastro.erroresDeApertura = [];
+  const base = rastro.deps;
+  const deps: DependenciasFlujo = {
+    ...base,
+    abrirLectura: async (): Promise<ConexionesVerificadas> => {
+      rastro.llamadas.lectura++;
+      const wp = await abrirSoloWordPress();
+      try {
+        const cms = await abrirConexionLectura(DESTINO_PRUEBAS);
+        try {
+          const servidorWordPress = verificarServidorWordPress(await leerDestinoServidor(wp.wp));
+          return {
+            wp: wp.wp, bd: cms.bd, destino: { host: DESTINO_PRUEBAS.host, puerto: DESTINO_PRUEBAS.puerto, base: DESTINO_PRUEBAS.base },
+            servidorCms: { puerto: cms.servidor.puerto, base: cms.servidor.base, readOnly: 0, version: cms.servidor.version }, servidorWordPress,
+            cerrar: async () => { await wp.cerrar(); await cms.cerrar(); },
+          };
+        } catch (e) { await cms.cerrar(); throw e; }
+      } catch (e) { await wp.cerrar(); throw e; }
+    },
+    abrirEscritura: async (destino: unknown, credenciales: Credenciales): Promise<ConexionEscritura> => {
+      rastro.llamadas.escritura++;
+      try {
+        const c = await abrirConexionEscritura(destino, credenciales);
+        const [f] = await c.prisma.$queryRawUnsafe<Array<Record<string, unknown>>>("SELECT CURRENT_USER() AS u");
+        rastro.usuariosDeEscritura.push(String(f?.["u"]));
+        return c;
+      } catch (e) { rastro.erroresDeApertura.push(e instanceof Error ? e.message : String(e)); throw e; }
+    },
+    ...cambios,
+  };
+  rastro.deps = deps;
+  return rastro;
+}

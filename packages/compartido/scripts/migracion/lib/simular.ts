@@ -20,6 +20,8 @@ export interface DependenciasSimular {
   largos?: ReadonlyMap<string, number>;
   medir?: OpcionesPreparar["medir"];
   ahora?: () => Date;
+  /** El destino que valida el plan. Por defecto DESTINO_REAL; el flujo de escritura pasa el destino de la corrida (DESTINO_PRUEBAS en los tests). */
+  destinoPermitido?: OpcionesPreparar["destinoPermitido"];
 }
 
 export interface ResultadoSimulacion { informe: Informe; preparado: Preparado; ejecucion: ResumenEjecucion }
@@ -39,7 +41,7 @@ export async function simular(
   const filasCuentasWp = cuentasDeFilas(await leerCuentas(wp, entrada.cuentas.map((c) => c.wpUserId)));
   const preparado = await prepararPlan({
     entrada, carpetaOriginales: opciones.originales, bd, largos: deps.largos ?? leerLargosSchema(), cuentas: entrada.cuentas, filasCuentasWp,
-    destino: { host: conexiones.destino.host, puerto: conexiones.servidorCms.puerto, base: conexiones.servidorCms.base }, destinoPermitido: DESTINO_REAL,
+    destino: { host: conexiones.destino.host, puerto: conexiones.servidorCms.puerto, base: conexiones.servidorCms.base }, destinoPermitido: deps.destinoPermitido ?? DESTINO_REAL,
     ...(deps.medir ? { medir: deps.medir } : {}),
   });
   const ejecucion = await new EjecutorNulo(bd).ejecutar(preparado.plan);

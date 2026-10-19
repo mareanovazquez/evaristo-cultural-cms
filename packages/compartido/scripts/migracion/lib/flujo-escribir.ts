@@ -96,7 +96,7 @@ export async function correrFlujoEscribir(argv: readonly string[], env: Readonly
   const lectura = await deps.abrirLectura();
   let resultadoPlan;
   try {
-    resultadoPlan = await simular({ ...opciones, modo: "simular" }, lectura);
+    resultadoPlan = await simular({ ...opciones, modo: "simular" }, lectura, { destinoPermitido: destino });
   } finally {
     await lectura.cerrar();
   }
