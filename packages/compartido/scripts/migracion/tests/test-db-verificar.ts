@@ -200,6 +200,19 @@ try {
     await sinDiferencias("nombre original de una imagen");
   });
 
+  await ta("V8: una ficha técnica del artículo (que el plan no escribe) se informa como DIFERENCIA, también con --solo-estos, y sale con 1; borrada, vuelve a 0", async () => {
+    const ID = 1555;
+    const art = (await prisma.articulo.findUnique({ where: { wpId: ID } }))!;
+    assert.deepEqual(fallan(await verificar([ID], true)), []);
+    await prisma.fichaTecnica.create({ data: { articuloId: art.id, titulo: "Ficha de prueba" } });
+    const r = await verificar([ID], true);
+    assert.ok(fallan(r).some((c) => c.articulo === ID && c.nombre === "(a) ficha técnica del artículo (0)"), JSON.stringify(fallan(r)));
+    assert.equal(codigoDeSalida(r), 1);
+    await prisma.fichaTecnica.delete({ where: { articuloId: art.id } });
+    assert.equal(codigoDeSalida(await verificar([ID], true)), 0);
+    assert.deepEqual(fallan(await verificar(IDS_MUESTRA, false)), []);
+  });
+
   await ta("V4: sobre una base donde un artículo pedido no existe, informa que no está, sin errores y sin escribir", async () => {
     // base vacía: ningún artículo
     await vaciarYSembrarPruebas(prisma);

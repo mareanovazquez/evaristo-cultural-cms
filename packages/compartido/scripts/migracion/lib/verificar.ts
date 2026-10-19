@@ -104,6 +104,7 @@ export async function verificarEscritura(o: OpcionesVerificacion): Promise<Resul
     const autoresDb = (await bd("SELECT au.wpUserId, aa.orden FROM articulos_autores aa JOIN autores au ON au.id = aa.autorId WHERE aa.articuloId = ? ORDER BY aa.orden, au.wpUserId", artId)) as Fila[];
     c("(d) autores y orden", estable(autoresDb.map((x) => [num(x["wpUserId"]), num(x["orden"])])) === estable([...pa.autores].sort((x, y) => x.orden - y.orden || x.wpUserId - y.wpUserId).map((x) => [x.wpUserId, x.orden])), `${autoresDb.length} en la base, ${pa.autores.length} en el plan`);
     c("(a) galería del artículo (0)", (await cuenta("SELECT COUNT(*) AS n FROM articulos_galeria WHERE articuloId = ?", artId)) === 0);
+    c("(a) ficha técnica del artículo (0)", (await cuenta("SELECT COUNT(*) AS n FROM fichas_tecnicas WHERE articuloId = ?", artId)) === 0);
 
     // (b) la fila
     c("(b) slug", str(art["slug"]) === pa.slug, `${str(art["slug"])} vs ${pa.slug}`);
