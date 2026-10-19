@@ -185,8 +185,16 @@ export async function verificarEscritura(o: OpcionesVerificacion): Promise<Resul
     const imgs = await bd("SELECT * FROM imagenes");
     const cats = await bd("SELECT * FROM categorias");
     const reds = await bd("SELECT * FROM redirecciones");
-    const texto = JSON.stringify([arts, aut, imgs, cats, reds], (_k, v) => (typeof v === "bigint" ? Number(v) : v));
-    chk(null, "(h) sin correos fuera de autores.bio", !CORREO.test(texto));
+    const enJson = (v: unknown) => JSON.stringify(v, (_k, x) => (typeof x === "bigint" ? Number(x) : x));
+    const texto = enJson([arts, aut, imgs, cats, reds]);
+    // los correos que están en el propio contenido del artículo (el cuerpo que escribió su autor) son legítimos: lo que no puede haber es un correo que el plan no tenga,
+    // ni ninguno en las demás tablas (la bio del autor es la única columna con datos del autor, y no se mira)
+    const correosDe = (s: string) => new Set(s.match(new RegExp(CORREO.source, "g")) ?? []);
+    const delPlan = correosDe(enJson(plan.articulos.filter((x) => presentes.includes(x.wpId)).map((x) => [x.titulo, x.bajada, x.cuerpo, x.textoPlano, x.redesDescripcion, x.avisosMigracion, x.etiquetasWp, x.encabezadoAlt, x.encabezadoCredito])));
+    const enArticulos = correosDe(enJson(arts));
+    const deMas = [...enArticulos].filter((x) => !delPlan.has(x)).length;
+    const enOtras = correosDe(enJson([aut, imgs, cats, reds])).size;
+    chk(null, "(h) sin correos fuera de autores.bio y del contenido del propio artículo", deMas === 0 && enOtras === 0, `${deMas} correos de más en artículos, ${enOtras} en otras tablas (${enArticulos.size} en el contenido de los artículos, todos del plan)`);
     const fragmentos = plan.autores.flatMap((a) => hojas(a.bio)).map((s) => s.trim()).filter((s) => s.length >= 15).map((s) => JSON.stringify(s).slice(1, -1));
     chk(null, "(h) sin texto de bio fuera de autores.bio", fragmentos.every((s) => !texto.includes(s)));
   }
