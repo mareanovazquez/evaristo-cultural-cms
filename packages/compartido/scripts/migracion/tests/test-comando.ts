@@ -7,11 +7,16 @@ import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { evaluarComando } from "../lib/comando-escribir.ts";
 import { credencialesDeUrl, ErrorDeCredenciales } from "../lib/credenciales.ts";
+import { confirmarAntesDeConectar } from "../lib/confirmaciones.ts";
+import { DESTINO_PRUEBAS, DESTINO_REAL } from "../lib/destinos.ts";
 import { cargarDatosVersionados } from "../lib/entrada-snapshot.ts";
+import { correrFlujoEscribir, dependenciasReales, pedirNombreDeBase } from "../lib/flujo-escribir.ts";
+import { dependenciasDePrueba } from "./dependencias-prueba.ts";
 import { grafo } from "./grafo-imports.ts";
 
 let ok = 0;
 const t = (name: string, fn: () => void) => { fn(); ok++; console.log("ok", name); };
+const ta = async (name: string, fn: () => Promise<void>) => { await fn(); ok++; console.log("ok", name); };
 
 const RAIZ = fileURLToPath(new URL("../../..", import.meta.url));   // packages/compartido
 const MIGRACION = join(RAIZ, "scripts", "migracion");
@@ -137,7 +142,7 @@ const ts = (d: string): string[] => readdirSync(d, { withFileTypes: true }).flat
 t("T22: migrar.ts no alcanza el comando de escritura, correr-escritura.ts ni escribir.ts", () => {
   const { archivos } = grafo(join(MIGRACION, "migrar.ts"));
   const alcanzados = [...archivos].map(rel);
-  for (const prohibido of ["scripts/migracion/migrar-escribir.ts", "scripts/migracion/lib/comando-escribir.ts", "scripts/migracion/lib/correr-escritura.ts", "scripts/migracion/lib/escribir.ts", "scripts/migracion/lib/informe-escritura.ts"]) {
+  for (const prohibido of ["scripts/migracion/migrar-escribir.ts", "scripts/migracion/lib/comando-escribir.ts", "scripts/migracion/lib/correr-escritura.ts", "scripts/migracion/lib/escribir.ts", "scripts/migracion/lib/informe-escritura.ts", "scripts/migracion/lib/flujo-escribir.ts"]) {
     assert.ok(!alcanzados.includes(prohibido), `migrar.ts no debe alcanzar ${prohibido}`);
   }
   assert.deepEqual(alcanzados.filter((a) => /escribir|tests\//.test(a)), []);
@@ -147,10 +152,12 @@ t("T22: solo el comando de escritura (y sus módulos propios) alcanza escribir.t
   // grafo calculado por el propio test sobre todos los .ts de scripts/migracion fuera de tests/
   const modulos = ts(MIGRACION).filter((a) => !rel(a).startsWith("scripts/migracion/tests/"));
   const alcanzan = (objetivo: string) => modulos.filter((m) => grafo(m).archivos.has(join(MIGRACION, objetivo))).map(rel).sort();
-  assert.deepEqual(alcanzan("lib/correr-escritura.ts"), ["scripts/migracion/lib/correr-escritura.ts", "scripts/migracion/migrar-escribir.ts"]);
+  assert.deepEqual(alcanzan("lib/correr-escritura.ts"), ["scripts/migracion/lib/correr-escritura.ts", "scripts/migracion/lib/flujo-escribir.ts", "scripts/migracion/migrar-escribir.ts"]);
   assert.deepEqual(alcanzan("lib/escribir.ts"), [
-    "scripts/migracion/lib/correr-escritura.ts", "scripts/migracion/lib/escribir.ts", "scripts/migracion/lib/informe-escritura.ts", "scripts/migracion/migrar-escribir.ts",
+    "scripts/migracion/lib/correr-escritura.ts", "scripts/migracion/lib/escribir.ts", "scripts/migracion/lib/flujo-escribir.ts", "scripts/migracion/lib/informe-escritura.ts", "scripts/migracion/migrar-escribir.ts",
   ]);
+  // el flujo nuevo lo alcanzan solo él mismo y el comando
+  assert.deepEqual(alcanzan("lib/flujo-escribir.ts"), ["scripts/migracion/lib/flujo-escribir.ts", "scripts/migracion/migrar-escribir.ts"]);
   // los programas de la carpeta (migrar, corrida-en-seco, comparar-snapshot-vivo, generar-snapshot-wp) no llegan ahí
   const programas = readdirSync(MIGRACION).filter((f) => f.endsWith(".ts")).sort();
   assert.ok(programas.includes("migrar.ts") && programas.includes("migrar-escribir.ts"));
@@ -164,6 +171,12 @@ t("T22: ningún módulo importa el comando de escritura (solo se lo corre con el
   assert.ok(unicos.length > 50, "se recorrió el código");
   const quienes = unicos.filter((f) => /(?:from|import)\s*\(?\s*["'][^"']*migrar-escribir(?:\.[a-z]+)?["']/.test(readFileSync(f, "utf8")));
   assert.deepEqual(quienes.map((f) => relative(raizRepo, f).replace(/\\/g, "/")), []);
+  // el flujo lo importan solo el comando y los tests; las dependencias de prueba, solo los tests (ningún archivo de producción)
+  const importan = (nombre: string) => unicos.filter((f) => new RegExp(`(?:from|import)\\s*\\(?\\s*["'][^"']*${nombre}(?:\\.[a-z]+)?["']`).test(readFileSync(f, "utf8"))).map((f) => relative(raizRepo, f).replace(/\\/g, "/"));
+  const noTests = (xs: string[]) => xs.filter((x) => !x.startsWith("packages/compartido/scripts/migracion/tests/"));
+  assert.deepEqual(noTests(importan("flujo-escribir")), ["packages/compartido/scripts/migracion/migrar-escribir.ts"]);
+  assert.deepEqual(noTests(importan("dependencias-prueba")), [], "ningún archivo de producción importa las dependencias de prueba");
+  assert.ok(importan("dependencias-prueba").length > 0, "los tests sí las usan");
   // el script npm lo corre directamente
   const paquete = JSON.parse(readFileSync(join(RAIZ, "package.json"), "utf8")) as { scripts: Record<string, string> };
   assert.equal(paquete.scripts["migrar:escribir"], "tsx scripts/migracion/migrar-escribir.ts");
@@ -171,19 +184,135 @@ t("T22: ningún módulo importa el comando de escritura (solo se lo corre con el
 });
 
 t("T22: el comando no tiene otra vía a un destino ni a las credenciales: solo DESTINO_REAL, solo DATABASE_URL_MIGRACION y nunca DATABASE_URL", () => {
-  for (const archivo of [COMANDO, join(MIGRACION, "lib", "comando-escribir.ts")]) {
+  const FLUJO = join(MIGRACION, "lib", "flujo-escribir.ts");
+  for (const archivo of [COMANDO, join(MIGRACION, "lib", "comando-escribir.ts"), FLUJO]) {
     const texto = readFileSync(archivo, "utf8");
     assert.ok(!/DATABASE_URL(?!_MIGRACION)/.test(texto), `${rel(archivo)}: no menciona DATABASE_URL`);
-    assert.ok(!/DESTINO_PRUEBAS|abrirConexionLectura/.test(texto), `${rel(archivo)}: no conoce el destino de pruebas`);
+    assert.ok(!/abrirConexionLectura/.test(texto), `${rel(archivo)}: no abre la lectura de la base de pruebas`);
     assert.ok(!/^\s*(?:export\s+)?(?:const|let|var)\s+ESCRITURA_REAL_HABILITADA\b|^\s*ESCRITURA_REAL_HABILITADA\s*=[^=]/m.test(texto), `${rel(archivo)}: no asigna el interruptor`);
     assert.ok(!/new PrismaClient\(/.test(texto), `${rel(archivo)}: no crea clientes`);
+    // el destino de pruebas solo lo conoce la guarda del flujo (la comparación por identidad), nunca el comando ni sus decisiones
+    if (archivo !== FLUJO) assert.ok(!/DESTINO_PRUEBAS/.test(texto), `${rel(archivo)}: no conoce el destino de pruebas`);
   }
+  const flujo = readFileSync(FLUJO, "utf8");
+  const usosDePruebas = flujo.split("\n").filter((l) => /DESTINO_PRUEBAS/.test(l) && !/^\s*(import|\/\/|\*|\/\*\*|error\()/.test(l)).map((l) => l.trim());
+  assert.equal(usosDePruebas.length, 2, "DESTINO_PRUEBAS solo en la guarda del flujo");
+  assert.ok(usosDePruebas[0]!.startsWith("if (!real && (deps.destino === DESTINO_REAL || deps.destino !== DESTINO_PRUEBAS))"));
+  assert.deepEqual(flujo.match(/abrirConexionEscritura\([^)]*\)/g), ["abrirConexionEscritura(destino, credenciales)"], "la apertura pasa siempre las credenciales de migración");
+  assert.equal((flujo.match(/destino: DESTINO_REAL/g) ?? []).length, 1, "las dependencias reales usan DESTINO_REAL una sola vez");
+  assert.equal((flujo.match(/interruptor: ESCRITURA_REAL_HABILITADA/g) ?? []).length, 1, "las dependencias reales traen el interruptor de destinos.ts");
+  assert.equal((flujo.match(/REALES\.add\(/g) ?? []).length, 1, "solo dependenciasReales() registra dependencias reales");
+  assert.ok(!/export\s+(const|let)\s+REALES/.test(flujo), "el registro de dependencias reales no se exporta");
+  assert.ok(!/process\.(env|argv)/.test(flujo), "el flujo no lee el entorno por su cuenta: lo recibe");
   const comando = readFileSync(COMANDO, "utf8");
-  assert.deepEqual(comando.match(/abrirConexionEscritura\([^)]*\)/g), ["abrirConexionEscritura(destino, credenciales)"], "la apertura pasa siempre las credenciales de migración");
-  assert.equal((comando.match(/destino: DESTINO_REAL/g) ?? []).length, 1);
-  assert.deepEqual(comando.match(/process\.env\b[^\n]*/g)?.map((x) => x.slice(0, 13)), ["process.env, "], "process.env solo entra a evaluarComando");
+  assert.deepEqual(comando.match(/process\.env\b[^\n]*/g)?.map((x) => x.slice(0, 13)), ["process.env, "], "process.env solo entra al flujo (que se lo pasa a evaluarComando)");
+  assert.deepEqual(comando.match(/dependenciasReales\(\)/g), ["dependenciasReales()"], "el comando arma solo las dependencias reales");
   // y comando-escribir.ts no lee el entorno por su cuenta
   assert.ok(!/process\.(env|argv)/.test(readFileSync(join(MIGRACION, "lib", "comando-escribir.ts"), "utf8")));
+});
+
+// -----------------------------------------------------------------------------------------------------------------
+// La guarda de las dependencias del flujo y el tipeo del nombre de la base (sin base y sin conexiones)
+// -----------------------------------------------------------------------------------------------------------------
+const ARGS_FLUJO = ["--muestra", "--esperar-articulos=35", "--originales=carpeta-que-no-existe"];
+const ENV_FLUJO = { DATABASE_URL_MIGRACION: URL_MIGRACION };
+const SIN_LLAMADAS = { lectura: 0, escritura: 0, linea: 0 };
+
+await ta("T24: dependencias de prueba con DESTINO_REAL e interruptor true se niegan sin leer credenciales ni conectar", async () => {
+  const p = dependenciasDePrueba({ destino: DESTINO_REAL, interruptor: true });
+  assert.equal(await correrFlujoEscribir(ARGS_FLUJO, ENV_FLUJO, p.deps), 2);
+  assert.match(p.error.join("\n"), /solo se admite DESTINO_PRUEBAS.*No se abrió ninguna conexión y no se escribió nada/);
+  assert.deepEqual(p.llamadas, SIN_LLAMADAS);
+  assert.ok(!p.error.concat(p.log).join("\n").includes(CLAVE));
+  // sin credenciales el mensaje es el mismo: la guarda va antes de leerlas
+  const q = dependenciasDePrueba({ destino: DESTINO_REAL, interruptor: true });
+  assert.equal(await correrFlujoEscribir(ARGS_FLUJO, {}, q.deps), 2);
+  assert.match(q.error.join("\n"), /solo se admite DESTINO_PRUEBAS/);
+  assert.ok(!/Falta DATABASE_URL_MIGRACION/.test(q.error.join("\n")));
+});
+
+await ta("T24: un destino que no es una de las dos constantes se niega: una copia con los mismos valores, un texto, una URL o nada", async () => {
+  for (const destino of [{ ...DESTINO_PRUEBAS }, { ...DESTINO_REAL }, "evaristo_cms_test", "mysql://x:y@127.0.0.1:3308/evaristo_cms_test", undefined, null, { host: "127.0.0.1", puerto: 3306, base: "otra" }]) {
+    const p = dependenciasDePrueba({ destino });
+    assert.equal(await correrFlujoEscribir(ARGS_FLUJO, ENV_FLUJO, p.deps), 2, JSON.stringify(destino));
+    assert.match(p.error.join("\n"), /solo se admite DESTINO_PRUEBAS/);
+    assert.deepEqual(p.llamadas, SIN_LLAMADAS);
+  }
+});
+
+await ta("T24: un objeto armado a mano o copiado de las dependencias reales no pasa por real", async () => {
+  // copiar las dependencias reales (spread) y cambiarles el destino o el interruptor NO las vuelve reales
+  const copia = { ...dependenciasReales(), destino: DESTINO_REAL, interruptor: true };
+  const llamadas = { n: 0 }, salida: string[] = [];
+  const falsa = { ...copia, abrirLectura: async () => { llamadas.n++; throw new Error("no"); }, abrirEscritura: async () => { llamadas.n++; throw new Error("no"); }, salida: { log: () => {}, error: (x: string) => { salida.push(x); } } };
+  assert.equal(await correrFlujoEscribir(ARGS_FLUJO, ENV_FLUJO, falsa), 2);
+  assert.match(salida.join("\n"), /solo se admite DESTINO_PRUEBAS/);
+  assert.equal(llamadas.n, 0);
+  // y las dependencias reales no se pueden modificar
+  assert.throws(() => { (dependenciasReales() as { destino: unknown }).destino = DESTINO_PRUEBAS; }, TypeError);
+});
+
+await ta("T24: con DESTINO_PRUEBAS el flujo respeta el interruptor, las credenciales, los argumentos y la carpeta, todo antes de conectar", async () => {
+  const p = dependenciasDePrueba({ interruptor: false });
+  assert.equal(await correrFlujoEscribir(ARGS_FLUJO, ENV_FLUJO, p.deps), 2);
+  assert.match(p.error.join("\n"), /deshabilitada.*No se abrió ninguna conexión y no se escribió nada/);
+  assert.deepEqual(p.llamadas, SIN_LLAMADAS);
+  // con el interruptor en true y sin credenciales: las credenciales, antes de conectar
+  const q = dependenciasDePrueba({});
+  assert.equal(await correrFlujoEscribir(ARGS_FLUJO, {}, q.deps), 2);
+  assert.match(q.error.join("\n"), /Falta DATABASE_URL_MIGRACION/);
+  assert.deepEqual(q.llamadas, SIN_LLAMADAS);
+  // con argumentos mal escritos, los argumentos
+  const r = dependenciasDePrueba({});
+  assert.equal(await correrFlujoEscribir(["--muestra"], ENV_FLUJO, r.deps), 2);
+  assert.match(r.error.join("\n"), /^Error en los argumentos/);
+  assert.deepEqual(r.llamadas, SIN_LLAMADAS);
+  // la carpeta de originales ilegible se detecta antes de conectar
+  const s = dependenciasDePrueba({});
+  assert.equal(await correrFlujoEscribir(ARGS_FLUJO, ENV_FLUJO, s.deps), 2);
+  assert.match(s.error.join("\n"), /no se puede leer la carpeta/);
+  assert.deepEqual(s.llamadas, SIN_LLAMADAS);
+});
+
+await ta("T25: el tipeo del nombre de la base: lo tipeado se recorta y la pregunta nombra el destino, sin conectar", async () => {
+  const llamadas: string[] = [];
+  const nombre = await pedirNombreDeBase(DESTINO_REAL, async (pregunta) => { llamadas.push(pregunta); return "  evaristo_cms \n"; });
+  assert.equal(nombre, "evaristo_cms");
+  assert.equal(llamadas.length, 1);
+  assert.match(llamadas[0]!, /127\.0\.0\.1:3308.*tipeá el nombre de la base \(evaristo_cms\)/);
+});
+
+await ta("T25: para el destino real, sin terminal interactiva se niega; con nombre equivocado se niega; con el correcto no queda ningún motivo de tipeo", async () => {
+  const entrada = { destino: DESTINO_REAL, articulosEnElPlan: 1, esperarArticulos: 1, sobrescribir: false, esperarSobrescribir: null };
+  const deTerminal = (c: ReturnType<typeof confirmarAntesDeConectar>) => (c.ok ? [] : c.motivos).filter((x) => /terminal|tipear/.test(x));
+  // sin terminal interactiva: se niega, aunque se haya "tipeado" el nombre correcto
+  const sinTerminal = confirmarAntesDeConectar({ ...entrada, terminalInteractiva: false, baseTipeada: "evaristo_cms" });
+  assert.equal(sinTerminal.ok, false);
+  assert.equal(deTerminal(sinTerminal).length, 1);
+  assert.match(deTerminal(sinTerminal)[0]!, /exige una terminal interactiva/);
+  // con terminal y el nombre equivocado (inyectando la lectura de línea): se niega por el tipeo
+  for (const tipeado of ["evaristo_cms_test", "Evaristo_cms", "", "si", "evaristo_cms_shadow"]) {
+    const baseTipeada = await pedirNombreDeBase(DESTINO_REAL, async () => tipeado);
+    const c = confirmarAntesDeConectar({ ...entrada, terminalInteractiva: true, baseTipeada });
+    assert.equal(c.ok, false, tipeado);
+    assert.match(deTerminal(c).join(), /tipear el nombre de la base \(evaristo_cms\)/, tipeado);
+  }
+  // sin haber tipeado nada (null) tampoco pasa
+  assert.match(deTerminal(confirmarAntesDeConectar({ ...entrada, terminalInteractiva: true, baseTipeada: null })).join(), /tipear el nombre/);
+  // con el nombre correcto: no queda ningún motivo de terminal ni de tipeo (con el interruptor en false sigue solo el motivo del interruptor)
+  const baseTipeada = await pedirNombreDeBase(DESTINO_REAL, async () => " evaristo_cms ");
+  const bien = confirmarAntesDeConectar({ ...entrada, terminalInteractiva: true, baseTipeada });
+  assert.deepEqual(deTerminal(bien), []);
+  assert.deepEqual((bien.ok ? [] : bien.motivos).filter((x) => !/deshabilitada/.test(x)), [], "el único motivo que queda es el interruptor");
+  // el destino de pruebas no pide ni terminal ni tipeo
+  assert.deepEqual(confirmarAntesDeConectar({ ...entrada, destino: DESTINO_PRUEBAS, terminalInteractiva: false, baseTipeada: null }), { ok: true });
+});
+
+await ta("T25: en el flujo, la lectura de línea inyectada no se usa si algún chequeo previo falla", async () => {
+  const p = dependenciasDePrueba({ terminalInteractiva: true }, ["evaristo_cms_test"]);
+  assert.equal(await correrFlujoEscribir(ARGS_FLUJO, ENV_FLUJO, p.deps), 2);
+  assert.deepEqual(p.llamadas, SIN_LLAMADAS);
+  assert.deepEqual(p.preguntas, []);
 });
 
 console.log(`${ok} pruebas del comando de escritura ok`);

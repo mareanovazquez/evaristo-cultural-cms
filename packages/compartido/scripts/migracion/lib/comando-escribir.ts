@@ -53,9 +53,9 @@ export function evaluarComando(argv: readonly string[], env: Readonly<Record<str
  * El resumen del plan que el comando muestra siempre antes de confirmar: destino, ids, filas por tabla a crear y a omitir, categorías a crear,
  * imágenes y bytes, originales faltantes, redirecciones por tipo, conflictos y avisos por código. Sin correos ni bios.
  */
-export function resumenDelPlan(i: Informe): string[] {
+export function resumenDelPlan(i: Informe, destino: { host: string; puerto: number; base: string } = DESTINO_REAL): string[] {
   const l: string[] = [];
-  l.push(`Destino: ${DESTINO_REAL.host}:${DESTINO_REAL.puerto}/${DESTINO_REAL.base} (MySQL ${i.destino.servidorCms.version}); origen WordPress ${i.destino.servidorWordPress.puerto}/${i.destino.servidorWordPress.base}`);
+  l.push(`Destino: ${destino.host}:${destino.puerto}/${destino.base} (MySQL ${i.destino.servidorCms.version}); origen WordPress ${i.destino.servidorWordPress.puerto}/${i.destino.servidorWordPress.base}`);
   l.push(`Artículos del plan: ${i.resumen.articulosEnElPlan} de ${i.resumen.articulosEnLaMuestra} pedidos (ids ${i.articulos.map((a) => a.wpId).join(", ") || "ninguno"}); estados ${JSON.stringify(i.resumen.estados)}`);
   l.push(`Filas por tabla (a crear / a omitir porque ya existen): ${i.tablas.map((t) => `${t.tabla} ${t.insertar}/${t.yaExisteSinComparar ?? "—"}`).join(", ")}`);
   l.push(`Categorías a crear (${i.categoriasACrear.length}): ${i.categoriasACrear.map((c) => c.slug).join(", ") || "ninguna"}`);
