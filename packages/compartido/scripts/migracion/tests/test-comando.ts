@@ -256,6 +256,7 @@ t("T22: el verificador (lib/verificar.ts y verificar-escritura.ts) solo lee: no 
   const deProduccion = (xs: string[]) => xs.filter((x) => !x.startsWith("packages/compartido/scripts/migracion/tests/"));
   assert.deepEqual(deProduccion(importan("verificar(?:\\.ts)?")), ["packages/compartido/scripts/migracion/verificar-escritura.ts"], "la función central solo la importa su script");
   assert.deepEqual(deProduccion(importan("verificar-escritura(?:\\.ts)?")), [], "nadie de producción importa el script");
+  assert.ok(importan("verificar(?:\\.ts)?").some((x) => x.includes("/tests/")), "los tests con base usan la función");
   // el script npm lo corre directamente
   const paquete = JSON.parse(readFileSync(join(RAIZ, "package.json"), "utf8")) as { scripts: Record<string, string> };
   assert.equal(paquete.scripts["verificar:escritura"], "tsx scripts/migracion/verificar-escritura.ts");
