@@ -11,6 +11,7 @@ import { confirmarAntesDeConectar } from "../lib/confirmaciones.ts";
 import { DESTINO_PRUEBAS, DESTINO_REAL } from "../lib/destinos.ts";
 import { cargarDatosVersionados } from "../lib/entrada-snapshot.ts";
 import { correrFlujoEscribir, dependenciasReales, pedirNombreDeBase } from "../lib/flujo-escribir.ts";
+import * as flujoEscribir from "../lib/flujo-escribir.ts";
 import { dependenciasDePrueba } from "./dependencias-prueba.ts";
 import { grafo } from "./grafo-imports.ts";
 
@@ -202,13 +203,41 @@ t("T22: el comando no tiene otra vía a un destino ni a las credenciales: solo D
   assert.equal((flujo.match(/destino: DESTINO_REAL/g) ?? []).length, 1, "las dependencias reales usan DESTINO_REAL una sola vez");
   assert.equal((flujo.match(/interruptor: ESCRITURA_REAL_HABILITADA/g) ?? []).length, 1, "las dependencias reales traen el interruptor de destinos.ts");
   assert.equal((flujo.match(/REALES\.add\(/g) ?? []).length, 1, "solo dependenciasReales() registra dependencias reales");
-  assert.ok(!/export\s+(const|let)\s+REALES/.test(flujo), "el registro de dependencias reales no se exporta");
+  // el registro de dependencias reales no se exporta, en ninguna forma: ni `export const|let|var REALES`, ni `export { REALES }` (con o sin `as`), ni `export default`
+  assert.ok(!/export\s+(const|let|var)\s+REALES\b/.test(flujo), "el registro de dependencias reales no se exporta (export const)");
+  assert.ok(!/export\s*\{[^}]*\bREALES\b/.test(flujo), "el registro de dependencias reales no se exporta (export { REALES } ni con as)");
+  assert.ok(!/export\s+default\b/.test(flujo), "el flujo no tiene export default");
+  assert.ok(!/export\s*\*/.test(flujo), "el flujo no re-exporta nada con export *");
   assert.ok(!/process\.(env|argv)/.test(flujo), "el flujo no lee el entorno por su cuenta: lo recibe");
   const comando = readFileSync(COMANDO, "utf8");
   assert.deepEqual(comando.match(/process\.env\b[^\n]*/g)?.map((x) => x.slice(0, 13)), ["process.env, "], "process.env solo entra al flujo (que se lo pasa a evaluarComando)");
   assert.deepEqual(comando.match(/dependenciasReales\(\)/g), ["dependenciasReales()"], "el comando arma solo las dependencias reales");
+  // migrar-escribir.ts es delgado: lista blanca de imports y nada de conexiones, destinos ni entorno fuera de la llamada al flujo (sin fijar su largo)
+  const codigo = comando.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+  const imports = [...codigo.matchAll(/(?:^|\n)\s*(?:import|export)\b[^;]*?\bfrom\s+"([^"]+)"|import\(\s*"([^"]+)"\s*\)|(?:^|\n)\s*import\s+"([^"]+)"|require\(\s*"([^"]+)"\s*\)/g)].map((m) => m[1] ?? m[2] ?? m[3] ?? m[4]!).sort();
+  assert.deepEqual(imports, ["./lib/flujo-escribir.ts", "dotenv", "node:url"], "migrar-escribir.ts solo importa el cargador del .env (dotenv), node:url y el flujo");
+  assert.ok(!/PrismaClient|abrirConexionEscritura|abrirConexionLectura|DESTINO_REAL|DESTINO_PRUEBAS|ESCRITURA_REAL_HABILITADA/.test(codigo), "migrar-escribir.ts no crea clientes, no abre conexiones ni nombra destinos ni el interruptor");
+  assert.ok(!/\b(?:eval|require)\s*\(|new\s+Function|child_process/.test(codigo), "migrar-escribir.ts no carga código por otra vía");
+  const usosDeEntorno = codigo.split("\n").filter((l) => /process\.env/.test(l));
+  assert.equal(usosDeEntorno.length, 1, "process.env aparece una sola vez");
+  assert.match(usosDeEntorno[0]!, /correrFlujoEscribir\(process\.argv\.slice\(2\), process\.env, dependenciasReales\(\)\)/, "y solo como argumento de la llamada al flujo");
+  assert.equal(codigo.split("\n").filter((l) => /correrFlujoEscribir\(/.test(l)).length, 1, "una sola llamada al flujo");
   // y comando-escribir.ts no lee el entorno por su cuenta
   assert.ok(!/process\.(env|argv)/.test(readFileSync(join(MIGRACION, "lib", "comando-escribir.ts"), "utf8")));
+});
+
+t("T22: ninguna exportación del flujo expone el registro de dependencias reales (comportamiento)", () => {
+  const real = dependenciasReales();
+  const exportadas = Object.entries(flujoEscribir as Record<string, unknown>);
+  assert.ok(exportadas.length >= 3, "el flujo exporta sus funciones");
+  for (const [nombre, valor] of exportadas) {
+    assert.ok(!(valor instanceof WeakSet) && !(valor instanceof WeakMap) && !(valor instanceof Set) && !(valor instanceof Map), `${nombre}: no es un registro`);
+    const tieneHas = (valor !== null && (typeof valor === "object" || typeof valor === "function")) && typeof (valor as { has?: unknown }).has === "function";
+    if (tieneHas) assert.notEqual((valor as { has: (x: unknown) => unknown }).has(real), true, `${nombre}: no responde has() true para las dependencias reales`);
+    if (typeof valor === "object" && valor !== null) {
+      for (const [clave, interno] of Object.entries(valor as Record<string, unknown>)) assert.ok(!(interno instanceof WeakSet) && !(interno instanceof WeakMap), `${nombre}.${clave}: no es un registro`);
+    }
+  }
 });
 
 // -----------------------------------------------------------------------------------------------------------------
