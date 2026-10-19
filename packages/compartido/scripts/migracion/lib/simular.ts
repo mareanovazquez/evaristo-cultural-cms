@@ -20,7 +20,7 @@ export interface DependenciasSimular {
   largos?: ReadonlyMap<string, number>;
   medir?: OpcionesPreparar["medir"];
   ahora?: () => Date;
-  /** El destino que valida el plan. Por defecto DESTINO_REAL; el flujo de escritura pasa el destino de la corrida (DESTINO_PRUEBAS en los tests). */
+  /** El destino que valida el plan. Por defecto DESTINO_REAL; el flujo de escritura pasa el destino de su corrida. */
   destinoPermitido?: OpcionesPreparar["destinoPermitido"];
 }
 
