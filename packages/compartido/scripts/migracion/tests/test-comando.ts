@@ -208,6 +208,11 @@ t("T22: el comando no tiene otra vía a un destino ni a las credenciales: solo D
   assert.ok(!/export\s*\{[^}]*\bREALES\b/.test(flujo), "el registro de dependencias reales no se exporta (export { REALES } ni con as)");
   assert.ok(!/export\s+default\b/.test(flujo), "el flujo no tiene export default");
   assert.ok(!/export\s*\*/.test(flujo), "el flujo no re-exporta nada con export *");
+  // y el registro solo se usa para declararlo, agregarle (dentro de dependenciasReales) y consultarlo: no se pasa, no se devuelve ni se guarda en otro lado
+  const sinComentarios = flujo.replace(/\/\*[\s\S]*?\*\//g, "").split("\n").filter((l) => !/^\s*\/\//.test(l));
+  const conRegistro = sinComentarios.filter((l) => /\bREALES\b/.test(l)).map((l) => l.trim());
+  assert.equal(conRegistro.length, 3, `REALES aparece solo en su declaración, en add y en has: ${conRegistro.join(" | ")}`);
+  assert.ok(/^const REALES = new WeakSet<object>\(\);/.test(conRegistro[0]!) && /^REALES\.add\(deps\);$/.test(conRegistro[1]!) && /^const real = REALES\.has\(deps\);$/.test(conRegistro[2]!), "y cada uso es el esperado");
   assert.ok(!/process\.(env|argv)/.test(flujo), "el flujo no lee el entorno por su cuenta: lo recibe");
   const comando = readFileSync(COMANDO, "utf8");
   assert.deepEqual(comando.match(/process\.env\b[^\n]*/g)?.map((x) => x.slice(0, 13)), ["process.env, "], "process.env solo entra al flujo (que se lo pasa a evaluarComando)");
