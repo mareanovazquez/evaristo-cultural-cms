@@ -303,6 +303,21 @@ await ta("T24: con DESTINO_PRUEBAS el flujo respeta el interruptor, las credenci
   assert.deepEqual(s.llamadas, SIN_LLAMADAS);
 });
 
+await ta("T24: sin DATABASE_URL_MIGRACION el flujo se niega aunque haya DATABASE_URL: no hay respaldo, no abre conexión y no dice su valor", async () => {
+  const LECTURA = "clave-de-lectura";
+  const env = { DATABASE_URL: `mysql://lector:${LECTURA}@127.0.0.1:3308/evaristo_cms` };
+  for (const entorno of [env, { ...env, DATABASE_URL_MIGRACION: "" }]) {
+    const p = dependenciasDePrueba({ destino: DESTINO_PRUEBAS, interruptor: true });
+    const codigo = await correrFlujoEscribir(ARGS_FLUJO, entorno, p.deps);
+    assert.notEqual(codigo, 0);
+    assert.equal(codigo, 2);
+    assert.match(p.error.join("\n"), /Falta DATABASE_URL_MIGRACION.*No se abrió ninguna conexión y no se escribió nada/);
+    assert.deepEqual(p.llamadas, SIN_LLAMADAS, "ninguna conexión, de lectura ni de escritura");
+    const todo = p.error.concat(p.log).join("\n");
+    assert.ok(!todo.includes(LECTURA) && !todo.includes("lector") && !todo.includes("mysql://"), "no dice el valor de DATABASE_URL");
+  }
+});
+
 await ta("T25: el tipeo del nombre de la base: lo tipeado se recorta y la pregunta nombra el destino, sin conectar", async () => {
   const llamadas: string[] = [];
   const nombre = await pedirNombreDeBase(DESTINO_REAL, async (pregunta) => { llamadas.push(pregunta); return "  evaristo_cms \n"; });
