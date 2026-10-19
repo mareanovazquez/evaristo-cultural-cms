@@ -188,13 +188,18 @@ export async function verificarEscritura(o: OpcionesVerificacion): Promise<Resul
     const enJson = (v: unknown) => JSON.stringify(v, (_k, x) => (typeof x === "bigint" ? Number(x) : x));
     const texto = enJson([arts, aut, imgs, cats, reds]);
     // los correos que están en el propio contenido del artículo (el cuerpo que escribió su autor) son legítimos: lo que no puede haber es un correo que el plan no tenga,
-    // ni ninguno en las demás tablas (la bio del autor es la única columna con datos del autor, y no se mira)
+    // ni ninguno en las demás tablas. En las bios de los autores del plan solo pueden estar los correos que el plan trae (hoy, el wpUserId 39).
     const correosDe = (s: string) => new Set(s.match(new RegExp(CORREO.source, "g")) ?? []);
     const delPlan = correosDe(enJson(plan.articulos.filter((x) => presentes.includes(x.wpId)).map((x) => [x.titulo, x.bajada, x.cuerpo, x.textoPlano, x.redesDescripcion, x.avisosMigracion, x.etiquetasWp, x.encabezadoAlt, x.encabezadoCredito])));
     const enArticulos = correosDe(enJson(arts));
     const deMas = [...enArticulos].filter((x) => !delPlan.has(x)).length;
     const enOtras = correosDe(enJson([aut, imgs, cats, reds])).size;
-    chk(null, "(h) sin correos fuera de autores.bio y del contenido del propio artículo", deMas === 0 && enOtras === 0, `${deMas} correos de más en artículos, ${enOtras} en otras tablas (${enArticulos.size} en el contenido de los artículos, todos del plan)`);
+    const idsAutores = plan.autores.map((a) => a.wpUserId);
+    const biosDb = idsAutores.length ? await bd(`SELECT bio FROM autores WHERE wpUserId IN (${marcas(idsAutores.length)})`, ...idsAutores) : [];
+    const correosDeBiosDelPlan = correosDe(enJson(plan.autores.map((a) => a.bio ?? null)));
+    const enBios = correosDe(enJson(biosDb));
+    const biosDeMas = [...enBios].filter((x) => !correosDeBiosDelPlan.has(x)).length;
+    chk(null, "(h) sin correos fuera de autores.bio y del contenido del propio artículo", deMas === 0 && enOtras === 0 && biosDeMas === 0, `${deMas} correos de más en artículos, ${enOtras} en otras tablas, ${biosDeMas} de más en bios (${enArticulos.size} en el contenido de los artículos, todos del plan)`);
     const fragmentos = plan.autores.flatMap((a) => hojas(a.bio)).map((s) => s.trim()).filter((s) => s.length >= 15).map((s) => JSON.stringify(s).slice(1, -1));
     chk(null, "(h) sin texto de bio fuera de autores.bio", fragmentos.every((s) => !texto.includes(s)));
   }

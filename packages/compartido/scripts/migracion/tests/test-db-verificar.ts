@@ -115,6 +115,91 @@ try {
     assert.equal(codigoDeSalida(await verificar(IDS_MUESTRA, false)), 0);
   });
 
+  await ta("V7: la regla de correos: los del plan (16691 y la bio del 39) no dan diferencia; uno de más en bajada, cuerpo y texto plano, categoría, bio de otro autor o imagen sí, y sale con 1", async () => {
+    const CORREO_FALSO = "prueba@example.invalid";
+    const regla = (r: ResultadoVerificacion) => r.comprobaciones.find((c) => c.nombre.startsWith("(h) sin correos fuera de autores.bio"))!;
+    /** Agrega el correo de mentira al primer texto que encuentre (nodos con `text` de un cuerpo o de una bio). */
+    const conCorreo = (doc: unknown): unknown => {
+      const copia = JSON.parse(JSON.stringify(doc)) as unknown;
+      let hecho = false;
+      const recorrer = (n: unknown) => {
+        if (hecho || n === null || typeof n !== "object") return;
+        if (!Array.isArray(n) && typeof (n as { text?: unknown }).text === "string") { (n as { text: string }).text += ` ${CORREO_FALSO}`; hecho = true; return; }
+        for (const v of Object.values(n as Record<string, unknown>)) recorrer(v);
+      };
+      recorrer(copia);
+      assert.ok(hecho, "se encontró un texto donde agregar el correo");
+      return copia;
+    };
+    const debeFallar = async (ids: readonly number[], nombre: string) => {
+      const r = await verificar(ids, true);
+      assert.equal(regla(r).ok, false, `${nombre}: la regla de correos tiene que informar DIFERENCIA`);
+      assert.equal(codigoDeSalida(r), 1, `${nombre}: sale con 1`);
+    };
+    const sinDiferencias = async (nombre: string) => assert.deepEqual(fallan(await verificar(IDS_MUESTRA, false)), [], `${nombre}: restaurado, 0 diferencias`);
+
+    // los correos legítimos del plan existen en la base y no dan diferencia
+    const a16691 = (await prisma.articulo.findUnique({ where: { wpId: 16691 } }))!;
+    assert.ok(CORREO.test(a16691.textoPlano) && CORREO.test(JSON.stringify(a16691.cuerpo)), "el 16691 trae un correo en el cuerpo y en el texto plano");
+    const bio39 = (await prisma.autor.findUnique({ where: { wpUserId: 39 } }))!.bio;   // en el snapshot lleva el marcador de correo omitido, no el correo
+    const base = await verificar(IDS_MUESTRA, false);
+    assert.equal(regla(base).ok, true, regla(base).detalle);
+    assert.deepEqual(fallan(base), []);
+    const solo = await verificar([16691], true);
+    assert.equal(regla(solo).ok, true);
+    assert.equal(codigoDeSalida(solo), 0);
+
+    // la bio del 39 con un correo (el de mentira) en la base Y en el plan, como pasa con el plan en vivo: tampoco da diferencia
+    await prisma.autor.update({ where: { wpUserId: 39 }, data: { bio: conCorreo(bio39) as never } });
+    const { plan: planConBio } = await planDePruebas(prisma, [22255]);
+    planConBio.autores.find((a) => a.wpUserId === 39)!.bio = conCorreo(bio39) as never;
+    const legitima = await verificarEscritura({ bd, destino: DESTINO_PRUEBAS, ids: [22255], soloEstos: true, originales: "(sin carpeta: plan del snapshot)", plan: planConBio });
+    assert.equal(regla(legitima).ok, true, regla(legitima).detalle);
+    assert.deepEqual(fallan(legitima), []);
+    // y si la base trae un correo y el plan no, sí
+    const sinEnPlan = await verificar([22255], true);
+    assert.equal(regla(sinEnPlan).ok, false);
+    assert.equal(codigoDeSalida(sinEnPlan), 1);
+    await prisma.autor.update({ where: { wpUserId: 39 }, data: { bio: bio39 as never } });
+    await sinDiferencias("bio del 39");
+
+    // (a) un correo en la bajada de un artículo (fuera del contenido del plan)
+    const art = (await prisma.articulo.findUnique({ where: { wpId: 1555 } }))!;
+    await prisma.articulo.update({ where: { wpId: 1555 }, data: { bajada: `Contacto: ${CORREO_FALSO}` } });
+    await debeFallar([1555], "bajada");
+    await prisma.articulo.update({ where: { wpId: 1555 }, data: { bajada: art.bajada } });
+    await sinDiferencias("bajada");
+
+    // (b) un correo extra en el cuerpo y en el texto plano de un artículo que no lo tenía
+    const art2 = (await prisma.articulo.findUnique({ where: { wpId: 3026 } }))!;
+    await prisma.articulo.update({ where: { wpId: 3026 }, data: { cuerpo: conCorreo(art2.cuerpo) as never, textoPlano: `${art2.textoPlano} ${CORREO_FALSO}` } });
+    await debeFallar([3026], "cuerpo y texto plano");
+    await prisma.articulo.update({ where: { wpId: 3026 }, data: { cuerpo: art2.cuerpo as never, textoPlano: art2.textoPlano } });
+    await sinDiferencias("cuerpo y texto plano");
+
+    // (c) un correo en el nombre de una categoría
+    const categoria = (await prisma.categoria.findFirst({ orderBy: { id: "asc" } }))!;
+    await prisma.categoria.update({ where: { id: categoria.id }, data: { nombre: `${categoria.nombre} ${CORREO_FALSO}` } });
+    await debeFallar([1555], "categoría");
+    await prisma.categoria.update({ where: { id: categoria.id }, data: { nombre: categoria.nombre } });
+    await sinDiferencias("categoría");
+
+    // (d) un correo en la bio de un autor que no es el 39 (el 3, autor del 1555)
+    const autor3 = (await prisma.autor.findUnique({ where: { wpUserId: 3 } }))!;
+    assert.notEqual(autor3.bio, null, "el autor 3 tiene bio");
+    await prisma.autor.update({ where: { wpUserId: 3 }, data: { bio: conCorreo(autor3.bio) as never } });
+    await debeFallar([1555], "bio de otro autor");
+    await prisma.autor.update({ where: { wpUserId: 3 }, data: { bio: autor3.bio as never } });
+    await sinDiferencias("bio de otro autor");
+
+    // (e) un correo en el nombreOriginal de una imagen
+    const imagen = (await prisma.imagen.findFirst({ orderBy: { id: "asc" } }))!;
+    await prisma.imagen.update({ where: { id: imagen.id }, data: { nombreOriginal: `${CORREO_FALSO}.jpg` } });
+    await debeFallar([1555], "nombre original de una imagen");
+    await prisma.imagen.update({ where: { id: imagen.id }, data: { nombreOriginal: imagen.nombreOriginal } });
+    await sinDiferencias("nombre original de una imagen");
+  });
+
   await ta("V4: sobre una base donde un artículo pedido no existe, informa que no está, sin errores y sin escribir", async () => {
     // base vacía: ningún artículo
     await vaciarYSembrarPruebas(prisma);
