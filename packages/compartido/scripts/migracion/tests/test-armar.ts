@@ -325,4 +325,47 @@ t("T19: bio_con_correo: con correo, con marcador, sin correo y autor de solo tex
   assert.ok(!JSON.stringify(plan.articulos.map((a) => a.avisosMigracion)).match(/@/));
 });
 
+// ---------------------------------------------------------------------------------------------------------------
+// Texto plano: el plan de los 35 trae todas las palabras visibles del cuerpo (recorrido propio del test, que no usa textoPlanoDe)
+// ---------------------------------------------------------------------------------------------------------------
+const palabras = (s: string) => (s.match(/\S+/g) ?? []).filter((x) => /[\p{L}\p{N}]/u.test(x)).length;
+/** Palabras visibles del cuerpo: cada unidad de texto se cuenta aparte (hardBreak y notas cortan la unidad), más epígrafes y autor y fuente de cita. */
+function palabrasDelCuerpo(doc: unknown): number {
+  let total = 0;
+  const camina = (n: any): void => {
+    if (!n || typeof n !== "object") return;
+    if (n.type === "paragraph" || n.type === "heading") {
+      let trozo = "";
+      const vuelca = () => { total += palabras(trozo); trozo = ""; };
+      const dentro = (h: any): void => {
+        if (typeof h.text === "string") trozo += h.text;
+        else if (h.type === "hardBreak") vuelca();
+        else if (h.type === "footnote") { vuelca(); camina(h.attrs?.content); }
+        else (h.content ?? []).forEach(dentro);
+      };
+      (n.content ?? []).forEach(dentro);
+      vuelca();
+      return;
+    }
+    if (n.type === "imagen") { total += palabras(String(n.attrs?.epigrafe ?? "")); return; }
+    (n.content ?? []).forEach(camina);
+    if (n.type === "cita") total += palabras(String(n.attrs?.autor ?? "")) + palabras(String(n.attrs?.fuente ?? ""));
+  };
+  camina(doc);
+  return total;
+}
+t("textoPlano: en los 35 del snapshot, las palabras del texto plano son las del cuerpo (epígrafes incluidos), sin pegar ni perder ninguna", () => {
+  for (const a of plan.articulos) {
+    assert.equal(palabras(a.textoPlano), palabrasDelCuerpo(a.cuerpo), `${a.wpId}: palabras del textoPlano`);
+    assert.ok(!/\n\n|^\s|\s$|  /.test(a.textoPlano), `${a.wpId}: sin líneas vacías, espacios dobles ni bordes con espacio`);
+    assert.ok(a.textoPlano.length > 0, `${a.wpId}: texto plano no vacío`);
+  }
+});
+t("textoPlano: testigos 5296 (tablas), 720 (saltos de línea) y 4265 (epígrafes): antes 367, 80 y 5974 palabras; ahora las del cuerpo", () => {
+  assert.equal(palabras(articulo(5296).textoPlano), 475);
+  assert.equal(palabras(articulo(720).textoPlano), 83);
+  assert.equal(palabras(articulo(4265).textoPlano), 6232);
+  assert.equal(palabrasDelCuerpo(articulo(4265).cuerpo), 6232);
+});
+
 console.log(`${ok} pruebas de armar ok`);
