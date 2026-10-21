@@ -29,6 +29,8 @@ La paleta tiene tres colores: un acento verde agua, un blanco cálido y un negro
 | 20/10/2026 | Letra capital | Opcional por artículo, en el primer párrafo del cuerpo y activable desde el panel; viene desactivada por defecto en los artículos nuevos y el editor la activa con la casilla (ver Letra capital) |
 | 20/10/2026 | Notas al pie | Numeradas en el texto y reunidas al final de la nota, con vínculo de ida y vuelta (ver Notas al pie) |
 | 20/10/2026 | Imágenes dentro del cuerpo | Se muestran con su proporción original, sin recorte, y con una altura máxima del 80% de la altura de la pantalla. La imagen de portada y las tarjetas siguen con proporción fija (ver Imágenes dentro del cuerpo) |
+| 21/10/2026 | Cita destacada | Caja con fondo accent-50, barra de 4px y comilla decorativa en #67beb0 (variante A; ver Tokens tipográficos) |
+| 21/10/2026 | Sección del artículo | Etiqueta rectangular suave: fondo accent-100, texto accent-900 y esquinas de 4px (ver Etiqueta de sección) |
 | 20/10/2026 | Manual de estilo para contenido nuevo | Se va a armar para homogeneizar los artículos que vengan (ver Preguntas abiertas) |
 
 ## Tokens tipográficos
@@ -50,7 +52,11 @@ Una fila por rol; la familia ya está definida para títulos, cuerpo y botones, 
 | Etiqueta | Inter | 12px | 600 | normal | 1,2 | izquierda |
 | Link | Inter | heredado | 500 | normal | heredado | heredada |
 
-La cita destacada lleva además una línea vertical de 4px en #67beb0 a su izquierda, con 24px de relleno (16px en celular). Su atribución va en Inter 14px, #656262.
+La cita destacada (`blockquote.cita`, atribución en `cite`) es una caja con acento, decidida el 21/10/2026 (variante A, a pedido de la directora, que vio el diseño "lavado"): fondo accent-50 #ecf6f3, barra izquierda de 4px en #67beb0, `border-radius: 4px` y relleno de 24px (16px en celular). Lleva una comilla de apertura decorativa en Fraunces 72px, #67beb0, generada por CSS (`::before`, fuera del árbol de accesibilidad). Su atribución va en Inter 14px, #656262 (unos 5,6:1 sobre el fondo), precedida por un guion largo. Los valores son propuestos para revisar.
+
+### Etiqueta de sección (chip)
+
+Decidida el 21/10/2026: la sección se muestra como etiqueta suave encima del título y en las tarjetas. Fondo accent-100 #d8eee9 con texto accent-900 #374f4b (unos 7:1), Inter 12px, peso 600, mayúsculas con `letter-spacing: 0.06em`, `border-radius: 4px` (el redondeo mínimo del proyecto, así que es una etiqueta rectangular y no una píldora) y relleno de 4px por 12px. En las tarjetas lleva `width: fit-content` para no estirarse a todo el ancho de la columna. Si la etiqueta es un link, el hover usa accent-200 #b2ded6. Los valores son propuestos para revisar.
 
 ## Variaciones de color
 

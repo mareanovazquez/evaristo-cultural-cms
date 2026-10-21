@@ -15,6 +15,7 @@ Antes de pegar cualquier prompt que use Prisma: comprobar el 3308 con `Test-NetC
 - Manual de estilo para los artículos nuevos: se va a armar; falta definir qué cubre, quién lo escribe y el formato.
 - Orden de trabajo: el paso 1 es solo el renderizador con tests y los 35 renderizados; la ruta `/media/<clave>` queda para el paso 3.
 - El renderizador agrega `width` y `height` a las imágenes del cuerpo desde la tabla `imagenes` (mapa de dimensiones por `imagenId`, consultado una vez por artículo). Si falta una medida, la imagen sale igual sin esos atributos.
+- 21/10/2026: Roxana Artal (directora) devolvió que el diseño está bien pero "un poco lavado". Se trabaja primero el artículo, antes del header y el footer: cita destacada como caja con acento (variante A, decidida) y sección como etiqueta rectangular suave (accent-100, decidida). Maquetas `nota-con-notas-al-pie.html` e `index.html` actualizadas. Falta confirmar con ella si "lavado" es el color, la tipografía o la falta de elementos de marca. El renderizador del paso 1 debe emitir una sola cita destacada (`blockquote.cita` con `cite`) en vez de `figure.cita-textual` y `figure.cita-destacada`.
 - La directora de la editorial recibió `referencias/maquetas/nota-con-notas-al-pie.html` y todavía no respondió. El diseño sigue como propuesta; no frena el paso 1.
 
 ## Resumen del reconocimiento
