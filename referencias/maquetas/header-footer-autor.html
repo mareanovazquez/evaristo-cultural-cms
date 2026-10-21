@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Header, footer y ficha de autor · Evaristo Cultural (maqueta provisoria)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Inter:ital,wght@0,400;0,500;0,600;1,400&family=Roboto:wght@600;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --accent-50: #ecf6f3;
+  --accent-100: #d8eee9;
+  --accent-200: #b2ded6;
+  --accent-500: #67beb0;
+  --accent-700: #538e85;
+  --accent-800: #456e68;
+  --accent-900: #374f4b;
+
+  --bg: #fefefc;
+  --surface: #f5f5f3;
+  --surface-2: #ececea;
+  --border-soft: #e4e3e2;
+  --border: #d2d1d0;
+  --border-strong: #a6a5a4;
+  --text: #231f20;
+  --text-soft: #444041;
+  --text-muted: #656262;
+
+  --font-serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px;
+  --space-8: 32px; --space-10: 40px; --space-12: 48px; --space-16: 64px; --space-24: 96px;
+
+  --radius: 4px;
+  --shadow-sm: rgba(0, 0, 0, 0.04) 0px 2px 8px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+  --shadow-md: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+  --gutter: 24px;
+  --section-gap: 64px;
+}
+@media (max-width: 639px) { :root { --gutter: 16px; --section-gap: 48px; } }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 18px; line-height: 1.6; }
+img { display: block; max-width: 100%; height: auto; }
+a { color: var(--accent-800); font-weight: 500; transition: color 150ms ease; }
+a:hover { color: var(--accent-900); }
+:focus-visible { outline: 2px solid var(--accent-700); outline-offset: 2px; }
+.icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.page { max-width: 1200px; margin: 0 auto; padding: 0 var(--gutter); }
+.col { max-width: 680px; margin-left: auto; margin-right: auto; }
+.etiqueta { display: inline-block; font-size: 12px; line-height: 1.2; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-900); background: var(--accent-100); border-radius: 4px; padding: 4px 12px; text-decoration: none; }
+a.etiqueta:hover { background: var(--accent-200); color: var(--accent-900); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- Aviso de la maqueta (no es parte del sitio) ---------- */
+.nota-maqueta { background: #fdf4e3; color: #8a5300; font-size: 14px; line-height: 1.4; padding: 8px var(--gutter); text-align: center; }
+.rotulo { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin: var(--space-16) 0 var(--space-4); }
+
+/* ---------- Topbar ---------- */
+.topbar { display: block; background: var(--text); color: var(--bg); text-align: center; font-size: 14px; line-height: 1.4; font-weight: 500; padding: 10px var(--gutter); text-decoration: none; }
+.topbar:hover { color: var(--bg); background: #3a3536; }
+.topbar span { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--accent-500); }
+
+/* ---------- Header ---------- */
+.header { background: var(--bg); border-bottom: 1px solid var(--border-soft); position: relative; }
+.header-fila { display: flex; align-items: center; gap: var(--space-6); min-height: 72px; }
+/* Marca: Roboto en mayúsculas, interletrado apretado. EVARISTO en Black (900) con el negro de la paleta; CULTURAL / EDITORIAL en SemiBold con border-strong. */
+.logo { font-family: "Roboto", system-ui, sans-serif; font-size: 22px; line-height: 1; text-transform: uppercase; letter-spacing: -0.02em; text-decoration: none; white-space: nowrap; display: inline-flex; gap: 0.3em; }
+.logo b { font-weight: 900; color: var(--text); }
+.logo span { font-weight: 600; color: var(--border-strong); }
+.logo:hover b { color: var(--text); }
+
+.menu { display: flex; align-items: center; gap: var(--space-1); list-style: none; margin: 0 0 0 auto; padding: 0; }
+.menu a, .menu summary { display: inline-flex; align-items: center; gap: var(--space-1); font-size: 15px; line-height: 1.2; font-weight: 500; color: var(--text); text-decoration: none; padding: 10px 12px; border-radius: var(--radius); cursor: pointer; list-style: none; min-height: 44px; }
+.menu summary::-webkit-details-marker { display: none; }
+.menu a:hover, .menu summary:hover { background: var(--surface); color: var(--text); }
+.menu a[aria-current="page"] { box-shadow: inset 0 -2px 0 var(--accent-500); border-radius: 0; }
+.mas { position: relative; }
+.mas[open] summary { background: var(--surface); }
+.mas[open] .icon-chev { transform: rotate(180deg); }
+.icon-chev { width: 16px; height: 16px; transition: transform 150ms ease; }
+.mas-panel { position: absolute; right: 0; top: calc(100% + 8px); z-index: 10; min-width: 240px; background: var(--bg); border-radius: var(--radius); box-shadow: var(--shadow-md); padding: var(--space-2); display: grid; grid-template-columns: 1fr 1fr; gap: 0 var(--space-2); }
+.mas-panel a { padding: 8px 12px; min-height: 40px; }
+.buscar { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: var(--radius); color: var(--text); background: none; border: 0; cursor: pointer; }
+.buscar:hover { background: var(--surface); }
+
+/* Celular: un botón abre un panel con todas las secciones */
+.menu-movil { display: none; margin-left: auto; }
+.menu-movil summary { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: var(--radius); cursor: pointer; list-style: none; }
+.menu-movil summary::-webkit-details-marker { display: none; }
+.menu-movil summary:hover { background: var(--surface); }
+.menu-movil .icon-x { display: none; }
+.menu-movil[open] .icon-menu { display: none; }
+.menu-movil[open] .icon-x { display: block; }
+.panel-movil { position: absolute; left: 0; right: 0; top: 100%; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--border-soft); box-shadow: var(--shadow-md); padding: var(--space-4) var(--gutter) var(--space-6); }
+.panel-movil ul { list-style: none; margin: 0; padding: 0; }
+.panel-movil a { display: block; padding: 12px 0; min-height: 44px; font-size: 17px; font-weight: 500; color: var(--text); text-decoration: none; border-bottom: 1px solid var(--border-soft); }
+.panel-movil .secundario { margin-top: var(--space-4); display: flex; gap: var(--space-6); }
+.panel-movil .secundario a { border: 0; font-size: 15px; color: var(--accent-800); }
+@media (max-width: 859px) {
+  .menu { display: none; }
+  .buscar-escritorio { display: none; }
+  .menu-movil { display: block; }
+  .logo { font-size: 22px; }
+  .header-fila { min-height: 64px; }
+}
+
+/* ---------- Footer ---------- */
+.footer { margin-top: var(--space-24); background: var(--surface); border-top: 1px solid var(--border-soft); padding: var(--space-16) 0 var(--space-8); font-size: 15px; line-height: 1.5; color: var(--text-soft); }
+.footer-grilla { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr; gap: var(--space-8); }
+@media (max-width: 859px) { .footer-grilla { grid-template-columns: 1fr 1fr; } .footer-sobre { grid-column: 1 / -1; } }
+@media (max-width: 639px) { .footer { padding-top: var(--space-12); } .footer-grilla { grid-template-columns: 1fr; gap: var(--space-6); } }
+.footer h2 { font-family: var(--font-sans); font-size: 12px; line-height: 1.2; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text); margin: 0 0 var(--space-3); }
+.footer p { margin: 0 0 var(--space-3); }
+.footer ul { list-style: none; margin: 0; padding: 0; }
+.footer li { margin: 0 0 var(--space-2); }
+.footer a { color: var(--text-soft); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border-strong, #a6a5a4); font-weight: 500; }
+.footer a:hover { color: var(--accent-900); text-decoration-color: var(--accent-500); }
+.footer .logo { text-decoration: none; margin-bottom: var(--space-3); }
+.footer-legal .logo { margin-bottom: 0; vertical-align: baseline; }
+.footer-tienda { display: inline-flex; align-items: center; gap: var(--space-2); background: var(--accent-500); color: var(--text) !important; text-decoration: none !important; font-size: 15px; font-weight: 600; line-height: 1.2; padding: 0 20px; height: 44px; border-radius: var(--radius); margin-top: var(--space-2); }
+.footer-tienda:hover { background: #5da69a; }
+.footer-legal { margin-top: var(--space-10); padding-top: var(--space-6); border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-6); justify-content: space-between; font-size: 14px; color: var(--text-muted); }
+.footer-legal p { margin: 0; }
+
+/* ---------- Bio del autor al final del artículo ---------- */
+.bio-seccion { margin-top: var(--space-16); }
+.bio-seccion h2 { font-size: 12px; line-height: 1.2; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 var(--space-4); }
+.bio { display: flex; gap: var(--space-4); align-items: flex-start; background: var(--surface); border-radius: var(--radius); padding: var(--space-6); margin-bottom: var(--space-4); }
+@media (max-width: 639px) { .bio { padding: var(--space-4); } }
+.foto { flex: none; width: 72px; height: 72px; border-radius: 50%; background: var(--accent-100); color: var(--accent-900); display: flex; align-items: center; justify-content: center; font-family: var(--font-serif); font-weight: 600; font-size: 26px; overflow: hidden; }
+.foto img { width: 100%; height: 100%; object-fit: cover; }
+.bio-nombre { font-family: var(--font-serif); font-weight: 600; font-size: 20px; line-height: 1.3; margin: 0 0 var(--space-1); }
+.bio-nombre a { color: var(--text); text-decoration: none; }
+.bio-nombre a:hover { color: var(--accent-900); text-decoration: underline; }
+.bio-texto { font-size: 15px; line-height: 1.5; color: var(--text-soft); margin: 0; }
+
+/* ---------- Página del autor ---------- */
+.autor-cabecera { display: flex; gap: var(--space-8); align-items: flex-start; padding: var(--space-16) 0 var(--space-10); border-bottom: 1px solid var(--border-soft); }
+.autor-cabecera .foto { width: 160px; height: 160px; font-size: 56px; }
+@media (max-width: 639px) { .autor-cabecera { flex-direction: column; gap: var(--space-4); padding: var(--space-8) 0; } .autor-cabecera .foto { width: 112px; height: 112px; font-size: 40px; } }
+.autor-cabecera h1 { font-family: var(--font-serif); font-weight: 600; font-size: 44px; line-height: 1.15; margin: 0 0 var(--space-4); }
+@media (max-width: 639px) { .autor-cabecera h1 { font-size: 32px; line-height: 1.2; } }
+.autor-bio { font-size: 18px; line-height: 1.6; color: var(--text-soft); margin: 0 0 var(--space-4); max-width: 640px; }
+.redes { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); font-size: 15px; }
+.redes a { display: inline-flex; align-items: center; gap: var(--space-2); min-height: 44px; }
+.autor-notas h2 { font-family: var(--font-serif); font-weight: 600; font-size: 30px; line-height: 1.25; margin: var(--space-12) 0 var(--space-6); }
+.grilla { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-6); }
+@media (max-width: 1023px) { .grilla { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 639px) { .grilla { grid-template-columns: 1fr; gap: var(--space-4); } }
+.tarjeta { position: relative; display: flex; flex-direction: column; background: var(--bg); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden; transition: box-shadow 150ms ease; }
+.tarjeta:hover { box-shadow: var(--shadow-md); }
+.tarjeta:focus-within { outline: 2px solid var(--accent-700); outline-offset: 2px; }
+.tarjeta .img { aspect-ratio: 3 / 2; background: var(--surface-2); }
+.tarjeta-texto { padding: var(--space-6); display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+@media (max-width: 639px) { .tarjeta-texto { padding: var(--space-4); } }
+.tarjeta h3 { font-family: var(--font-serif); font-weight: 600; font-size: 22px; line-height: 1.3; margin: 0; }
+.tarjeta h3 a { color: var(--text); text-decoration: none; }
+.tarjeta h3 a::after { content: ""; position: absolute; inset: 0; } /* toda la tarjeta es clicable */
+.tarjeta h3 a:focus-visible { outline: none; }
+.tarjeta .meta { font-size: 14px; line-height: 1.4; color: var(--text-muted); margin: 0; }
+.tarjeta .etiqueta { width: fit-content; position: relative; z-index: 1; }
+
+/* Listado de autores (8.3) */
+.lista-autores { list-style: none; margin: 0; padding: 0; }
+.lista-autores li { border-bottom: 1px solid var(--border-soft); }
+.lista-autores a { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-4) 0; min-height: 44px; text-decoration: none; color: var(--text); font-weight: 400; }
+.lista-autores a:hover .nombre { color: var(--accent-900); text-decoration: underline; }
+.lista-autores .foto { width: 56px; height: 56px; font-size: 20px; }
+.lista-autores .nombre { font-family: var(--font-serif); font-weight: 600; font-size: 20px; line-height: 1.3; }
+.lista-autores .cuenta { margin-left: auto; font-size: 14px; color: var(--text-muted); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-arrow-up-right" viewBox="0 0 24 24"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></symbol>
+</svg>
+
+<div class="nota-maqueta">Maqueta provisoria: los textos, el logo y los enlaces son de ejemplo y se reemplazan cuando la editorial los defina. Los nombres y las bios son inventados.</div>
+
+<!-- ============ HEADER ============ -->
+<a class="topbar" href="#"><span>Conseguí todos los libros de Evaristo Editorial en nuestra tienda online</span></a>
+<header class="header">
+  <div class="page header-fila">
+    <a class="logo" href="#" aria-label="Evaristo Cultural"><b>Evaristo</b> <span>Cultural</span></a>
+
+    <!-- Escritorio: 6 secciones visibles y "Más" con el resto -->
+    <nav aria-label="Secciones" style="margin-left:auto">
+      <ul class="menu" style="margin:0">
+        <li><a href="#">Entrevista</a></li>
+        <li><a href="#" aria-current="page">Reseña</a></li>
+        <li><a href="#">Ensayo</a></li>
+        <li><a href="#">Crónica</a></li>
+        <li><a href="#">Crítica</a></li>
+        <li><a href="#">Rastros</a></li>
+        <li>
+          <details class="mas">
+            <summary>Más <svg class="icon icon-chev" aria-hidden="true"><use href="#i-chevron-down"/></svg></summary>
+            <div class="mas-panel">
+              <a href="#">Asia</a><a href="#">Poesía</a><a href="#">Teatro</a><a href="#">Música</a>
+              <a href="#">Historieta</a><a href="#">TV &amp; Cine</a><a href="#">Fantástico</a><a href="#">Arte</a>
+              <a href="#">Infantojuvenil</a><a href="#">Libro Ilustrado</a><a href="#">Literatura</a><a href="#">Autores</a>
+            </div>
+          </details>
+        </li>
+      </ul>
+    </nav>
+    <button class="buscar buscar-escritorio" type="button" aria-label="Buscar"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg></button>
+
+    <!-- Celular: botón que abre un panel con todo -->
+    <details class="menu-movil">
+      <summary aria-label="Menú"><svg class="icon icon-menu" aria-hidden="true"><use href="#i-menu"/></svg><svg class="icon icon-x" aria-hidden="true"><use href="#i-x"/></svg></summary>
+      <nav class="panel-movil" aria-label="Secciones">
+        <ul>
+          <li><a href="#">Entrevista</a></li><li><a href="#">Reseña</a></li><li><a href="#">Ensayo</a></li>
+          <li><a href="#">Crónica</a></li><li><a href="#">Crítica</a></li><li><a href="#">Rastros</a></li>
+          <li><a href="#">Asia</a></li><li><a href="#">Poesía</a></li><li><a href="#">Teatro</a></li>
+          <li><a href="#">Música</a></li><li><a href="#">Historieta</a></li><li><a href="#">TV &amp; Cine</a></li>
+          <li><a href="#">Fantástico</a></li><li><a href="#">Arte</a></li><li><a href="#">Infantojuvenil</a></li>
+          <li><a href="#">Libro Ilustrado</a></li><li><a href="#">Literatura</a></li>
+        </ul>
+        <div class="secundario"><a href="#">Autores</a><a href="#">Buscar</a></div>
+      </nav>
+    </details>
+  </div>
+</header>
+
+<main class="page">
+
+  <!-- ============ BIO EN EL ARTÍCULO (8.2) ============ -->
+  <p class="rotulo">Bio al final del artículo</p>
+  <section class="col bio-seccion" style="margin-top:0" aria-labelledby="bio-titulo">
+    <h2 id="bio-titulo">Sobre el autor</h2>
+    <div class="bio">
+      <div class="foto" aria-hidden="true">LM</div>
+      <div>
+        <p class="bio-nombre"><a href="#">Lucía Montenegro</a></p>
+        <p class="bio-texto">Escritora y traductora. Es autora de <em>Los días largos</em> (relatos) y colabora con Evaristo Cultural desde 2014. Texto de ejemplo para mostrar una bio de unos 400 caracteres con itálica y <a href="#">un enlace</a>.</p>
+      </div>
+    </div>
+    <div class="bio">
+      <div class="foto" aria-hidden="true">TR</div>
+      <div>
+        <p class="bio-nombre"><a href="#">Tomás Rivarola</a></p>
+        <p class="bio-texto">Periodista cultural. Segunda bio del mismo artículo, en el mismo orden que en el encabezado. Los autores sin bio no muestran este bloque.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PÁGINA DEL AUTOR (8.4) ============ -->
+  <p class="rotulo">Página individual del autor</p>
+  <section class="autor-cabecera" style="border-top:1px solid var(--border-soft)">
+    <div class="foto" aria-hidden="true">LM</div>
+    <div>
+      <h1>Lucía Montenegro</h1>
+      <p class="autor-bio">Escritora y traductora. Es autora de <em>Los días largos</em> (relatos) y colabora con Evaristo Cultural desde 2014.</p>
+      <ul class="redes">
+        <li><a href="#">Instagram <svg class="icon" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></a></li>
+        <li><a href="#">Sitio web <svg class="icon" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></a></li>
+      </ul>
+    </div>
+  </section>
+  <section class="autor-notas" aria-labelledby="notas-autor">
+    <h2 id="notas-autor">Notas de Lucía Montenegro</h2>
+    <div class="grilla">
+      <article class="tarjeta"><div class="img" role="img" aria-label="Imagen de ejemplo"></div><div class="tarjeta-texto"><a class="etiqueta" href="#">Reseña</a><h3><a href="#">Una casa con todas las luces apagadas</a></h3><p class="meta">12 de marzo de 2026</p></div></article>
+      <article class="tarjeta"><div class="img" role="img" aria-label="Imagen de ejemplo"></div><div class="tarjeta-texto"><a class="etiqueta" href="#">Entrevista</a><h3><a href="#">Conversación sobre el oficio de traducir</a></h3><p class="meta">2 de febrero de 2026</p></div></article>
+      <article class="tarjeta"><div class="img" role="img" aria-label="Imagen de ejemplo"></div><div class="tarjeta-texto"><a class="etiqueta" href="#">Poesía</a><h3><a href="#">Lo que queda cuando se apaga la radio</a></h3><p class="meta">19 de noviembre de 2025</p></div></article>
+    </div>
+  </section>
+
+  <!-- ============ LISTADO DE AUTORES (8.3) ============ -->
+  <p class="rotulo">Listado de autores</p>
+  <section class="col" style="margin-top:0">
+    <h2 style="font-family:var(--font-serif);font-weight:600;font-size:30px;line-height:1.25;margin:0 0 var(--space-4)">Autores</h2>
+    <ul class="lista-autores">
+      <li><a href="#"><span class="foto" aria-hidden="true">LM</span><span class="nombre">Lucía Montenegro</span><span class="cuenta">48 notas</span></a></li>
+      <li><a href="#"><span class="foto" aria-hidden="true">TR</span><span class="nombre">Tomás Rivarola</span><span class="cuenta">31 notas</span></a></li>
+      <li><a href="#"><span class="foto" aria-hidden="true">AC</span><span class="nombre">Ana Cardozo</span><span class="cuenta">12 notas</span></a></li>
+    </ul>
+  </section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="page">
+    <div class="footer-grilla">
+      <div class="footer-sobre">
+        <a class="logo" href="#" aria-label="Evaristo Cultural"><b>Evaristo</b> <span>Cultural</span></a>
+        <p>Revista cultural de Evaristo Editorial. Entrevistas, reseñas, ensayos y crónicas desde 2006. (Texto de ejemplo.)</p>
+        <a class="footer-tienda" href="#">Tienda de Evaristo Editorial <svg class="icon" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></a>
+      </div>
+      <div>
+        <h2>Secciones</h2>
+        <ul><li><a href="#">Entrevista</a></li><li><a href="#">Reseña</a></li><li><a href="#">Ensayo</a></li><li><a href="#">Crónica</a></li><li><a href="#">Todas las secciones</a></li></ul>
+      </div>
+      <div>
+        <h2>La revista</h2>
+        <ul><li><a href="#">Autores</a></li><li><a href="#">Quiénes somos</a></li><li><a href="#">Contacto</a></li></ul>
+      </div>
+      <div>
+        <h2>Seguinos</h2>
+        <ul><li><a href="#">Instagram</a></li><li><a href="#">Facebook</a></li><li><a href="#">X</a></li></ul>
+      </div>
+    </div>
+    <div class="footer-legal">
+      <p>© 2006–2026 <a class="logo" href="#" aria-label="Evaristo Editorial" style="font-size:13px;text-decoration:none"><b>Evaristo</b> <span>Editorial</span></a>. Todos los derechos reservados.</p>
+      <p>contacto@ejemplo.com (dato de ejemplo)</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

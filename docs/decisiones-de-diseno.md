@@ -31,6 +31,9 @@ La paleta tiene tres colores: un acento verde agua, un blanco cálido y un negro
 | 20/10/2026 | Imágenes dentro del cuerpo | Se muestran con su proporción original, sin recorte, y con una altura máxima del 80% de la altura de la pantalla. La imagen de portada y las tarjetas siguen con proporción fija (ver Imágenes dentro del cuerpo) |
 | 21/10/2026 | Cita destacada | Caja con fondo accent-50, barra de 4px y comilla decorativa en #67beb0 (variante A; ver Tokens tipográficos) |
 | 21/10/2026 | Sección del artículo | Etiqueta rectangular suave: fondo accent-100, texto accent-900 y esquinas de 4px (ver Etiqueta de sección) |
+| 21/10/2026 | Menú del header | Seis secciones visibles (Entrevista, Reseña, Ensayo, Crónica, Crítica, Rastros), desplegable "Más" con el resto y "Autores"; en celular, un botón abre un panel con todas. Propuesta en `referencias/maquetas/header-footer-autor.html`, con textos provisorios hasta que la editorial defina contenido, logo y menú |
+| 21/10/2026 | Fuentes | Fraunces e Inter desde Google Fonts, como en las maquetas |
+| 21/10/2026 | Marca (wordmark) | "EVARISTO" en Roboto Black (900) con el negro #231f20, seguido de "CULTURAL" o "EDITORIAL" en Roboto SemiBold (600) con border-strong #a6a5a4, todo en mayúsculas y con interletrado apretado (`letter-spacing: -0.02em`, valor propuesto para ajustar). Es la única excepción a "sin Roboto": vale solo para la marca, no para botones ni menús. Ojo: #a6a5a4 sobre el fondo da 2,4:1, aceptable para un logotipo pero no para texto corriente |
 | 20/10/2026 | Manual de estilo para contenido nuevo | Se va a armar para homogeneizar los artículos que vengan (ver Preguntas abiertas) |
 
 ## Tokens tipográficos
@@ -425,7 +428,8 @@ Cuerpo, cuerpo chico, epígrafe, botón, etiqueta y link mantienen el mismo tama
 
 ## Preguntas abiertas
 
-- [ ] Encabezado y menú de navegación en celular: definir estructura y comportamiento.
+- [ ] Encabezado, footer y ficha de autor: hay una propuesta en `referencias/maquetas/header-footer-autor.html` (topbar, menú con "Más", panel en celular, footer de cuatro columnas, bio al final del artículo, página y listado de autores). Falta el visto bueno de Mariano y de la directora, el contenido real (logo, textos, contacto, redes) y cuáles son las seis secciones visibles.
+- [ ] Bio del autor 39 con correo: decidido el 21/10/2026 que se le saca el correo a mano (desde el panel o en la base) antes de publicar páginas de autor. Falta hacerlo.
 - [ ] Manual de estilo para los artículos nuevos: se va a armar para homogeneizar el contenido que venga (por ejemplo, longitud y forma de la bajada, uso de subtítulos, citas, notas al pie, texto alternativo y epígrafes de las imágenes, créditos). Falta definir qué cubre, quién lo escribe y en qué formato se le muestra al equipo editorial.
 - [ ] Visto bueno de la directora de la editorial: se le envió `referencias/maquetas/nota-con-notas-al-pie.html` y no respondió todavía. Mientras tanto el diseño sigue como propuesta.
 
