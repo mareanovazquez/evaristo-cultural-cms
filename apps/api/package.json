@@ -8,7 +8,8 @@
     "start": "tsx --env-file=../../.env src/servidor.ts",
     "typecheck": "tsc --noEmit",
     "test:media": "tsx src/tests/test-media.ts",
-    "test:media-originales": "tsx --env-file=../../.env src/tests/test-media-originales.ts"
+    "test:media-originales": "tsx --env-file=../../.env src/tests/test-media-originales.ts",
+    "test:articulos": "tsx --env-file=../../.env src/tests/test-articulos.ts"
   },
   "dependencies": {
     "@evaristo/compartido": "0.0.0",

@@ -569,3 +569,11 @@
   position: relative;
   z-index: 1;
 }
+
+/* Texto de la bio (documento renderizado): párrafos sin el margen del cuerpo */
+.bio-texto p {
+  margin: 0 0 var(--space-2);
+}
+.bio-texto p:last-child {
+  margin-bottom: 0;
+}

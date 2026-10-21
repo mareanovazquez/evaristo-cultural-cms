@@ -1,23 +1,69 @@
 ---
-// Estructura de un artículo: cabecera, cuerpo renderizado y notas. El HTML ya viene escapado por el renderizador.
+// Estructura de un artículo: cintillo y volanta, título, bajada, autores y fecha, imagen de encabezado,
+// cuerpo renderizado y notas. El HTML del cuerpo ya viene escapado por el renderizador.
+// El slot recibe lo que va después (bios, relacionados).
+export interface AutorLinea {
+  nombre: string;
+  slug: string;
+  soloTexto: boolean;
+}
 interface Props {
-  seccion: string;
+  seccion?: string | undefined;
+  volanta?: string | undefined;
   titulo: string;
-  bajada?: string | null;
-  meta?: string | undefined;
+  bajada?: string | null | undefined;
+  autores?: AutorLinea[];
+  fecha?: { texto: string; iso: string } | undefined;
+  encabezado?: { src: string; alt: string; credito?: string | null | undefined; posicion: string } | undefined;
   html: string;
   notesHtml: string;
 }
-const { seccion, titulo, bajada, meta, html, notesHtml } = Astro.props;
+const { seccion, volanta, titulo, bajada, autores = [], fecha, encabezado, html, notesHtml } = Astro.props;
+const hayMeta = autores.length > 0 || fecha;
 ---
 
 <article class="section nota">
   <header class="col">
-    <span class="etiqueta">{seccion}</span>
+    {
+      (seccion || volanta) && (
+        <p class="rotulos">
+          {seccion && <span class="etiqueta">{seccion}</span>}
+          {volanta && <span class="volanta">{volanta}</span>}
+        </p>
+      )
+    }
     <h1>{titulo}</h1>
     {bajada && <p class="bajada">{bajada}</p>}
-    {meta && <p class="meta">{meta}</p>}
+    {
+      hayMeta && (
+        <p class="meta">
+          {autores.length > 0 && (
+            <>
+              Por{" "}
+              {autores.map((a, i) => (
+                <>
+                  {i > 0 && (i === autores.length - 1 ? " y " : ", ")}
+                  {a.soloTexto ? a.nombre : <a href={`/author/${a.slug}/`}>{a.nombre}</a>}
+                </>
+              ))}
+            </>
+          )}
+          {autores.length > 0 && fecha && " · "}
+          {fecha && <time datetime={fecha.iso}>{fecha.texto}</time>}
+        </p>
+      )
+    }
   </header>
+
+  {
+    encabezado && (
+      <figure class="wide encabezado">
+        <img class="hero-img" src={encabezado.src} alt={encabezado.alt} style={`object-position: ${encabezado.posicion}`} fetchpriority="high" />
+        {encabezado.credito && <figcaption>{encabezado.credito}</figcaption>}
+      </figure>
+    )
+  }
+
   <div class="col nota-cuerpo" set:html={html} />
   {notesHtml && <div class="col" set:html={notesHtml} />}
   <slot />

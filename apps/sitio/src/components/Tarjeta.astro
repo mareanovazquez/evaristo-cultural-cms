@@ -1,0 +1,20 @@
+---
+// Tarjeta de nota (listados, relacionados). Toda la tarjeta es clicable: el vínculo del título se extiende con ::after.
+interface Props {
+  href: string;
+  titulo: string;
+  seccion?: string | undefined;
+  imagen?: { src: string; posicion: string } | undefined;
+  meta?: string | undefined;
+}
+const { href, titulo, seccion, imagen, meta } = Astro.props;
+---
+
+<article class="tarjeta">
+  {imagen ? <img class="img" src={imagen.src} alt="" style={`object-position: ${imagen.posicion}`} loading="lazy" /> : <div class="img"></div>}
+  <div class="tarjeta-texto">
+    {seccion && <span class="etiqueta">{seccion}</span>}
+    <h3><a href={href}>{titulo}</a></h3>
+    {meta && <p class="meta">{meta}</p>}
+  </div>
+</article>

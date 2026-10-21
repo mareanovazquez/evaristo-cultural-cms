@@ -1,0 +1,102 @@
+---
+import Base from "../../../../layouts/Base.astro";
+import Articulo from "../../../../components/Articulo.astro";
+import Bio from "../../../../components/Bio.astro";
+import Tarjeta from "../../../../components/Tarjeta.astro";
+import { renderArticleBody, type JSONNode } from "@evaristo/compartido/render";
+import { articulosRelacionados, buscarArticulo, fechaLarga, medidasDeImagenes, posicionFocal, rutaArticulo, urlMedia } from "../../../../lib/articulos";
+import { pruebaLayoutHabilitada } from "../../../../lib/prueba-layout";
+
+// Vista pública del artículo. URL canónica: /AAAA/MM/DD/slug/ (fecha de publicadoEn en UTC).
+// El artículo se busca por slug (único). Si la fecha o la barra final de la URL no son las canónicas, se redirige con 301.
+const { anio, mes, dia, slug } = Astro.params;
+const noEncontrado = () => new Response("No encontrado", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+if (!slug || !/^\d{4}$/.test(anio ?? "") || !/^\d{2}$/.test(mes ?? "") || !/^\d{2}$/.test(dia ?? "")) return noEncontrado();
+
+const articulo = await buscarArticulo(slug);
+if (!articulo || !articulo.publicadoEn) return noEncontrado();
+
+const canonica = rutaArticulo({ slug: articulo.slug, publicadoEn: articulo.publicadoEn });
+if (decodeURIComponent(Astro.url.pathname) !== decodeURIComponent(canonica)) {
+  return Astro.redirect(canonica + Astro.url.search, 301);
+}
+
+// Medidas de las imágenes del cuerpo (una sola consulta por artículo)
+const cuerpo = articulo.cuerpo as JSONNode;
+const ids = new Set<number>();
+const reunir = (n: JSONNode) => {
+  const id = n.attrs?.["imagenId"];
+  if (n.type === "imagen" && typeof id === "number") ids.add(id);
+  n.content?.forEach(reunir);
+};
+reunir(cuerpo);
+const dimensionesImagenes = await medidasDeImagenes([...ids]);
+
+// La letra capital va a ser un campo del artículo (panel, fase 4). Mientras tanto, solo se prueba con ?capital=1 en desarrollo.
+const conCapital = pruebaLayoutHabilitada() && Astro.url.searchParams.get("capital") === "1";
+const { html, notesHtml } = renderArticleBody(cuerpo, { conCapital, dimensionesImagenes });
+
+const relacionados = await articulosRelacionados(articulo);
+const autores = articulo.autores.map((x) => x.autor);
+const conBio = autores.filter((a) => !a.soloTexto && a.bio !== null);
+const encabezado = articulo.imagenEncabezado
+  ? {
+      src: urlMedia(articulo.imagenEncabezado.clave),
+      // Vacío significa texto alternativo pendiente: sale alt="" hasta que se complete.
+      alt: articulo.encabezadoAlt?.trim() ?? "",
+      credito: articulo.encabezadoCredito?.trim() || undefined,
+      posicion: posicionFocal(articulo.encabezadoPuntoFocalX, articulo.encabezadoPuntoFocalY),
+    }
+  : undefined;
+// Las secciones internas (sin-asignar) no se muestran como cintillo.
+const seccion = articulo.seccion.interna ? undefined : articulo.seccion.nombre;
+---
+
+<Base titulo={articulo.titulo} descripcion={articulo.bajada ?? undefined}>
+  <Articulo
+    seccion={seccion}
+    volanta={articulo.categoriaPrincipal?.nombre}
+    titulo={articulo.titulo}
+    bajada={articulo.bajada}
+    autores={autores.map((a) => ({ nombre: a.nombre, slug: a.slug, soloTexto: a.soloTexto }))}
+    fecha={{ texto: fechaLarga(articulo.publicadoEn), iso: articulo.publicadoEn.toISOString() }}
+    encabezado={encabezado}
+    html={html}
+    notesHtml={notesHtml}
+  >
+    {
+      conBio.length > 0 && (
+        <section class="col bio-seccion" aria-labelledby="bio-titulo">
+          <h2 id="bio-titulo">{conBio.length > 1 ? "Sobre los autores" : "Sobre el autor"}</h2>
+          {conBio.map((a) => (
+            <Bio
+              nombre={a.nombre}
+              slug={a.slug}
+              bio={a.bio as JSONNode}
+              foto={a.foto ? { clave: a.foto.clave, alt: a.fotoAlt, x: a.fotoPuntoFocalX, y: a.fotoPuntoFocalY } : null}
+            />
+          ))}
+        </section>
+      )
+    }
+  </Articulo>
+
+  {
+    relacionados.length > 0 && (
+      <section class="relacionados wide" aria-labelledby="rel-titulo">
+        <h2 id="rel-titulo">Artículos relacionados</h2>
+        <div class="grilla">
+          {relacionados.map((r) => (
+            <Tarjeta
+              href={rutaArticulo({ slug: r.slug, publicadoEn: r.publicadoEn! })}
+              titulo={r.titulo}
+              seccion={r.seccion.interna ? undefined : r.seccion.nombre}
+              imagen={r.imagenEncabezado ? { src: urlMedia(r.imagenEncabezado.clave), posicion: posicionFocal(r.encabezadoPuntoFocalX, r.encabezadoPuntoFocalY) } : undefined}
+              meta={`${r.autores.length ? `Por ${r.autores.map((x) => x.autor.nombre).join(", ")} · ` : ""}${fechaLarga(r.publicadoEn!)}`}
+            />
+          ))}
+        </div>
+      </section>
+    )
+  }
+</Base>

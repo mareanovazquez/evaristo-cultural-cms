@@ -1,0 +1,37 @@
+---
+// Bio de un autor al final del artículo: foto chica (o iniciales) junto al texto.
+// El texto de la bio es un documento con itálica y enlaces; lo dibuja el mismo renderizador del cuerpo.
+import { renderArticleBody, type JSONNode } from "@evaristo/compartido/render";
+import { posicionFocal, urlMedia } from "../lib/articulos";
+
+interface Props {
+  nombre: string;
+  slug: string;
+  bio: JSONNode;
+  foto?: { clave: string; alt: string | null; x: number; y: number } | null | undefined;
+}
+const { nombre, slug, bio, foto } = Astro.props;
+const { html } = renderArticleBody(bio);
+const iniciales = nombre
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((p) => p[0]?.toUpperCase() ?? "")
+  .join("");
+---
+
+<div class="bio">
+  <div class="foto">
+    {
+      foto ? (
+        <img src={urlMedia(foto.clave)} alt={foto.alt ?? ""} style={`object-position: ${posicionFocal(foto.x, foto.y)}`} loading="lazy" width="72" height="72" />
+      ) : (
+        <span aria-hidden="true">{iniciales}</span>
+      )
+    }
+  </div>
+  <div>
+    <p class="bio-nombre"><a href={`/author/${slug}/`}>{nombre}</a></p>
+    <div class="bio-texto" set:html={html} />
+  </div>
+</div>

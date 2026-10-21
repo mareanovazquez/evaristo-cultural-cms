@@ -16,7 +16,8 @@ const { html, notesHtml } = renderArticleBody(MUESTRA, { conCapital: true });
     seccion="Ensayo"
     titulo="La biblioteca que se mudaba de noche"
     bajada="Un recorrido por las salas que cambiaron de lugar mientras los lectores dormían."
-    meta="Por Lucía Ferrante · 12 de octubre de 2026"
+    autores={[{ nombre: "Lucía Ferrante", slug: "lucia-ferrante", soloTexto: true }]}
+    fecha={{ texto: "12 de octubre de 2026", iso: "2026-10-12" }}
     html={html}
     notesHtml={notesHtml}
   >

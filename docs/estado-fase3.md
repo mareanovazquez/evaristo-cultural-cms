@@ -16,7 +16,12 @@ Actualizado el 20/10/2026, 13:00. Resumen del reconocimiento de solo lectura de 
 
 **Decididos el 21/10/2026:** la URL canónica del artículo es la de WordPress, `/AAAA/MM/DD/slug/` (la fecha sale de `publicadoEn` en UTC, que reproduce 33 de los 34 orígenes de la muestra; el 19899 difiere por un carácter invisible del slug viejo). Y se sacó el correo de la bio del autor 60 (wpUserId 39) directamente en la base, con una copia del valor anterior en `packages/compartido/out/verif/` (ignorada por git).
 
-**Próximo paso:** el paso 4 (vista del artículo).
+**Paso 4 hecho (21/10/2026, rama `fase3-articulo`, sin mergear):** vista pública en `apps/sitio/src/pages/[anio]/[mes]/[dia]/[slug].astro`. Busca por slug (único) con `estado = PUBLICADO` y `publicadoEn <= ahora`; si la fecha o la barra final no son las canónicas, responde 301 a `/AAAA/MM/DD/slug/` (fecha de `publicadoEn` en UTC); el resto, 404. Orden: cintillo y volanta, título, bajada, autores (con enlace a `/author/<slug>/`, salvo los de solo texto) y fecha, imagen de encabezado en 3:2 con punto focal (decidido hoy; se omite si no hay), cuerpo, notas, bios (solo autores con página y bio; foto o iniciales) y hasta 3 relacionados (misma categoría y, si faltan, misma sección). `lib/articulos.ts` concentra las consultas con `select` explícito (no se trae `visitasWp`). Los datos de los 35 no tienen galería ni ficha técnica, así que esas dos partes de la especificación (puntos 10 y 11) no se implementaron. Test: `npm run test:articulos -- --originales="<carpeta>"` (necesita `build:sitio`): los 34 publicados dan 200 en su URL canónica con h1 único, imágenes y notas iguales al JSON; el borrador da 404; fecha equivocada y sin barra final dan 301.
+- Se borró `/prueba-layout/<wpId>`; queda `/prueba-layout/` (artículo sintético con la cita destacada, que no está en los 35). `?capital=1` en la vista real solo funciona en desarrollo o con `PRUEBA_LAYOUT=1`, hasta que la letra capital sea un campo del artículo (panel, fase 4).
+- Decisiones mías, a revisar: la volanta va al lado del cintillo (un texto gris en mayúsculas, sin diseño aprobado); las secciones internas (`sin-asignar`) no muestran cintillo; el texto alternativo pendiente del encabezado sale `alt=""` (los 32 con encabezado están pendientes); no hay `og:image` ni `canonical` en el `<head>` porque falta definir la URL base del sitio; las imágenes se sirven originales (no hay variantes de tamaño todavía, solo se ve el tamaño completo).
+- Los enlaces de autor (`/author/<slug>/`) dan 404 hasta el paso 5.
+
+**Próximo paso:** paso 5 (vista de autores y listado).
 
 Antes de pegar cualquier prompt que use Prisma: comprobar el 3308 con `Test-NetConnection`. El prompt se pega desde `C:\Users\Usuario\Documents\Proyectos frontend`, sin push.
 
@@ -60,7 +65,7 @@ Antes de pegar cualquier prompt que use Prisma: comprobar el 3308 con `Test-NetC
 1. Exports de `compartido` y renderizador portado con tests y los 35 renderizados. **Hecho el 21/10/2026 (rama `fase3-renderizador`).**
 2. Tokens y layout base. **Hecho el 21/10/2026 (rama `fase3-renderizador`).** Corrección: la tipografía es Fraunces e Inter (no de sistema) y el modo oscuro es de segunda etapa; solo se nombran los tokens por función (bg, surface, text, border, accent).
 3. Ruta `/media/:clave` (propuesta de arriba). **Hecho el 21/10/2026 (rama `fase3-media`).**
-4. Vista del artículo (filtra `estado = PUBLICADO` y `publicadoEn <= ahora`; los 2 sin encabezado se muestran sin imagen de encabezado).
+4. **Hecho el 21/10/2026 (rama `fase3-articulo`).** Vista del artículo (filtra `estado = PUBLICADO` y `publicadoEn <= ahora`; los 2 sin encabezado se muestran sin imagen de encabezado).
 5. Vista de autores (`/author/<slug>/`; 404 para los 2 de solo texto).
 6. Redirecciones (middleware con 301; los 58 orígenes de la muestra).
 7. Build y prueba de humo (los 34 publicados responden 200 y el borrador 404).
