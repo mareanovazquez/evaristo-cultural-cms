@@ -1,0 +1,24 @@
+---
+// Estructura de un artículo: cabecera, cuerpo renderizado y notas. El HTML ya viene escapado por el renderizador.
+interface Props {
+  seccion: string;
+  titulo: string;
+  bajada?: string | null;
+  meta?: string | undefined;
+  html: string;
+  notesHtml: string;
+}
+const { seccion, titulo, bajada, meta, html, notesHtml } = Astro.props;
+---
+
+<article class="section nota">
+  <header class="col">
+    <span class="etiqueta">{seccion}</span>
+    <h1>{titulo}</h1>
+    {bajada && <p class="bajada">{bajada}</p>}
+    {meta && <p class="meta">{meta}</p>}
+  </header>
+  <div class="col nota-cuerpo" set:html={html} />
+  {notesHtml && <div class="col" set:html={notesHtml} />}
+  <slot />
+</article>

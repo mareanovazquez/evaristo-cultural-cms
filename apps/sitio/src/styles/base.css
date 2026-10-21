@@ -1,0 +1,121 @@
+/* Base: reinicio mínimo, tipografía del cuerpo, enlaces, foco y utilidades de ancho. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 1.6;
+  font-weight: 400;
+  text-align: left;
+}
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+a {
+  color: var(--link);
+  text-decoration: underline;
+  font-weight: 500;
+  transition: color 150ms ease;
+}
+a:hover {
+  color: var(--link-hover);
+}
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
+
+.icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex: none;
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+.salto-contenido {
+  position: absolute;
+  left: var(--space-4);
+  top: -100px;
+  z-index: 100;
+  background: var(--bg);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+}
+.salto-contenido:focus {
+  top: var(--space-4);
+}
+
+/* Anchos */
+.page {
+  max-width: var(--ancho-pagina);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+.col {
+  max-width: var(--ancho-texto);
+  margin-left: auto;
+  margin-right: auto;
+}
+.wide {
+  max-width: var(--ancho-ancho);
+  margin-left: auto;
+  margin-right: auto;
+}
+.section {
+  padding-top: var(--section-gap);
+  padding-bottom: var(--space-16);
+}
+
+/* Etiqueta de sección (chip) */
+.etiqueta {
+  display: inline-block;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-900);
+  background: var(--accent-100);
+  border-radius: var(--radius);
+  padding: var(--space-1) var(--space-3);
+  text-decoration: none;
+  width: fit-content;
+}
+a.etiqueta:hover {
+  background: var(--accent-200);
+  color: var(--accent-900);
+}

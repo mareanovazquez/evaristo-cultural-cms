@@ -1,0 +1,72 @@
+---
+import Marca from "./Marca.astro";
+import { SECCIONES_MENU, SECCIONES_VISIBLES, URL_AUTORES, urlSeccion } from "../lib/rutas";
+
+// Topbar: texto provisorio. Más adelante se edita desde el panel (solo administrador).
+const TOPBAR_TEXTO = "Conseguí todos los libros de Evaristo Editorial en nuestra tienda online";
+const TOPBAR_URL = "#";
+
+const visibles = SECCIONES_MENU.slice(0, SECCIONES_VISIBLES);
+const resto = SECCIONES_MENU.slice(SECCIONES_VISIBLES);
+const ruta = Astro.url.pathname;
+const actual = (href: string) => (ruta === href || ruta.startsWith(href) ? "page" : undefined);
+---
+
+<a class="topbar" href={TOPBAR_URL}><span>{TOPBAR_TEXTO}</span></a>
+<header class="header">
+  <div class="page header-fila">
+    <Marca nombre="Cultural" />
+
+    <nav class="menu-principal" aria-label="Secciones">
+      <ul class="menu">
+        {
+          visibles.map((s) => (
+            <li>
+              <a href={urlSeccion(s.slug)} aria-current={actual(urlSeccion(s.slug))}>{s.nombre}</a>
+            </li>
+          ))
+        }
+        <li>
+          <details class="mas">
+            <summary>
+              Más <svg class="icon icon-chev" aria-hidden="true"><use href="#i-chevron-down" /></svg>
+            </summary>
+            <div class="mas-panel">
+              {resto.map((s) => <a href={urlSeccion(s.slug)} aria-current={actual(urlSeccion(s.slug))}>{s.nombre}</a>)}
+              <a href={URL_AUTORES} aria-current={actual(URL_AUTORES)}>Autores</a>
+            </div>
+          </details>
+        </li>
+      </ul>
+    </nav>
+
+    <details class="menu-movil">
+      <summary aria-label="Menú">
+        <svg class="icon icon-menu" aria-hidden="true"><use href="#i-menu" /></svg>
+        <svg class="icon icon-x" aria-hidden="true"><use href="#i-x" /></svg>
+      </summary>
+      <nav class="panel-movil" aria-label="Secciones">
+        <ul>
+          {SECCIONES_MENU.map((s) => <li><a href={urlSeccion(s.slug)} aria-current={actual(urlSeccion(s.slug))}>{s.nombre}</a></li>)}
+        </ul>
+        <div class="secundario"><a href={URL_AUTORES}>Autores</a></div>
+      </nav>
+    </details>
+  </div>
+</header>
+
+<script>
+  // "Más" se cierra con un clic afuera o con Esc.
+  const mas = document.querySelector<HTMLDetailsElement>("details.mas");
+  if (mas) {
+    document.addEventListener("click", (e) => {
+      if (mas.open && !mas.contains(e.target as Node)) mas.open = false;
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && mas.open) {
+        mas.open = false;
+        mas.querySelector("summary")?.focus();
+      }
+    });
+  }
+</script>

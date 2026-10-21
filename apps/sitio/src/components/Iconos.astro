@@ -1,0 +1,13 @@
+---
+import { SPRITE_ICONO_VOLVER } from "@evaristo/compartido/render";
+
+// Sprite de íconos de Lucide (trazo de 1,5px). Se incluye una vez por página, en el layout.
+// El renderizador de artículos no lo emite: usa #i-corner-up-left en el vínculo de vuelta de las notas.
+const otros =
+  '<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>' +
+  '<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>' +
+  '<symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>' +
+  '<symbol id="i-arrow-up-right" viewBox="0 0 24 24"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></symbol>';
+---
+
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false" set:html={SPRITE_ICONO_VOLVER + otros} />

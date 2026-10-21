@@ -1,0 +1,9 @@
+---
+interface Props {
+  nombre: "Cultural" | "Editorial";
+  href?: string;
+}
+const { nombre, href = "/" } = Astro.props;
+---
+
+<a class="logo" href={href} aria-label={`Evaristo ${nombre}`}><b>Evaristo</b> <span>{nombre}</span></a>

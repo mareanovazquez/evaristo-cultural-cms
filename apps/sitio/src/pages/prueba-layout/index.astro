@@ -1,0 +1,34 @@
+---
+import Base from "../../layouts/Base.astro";
+import Articulo from "../../components/Articulo.astro";
+import { renderArticleBody } from "@evaristo/compartido/render";
+import { MUESTRA } from "../../lib/muestra-layout";
+import { pruebaLayoutHabilitada } from "../../lib/prueba-layout";
+
+// Página temporal para mirar el layout (paso 2). Se elimina cuando exista la vista real del artículo (paso 4).
+if (!pruebaLayoutHabilitada()) return new Response("No encontrado", { status: 404 });
+
+const { html, notesHtml } = renderArticleBody(MUESTRA, { conCapital: true });
+---
+
+<Base titulo="Prueba de layout" noindex>
+  <Articulo
+    seccion="Ensayo"
+    titulo="La biblioteca que se mudaba de noche"
+    bajada="Un recorrido por las salas que cambiaron de lugar mientras los lectores dormían."
+    meta="Por Lucía Ferrante · 12 de octubre de 2026"
+    html={html}
+    notesHtml={notesHtml}
+  >
+    <section class="col bio-seccion" aria-labelledby="bio-titulo">
+      <h2 id="bio-titulo">Sobre el autor</h2>
+      <div class="bio">
+        <div class="foto" aria-hidden="true">LF</div>
+        <div>
+          <p class="bio-nombre"><a href="#">Lucía Ferrante</a></p>
+          <p class="bio-texto">Bio de ejemplo para mostrar el bloque. Los datos reales salen de la base en el paso de autores.</p>
+        </div>
+      </div>
+    </section>
+  </Articulo>
+</Base>

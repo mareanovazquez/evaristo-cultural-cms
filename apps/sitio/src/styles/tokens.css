@@ -1,0 +1,71 @@
+/* Tokens del sitio público. Valores de docs/decisiones-de-diseno.md.
+   Los roles (bg, surface, text, border...) están nombrados por función: el modo oscuro (segunda etapa)
+   se hace remapeando estos valores, sin tocar los componentes. */
+:root {
+  /* Escala del acento */
+  --accent-50: #ecf6f3;
+  --accent-100: #d8eee9;
+  --accent-200: #b2ded6;
+  --accent-300: #8dcec3;
+  --accent-500: #67beb0;
+  --accent-600: #5da69a;
+  --accent-700: #538e85;
+  --accent-800: #456e68;
+  --accent-900: #374f4b;
+
+  /* Roles */
+  --bg: #fefefc;
+  --surface: #f5f5f3;
+  --surface-2: #ececea;
+  --text: #231f20;
+  --text-soft: #444041;
+  --text-muted: #656262;
+  --border-soft: #e4e3e2;
+  --border: #d2d1d0;
+  --border-strong: #a6a5a4;
+  --border-input: #8f8d8d;
+  --link: var(--accent-800);
+  --link-hover: var(--accent-900);
+  --focus: var(--accent-700);
+  --peligro: #a8261d;
+
+  /* Tipografía */
+  --font-serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-marca: "Roboto", system-ui, sans-serif; /* solo la marca (wordmark) */
+
+  /* Espaciado (escala de 4px) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+
+  --radius: 4px;
+  --shadow-sm: rgba(0, 0, 0, 0.04) 0px 2px 8px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+  --shadow-md: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+  --shadow-lg: rgba(0, 0, 0, 0.1) 0px 16px 48px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+
+  /* Maquetación */
+  --gutter: 24px;
+  --section-gap: 64px;
+  --h2-top: 48px;
+  --ancho-pagina: 1200px;
+  --ancho-texto: 680px;
+  --ancho-ancho: 960px;
+  --cuerpo-img-max-h: 80vh; /* altura máxima de las imágenes del cuerpo (decidido el 20/10/2026) */
+}
+
+@media (max-width: 639px) {
+  :root {
+    --gutter: 16px;
+    --section-gap: 48px;
+    --h2-top: 40px;
+  }
+}

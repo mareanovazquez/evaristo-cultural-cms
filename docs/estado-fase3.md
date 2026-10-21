@@ -6,7 +6,13 @@ Actualizado el 20/10/2026, 13:00. Resumen del reconocimiento de solo lectura de 
 
 **Paso 1 hecho (21/10/2026, rama `fase3-renderizador`, sin merge ni push):** `@evaristo/compartido` exporta `./schema` y `./render`; el renderizador está en `packages/compartido/src/render/render.ts` (opciones `conCapital`, `prefijoIds`, `dimensionesImagenes`; constante `SPRITE_ICONO_VOLVER` para que el layout la incluya una vez por página). Tests: `npm run test:render` (38, puros), `npm run test:render-35` (lee `evaristo_cms` en el 3308, solo SELECT y sesión READ ONLY) y `npm run render:preview-35 -- --originales=<carpeta>` (páginas en `CMS-EVARISTO(ASSETS)\previews-fase3\`, con CSS neutro). El validador admite títulos H2 a H4; el renderizador acota a 2..6. El esquema no valida los atributos de `cita` (`variante`, `autor`, `fuente`), y `autor` y `fuente` son texto plano: una llamada a nota en la atribución de una cita destacada no es posible hoy, solo dentro del texto de la cita.
 
-**Próximo paso:** revisar las vistas previas, mergear la rama y seguir con el paso 2 (tokens y layout base).
+**Paso 2 hecho (21/10/2026, misma rama, sin mergear):** en `apps/sitio/src`: `styles/` (`tokens.css` con los tokens por función, `base.css`, `articulo.css` con el cuerpo y las notas, `sitio.css` con marca, topbar, header, footer, bio, autor y tarjetas), `components/` (`Marca`, `Header`, `Footer`, `Iconos` con el sprite, `Articulo`), `layouts/Base.astro` (Google Fonts, sprite una vez por página, salto al contenido) y `lib/rutas.ts`. El menú sale de `SECCIONES` (6 visibles, el resto en "Más"; en celular un panel sin JavaScript). Se agregó `allowImportingTsExtensions` al `tsconfig` del sitio para poder importar `@evaristo/compartido/render`. Modo oscuro: solo quedan nombrados los tokens.
+- Páginas temporales, que se borran en el paso 4: `/prueba-layout/` (artículo sintético con cita destacada, tabla, video, notas y bio) y `/prueba-layout/<wpId>` (un PUBLICADO real; `?capital=1` activa la capital). Solo responden en `astro dev` o con `PRUEBA_LAYOUT=1`; si no, 404.
+- Para verlas: `npm run dev:sitio` con el 3308 arriba (`/prueba-layout/` no necesita base), o `$env:PRUEBA_LAYOUT=1; npm run dev` (puerto 3000). Las imágenes del cuerpo no cargan hasta el paso 3 (`/media`).
+- Provisorio y sin destino todavía: URLs de sección (`/seccion/<slug>/`) y de autores (`/autores/`), enlaces de la tienda, redes, "Quiénes somos" y "Contacto", y los textos del topbar y del footer. El botón de búsqueda de la maqueta no se implementó (no hay buscador).
+- No verificado: no se miró en un navegador (Claude Code no arranca servidores); solo typecheck y `build:sitio`.
+
+**Próximo paso:** mirar las páginas de prueba, sacar el correo de la bio del autor 39 y seguir con el paso 3 (`/media/<clave>`).
 
 Antes de pegar cualquier prompt que use Prisma: comprobar el 3308 con `Test-NetConnection`. El prompt se pega desde `C:\Users\Usuario\Documents\Proyectos frontend`, sin push.
 
@@ -48,7 +54,7 @@ Antes de pegar cualquier prompt que use Prisma: comprobar el 3308 con `Test-NetC
 
 0. Decisiones previas: URL del artículo y bio del 39.
 1. Exports de `compartido` y renderizador portado con tests y los 35 renderizados. **Hecho el 21/10/2026 (rama `fase3-renderizador`).**
-2. Tokens y layout base. Corrección: la tipografía es Fraunces e Inter (no de sistema) y el modo oscuro es de segunda etapa; solo se nombran los tokens por función (bg, surface, text, border, accent).
+2. Tokens y layout base. **Hecho el 21/10/2026 (rama `fase3-renderizador`).** Corrección: la tipografía es Fraunces e Inter (no de sistema) y el modo oscuro es de segunda etapa; solo se nombran los tokens por función (bg, surface, text, border, accent).
 3. Ruta `/media/:clave` (propuesta de arriba).
 4. Vista del artículo (filtra `estado = PUBLICADO` y `publicadoEn <= ahora`; los 2 sin encabezado se muestran sin imagen de encabezado).
 5. Vista de autores (`/author/<slug>/`; 404 para los 2 de solo texto).

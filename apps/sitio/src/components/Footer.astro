@@ -1,0 +1,44 @@
+---
+import Marca from "./Marca.astro";
+import { SECCIONES_MENU, URL_AUTORES, urlSeccion } from "../lib/rutas";
+
+// Textos, contacto y redes provisorios: la editorial todavía no los definió (ver especificacion-home.md, sección 6).
+const principales = SECCIONES_MENU.slice(0, 4);
+---
+
+<footer class="footer">
+  <div class="page">
+    <div class="footer-grilla">
+      <div class="footer-sobre">
+        <Marca nombre="Cultural" />
+        <p>Revista cultural de Evaristo Editorial. Entrevistas, reseñas, ensayos y crónicas desde 2006. (Texto provisorio.)</p>
+        <a class="footer-tienda" href="#">Tienda de Evaristo Editorial <svg class="icon" aria-hidden="true"><use href="#i-arrow-up-right" /></svg></a>
+      </div>
+      <div>
+        <h2>Secciones</h2>
+        <ul>
+          {principales.map((s) => <li><a href={urlSeccion(s.slug)}>{s.nombre}</a></li>)}
+        </ul>
+      </div>
+      <div>
+        <h2>La revista</h2>
+        <ul>
+          <li><a href={URL_AUTORES}>Autores</a></li>
+          <li><a href="#">Quiénes somos</a></li>
+          <li><a href="#">Contacto</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Seguinos</h2>
+        <ul>
+          <li><a href="#">Instagram</a></li>
+          <li><a href="#">Facebook</a></li>
+          <li><a href="#">X</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-legal">
+      <p>© 2006–{new Date().getFullYear()} <Marca nombre="Editorial" />. Todos los derechos reservados.</p>
+    </div>
+  </div>
+</footer>
