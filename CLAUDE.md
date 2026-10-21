@@ -26,6 +26,7 @@ Leer solo lo que la tarea necesite.
 | Archivo | Qué contiene y cuándo leerlo |
 |---|---|
 | `docs/estado-fase3.md` | Dónde quedamos en la fase 3, decisiones del 20/10 y próximo paso. Leer al retomar. |
+| `docs/estado-fase4.md` | Fase 4 (panel y API): reconocimiento, problemas del editor, decisiones pendientes y orden propuesto. Leer al retomar la fase 4. |
 | `docs/pendientes.md` | Estado técnico vivo (bases, tests, commits) y lista de pendientes. Leer al empezar y antes de planificar. |
 | `docs/plan-implementacion.md` | Roadmap de fases 0 a 7, decisiones 1 a 53 y riesgos. Largo: buscar la fase o decisión, no leerlo entero. |
 | `docs/decisiones-de-diseno.md` | Paleta, tipografía, tokens, componentes, notas al pie, letra capital, celular. Leer antes de tocar CSS o UI. |
