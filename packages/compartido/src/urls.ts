@@ -14,6 +14,9 @@ export const rutaAutor = (slug: string): string => `/author/${encodeURIComponent
 /** Página de una sección: /seccion/<slug>/ (URL propia del sitio nuevo; las /category/… de WordPress se redirigen en la fase 7). */
 export const rutaSeccion = (slug: string): string => `/seccion/${encodeURIComponent(slug)}/`;
 
+/** Página de una categoría: /categoria/<slug>/ (URL propia; las /category/… de WordPress se redirigen en la fase 7). */
+export const rutaCategoria = (slug: string): string => `/categoria/${encodeURIComponent(slug)}/`;
+
 /** Ruta pública de un archivo de la biblioteca (la sirve apps/api en /media/<clave>). */
 export const urlMedia = (clave: string): string => `/media/${encodeURIComponent(clave)}`;
 

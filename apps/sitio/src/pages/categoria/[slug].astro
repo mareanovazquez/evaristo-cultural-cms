@@ -1,0 +1,46 @@
+---
+import Base from "../../layouts/Base.astro";
+import Listado from "../../components/Listado.astro";
+import { rutaCategoria } from "@evaristo/compartido/urls";
+import { fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../../lib/articulos";
+import { buscarCategoria, contarNotasDeCategoria, notasDeCategoria } from "../../lib/categorias";
+import { cantidadDePaginas, paginaPedida } from "../../lib/paginacion";
+
+// Página de una categoría: /categoria/<slug>/. Lista las notas que la tienen entre sus categorías (no solo como principal),
+// de la más nueva a la más vieja, de a NOTAS_POR_PAGINA con ?pagina=N. Se llega desde la volanta del artículo.
+const { slug } = Astro.params;
+const noEncontrado = () => Astro.rewrite("/404");
+if (!slug) return noEncontrado();
+
+const categoria = await buscarCategoria(slug);
+if (!categoria) return noEncontrado();
+
+const canonica = rutaCategoria(categoria.slug);
+if (decodeURIComponent(Astro.url.pathname) !== decodeURIComponent(canonica)) {
+  return Astro.redirect(canonica + Astro.url.search, 301);
+}
+
+const total = await contarNotasDeCategoria(categoria.id);
+const paginas = cantidadDePaginas(total);
+const pagina = paginaPedida(Astro.url.searchParams.get("pagina"));
+if (pagina > paginas) return noEncontrado();
+const notas = await notasDeCategoria(categoria.id, pagina);
+---
+
+<Base titulo={pagina > 1 ? `${categoria.nombre} (página ${pagina})` : categoria.nombre} descripcion={`Notas de ${categoria.nombre} en Evaristo Cultural.`}>
+  <Listado
+    titulo={categoria.nombre}
+    total={total}
+    base={canonica}
+    pagina={pagina}
+    paginas={paginas}
+    vacio="Todavía no hay notas publicadas en esta categoría."
+    notas={notas.map((n) => ({
+      href: rutaArticulo({ slug: n.slug, publicadoEn: n.publicadoEn! }),
+      titulo: n.titulo,
+      seccion: n.seccion.interna ? undefined : n.seccion.nombre,
+      imagen: n.imagenEncabezado ? { src: urlMedia(n.imagenEncabezado.clave), posicion: posicionFocal(n.encabezadoPuntoFocalX, n.encabezadoPuntoFocalY) } : undefined,
+      meta: `${n.autores.length ? `Por ${n.autores.map((x) => x.autor.nombre).join(", ")} · ` : ""}${fechaLarga(n.publicadoEn!)}`,
+    }))}
+  />
+</Base>

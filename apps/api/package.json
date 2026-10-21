@@ -8,6 +8,7 @@
     "start": "tsx --env-file=../../.env src/servidor.ts",
     "typecheck": "tsc --noEmit",
     "test:media": "tsx src/tests/test-media.ts",
+    "test:categorias": "tsx --env-file=../../.env src/tests/test-categorias.ts",
     "test:secciones": "tsx --env-file=../../.env src/tests/test-secciones.ts",
     "test:humo": "tsx --env-file=../../.env src/tests/test-humo.ts",
     "test:redirecciones": "tsx src/tests/test-redirecciones.ts",

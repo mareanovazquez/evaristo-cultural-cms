@@ -4,6 +4,7 @@ import Articulo from "../../../../components/Articulo.astro";
 import Bio from "../../../../components/Bio.astro";
 import Tarjeta from "../../../../components/Tarjeta.astro";
 import { renderArticleBody, type JSONNode } from "@evaristo/compartido/render";
+import { rutaCategoria } from "@evaristo/compartido/urls";
 import { articulosRelacionados, buscarArticulo, fechaLarga, medidasDeImagenes, posicionFocal, rutaArticulo, urlMedia } from "../../../../lib/articulos";
 import { pruebaLayoutHabilitada } from "../../../../lib/prueba-layout";
 
@@ -55,7 +56,7 @@ const seccion = articulo.seccion.interna ? undefined : articulo.seccion.nombre;
 <Base titulo={articulo.titulo} descripcion={articulo.bajada ?? undefined}>
   <Articulo
     seccion={seccion}
-    volanta={articulo.categoriaPrincipal?.nombre}
+    volanta={articulo.categoriaPrincipal ? { nombre: articulo.categoriaPrincipal.nombre, href: rutaCategoria(articulo.categoriaPrincipal.slug) } : undefined}
     titulo={articulo.titulo}
     bajada={articulo.bajada}
     autores={autores.map((a) => ({ nombre: a.nombre, slug: a.slug, soloTexto: a.soloTexto }))}

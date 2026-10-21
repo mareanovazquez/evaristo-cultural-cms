@@ -338,6 +338,15 @@
   color: var(--accent-800);
   margin: 0 0 var(--space-1);
 }
+.nota .volanta a {
+  color: inherit;
+  font-weight: inherit;
+  text-decoration: none;
+}
+.nota .volanta a:hover {
+  color: var(--accent-900);
+  text-decoration: underline;
+}
 .nota .meta a {
   font-weight: 500;
 }

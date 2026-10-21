@@ -1,7 +1,6 @@
 ---
 import Base from "../../layouts/Base.astro";
-import Tarjeta from "../../components/Tarjeta.astro";
-import Paginacion from "../../components/Paginacion.astro";
+import Listado from "../../components/Listado.astro";
 import { rutaSeccion } from "@evaristo/compartido/urls";
 import { fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../../lib/articulos";
 import { cantidadDePaginas, paginaPedida } from "../../lib/paginacion";
@@ -29,27 +28,18 @@ const notas = await notasDeSeccion(seccion.id, pagina);
 ---
 
 <Base titulo={pagina > 1 ? `${seccion.nombre} (página ${pagina})` : seccion.nombre} descripcion={`Notas de ${seccion.nombre} en Evaristo Cultural.`}>
-  <section class="section">
-    <header class="encabezado-listado">
-      <h1 class="titulo-pagina">{seccion.nombre}</h1>
-      <p class="cuenta-listado">{total === 1 ? "1 nota" : `${total} notas`}</p>
-    </header>
-    {
-      notas.length > 0 ? (
-        <div class="grilla">
-          {notas.map((n) => (
-            <Tarjeta
-              href={rutaArticulo({ slug: n.slug, publicadoEn: n.publicadoEn! })}
-              titulo={n.titulo}
-              imagen={n.imagenEncabezado ? { src: urlMedia(n.imagenEncabezado.clave), posicion: posicionFocal(n.encabezadoPuntoFocalX, n.encabezadoPuntoFocalY) } : undefined}
-              meta={`${n.autores.length ? `Por ${n.autores.map((x) => x.autor.nombre).join(", ")} · ` : ""}${fechaLarga(n.publicadoEn!)}`}
-            />
-          ))}
-        </div>
-      ) : (
-        <p class="vacio">Todavía no hay notas publicadas en esta sección.</p>
-      )
-    }
-    <Paginacion base={canonica} pagina={pagina} paginas={paginas} />
-  </section>
+  <Listado
+    titulo={seccion.nombre}
+    total={total}
+    base={canonica}
+    pagina={pagina}
+    paginas={paginas}
+    vacio="Todavía no hay notas publicadas en esta sección."
+    notas={notas.map((n) => ({
+      href: rutaArticulo({ slug: n.slug, publicadoEn: n.publicadoEn! }),
+      titulo: n.titulo,
+      imagen: n.imagenEncabezado ? { src: urlMedia(n.imagenEncabezado.clave), posicion: posicionFocal(n.encabezadoPuntoFocalX, n.encabezadoPuntoFocalY) } : undefined,
+      meta: `${n.autores.length ? `Por ${n.autores.map((x) => x.autor.nombre).join(", ")} · ` : ""}${fechaLarga(n.publicadoEn!)}`,
+    }))}
+  />
 </Base>

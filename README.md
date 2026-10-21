@@ -216,6 +216,7 @@ Después abrir:
 | `npm run test:humo -- --originales="<carpeta>"` | Prueba de humo del sitio completo contra la base real (solo lectura; requiere `build:sitio`). |
 | `npm run test:fase3` | Compila el sitio y corre las suites de la fase 3 (renderizador, `/media`, redirecciones, artículos, autores y humo). Necesita `MEDIA_DIR` en el entorno o en el `.env`. |
 | `npm run test:secciones -- --originales="<carpeta>"` | Recorre las páginas de sección contra la base (solo lectura; requiere `build:sitio`). |
+| `npm run test:categorias -- --originales="<carpeta>"` | Recorre las páginas de categoría y comprueba la volanta como enlace (base en solo lectura; requiere `build:sitio`). |
 | `npm run start --workspace=@evaristo/api` | Arranca el servidor único sin compilar nada antes (pensado para producción). |
 
 > **Apagado ordenado:** el servidor atiende SIGINT y SIGTERM (cierra el servidor y desconecta Prisma), pero en Windows no se puede probar porque ahí las señales terminan el proceso sin pasar por los handlers. Se prueba en Linux al desplegar.

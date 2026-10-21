@@ -9,7 +9,7 @@ export interface AutorLinea {
 }
 interface Props {
   seccion?: string | undefined;
-  volanta?: string | undefined;
+  volanta?: { nombre: string; href: string } | undefined;
   titulo: string;
   bajada?: string | null | undefined;
   autores?: AutorLinea[];
@@ -25,7 +25,7 @@ const hayMeta = autores.length > 0 || fecha;
 <article class="section nota">
   <header class="col">
     {seccion && <p class="rotulos"><span class="etiqueta">{seccion}</span></p>}
-    {volanta && <p class="volanta">{volanta}</p>}
+    {volanta && <p class="volanta"><a href={volanta.href}>{volanta.nombre}</a></p>}
     <h1>{titulo}</h1>
     {bajada && <p class="bajada">{bajada}</p>}
     {

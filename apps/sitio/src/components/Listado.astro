@@ -1,0 +1,43 @@
+---
+// Listado paginado de notas (sección, categoría): título, cantidad, tarjetas y navegación entre páginas.
+import Tarjeta from "./Tarjeta.astro";
+import Paginacion from "./Paginacion.astro";
+
+interface Nota {
+  href: string;
+  titulo: string;
+  seccion?: string | undefined;
+  imagen?: { src: string; posicion: string } | undefined;
+  meta?: string | undefined;
+}
+interface Props {
+  titulo: string;
+  total: number;
+  notas: Nota[];
+  /** Ruta de la primera página, con barra final. */
+  base: string;
+  pagina: number;
+  paginas: number;
+  vacio: string;
+}
+const { titulo, total, notas, base, pagina, paginas, vacio } = Astro.props;
+---
+
+<section class="section">
+  <header class="encabezado-listado">
+    <h1 class="titulo-pagina">{titulo}</h1>
+    <p class="cuenta-listado">{total === 1 ? "1 nota" : `${total} notas`}</p>
+  </header>
+  {
+    notas.length > 0 ? (
+      <div class="grilla">
+        {notas.map((n) => (
+          <Tarjeta href={n.href} titulo={n.titulo} seccion={n.seccion} imagen={n.imagen} meta={n.meta} />
+        ))}
+      </div>
+    ) : (
+      <p class="vacio">{vacio}</p>
+    )
+  }
+  <Paginacion base={base} pagina={pagina} paginas={paginas} />
+</section>

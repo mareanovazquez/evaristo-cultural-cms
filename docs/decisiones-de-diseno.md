@@ -33,6 +33,7 @@ La paleta tiene tres colores: un acento verde agua, un blanco cálido y un negro
 | 21/10/2026 | Sección del artículo | Etiqueta rectangular suave: fondo accent-100, texto accent-900 y esquinas de 4px (ver Etiqueta de sección) |
 | 21/10/2026 | Menú del header | Seis secciones visibles (Entrevista, Reseña, Ensayo, Crónica, Crítica, Rastros), desplegable "Más" con el resto y "Autores"; en celular, un botón abre un panel con todas. Propuesta en `referencias/maquetas/header-footer-autor.html`, con textos provisorios hasta que la editorial defina contenido, logo y menú |
 | 21/10/2026 | Cantidad de notas en un listado | Etiqueta rectangular junto al título de la sección: fondo accent-900 (#374f4b), texto en el blanco de la paleta (#fefefc, unos 8,7:1), Inter 12px, peso 600, mayúsculas con `letter-spacing: 0.06em`, esquinas de 4px y relleno de 4px por 12px |
+| 21/10/2026 | Volanta como enlace | La volanta enlaza a la página de su categoría (`/categoria/<slug>/`); sin subrayado en reposo, con subrayado y accent-900 al pasar el cursor |
 | 21/10/2026 | Volanta | Línea propia pegada al título, debajo del cintillo: Fraunces cursiva 18px, peso 400, accent-800 (5,7:1). Se distingue del cintillo (Inter, mayúsculas, caja) sin sumar recursos nuevos |
 | 21/10/2026 | Imagen de encabezado del artículo | Proporción fija 3:2, con recorte según el punto focal; en celular, de borde a borde |
 | 21/10/2026 | Fuentes | Fraunces e Inter desde Google Fonts, como en las maquetas |
