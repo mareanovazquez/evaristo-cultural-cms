@@ -19,6 +19,7 @@ Actualizado el 20/10/2026 (mediodía). Resumen de lo pendiente, ordenado por qu�
 - **Decisiones por defecto vigentes:** el artículo 16691 se migra con el correo que escribió su autor en el cuerpo (a revisar después, junto con las bios con correo); el 22255 y el 22590 quedan publicados en `sin-asignar`; los artículos 4265 y 15027 tienen slug numérico (a la revisión manual).
 
 - Contexto de la fase 3: ver docs/estado-fase3.md (vigente ante cualquier diferencia).
+- **Fase 4 (panel y API): la base de desarrollo es `evaristo_cms_dev`** (decidido el 21/10/2026; `DATABASE_URL_DEV` en el `.env`). No se desarrolla contra `evaristo_cms` (la muestra migrada y verificada) ni contra `evaristo_cms_test` (los tests de la migración la vacían). Decisiones de la fase 4 que faltan: algoritmo del hash de contraseñas, dónde viven las sesiones (requiere una migración de Prisma) y si se acepta una dependencia nueva para validar lo que llega del panel.
 - **URL del artículo (decidido el 21/10/2026):** canónica `/AAAA/MM/DD/slug/`, fecha de `publicadoEn` en UTC.
 - **Fase 7, redirecciones que faltan:** las URLs viejas de WordPress que no están en `redirecciones` (`/category/…`, `/tag/…`, `/feed/`, `/?p=ID`, `/wp-content/uploads/…` y páginas fijas) no se redirigen todavía; hay que decidir qué hacer con cada grupo al migrar los 2.637 artículos. El comentario de `Redireccion.origen` en el esquema dice que las URLs usan hora local y no UTC, pero en la muestra la fecha UTC coincide en 33 de 34 (WordPress tiene `gmt_offset` 0): conviene confirmarlo con el corpus completo.
 

@@ -10,7 +10,7 @@ Actualizado: 17/10/2026. Todo se corre en PowerShell. Las contraseñas NO se gua
 | CMS | MySQL 8.4.11 | 3308 | Servicio de Windows `MySQL84` (inicio manual) | Prisma, el CMS, los tests con base y la escritura |
 
 Bases del 3307: `evaristo_lectura` (prefijo `wp_`, usuario `root` sin contraseña).
-Bases del 3308: `evaristo_cms` (real), `evaristo_cms_shadow` (la usa Prisma al crear migraciones) y `evaristo_cms_test` (solo para tests con base).
+Bases del 3308: `evaristo_cms` (real), `evaristo_cms_shadow` (la usa Prisma al crear migraciones), `evaristo_cms_test` (solo para tests con base: `test:migracion-db` la vacía con DELETE antes de cada test) y `evaristo_cms_dev` (desarrollo del panel y la API de la fase 4; creada el 21/10/2026 como copia de `evaristo_cms` con 35 artículos, 25 autores, 200 imágenes y 58 redirecciones; apunta `DATABASE_URL_DEV` del `.env`). Para recrear la de desarrollo: `CREATE DATABASE evaristo_cms_dev CHARACTER SET utf8mb4 COLLATE utf8mb4_es_0900_ai_ci;`, `GRANT ALL ON evaristo_cms_dev.* TO 'evaristo'@'localhost';`, y después `mysqldump --single-transaction --no-tablespaces --default-character-set=utf8mb4 --result-file=<archivo> evaristo_cms` y `mysql --database=evaristo_cms_dev --execute="source <archivo>"` (el cliente está en `C:Program FilesMySQLMySQL Server 8.4in`, que no está en el PATH).
 
 ## Comprobar qué está arriba (siempre antes de un prompt)
 
