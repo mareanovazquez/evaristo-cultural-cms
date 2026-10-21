@@ -68,7 +68,7 @@ Antes de pegar cualquier prompt que use Prisma: comprobar el 3308 con `Test-NetC
 ## Decisiones que quedan abiertas
 
 - ~~URL del artículo~~ Decidido el 21/10/2026: se conserva `/AAAA/MM/DD/slug/` como canónica (sin redirección para los artículos migrados; los slugs anteriores y la fecha editada redirigen con 301 a la canónica).
-- ~~Bio del autor 39 con correo~~ Resuelto el 21/10/2026. Queda la del autor 40 (wpUserId 278), que también tiene correo (ver docs/pendientes.md, sección 5).
+- ~~Bio del autor 39 con correo~~ Resuelto el 21/10/2026. La del autor 40 (wpUserId 278) no tiene correo: trae un usuario de Instagram (@…), que se deja.
 - Manual de estilo para los artículos nuevos.
 - Navegación y menú en celular.
 - Visto bueno de la directora.

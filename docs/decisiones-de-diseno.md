@@ -429,7 +429,7 @@ Cuerpo, cuerpo chico, epígrafe, botón, etiqueta y link mantienen el mismo tama
 ## Preguntas abiertas
 
 - [ ] Encabezado, footer y ficha de autor: hay una propuesta en `referencias/maquetas/header-footer-autor.html` (topbar, menú con "Más", panel en celular, footer de cuatro columnas, bio al final del artículo, página y listado de autores). Falta el visto bueno de Mariano y de la directora, el contenido real (logo, textos, contacto, redes) y cuáles son las seis secciones visibles.
-- [x] Bio del autor 39 (id 60) con correo: el correo se sacó el 21/10/2026 directamente en la base. Falta la del autor 40 (wpUserId 278).
+- [x] Bio del autor 39 (id 60) con correo: el correo se sacó el 21/10/2026 directamente en la base. La del autor 40 (wpUserId 278) no tiene correo, solo un usuario de Instagram.
 - [ ] Manual de estilo para los artículos nuevos: se va a armar para homogeneizar el contenido que venga (por ejemplo, longitud y forma de la bajada, uso de subtítulos, citas, notas al pie, texto alternativo y epígrafes de las imágenes, créditos). Falta definir qué cubre, quién lo escribe y en qué formato se le muestra al equipo editorial.
 - [ ] Visto bueno de la directora de la editorial: se le envió `referencias/maquetas/nota-con-notas-al-pie.html` y no respondió todavía. Mientras tanto el diseño sigue como propuesta.
 
