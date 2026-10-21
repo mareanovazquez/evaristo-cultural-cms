@@ -37,11 +37,14 @@ Lo que ya resuelve: títulos H2 a H4 en una línea (`titulo.ts`), citas textual 
 - **Borrador de cambios de un artículo ya publicado** (ver decisiones).
 - Verificar si hace falta un campo para recordar quién creó o editó un artículo (no está en el modelo).
 
+## Decisiones tomadas (21/10/2026)
+
+1. **Hash de contraseñas: `scrypt` de `node:crypto`** (sin dependencia nueva).
+2. **Sesiones: tabla propia `sesiones` en la base** (código aleatorio de 32 bytes guardado como SHA-256, cookie `httpOnly` y `SameSite=Strict`, vencimiento y cierre en el servidor). Sin `express-session`.
+3. **Dependencias aceptadas** (versiones exactas): `zod`, `helmet` y `express-rate-limit` (paso 1); `multer` y `sharp` (imágenes); paquetes de TipTap y `jsdom` (editor y sus tests).
+
 ## Decisiones pendientes (a plantear de a una)
 
-1. **Hash de contraseñas.** Recomendado: `scrypt` de `node:crypto` (sin dependencia nueva). Alternativa: argon2 (dependencia nativa).
-2. **Sesiones.** Recomendado: tabla propia en la base (token aleatorio de 32 bytes guardado como hash SHA-256, cookie `httpOnly`, `SameSite=Strict`, vencimiento y cierre en el servidor), sin `express-session`. Alternativa: `express-session` con un almacén.
-3. **Dependencias.** Para pedir permiso: `zod` (validar lo que llega del panel), `helmet`, `express-rate-limit`, `multer` y `sharp` (imágenes), y los paquetes de TipTap. Sin ellas no se avanza más allá del login.
 4. **Autoguardado de un artículo PUBLICADO.** Si se autoguarda directo sobre la fila, cada tecla cambia lo que ve el público. Opciones: no autoguardar los publicados (guardar con botón), o un "borrador de cambios" separado que se aplica al publicar de nuevo (mejor para el editor, más trabajo y una migración).
 5. **Ediciones simultáneas.** Recomendado: bloqueo optimista con `actualizadoEn`: si otra persona guardó mientras tanto, el servidor rechaza y avisa, en vez de pisar.
 6. **Enrutado del panel.** Recomendado: sin librería (pocas pantallas, rutas por hash). Alternativa: `react-router`.
