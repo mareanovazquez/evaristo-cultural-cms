@@ -9,7 +9,8 @@
     "./secciones": "./src/secciones.ts",
     "./schema": "./src/schema/validate.ts",
     "./render": "./src/render/render.ts",
-    "./urls": "./src/urls.ts"
+    "./urls": "./src/urls.ts",
+    "./texto-plano": "./src/texto-plano.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
