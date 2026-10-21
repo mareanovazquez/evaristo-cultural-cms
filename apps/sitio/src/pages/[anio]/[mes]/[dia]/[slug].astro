@@ -10,7 +10,7 @@ import { pruebaLayoutHabilitada } from "../../../../lib/prueba-layout";
 // Vista pública del artículo. URL canónica: /AAAA/MM/DD/slug/ (fecha de publicadoEn en UTC).
 // El artículo se busca por slug (único). Si la fecha o la barra final de la URL no son las canónicas, se redirige con 301.
 const { anio, mes, dia, slug } = Astro.params;
-const noEncontrado = () => new Response("No encontrado", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+const noEncontrado = () => Astro.rewrite("/404");
 if (!slug || !/^\d{4}$/.test(anio ?? "") || !/^\d{2}$/.test(mes ?? "") || !/^\d{2}$/.test(dia ?? "")) return noEncontrado();
 
 const articulo = await buscarArticulo(slug);

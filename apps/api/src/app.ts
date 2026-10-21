@@ -135,6 +135,19 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
   };
   app.use(ssr);
 
+  // (5) Cualquier otra ruta: la página 404 del sitio. En modo middleware, Astro pasa a Express lo que no reconoce;
+  // acá se le pide su página /404 (que responde con estado 404).
+  app.use(async (req, res, next) => {
+    const manejador = req.method === "GET" || req.method === "HEAD" ? await cargarManejadorAstro() : undefined;
+    if (!manejador) {
+      res.status(404).type("text/plain; charset=utf-8").send("No encontrado");
+      return;
+    }
+    req.url = "/404";
+    req.originalUrl = "/404";
+    manejador(req, res, next);
+  });
+
   // Errores no previstos: sin detalles hacia afuera.
   app.use((error: unknown, _req: Request, res: Response, next: NextFunction) => {
     console.error("Error no controlado:", error instanceof Error ? error.message : "error desconocido");

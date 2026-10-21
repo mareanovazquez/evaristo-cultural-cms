@@ -325,7 +325,7 @@
 }
 
 /* ---------- Rótulos (sección y volanta) ---------- */
-.nota .rotulos {
+.rotulos {
   margin: 0 0 var(--space-4);
 }
 /* Volanta (categoría principal): línea corta pegada al título, Fraunces cursiva en el color de los links */

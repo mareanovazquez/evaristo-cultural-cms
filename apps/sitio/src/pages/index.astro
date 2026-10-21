@@ -1,33 +1,31 @@
 ---
-import { prisma } from "../lib/prisma";
+import Base from "../layouts/Base.astro";
+import Tarjeta from "../components/Tarjeta.astro";
+import { fechaLarga, posicionFocal, rutaArticulo, ultimosArticulos, urlMedia } from "../lib/articulos";
 
-const filas = await prisma.pruebaConexion.findMany({ orderBy: { id: "asc" } });
-const formato = new Intl.DateTimeFormat("es-AR", { dateStyle: "medium", timeStyle: "medium", timeZone: "UTC" });
+// Portada provisoria: los últimos artículos. La portada real (destacados, secciones) es la fase 5.
+const articulos = await ultimosArticulos(12);
 ---
 
-<!doctype html>
-<html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Evaristo Cultural CMS: prueba</title>
-  </head>
-  <body>
-    <h1>Evaristo Cultural CMS: prueba</h1>
-    <p>Codificación: Ñandú, canción, “comillas tipográficas” y ¿tildes?</p>
-    <h2>Filas de PruebaConexion</h2>
+<Base titulo="Evaristo Cultural" descripcion="Revista cultural de Evaristo Editorial.">
+  <section class="section">
+    <h1 class="titulo-pagina">Últimos artículos</h1>
     {
-      filas.length === 0 ? (
-        <p>Sin filas de prueba</p>
-      ) : (
-        <ul>
-          {filas.map((fila) => (
-            <li>
-              {fila.mensaje} (<time datetime={fila.creadoEn.toISOString()}>{formato.format(fila.creadoEn)} UTC</time>)
-            </li>
+      articulos.length > 0 ? (
+        <div class="grilla">
+          {articulos.map((a) => (
+            <Tarjeta
+              href={rutaArticulo({ slug: a.slug, publicadoEn: a.publicadoEn! })}
+              titulo={a.titulo}
+              seccion={a.seccion.interna ? undefined : a.seccion.nombre}
+              imagen={a.imagenEncabezado ? { src: urlMedia(a.imagenEncabezado.clave), posicion: posicionFocal(a.encabezadoPuntoFocalX, a.encabezadoPuntoFocalY) } : undefined}
+              meta={`${a.autores.length ? `Por ${a.autores.map((x) => x.autor.nombre).join(", ")} · ` : ""}${fechaLarga(a.publicadoEn!)}`}
+            />
           ))}
-        </ul>
+        </div>
+      ) : (
+        <p class="vacio">Todavía no hay artículos publicados.</p>
       )
     }
-  </body>
-</html>
+  </section>
+</Base>

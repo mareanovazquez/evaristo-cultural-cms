@@ -4,7 +4,7 @@ CMS propio para reemplazar WordPress en la revista cultural Evaristo Cultural (e
 
 **Stack:** TypeScript en todo. Monorepo con npm workspaces: `apps/sitio` (Astro, SSR en modo middleware), `apps/panel` (React + Vite), `apps/api` (Express 5) y `packages/compartido` (Prisma 7, validador, conversor, migración). MySQL 8.4 + Prisma. Editor: TipTap. Un solo proceso en el puerto 3000.
 
-**Estado:** la fase 2 (modelo de datos y migración de la muestra de 35 artículos) está cerrada. La fase 3 (sitio público) está por empezar. Para retomar, leer `docs/estado-fase3.md` y `docs/pendientes.md`.
+**Estado:** la fase 2 (modelo de datos y migración de la muestra de 35 artículos) está cerrada. La fase 3 (sitio público) tiene hechos los pasos 1 a 7 (renderizador, layout, `/media`, vista del artículo y de autores, redirecciones, prueba de humo). Para retomar, leer `docs/estado-fase3.md` y `docs/pendientes.md`.
 
 ## Reglas de trabajo
 

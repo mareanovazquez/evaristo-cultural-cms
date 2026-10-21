@@ -24,6 +24,8 @@
     "test:autores": "npm run test:autores --workspace=@evaristo/api --",
     "test:redirecciones": "npm run test:redirecciones --workspace=@evaristo/api",
     "test:redirecciones-base": "npm run test:redirecciones-base --workspace=@evaristo/api",
+    "test:humo": "npm run test:humo --workspace=@evaristo/api --",
+    "test:fase3": "npm run build:sitio && npm run test:render && npm run test:media && npm run test:redirecciones && npm run test:articulos && npm run test:autores && npm run test:redirecciones-base && npm run test:humo",
     "test:render": "npm run test:render --workspace=@evaristo/compartido",
     "test:render-35": "npm run test:render-35 --workspace=@evaristo/compartido",
     "render:preview-35": "npm run render:preview-35 --workspace=@evaristo/compartido --",

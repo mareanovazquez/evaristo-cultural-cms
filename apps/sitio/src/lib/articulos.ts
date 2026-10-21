@@ -74,6 +74,16 @@ const seleccionTarjeta = {
   autores: { orderBy: { orden: "asc" as const }, select: { autor: { select: { nombre: true } } } },
 };
 
+/** Los últimos artículos publicados, del más nuevo al más viejo. */
+export async function ultimosArticulos(cantidad: number) {
+  return prisma.articulo.findMany({
+    where: visibles(),
+    orderBy: [{ publicadoEn: "desc" }, { id: "desc" }],
+    take: cantidad,
+    select: seleccionTarjeta,
+  });
+}
+
 /** Hasta 3 artículos: primero los que comparten categoría, y si faltan, los de la misma sección. */
 export async function articulosRelacionados(art: { id: number; seccionId: number; categorias: Array<{ categoriaId: number }> }) {
   const base = { ...visibles(), id: { not: art.id } };

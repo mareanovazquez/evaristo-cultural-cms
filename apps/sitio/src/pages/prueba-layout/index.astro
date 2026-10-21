@@ -6,7 +6,7 @@ import { MUESTRA } from "../../lib/muestra-layout";
 import { pruebaLayoutHabilitada } from "../../lib/prueba-layout";
 
 // Página temporal para mirar el layout (paso 2). Se elimina cuando exista la vista real del artículo (paso 4).
-if (!pruebaLayoutHabilitada()) return new Response("No encontrado", { status: 404 });
+if (!pruebaLayoutHabilitada()) return Astro.rewrite("/404");
 
 const { html, notesHtml } = renderArticleBody(MUESTRA, { conCapital: true });
 ---

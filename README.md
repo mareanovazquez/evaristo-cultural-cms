@@ -213,6 +213,8 @@ Después abrir:
 | `npm run test:autores -- --originales="<carpeta>"` | Recorre las páginas de autores y el listado contra la base (solo lectura; requiere `build:sitio`). |
 | `npm run test:redirecciones` | Pruebas puras del manejador de redirecciones 301 (buscador falso). |
 | `npm run test:redirecciones-base` | Recorre las redirecciones de la tabla contra la base real (solo lectura; requiere `build:sitio`). |
+| `npm run test:humo -- --originales="<carpeta>"` | Prueba de humo del sitio completo contra la base real (solo lectura; requiere `build:sitio`). |
+| `npm run test:fase3` | Compila el sitio y corre las suites de la fase 3 (renderizador, `/media`, redirecciones, artículos, autores y humo). Necesita `MEDIA_DIR` en el entorno o en el `.env`. |
 | `npm run start --workspace=@evaristo/api` | Arranca el servidor único sin compilar nada antes (pensado para producción). |
 
 > **Apagado ordenado:** el servidor atiende SIGINT y SIGTERM (cierra el servidor y desconecta Prisma), pero en Windows no se puede probar porque ahí las señales terminan el proceso sin pasar por los handlers. Se prueba en Linux al desplegar.

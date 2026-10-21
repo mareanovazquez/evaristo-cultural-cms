@@ -1,0 +1,15 @@
+---
+import Base from "../layouts/Base.astro";
+
+// Página 404 del sitio. Astro la responde con estado 404; apps/api la usa para cualquier ruta que no exista.
+Astro.response.status = 404;
+---
+
+<Base titulo="No encontramos esa página" noindex>
+  <section class="section col">
+    <p class="rotulos"><span class="etiqueta">Error 404</span></p>
+    <h1 class="titulo-pagina">No encontramos esa página</h1>
+    <p>Puede que la dirección esté mal escrita o que el artículo ya no esté publicado.</p>
+    <p><a href="/">Volver a la portada</a> · <a href="/autores/">Ver los autores</a></p>
+  </section>
+</Base>

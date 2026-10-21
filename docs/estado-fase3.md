@@ -29,7 +29,17 @@ Actualizado el 20/10/2026, 13:00. Resumen del reconocimiento de solo lectura de 
 - No cubre las URLs viejas de WordPress que no están en la tabla (`/category/…`, `/tag/…`, `/feed/`, `/?p=ID`, `/wp-content/uploads/…`, páginas fijas): queda para la fase 7.
 - Cada pedido que llega al sitio hace una consulta indexada a `redirecciones`; si la carga lo pide, se puede poner una caché en memoria.
 
-**Próximo paso:** paso 7 (build y prueba de humo: los 34 publicados responden 200 y el borrador 404; página 404 propia).
+**Paso 7 hecho (21/10/2026, rama `fase3-humo`, sin mergear):** portada provisoria en `/` con los 12 últimos artículos (reemplaza la página de prueba de la base; la portada real es la fase 5), página 404 propia (`pages/404.astro`) y manejador final en `crearApp` que la muestra para cualquier ruta que no exista (en modo middleware Astro pasa a Express lo que no reconoce y antes salía el "Cannot GET" de Express); los artículos y autores no encontrados usan `Astro.rewrite("/404")`. Prueba de humo: `npm run test:humo -- --originales="<carpeta>"` (API, portada, hoja de estilos, 34 artículos con 200, el borrador con la 404 del sitio, rutas inexistentes, autores, redirección de muestra, panel si está compilado, enlaces internos e imágenes de lo recorrido, y que ninguna página tenga `undefined`/`null`). Todo junto: `npm run test:fase3` (compila el sitio y corre las suites de la fase 3; con `MEDIA_DIR` definido en el entorno o en el `.env`).
+
+**Fase 3: pasos 1 a 7 terminados.** Lo que NO está y la fase 3 todavía necesita o deja abierto:
+- **Páginas de sección y de categoría** (`/seccion/<slug>/`): el menú y el footer enlazan 17 secciones que dan 404. Falta especificarlas (listado, orden, paginación) y hacerlas. Es lo más visible.
+- **Portada real, buscador y navegación en celular** (fase 5 y especificaciones pendientes).
+- **`<head>`:** `canonical`, `og:image` y `description` en todas las páginas; falta definir la URL base del sitio.
+- **Imágenes sin variantes de tamaño:** se sirven los originales; con miles de artículos la carga va a ser lenta.
+- **Galería y ficha técnica** del artículo (ninguno de los 35 las tiene).
+- Visto bueno de la directora sobre el diseño.
+
+**Próximo paso:** mergear las ramas (`fase3-humo` contiene todo lo anterior desde `fase3-redirecciones`) y definir con Mariano qué sigue: páginas de sección y categoría, o la portada real.
 
 Antes de pegar cualquier prompt que use Prisma: comprobar el 3308 con `Test-NetConnection`. El prompt se pega desde `C:\Users\Usuario\Documents\Proyectos frontend`, sin push.
 
@@ -76,7 +86,7 @@ Antes de pegar cualquier prompt que use Prisma: comprobar el 3308 con `Test-NetC
 4. **Hecho el 21/10/2026 (rama `fase3-articulo`).** Vista del artículo (filtra `estado = PUBLICADO` y `publicadoEn <= ahora`; los 2 sin encabezado se muestran sin imagen de encabezado).
 5. **Hecho el 21/10/2026.** Vista de autores (`/author/<slug>/`; 404 para los 2 de solo texto).
 6. **Hecho el 21/10/2026 (rama `fase3-redirecciones`).** Redirecciones (middleware con 301; los 58 orígenes de la muestra).
-7. Build y prueba de humo (los 34 publicados responden 200 y el borrador 404).
+7. **Hecho el 21/10/2026 (rama `fase3-humo`).** Build y prueba de humo (los 34 publicados responden 200 y el borrador 404).
 
 ## Decisiones que quedan abiertas
 
