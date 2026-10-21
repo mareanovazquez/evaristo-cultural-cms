@@ -618,3 +618,20 @@
 .autor-bio p:last-child {
   margin-bottom: 0;
 }
+
+/* Encabezado de un listado (sección): título y cantidad de notas */
+.encabezado-listado {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-4);
+  margin-bottom: var(--space-8);
+}
+.encabezado-listado .titulo-pagina {
+  margin: 0;
+}
+.cuenta-listado {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text-muted);
+}

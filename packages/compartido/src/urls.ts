@@ -11,6 +11,9 @@ export function rutaArticulo(a: { slug: string; publicadoEn: Date }): string {
 /** Página de un autor: /author/<slug>/ (la misma que tenía en WordPress). */
 export const rutaAutor = (slug: string): string => `/author/${encodeURIComponent(slug)}/`;
 
+/** Página de una sección: /seccion/<slug>/ (URL propia del sitio nuevo; las /category/… de WordPress se redirigen en la fase 7). */
+export const rutaSeccion = (slug: string): string => `/seccion/${encodeURIComponent(slug)}/`;
+
 /** Ruta pública de un archivo de la biblioteca (la sirve apps/api en /media/<clave>). */
 export const urlMedia = (clave: string): string => `/media/${encodeURIComponent(clave)}`;
 

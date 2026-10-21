@@ -1,0 +1,55 @@
+---
+import Base from "../../layouts/Base.astro";
+import Tarjeta from "../../components/Tarjeta.astro";
+import Paginacion from "../../components/Paginacion.astro";
+import { rutaSeccion } from "@evaristo/compartido/urls";
+import { fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../../lib/articulos";
+import { cantidadDePaginas, paginaPedida } from "../../lib/paginacion";
+import { buscarSeccion, contarNotasDeSeccion, notasDeSeccion } from "../../lib/secciones";
+
+// Página de una sección: /seccion/<slug>/. Las secciones internas (sin-asignar) no tienen página (404).
+// Las notas van de la más nueva a la más vieja, de a NOTAS_POR_PAGINA con ?pagina=N.
+const { slug } = Astro.params;
+const noEncontrado = () => Astro.rewrite("/404");
+if (!slug) return noEncontrado();
+
+const seccion = await buscarSeccion(slug);
+if (!seccion) return noEncontrado();
+
+const canonica = rutaSeccion(seccion.slug);
+if (decodeURIComponent(Astro.url.pathname) !== decodeURIComponent(canonica)) {
+  return Astro.redirect(canonica + Astro.url.search, 301);
+}
+
+const total = await contarNotasDeSeccion(seccion.id);
+const paginas = cantidadDePaginas(total);
+const pagina = paginaPedida(Astro.url.searchParams.get("pagina"));
+if (pagina > paginas) return noEncontrado();
+const notas = await notasDeSeccion(seccion.id, pagina);
+---
+
+<Base titulo={pagina > 1 ? `${seccion.nombre} (página ${pagina})` : seccion.nombre} descripcion={`Notas de ${seccion.nombre} en Evaristo Cultural.`}>
+  <section class="section">
+    <header class="encabezado-listado">
+      <h1 class="titulo-pagina">{seccion.nombre}</h1>
+      <p class="cuenta-listado">{total === 1 ? "1 nota" : `${total} notas`}</p>
+    </header>
+    {
+      notas.length > 0 ? (
+        <div class="grilla">
+          {notas.map((n) => (
+            <Tarjeta
+              href={rutaArticulo({ slug: n.slug, publicadoEn: n.publicadoEn! })}
+              titulo={n.titulo}
+              imagen={n.imagenEncabezado ? { src: urlMedia(n.imagenEncabezado.clave), posicion: posicionFocal(n.encabezadoPuntoFocalX, n.encabezadoPuntoFocalY) } : undefined}
+              meta={`${n.autores.length ? `Por ${n.autores.map((x) => x.autor.nombre).join(", ")} · ` : ""}${fechaLarga(n.publicadoEn!)}`}
+            />
+          ))}
+        </div>
+      ) : (
+        <p class="vacio">Todavía no hay notas publicadas en esta sección.</p>
+      )
+    }
+    <Paginacion base={canonica} pagina={pagina} paginas={paginas} />
+  </section>
+</Base>

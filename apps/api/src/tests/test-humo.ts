@@ -137,7 +137,7 @@ try {
     console.log("Panel: omitido porque no está compilado (npm run build:panel); no es parte del sitio público.");
   }
 
-  // 9) Enlaces internos y imágenes de lo recorrido: todo resuelve. Las páginas de sección todavía no existen (no está especificada).
+  // 9) Enlaces internos y imágenes de lo recorrido: todo resuelve, incluidas las 17 secciones del menú
   const paginas = [portada, autores, ...(await Promise.all(publicados.slice(0, 12).map((a) => pedir(canonica(a.slug, a.publicadoEn!)))))];
   const enlaces = new Set<string>();
   const imagenes = new Set<string>();
@@ -145,9 +145,8 @@ try {
     for (const m of p.cuerpo.matchAll(/\shref="(\/[^"#]*)"/g)) if (!m[1]!.startsWith("//")) enlaces.add(m[1]!.replace(/&amp;/g, "&"));
     for (const m of p.cuerpo.matchAll(/\ssrc="(\/media\/[^"]+)"/g)) imagenes.add(m[1]!);
   }
-  const sinPagina = [...enlaces].filter((e) => e.startsWith("/seccion/"));
   let resueltos = 0;
-  for (const e of [...enlaces].filter((x) => !x.startsWith("/seccion/") && !x.startsWith("/_astro/"))) {
+  for (const e of [...enlaces].filter((x) => !x.startsWith("/_astro/"))) {
     let r = await pedir(e);
     if (r.estado === 301 && typeof r.cabeceras["location"] === "string") r = await pedir(r.cabeceras["location"]);
     if (r.estado !== 200) falla(`enlace ${e}`, `dio ${r.estado}`);
@@ -163,7 +162,9 @@ try {
   console.log(`API: /api/salud ok. Portada: ${tarjetasPortada} artículos, hoja de estilos 200.`);
   console.log(`Artículos: ${publicados.length} publicados con 200 y ${noPublicados.length} no publicado(s) con la página 404 del sitio.`);
   console.log(`Enlaces internos de ${paginas.length} páginas: ${resueltos} resuelven. Imágenes de /media: ${imgOk} de ${imagenes.size} con 200.`);
-  if (sinPagina.length) console.log(`PENDIENTE conocido: ${sinPagina.length} enlaces a páginas de sección (/seccion/<slug>/) que todavía no existen (por ejemplo ${sinPagina[0]}).`);
+  const secciones = [...enlaces].filter((e) => e.startsWith("/seccion/")).length;
+  if (secciones < 17) problemas.push(`el menú enlaza ${secciones} secciones, se esperaban 17`);
+  console.log(`Menú: ${secciones} secciones enlazadas, todas con página.`);
   if (problemas.length) fallar(`${problemas.length} problemas:\n  - ${problemas.slice(0, 40).join("\n  - ")}`);
   console.log("\nOK: el sitio responde bien de punta a punta.");
 } finally {

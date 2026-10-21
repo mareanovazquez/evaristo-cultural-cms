@@ -1,8 +1,7 @@
 import { SECCIONES } from "@evaristo/compartido/secciones";
 
-// Rutas públicas provisorias: todavía no hay páginas de sección, de autores ni buscador.
-// El esquema definitivo de URL del artículo y de sección se decide antes del paso 4.
-export const urlSeccion = (slug: string): string => `/seccion/${slug}/`;
+// Rutas del menú. Las de artículo, autor y sección viven en @evaristo/compartido/urls.
+export { rutaSeccion as urlSeccion } from "@evaristo/compartido/urls";
 export const URL_AUTORES = "/autores/";
 
 // Secciones del menú: las que no son internas, en el orden de la revista.

@@ -3,7 +3,9 @@ import Base from "../../layouts/Base.astro";
 import Tarjeta from "../../components/Tarjeta.astro";
 import { renderArticleBody, type JSONNode } from "@evaristo/compartido/render";
 import { fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../../lib/articulos";
-import { buscarAutor, contarNotasDelAutor, enlacesDeRedes, NOTAS_POR_PAGINA, notasDelAutor, paginaPedida } from "../../lib/autores";
+import Paginacion from "../../components/Paginacion.astro";
+import { buscarAutor, contarNotasDelAutor, enlacesDeRedes, notasDelAutor } from "../../lib/autores";
+import { cantidadDePaginas, paginaPedida } from "../../lib/paginacion";
 
 // Página de un autor: /author/<slug>/ (la misma URL que tenía en WordPress). Los autores de solo texto no tienen página (404).
 // Las notas se paginan de a NOTAS_POR_PAGINA con ?pagina=N.
@@ -20,7 +22,7 @@ if (decodeURIComponent(Astro.url.pathname) !== decodeURIComponent(canonica)) {
 }
 
 const total = await contarNotasDelAutor(autor.id);
-const paginas = Math.max(1, Math.ceil(total / NOTAS_POR_PAGINA));
+const paginas = cantidadDePaginas(total);
 const pagina = paginaPedida(Astro.url.searchParams.get("pagina"));
 if (pagina > paginas) return noEncontrado();
 const notas = await notasDelAutor(autor.id, pagina);
@@ -33,7 +35,6 @@ const iniciales = autor.nombre
   .slice(0, 2)
   .map((p) => p[0]?.toUpperCase() ?? "")
   .join("");
-const enlacePagina = (n: number) => (n === 1 ? canonica : `${canonica}?pagina=${n}`);
 ---
 
 <Base titulo={pagina > 1 ? `${autor.nombre} (página ${pagina})` : autor.nombre}>
@@ -91,14 +92,6 @@ const enlacePagina = (n: number) => (n === 1 ? canonica : `${canonica}?pagina=${
         <p class="vacio">Todavía no hay notas publicadas.</p>
       )
     }
-    {
-      paginas > 1 && (
-        <nav class="paginacion" aria-label="Páginas de notas">
-          {pagina > 1 ? <a href={enlacePagina(pagina - 1)} rel="prev">← Anterior</a> : <span></span>}
-          <span>Página {pagina} de {paginas}</span>
-          {pagina < paginas ? <a href={enlacePagina(pagina + 1)} rel="next">Siguiente →</a> : <span></span>}
-        </nav>
-      )
-    }
+    <Paginacion base={canonica} pagina={pagina} paginas={paginas} />
   </section>
 </Base>

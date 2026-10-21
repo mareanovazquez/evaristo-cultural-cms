@@ -32,14 +32,16 @@ Actualizado el 20/10/2026, 13:00. Resumen del reconocimiento de solo lectura de 
 **Paso 7 hecho (21/10/2026, rama `fase3-humo`, sin mergear):** portada provisoria en `/` con los 12 últimos artículos (reemplaza la página de prueba de la base; la portada real es la fase 5), página 404 propia (`pages/404.astro`) y manejador final en `crearApp` que la muestra para cualquier ruta que no exista (en modo middleware Astro pasa a Express lo que no reconoce y antes salía el "Cannot GET" de Express); los artículos y autores no encontrados usan `Astro.rewrite("/404")`. Prueba de humo: `npm run test:humo -- --originales="<carpeta>"` (API, portada, hoja de estilos, 34 artículos con 200, el borrador con la 404 del sitio, rutas inexistentes, autores, redirección de muestra, panel si está compilado, enlaces internos e imágenes de lo recorrido, y que ninguna página tenga `undefined`/`null`). Todo junto: `npm run test:fase3` (compila el sitio y corre las suites de la fase 3; con `MEDIA_DIR` definido en el entorno o en el `.env`).
 
 **Fase 3: pasos 1 a 7 terminados.** Lo que NO está y la fase 3 todavía necesita o deja abierto:
-- **Páginas de sección y de categoría** (`/seccion/<slug>/`): el menú y el footer enlazan 17 secciones que dan 404. Falta especificarlas (listado, orden, paginación) y hacerlas. Es lo más visible.
+- **Páginas de categoría** (`/categoria/<slug>/`): cada categoría tiene página propia según la especificación, pero no hay ningún enlace hacia ellas (la volanta es texto). Falta decidir la URL y cómo se llega.
 - **Portada real, buscador y navegación en celular** (fase 5 y especificaciones pendientes).
 - **`<head>`:** `canonical`, `og:image` y `description` en todas las páginas; falta definir la URL base del sitio.
 - **Imágenes sin variantes de tamaño:** se sirven los originales; con miles de artículos la carga va a ser lenta.
 - **Galería y ficha técnica** del artículo (ninguno de los 35 las tiene).
 - Visto bueno de la directora sobre el diseño.
 
-**Próximo paso:** mergear las ramas (`fase3-humo` contiene todo lo anterior desde `fase3-redirecciones`) y definir con Mariano qué sigue: páginas de sección y categoría, o la portada real.
+**Páginas de sección hechas (21/10/2026, rama `fase3-secciones`, sin mergear):** `/seccion/<slug>/` (`pages/seccion/[slug].astro`, `lib/secciones.ts`). Muestra el nombre de la sección (h1), la cantidad de notas y las notas de la más nueva a la más vieja, de a 12 con `?pagina=N`, con las mismas tarjetas (sin repetir el cintillo, con autores y fecha). Una sección vacía muestra un aviso (Crítica no tiene notas); las internas (`sin-asignar`) dan 404; sin barra final redirige con 301. La paginación pasó a `lib/paginacion.ts` y al componente `Paginacion.astro`, que usa también la página de autor. `rutaSeccion` está en `@evaristo/compartido/urls`. Test: `npm run test:secciones -- --originales="<carpeta>"` (17 secciones con 200, 1 interna con 404, 18 páginas recorridas con las 32 notas visibles en orden; Asia tiene 17 notas en 2 páginas, así que la paginación se probó con datos reales). La prueba de humo ahora exige que las 17 secciones del menú resuelvan. Decisiones mías, a revisar: sin descripción por sección (no hay campo), 12 notas por página, y la URL `/seccion/<slug>/` es propia (las `/category/…` de WordPress se redirigen en la fase 7).
+
+**Próximo paso:** páginas de categoría, o la portada real (decidido: la portada va al final, después de la reunión con la editorial).
 
 Antes de pegar cualquier prompt que use Prisma: comprobar el 3308 con `Test-NetConnection`. El prompt se pega desde `C:\Users\Usuario\Documents\Proyectos frontend`, sin push.
 

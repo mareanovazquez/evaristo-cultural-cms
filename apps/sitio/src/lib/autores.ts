@@ -1,7 +1,8 @@
 import { prisma } from "./prisma";
 
-// Notas por página en la página de un autor.
-export const NOTAS_POR_PAGINA = 12;
+import { NOTAS_POR_PAGINA } from "./paginacion";
+
+export { NOTAS_POR_PAGINA };
 
 // Un artículo se ve solo si está PUBLICADO y su fecha ya llegó.
 const visibles = () => ({ estado: "PUBLICADO" as const, publicadoEn: { lte: new Date() } });
@@ -66,12 +67,6 @@ export async function listarAutores() {
     },
   });
   return autores.sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
-}
-
-/** Número de página pedido: entero desde 1; cualquier otra cosa vale 1. */
-export function paginaPedida(valor: string | null): number {
-  const n = Number(valor);
-  return Number.isInteger(n) && n >= 1 ? n : 1;
 }
 
 export interface EnlaceRed {

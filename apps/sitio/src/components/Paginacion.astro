@@ -1,0 +1,21 @@
+---
+// Navegación entre páginas de un listado: "← Anterior · Página N de M · Siguiente →". Solo se muestra si hay más de una página.
+interface Props {
+  /** Ruta de la primera página, con barra final (por ejemplo /seccion/asia/). */
+  base: string;
+  pagina: number;
+  paginas: number;
+}
+const { base, pagina, paginas } = Astro.props;
+const enlace = (n: number) => (n === 1 ? base : `${base}?pagina=${n}`);
+---
+
+{
+  paginas > 1 && (
+    <nav class="paginacion" aria-label="Páginas de notas">
+      {pagina > 1 ? <a href={enlace(pagina - 1)} rel="prev">← Anterior</a> : <span />}
+      <span>Página {pagina} de {paginas}</span>
+      {pagina < paginas ? <a href={enlace(pagina + 1)} rel="next">Siguiente →</a> : <span />}
+    </nav>
+  )
+}
