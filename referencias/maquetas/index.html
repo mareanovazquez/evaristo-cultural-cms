@@ -1,0 +1,777 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evaristo Cultural · Muestra de diseño</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Inter:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+/* ==========================================================
+   TOKENS (tomados del documento "Decisiones de diseño – CMS Evaristo")
+   ========================================================== */
+:root {
+  /* Acento */
+  --accent-50: #ecf6f3;
+  --accent-100: #d8eee9;
+  --accent-200: #b2ded6;
+  --accent-300: #8dcec3;
+  --accent-500: #67beb0;
+  --accent-600: #5da69a;
+  --accent-700: #538e85;
+  --accent-800: #456e68;
+  --accent-900: #374f4b;
+
+  /* Neutros */
+  --bg: #fefefc;
+  --surface: #f5f5f3;
+  --surface-2: #ececea;
+  --border-soft: #e4e3e2;
+  --border: #d2d1d0;
+  --border-input: #8f8d8d;
+  --border-strong: #a6a5a4;
+  --text: #231f20;
+  --text-soft: #444041;
+  --text-muted: #656262;
+
+  /* Avisos */
+  --danger: #a8261d;
+  --danger-hover: #8f1f17;
+  --danger-bg: #fceeed;
+  --warning-bar: #c9821a;
+  --warning: #8a5300;
+  --warning-bg: #fdf4e3;
+
+  /* Tipografía */
+  --font-serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  /* Espaciado (escala de 4px) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+
+  /* Forma y sombras */
+  --radius: 4px;
+  --shadow-sm: rgba(0, 0, 0, 0.04) 0px 2px 8px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+  --shadow-md: rgba(0, 0, 0, 0.05) 0px 6px 24px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+  --shadow-lg: rgba(0, 0, 0, 0.10) 0px 16px 48px 0px, rgba(0, 0, 0, 0.08) 0px 0px 0px 1px;
+
+  /* Márgenes laterales y secciones */
+  --gutter: 24px;
+  --section-gap: 64px;
+  --h2-top: 48px;
+}
+@media (max-width: 639px) {
+  :root { --gutter: 16px; --section-gap: 48px; --h2-top: 40px; }
+}
+
+/* ==========================================================
+   BASE
+   ========================================================== */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 18px;
+  line-height: 1.6;
+  font-weight: 400;
+  text-align: left;
+}
+img { display: block; max-width: 100%; height: auto; }
+a { color: var(--accent-800); text-decoration: underline; font-weight: 500; transition: color 150ms ease; }
+a:hover { color: var(--accent-900); }
+:focus-visible { outline: 2px solid var(--accent-700); outline-offset: 2px; }
+
+.icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+.page { max-width: 1200px; margin: 0 auto; padding: 0 var(--gutter); }
+.col { max-width: 680px; margin-left: auto; margin-right: auto; }
+.wide { max-width: 960px; margin-left: auto; margin-right: auto; }
+@media (max-width: 639px) {
+  .wide--bleed { margin-left: calc(var(--gutter) * -1); margin-right: calc(var(--gutter) * -1); max-width: none; }
+}
+
+/* Barra de la muestra (no es parte del diseño de la revista) */
+.sample-bar { background: var(--surface); border-bottom: 1px solid var(--border-soft); font-size: 14px; line-height: 1.4; }
+.sample-bar .page { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-6); align-items: center; padding-top: var(--space-3); padding-bottom: var(--space-3); }
+.sample-bar strong { font-weight: 600; margin-right: auto; }
+.sample-bar a { font-weight: 500; }
+
+.section { padding-top: var(--section-gap); }
+.section-head { margin-bottom: var(--space-8); }
+.section-head h2 { font-family: var(--font-serif); font-weight: 600; font-size: 30px; line-height: 1.25; margin: 0 0 var(--space-2); }
+.section-head p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--text-muted); max-width: 680px; }
+@media (max-width: 639px) { .section-head h2 { font-size: 26px; line-height: 1.3; } }
+
+/* ==========================================================
+   TIPOGRAFÍA DE LA NOTA
+   ========================================================== */
+.etiqueta { font-family: var(--font-sans); font-size: 12px; line-height: 1.2; font-weight: 600; color: var(--accent-800); display: inline-block; margin: 0 0 var(--space-3); }
+
+.nota h1 { font-family: var(--font-serif); font-weight: 600; font-size: 44px; line-height: 1.15; margin: 0 0 var(--space-4); }
+.nota .bajada { font-family: var(--font-serif); font-weight: 400; font-size: 22px; line-height: 1.4; margin: 0 0 var(--space-6); }
+.nota .meta { font-size: 14px; line-height: 1.4; color: var(--text-muted); margin: 0 0 var(--space-10); }
+@media (max-width: 639px) {
+  .nota h1 { font-size: 32px; line-height: 1.2; }
+  .nota .bajada { font-size: 19px; }
+}
+
+.nota figure { margin: 0 auto; }
+@media (max-width: 639px) {
+  .nota figure.wide--bleed { margin-left: calc(var(--gutter) * -1); margin-right: calc(var(--gutter) * -1); max-width: none; }
+}
+.nota .hero-img { aspect-ratio: 3 / 2; width: 100%; object-fit: cover; background: var(--surface-2); border-radius: 0; }
+.nota figcaption { font-size: 14px; line-height: 1.4; font-style: italic; color: var(--text-muted); margin: var(--space-2) auto var(--space-8); max-width: 680px; }
+
+.nota-cuerpo p { margin: 0 0 var(--space-6); }
+/* Letra capital: opcional, solo en el primer párrafo del cuerpo.
+   Navegadores con initial-letter la alinean solos a 3 líneas; el resto usa un float. */
+.con-capital::first-letter {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  color: var(--capital-color, var(--text));
+  float: left;
+  font-size: 4.9em;
+  line-height: 0.8;
+  padding: 0.06em 0.12em 0 0;
+}
+@supports (initial-letter: 3) or (-webkit-initial-letter: 3) {
+  .con-capital::first-letter {
+    float: none;
+    font-size: inherit;
+    line-height: inherit;
+    padding: 0;
+    margin-right: 0.12em;
+    -webkit-initial-letter: 3;
+    initial-letter: 3;
+  }
+}
+.nota-cuerpo h2 { font-family: var(--font-serif); font-weight: 600; font-size: 30px; line-height: 1.25; margin: var(--h2-top) 0 var(--space-4); }
+.nota-cuerpo h3 { font-family: var(--font-serif); font-weight: 600; font-size: 22px; line-height: 1.3; margin: var(--space-8) 0 var(--space-3); }
+@media (max-width: 639px) {
+  .nota-cuerpo h2 { font-size: 26px; line-height: 1.3; }
+  .nota-cuerpo h3 { font-size: 20px; }
+}
+.nota-cuerpo ul { margin: 0 0 var(--space-6); padding-left: var(--space-6); }
+.nota-cuerpo li { margin: 0 0 var(--space-2); }
+.nota-cuerpo li:last-child { margin-bottom: 0; }
+
+.cita {
+  margin: var(--space-10) 0;
+  padding-left: var(--space-6);
+  border-left: 4px solid var(--accent-500);
+}
+.cita p { font-family: var(--font-serif); font-style: italic; font-weight: 400; font-size: 26px; line-height: 1.35; margin: 0; }
+.cita cite { display: block; margin-top: var(--space-3); font-family: var(--font-sans); font-style: normal; font-size: 14px; line-height: 1.4; color: var(--text-muted); }
+@media (max-width: 639px) {
+  .cita { padding-left: var(--space-4); }
+  .cita p { font-size: 22px; }
+}
+
+.caja { background: var(--surface); border-radius: var(--radius); padding: var(--space-6); margin: var(--space-8) 0; }
+.caja--acento { background: var(--accent-50); }
+.caja p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--text-soft); }
+.caja p + p { margin-top: var(--space-2); }
+.caja strong { color: var(--text); font-weight: 600; }
+
+/* ==========================================================
+   TARJETAS
+   ========================================================== */
+.cards { display: grid; grid-template-columns: 1fr; gap: var(--space-4); }
+@media (min-width: 640px) { .cards { grid-template-columns: repeat(2, 1fr); gap: var(--space-6); } }
+@media (min-width: 1024px) { .cards { grid-template-columns: repeat(3, 1fr); } }
+
+.card {
+  display: flex; flex-direction: column;
+  background: var(--bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 400;
+  transition: box-shadow 150ms ease;
+}
+.card:hover { box-shadow: var(--shadow-md); color: var(--text); }
+.card:focus-visible { outline: 2px solid var(--accent-700); outline-offset: 2px; }
+.card-img { aspect-ratio: 3 / 2; width: 100%; object-fit: cover; background: var(--surface-2); }
+.card-body { padding: var(--space-4) var(--space-6) var(--space-6); display: flex; flex-direction: column; gap: var(--space-2); }
+@media (max-width: 639px) { .card-body { padding: var(--space-4); } }
+.card .etiqueta { margin: 0; }
+.card h3 { font-family: var(--font-serif); font-weight: 600; font-size: 22px; line-height: 1.3; margin: 0; }
+.card p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--text-soft); }
+.card .meta { font-size: 14px; line-height: 1.4; color: var(--text-muted); }
+
+/* ==========================================================
+   BOTONES
+   ========================================================== */
+.btn {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  font-family: var(--font-sans); font-weight: 600; line-height: 1.2; text-align: center; text-decoration: none;
+  border: 0; border-radius: var(--radius);
+  cursor: pointer;
+  transition: background-color 150ms ease, box-shadow 150ms ease, color 150ms ease;
+  height: 44px; padding: 0 20px; font-size: 15px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.btn:hover { color: var(--text); }
+.btn--sm { height: 36px; padding: 0 16px; font-size: 14px; }
+.btn--sm::after { content: ""; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; } /* área táctil de 44px */
+.btn--lg { height: 52px; padding: 0 24px; font-size: 16px; }
+
+.btn--primary { background: var(--accent-500); }
+.btn--primary:hover { background: var(--accent-600); }
+.btn--soft { background: var(--surface); box-shadow: inset 0 -2px 0 var(--border); }
+.btn--soft:hover { background: var(--surface-2); }
+.btn--outline { background: transparent; box-shadow: inset 0 0 0 2px var(--text); }
+.btn--outline:hover { background: var(--accent-50); }
+.btn--ghost { background: transparent; }
+.btn--ghost:hover { background: var(--surface); }
+.btn--danger { background: var(--danger); color: var(--bg); }
+.btn--danger:hover { background: var(--danger-hover); color: var(--bg); }
+.btn:disabled, .btn[aria-disabled="true"] { color: var(--text-muted); cursor: not-allowed; }
+.btn--primary:disabled, .btn--soft:disabled { background: var(--surface-2); box-shadow: none; }
+.btn--outline:disabled { background: transparent; box-shadow: inset 0 0 0 2px var(--border); }
+.btn--ghost:disabled { background: transparent; }
+
+.btn-matrix { display: grid; gap: var(--space-6); }
+.btn-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); }
+.btn-row-label { flex: 0 0 100%; font-size: 12px; line-height: 1.2; font-weight: 600; color: var(--text-muted); margin-bottom: calc(var(--space-2) * -1); }
+@media (min-width: 640px) { .btn-matrix { gap: var(--space-8); } }
+
+/* ==========================================================
+   FORMULARIOS (etiqueta flotante)
+   ========================================================== */
+.form { display: grid; gap: var(--space-5); max-width: 480px; }
+.field { position: relative; }
+.field input[type="text"], .field input[type="email"], .field textarea, .field select {
+  display: block; width: 100%;
+  height: 56px; padding: 24px 16px 8px;
+  font-family: var(--font-sans); font-size: 16px; line-height: 1.4; font-weight: 400; color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius);
+  appearance: none; -webkit-appearance: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.field textarea { height: auto; min-height: 120px; padding-top: 28px; resize: vertical; }
+.field select { padding-right: 48px; cursor: pointer; }
+.field .select-icon { position: absolute; right: 16px; top: 18px; pointer-events: none; color: var(--text-muted); }
+.field label {
+  position: absolute; left: 17px; top: 17px;
+  font-size: 16px; line-height: 1.4; font-weight: 400; color: var(--text-muted);
+  pointer-events: none;
+  transform-origin: left top;
+  transition: top 150ms ease, font-size 150ms ease, color 150ms ease;
+}
+.field input:hover, .field textarea:hover, .field select:hover { border-color: var(--text); }
+.field input:focus, .field textarea:focus, .field select:focus { outline: none; border-color: var(--accent-700); box-shadow: 0 0 0 1px var(--accent-700); }
+.field input:focus + label, .field textarea:focus + label, .field select:focus + label { color: var(--accent-800); }
+.field input:focus + label, .field input:not(:placeholder-shown) + label,
+.field textarea:focus + label, .field textarea:not(:placeholder-shown) + label,
+.field select + label { top: 8px; font-size: 12px; line-height: 1.2; }
+.field textarea:focus + label, .field textarea:not(:placeholder-shown) + label { top: 8px; }
+.field--error input, .field--error textarea { border-color: var(--danger); box-shadow: 0 0 0 1px var(--danger); }
+.field--error input:focus + label, .field--error label { color: var(--danger); }
+.field input:disabled, .field textarea:disabled { background: var(--surface); border-color: var(--border); color: var(--text-muted); cursor: not-allowed; }
+.field input:disabled:hover { border-color: var(--border); }
+.field input:disabled + label { color: var(--text-muted); }
+.field-help { margin: var(--space-1) 0 0; font-size: 14px; line-height: 1.4; color: var(--text-muted); }
+.field-error { display: flex; align-items: flex-start; gap: var(--space-2); margin: var(--space-1) 0 0; font-size: 14px; line-height: 1.4; color: var(--danger); }
+.field-error .icon { width: 16px; height: 16px; margin-top: 2px; }
+
+.choices { display: grid; gap: var(--space-3); border: 0; margin: 0; padding: 0; }
+.choice { display: flex; align-items: center; gap: var(--space-3); font-size: 16px; line-height: 1.4; cursor: pointer; }
+.choice input { appearance: none; -webkit-appearance: none; width: 24px; height: 24px; margin: 0; flex: none; border: 2px solid var(--border-input); background-color: var(--bg); cursor: pointer; transition: background-color 150ms ease, border-color 150ms ease; }
+.choice input[type="checkbox"] { border-radius: var(--radius); }
+.choice input[type="radio"] { border-radius: 50%; }
+.choice input:hover { border-color: var(--text); }
+.choice input[type="checkbox"]:checked {
+  background-color: var(--accent-500); border-color: var(--accent-500);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23231f20' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E");
+  background-position: center; background-size: 16px; background-repeat: no-repeat;
+}
+.choice input[type="radio"]:checked { border-color: var(--accent-500); background-color: var(--accent-500); background-image: radial-gradient(circle, var(--text) 0 4px, transparent 5px); }
+legend.choices-title { font-size: 12px; line-height: 1.2; font-weight: 600; color: var(--text-muted); padding: 0; margin-bottom: var(--space-3); }
+.form-actions { margin-top: var(--space-1); }
+@media (max-width: 639px) { .form-actions .btn { width: 100%; } }
+
+/* ==========================================================
+   AVISOS
+   ========================================================== */
+.tone-success { --bar: var(--accent-500); --ink: var(--accent-800); --tint: var(--accent-50); }
+.tone-info { --bar: var(--text); --ink: var(--text); --tint: var(--surface); }
+.tone-warning { --bar: var(--warning-bar); --ink: var(--warning); --tint: var(--warning-bg); }
+.tone-danger { --bar: var(--danger); --ink: var(--danger); --tint: var(--danger-bg); }
+
+.alerts { display: grid; gap: var(--space-4); max-width: 680px; }
+.alert { display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4); background: var(--tint); border-left: 4px solid var(--bar); border-radius: var(--radius); }
+.alert > .icon { color: var(--ink); margin-top: 1px; }
+.alert-body { flex: 1; min-width: 0; font-size: 15px; line-height: 1.5; color: var(--text-soft); }
+.alert-body strong { display: block; font-weight: 600; color: var(--text); margin-bottom: 2px; }
+.icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin: -12px -12px -12px 0; border: 0; background: transparent; color: var(--text-muted); border-radius: var(--radius); cursor: pointer; transition: color 150ms ease; flex: none; }
+.icon-btn:hover { color: var(--text); }
+
+/* Toast */
+.toasts { position: fixed; z-index: 60; right: var(--space-6); bottom: var(--space-6); width: 360px; max-width: calc(100vw - 32px); display: flex; flex-direction: column; gap: var(--space-2); pointer-events: none; }
+@media (max-width: 639px) { .toasts { left: var(--space-4); right: var(--space-4); bottom: var(--space-4); width: auto; max-width: none; } }
+.toast { pointer-events: auto; display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-4); background: var(--bg); border-left: 4px solid var(--bar); border-radius: var(--radius); box-shadow: var(--shadow-md); animation: toast-in 200ms ease both; }
+.toast > .icon { color: var(--ink); margin-top: 1px; }
+.toast-body { flex: 1; min-width: 0; font-size: 15px; line-height: 1.5; color: var(--text-soft); padding-top: 0; }
+.toast-actions { display: flex; align-items: center; gap: var(--space-1); margin: -8px -12px -12px 0; }
+.toast .btn--sm { margin: 0; }
+.toast.is-leaving { animation: toast-out 150ms ease both; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes toast-out { to { opacity: 0; transform: translateY(8px); } }
+@media (prefers-reduced-motion: reduce) { .toast, .toast.is-leaving { animation: none; } * { transition: none !important; } }
+
+/* Modal */
+dialog.modal {
+  position: fixed;
+  border: 0; border-left: 4px solid var(--bar);
+  padding: var(--space-8);
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  background: var(--bg); color: var(--text);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+dialog.modal::backdrop { background: rgba(35, 31, 32, 0.5); }
+@media (max-width: 639px) { dialog.modal { padding: var(--space-6); } }
+.modal-close { position: absolute; top: var(--space-2); right: var(--space-2); margin: 0; }
+.modal h3 { font-family: var(--font-serif); font-weight: 600; font-size: 22px; line-height: 1.3; margin: 0 var(--space-8) var(--space-4) 0; }
+.modal p { margin: 0 0 var(--space-3); font-size: 15px; line-height: 1.5; color: var(--text-soft); }
+.modal p:last-of-type { margin-bottom: 0; }
+.modal strong { font-weight: 600; color: var(--text); }
+.modal-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-8); }
+
+/* ==========================================================
+   COLORES (muestrario)
+   ========================================================== */
+.swatch-group { margin-bottom: var(--space-8); }
+.swatch-group h3 { font-size: 12px; line-height: 1.2; font-weight: 600; color: var(--text-muted); margin: 0 0 var(--space-3); }
+.swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: var(--space-2); }
+.sw { border-radius: var(--radius); box-shadow: inset 0 0 0 1px rgba(0,0,0,.08); padding: var(--space-3); min-height: 84px; display: flex; flex-direction: column; justify-content: flex-end; font-size: 12px; line-height: 1.3; font-weight: 500; }
+.sw b { font-weight: 600; }
+.sw.on-dark { color: var(--bg); }
+.sw.on-light { color: var(--text); }
+
+.foot { margin-top: var(--space-24); padding: var(--space-8) 0 var(--space-12); border-top: 1px solid var(--border-soft); font-size: 14px; line-height: 1.4; color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<!-- Íconos de Lucide (lucide.dev), trazo de 1,5px -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></symbol>
+  <symbol id="i-circle-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></symbol>
+  <symbol id="i-triangle-alert" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></symbol>
+  <symbol id="i-circle-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></symbol>
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+</svg>
+
+<div class="sample-bar">
+  <div class="page">
+    <strong>Evaristo Cultural · Muestra de diseño</strong>
+    <a href="#nota">Nota</a>
+    <a href="#tarjetas">Tarjetas</a>
+    <a href="#botones">Botones</a>
+    <a href="#formularios">Formularios</a>
+    <a href="#avisos">Avisos</a>
+    <a href="#colores">Colores</a>
+  </div>
+</div>
+
+<main class="page">
+
+  <!-- ======================= NOTA ======================= -->
+  <article class="section nota" id="nota">
+    <header class="col">
+      <span class="etiqueta">Ensayo</span>
+      <h1>La biblioteca que se mudaba de noche</h1>
+      <p class="bajada">Un recorrido por las salas que cambiaron de lugar mientras los lectores dormían, y por las personas que se encargaron de que nadie lo notara.</p>
+      <p class="meta">Por Lucía Ferrante · 12 de octubre de 2026 · 9 min de lectura</p>
+    </header>
+
+    <figure class="wide wide--bleed">
+      <img class="hero-img" src="https://commons.wikimedia.org/wiki/Special:FilePath/LOC_Main_Reading_Room_Highsmith.jpg?width=1600" alt="Sala principal de lectura de una biblioteca, con filas de escritorios bajo una cúpula">
+      <figcaption>Sala principal de lectura. Fotografía de Carol M. Highsmith, dominio público (Biblioteca del Congreso de EE. UU.).</figcaption>
+    </figure>
+
+    <div class="col nota-cuerpo">
+      <p class="con-capital">Nadie recuerda con precisión cuándo empezaron los traslados. Los registros más antiguos hablan de un martes de invierno en que el estante de los atlas amaneció tres salas más allá, con los lomos en el mismo orden y el polvo intacto. La bibliotecaria de turno, según cuenta la leyenda, se limitó a corregir el cartel de la puerta.</p>
+      <p>Lo que sigue es un intento de ordenar esas versiones. No hay un culpable claro ni una explicación única, pero sí un conjunto de <a href="#nota">hábitos compartidos</a> que fueron pasando de un turno a otro, como pasan las llaves.</p>
+
+      <h2>Los primeros traslados</h2>
+      <p>Durante las primeras décadas, los cambios se hacían a la luz del día y con carros de madera. Había un plano colgado detrás del mostrador que se reescribía a lápiz cada vez que una sección cambiaba de lugar. Con el tiempo el plano se volvió ilegible, de tanto borrar, y se decidió que lo más sensato era aprenderlo de memoria.</p>
+
+      <blockquote class="cita">
+        <p>Una biblioteca no es un lugar sino una costumbre: la de volver a buscar lo que ya sabíamos dónde estaba.</p>
+        <cite>Marina Oyarzún, bibliotecaria jubilada</cite>
+      </blockquote>
+
+      <p>Las mudanzas nocturnas llegaron después, cuando el edificio empezó a recibir más visitantes de los que podía acomodar. Se pensaba que, si los cambios ocurrían de madrugada, nadie tendría que renunciar a su mesa favorita por una mañana. Funcionó mejor de lo esperado, y por eso mismo nadie se atrevió a cuestionarlo.</p>
+
+      <h3>El catálogo de papel</h3>
+      <p>Las fichas son la memoria más fiel de este sistema. Cada una lleva anotaciones en tres letras distintas, y las más viejas conservan la huella de dedos que ya no están. Entre sus costumbres, el equipo conserva tres reglas simples:</p>
+      <ul>
+        <li>Nada se mueve sin dejar una nota en el estante vacío.</li>
+        <li>Los traslados se anuncian al cierre y se confirman a la apertura.</li>
+        <li>El plano se actualiza al final, nunca antes.</li>
+      </ul>
+
+      <div class="caja caja--acento">
+        <p><strong>Para seguir leyendo.</strong> Esta caja de ejemplo sirve para destacados, avisos o notas al margen, con fondo suave y sin sombra.</p>
+      </div>
+
+      <h2>Lo que queda a la vista</h2>
+      <p>Hoy las salas se mueven mucho menos. Quedan las marcas en el piso, los carteles con dos fechas y una pequeña tradición: quien descubre un estante en un lugar nuevo tiene derecho a dejar una frase en el cuaderno que cuelga junto a la puerta. Hay cuadernos enteros llenos de sorpresas.</p>
+      <p>Quizás eso sea lo más parecido a una respuesta. Los libros no se movían solos; se movía la manera de mirarlos, y alguien tenía que hacerse cargo de acompañar ese cambio sin llamar la atención.</p>
+    </div>
+  </article>
+
+  <!-- ======================= TARJETAS ======================= -->
+  <section class="section" id="tarjetas">
+    <div class="section-head">
+      <h2>Tarjetas</h2>
+      <p>Reposo con shadow-sm, hover con shadow-md y foco con anillo. Una columna en celular, dos desde 640px y tres desde 1024px.</p>
+    </div>
+    <div class="cards">
+      <a class="card" href="#tarjetas">
+        <img class="card-img" style="object-position: 20% 50%;" src="https://commons.wikimedia.org/wiki/Special:FilePath/LOC_Main_Reading_Room_Highsmith.jpg?width=900" alt="" loading="lazy">
+        <div class="card-body">
+          <span class="etiqueta">Reseña</span>
+          <h3>Cartografías del insomnio</h3>
+          <p>Un libro de cuentos donde la noche funciona como mapa y cada habitación guarda un desvelo distinto.</p>
+          <span class="meta">Por Mateo Salgado · 8 de octubre de 2026</span>
+        </div>
+      </a>
+      <a class="card" href="#tarjetas">
+        <img class="card-img" style="object-position: 50% 30%;" src="https://commons.wikimedia.org/wiki/Special:FilePath/LOC_Main_Reading_Room_Highsmith.jpg?width=900" alt="" loading="lazy">
+        <div class="card-body">
+          <span class="etiqueta">Entrevista</span>
+          <h3>Una conversación junto a la ventana</h3>
+          <p>La poeta habla de sus años de traducción, de los cuadernos viejos y de lo que todavía no se animó a publicar.</p>
+          <span class="meta">Por Julia Bermúdez · 5 de octubre de 2026</span>
+        </div>
+      </a>
+      <a class="card" href="#tarjetas">
+        <img class="card-img" style="object-position: 80% 60%;" src="https://commons.wikimedia.org/wiki/Special:FilePath/LOC_Main_Reading_Room_Highsmith.jpg?width=900" alt="" loading="lazy">
+        <div class="card-body">
+          <span class="etiqueta">Crónica</span>
+          <h3>Tres tardes en el mercado de libros usados</h3>
+          <p>Entre puestos de lona y cajones de saldos, una recorrida por el lugar donde los libros esperan una segunda lectura.</p>
+          <span class="meta">Por Tomás Echeverría · 1 de octubre de 2026</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ======================= BOTONES ======================= -->
+  <section class="section" id="botones">
+    <div class="section-head">
+      <h2>Botones</h2>
+      <p>Cuatro variantes en tres tamaños, con 4px de redondeo. El botón small amplía su área táctil a 44px sin cambiar su aspecto.</p>
+    </div>
+    <div class="btn-matrix">
+      <div class="btn-row">
+        <span class="btn-row-label">Small · 36px</span>
+        <button class="btn btn--sm btn--primary" type="button">Suscribirme</button>
+        <button class="btn btn--sm btn--soft" type="button">Ver más</button>
+        <button class="btn btn--sm btn--outline" type="button">Compartir</button>
+        <button class="btn btn--sm btn--ghost" type="button">Leer más</button>
+      </div>
+      <div class="btn-row">
+        <span class="btn-row-label">Medium · 44px (por defecto)</span>
+        <button class="btn btn--primary" type="button">Suscribirme</button>
+        <button class="btn btn--soft" type="button">Ver más</button>
+        <button class="btn btn--outline" type="button">Compartir</button>
+        <button class="btn btn--ghost" type="button">Leer más</button>
+      </div>
+      <div class="btn-row">
+        <span class="btn-row-label">Large · 52px</span>
+        <button class="btn btn--lg btn--primary" type="button">Suscribirme <svg class="icon"><use href="#i-arrow-right"/></svg></button>
+        <button class="btn btn--lg btn--soft" type="button">Ver más</button>
+        <button class="btn btn--lg btn--outline" type="button">Compartir</button>
+        <button class="btn btn--lg btn--ghost" type="button">Leer más</button>
+      </div>
+      <div class="btn-row">
+        <span class="btn-row-label">Deshabilitados y acción destructiva</span>
+        <button class="btn btn--primary" type="button" disabled>Suscribirme</button>
+        <button class="btn btn--soft" type="button" disabled>Ver más</button>
+        <button class="btn btn--outline" type="button" disabled>Compartir</button>
+        <button class="btn btn--ghost" type="button" disabled>Leer más</button>
+        <button class="btn btn--danger" type="button">Eliminar</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================= FORMULARIOS ======================= -->
+  <section class="section" id="formularios">
+    <div class="section-head">
+      <h2>Formularios</h2>
+      <p>Etiqueta flotante: sube al borde superior, en 12px, cuando el campo recibe foco o tiene contenido. Probá escribir en los campos.</p>
+    </div>
+    <form class="form" novalidate onsubmit="return false">
+      <div class="field">
+        <input type="text" id="f-nombre" placeholder=" " autocomplete="name">
+        <label for="f-nombre">Nombre y apellido</label>
+      </div>
+      <div class="field field--error">
+        <input type="email" id="f-mail" placeholder=" " value="lucia@ejemplo" aria-invalid="true" aria-describedby="f-mail-error">
+        <label for="f-mail">Correo electrónico</label>
+        <p class="field-error" id="f-mail-error"><svg class="icon"><use href="#i-circle-alert"/></svg>Revisá el formato del correo: falta el dominio.</p>
+      </div>
+      <div class="field">
+        <select id="f-tema">
+          <option>Ensayo</option>
+          <option>Reseña</option>
+          <option>Entrevista</option>
+          <option>Crónica</option>
+        </select>
+        <label for="f-tema">Sección preferida (opcional)</label>
+        <svg class="icon select-icon"><use href="#i-chevron-down"/></svg>
+      </div>
+      <div class="field">
+        <textarea id="f-msg" placeholder=" "></textarea>
+        <label for="f-msg">Mensaje (opcional)</label>
+        <p class="field-help">Contanos qué te gustaría leer. Máximo 500 caracteres.</p>
+      </div>
+      <div class="field">
+        <input type="text" id="f-dis" placeholder=" " value="Campo deshabilitado" disabled>
+        <label for="f-dis">Código de suscriptor</label>
+      </div>
+      <fieldset class="choices">
+        <legend class="choices-title">Quiero recibir</legend>
+        <label class="choice"><input type="checkbox" checked> El resumen semanal</label>
+        <label class="choice"><input type="checkbox"> Avisos de nuevas entrevistas</label>
+      </fieldset>
+      <fieldset class="choices">
+        <legend class="choices-title">Formato</legend>
+        <label class="choice"><input type="radio" name="fmt" checked> Correo electrónico</label>
+        <label class="choice"><input type="radio" name="fmt"> Mensaje de texto</label>
+      </fieldset>
+      <div class="form-actions">
+        <button class="btn btn--lg btn--primary" type="submit">Enviar</button>
+      </div>
+    </form>
+  </section>
+
+  <!-- ======================= AVISOS ======================= -->
+  <section class="section" id="avisos">
+    <div class="section-head">
+      <h2>Avisos</h2>
+      <p>Cuatro tipos (éxito, información, alerta y peligro) en tres formatos: aviso en la página, toast y modal de confirmación.</p>
+    </div>
+
+    <h3 style="font-family:var(--font-serif);font-weight:600;font-size:22px;line-height:1.3;margin:0 0 var(--space-3);">Aviso en la página</h3>
+    <div class="alerts" style="margin-bottom:var(--space-10);">
+      <div class="alert tone-success" role="status">
+        <svg class="icon"><use href="#i-circle-check"/></svg>
+        <div class="alert-body"><strong>Suscripción confirmada</strong>Desde la próxima semana vas a recibir el resumen en tu correo.</div>
+        <button class="icon-btn" type="button" aria-label="Cerrar aviso"><svg class="icon"><use href="#i-x"/></svg></button>
+      </div>
+      <div class="alert tone-info" role="status">
+        <svg class="icon"><use href="#i-info"/></svg>
+        <div class="alert-body"><strong>Esta nota es un borrador</strong>Todavía no se ve en el sitio público.</div>
+      </div>
+      <div class="alert tone-warning" role="alert">
+        <svg class="icon"><use href="#i-triangle-alert"/></svg>
+        <div class="alert-body"><strong>La imagen es muy pesada</strong>Pesa más de 5 MB y puede tardar en cargar en celulares.</div>
+      </div>
+      <div class="alert tone-danger" role="alert">
+        <svg class="icon"><use href="#i-circle-alert"/></svg>
+        <div class="alert-body"><strong>No se pudo enviar el formulario</strong>Revisá los campos marcados y volvé a intentarlo.</div>
+      </div>
+    </div>
+
+    <h3 style="font-family:var(--font-serif);font-weight:600;font-size:22px;line-height:1.3;margin:0 0 var(--space-3);">Toast</h3>
+    <p style="margin:0 0 var(--space-4);font-size:15px;line-height:1.5;color:var(--text-muted);max-width:680px;">Éxito e información se cierran solos a los 5 segundos. Alerta y peligro esperan a que los cierres. La cuenta se pausa con hover o foco.</p>
+    <div class="btn-row" style="margin-bottom:var(--space-10);">
+      <button class="btn btn--soft" type="button" data-toast="success">Toast de éxito</button>
+      <button class="btn btn--soft" type="button" data-toast="info">Toast de información</button>
+      <button class="btn btn--soft" type="button" data-toast="warning">Toast de alerta</button>
+      <button class="btn btn--soft" type="button" data-toast="danger">Toast de peligro</button>
+    </div>
+
+    <h3 style="font-family:var(--font-serif);font-weight:600;font-size:22px;line-height:1.3;margin:0 0 var(--space-3);">Modal de confirmación</h3>
+    <p style="margin:0 0 var(--space-4);font-size:15px;line-height:1.5;color:var(--text-muted);max-width:680px;">Esc y el clic afuera cierran el modal. En la acción destructiva el foco empieza en "Cancelar".</p>
+    <div class="btn-row">
+      <button class="btn btn--outline" type="button" data-open="dlg-delete">Eliminar nota…</button>
+      <button class="btn btn--outline" type="button" data-open="dlg-publish">Publicar nota…</button>
+    </div>
+  </section>
+
+  <!-- ======================= COLORES ======================= -->
+  <section class="section" id="colores">
+    <div class="section-head">
+      <h2>Colores</h2>
+      <p>Las tres bases son #67beb0, #fefefc y #231f20. El resto se deriva de ellas.</p>
+    </div>
+    <div class="swatch-group">
+      <h3>Acento</h3>
+      <div class="swatches">
+        <div class="sw on-light" style="background:#ecf6f3"><b>accent-50</b>#ecf6f3</div>
+        <div class="sw on-light" style="background:#d8eee9"><b>accent-100</b>#d8eee9</div>
+        <div class="sw on-light" style="background:#b2ded6"><b>accent-200</b>#b2ded6</div>
+        <div class="sw on-light" style="background:#8dcec3"><b>accent-300</b>#8dcec3</div>
+        <div class="sw on-light" style="background:#67beb0"><b>accent-500</b>#67beb0</div>
+        <div class="sw on-light" style="background:#5da69a"><b>accent-600</b>#5da69a</div>
+        <div class="sw on-dark" style="background:#538e85"><b>accent-700</b>#538e85</div>
+        <div class="sw on-dark" style="background:#456e68"><b>accent-800</b>#456e68</div>
+        <div class="sw on-dark" style="background:#374f4b"><b>accent-900</b>#374f4b</div>
+      </div>
+    </div>
+    <div class="swatch-group">
+      <h3>Neutros</h3>
+      <div class="swatches">
+        <div class="sw on-light" style="background:#fefefc"><b>bg</b>#fefefc</div>
+        <div class="sw on-light" style="background:#f5f5f3"><b>surface</b>#f5f5f3</div>
+        <div class="sw on-light" style="background:#ececea"><b>surface-2</b>#ececea</div>
+        <div class="sw on-light" style="background:#e4e3e2"><b>border-soft</b>#e4e3e2</div>
+        <div class="sw on-light" style="background:#d2d1d0"><b>border</b>#d2d1d0</div>
+        <div class="sw on-light" style="background:#a6a5a4"><b>border-strong</b>#a6a5a4</div>
+        <div class="sw on-light" style="background:#8f8d8d"><b>border-input</b>#8f8d8d</div>
+        <div class="sw on-dark" style="background:#656262"><b>text-muted</b>#656262</div>
+        <div class="sw on-dark" style="background:#444041"><b>text-soft</b>#444041</div>
+        <div class="sw on-dark" style="background:#231f20"><b>text</b>#231f20</div>
+      </div>
+    </div>
+    <div class="swatch-group">
+      <h3>Avisos</h3>
+      <div class="swatches">
+        <div class="sw on-dark" style="background:#a8261d"><b>danger</b>#a8261d</div>
+        <div class="sw on-light" style="background:#fceeed"><b>danger-bg</b>#fceeed</div>
+        <div class="sw on-light" style="background:#c9821a"><b>warning-bar</b>#c9821a</div>
+        <div class="sw on-dark" style="background:#8a5300"><b>warning</b>#8a5300</div>
+        <div class="sw on-light" style="background:#fdf4e3"><b>warning-bg</b>#fdf4e3</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    Muestra de diseño basada en el documento "Decisiones de diseño – CMS Evaristo". Textos de fantasía. Íconos: Lucide. Imagen: dominio público (Carol M. Highsmith, Biblioteca del Congreso de EE. UU.).
+  </footer>
+</main>
+
+<!-- Contenedor de toasts -->
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<!-- Modal: eliminar (peligro) -->
+<dialog class="modal tone-danger" id="dlg-delete" aria-labelledby="dlg-delete-title">
+  <button class="icon-btn modal-close" type="button" aria-label="Cerrar" data-close><svg class="icon"><use href="#i-x"/></svg></button>
+  <h3 id="dlg-delete-title">¿Eliminar esta nota?</h3>
+  <p>Vas a eliminar <strong>"La biblioteca que se mudaba de noche"</strong> y <strong>todas sus versiones</strong>.</p>
+  <p>Las imágenes y los autores asociados se conservan, pero la nota <strong>se borra de manera definitiva</strong>. ¿Querés continuar?</p>
+  <div class="modal-actions">
+    <button class="btn btn--danger" type="button" data-close data-toast-after="Nota eliminada.">Eliminar</button>
+    <button class="btn btn--ghost" type="button" data-close autofocus>Cancelar</button>
+  </div>
+</dialog>
+
+<!-- Modal: publicar (información) -->
+<dialog class="modal tone-info" id="dlg-publish" aria-labelledby="dlg-publish-title">
+  <button class="icon-btn modal-close" type="button" aria-label="Cerrar" data-close><svg class="icon"><use href="#i-x"/></svg></button>
+  <h3 id="dlg-publish-title">¿Publicar esta nota?</h3>
+  <p>La nota se va a ver en el sitio público <strong>ahora mismo</strong>. Podés volver a pasarla a borrador cuando quieras.</p>
+  <div class="modal-actions">
+    <button class="btn btn--primary" type="button" data-close data-toast-after="Nota publicada.">Publicar</button>
+    <button class="btn btn--ghost" type="button" data-close autofocus>Cancelar</button>
+  </div>
+</dialog>
+
+<script>
+(function () {
+  /* ---------- Toasts ---------- */
+  var container = document.getElementById('toasts');
+  var TOASTS = {
+    success: { icon: 'i-circle-check', msg: 'Artículo guardado.', auto: true },
+    info:    { icon: 'i-info', msg: 'Hay una versión más reciente de esta nota.', auto: true },
+    warning: { icon: 'i-triangle-alert', msg: 'La imagen pesa más de 5 MB y puede tardar en cargar.', auto: false },
+    danger:  { icon: 'i-circle-alert', msg: 'No se pudo publicar. Revisá tu conexión.', auto: false, action: 'Reintentar' }
+  };
+
+  function icon(id) {
+    return '<svg class="icon"><use href="#' + id + '"/></svg>';
+  }
+
+  function dismiss(el) {
+    if (!el || el.classList.contains('is-leaving')) return;
+    el.classList.add('is-leaving');
+    setTimeout(function () { el.remove(); }, 150);
+  }
+
+  function showToast(type, customMsg) {
+    var cfg = TOASTS[type];
+    var el = document.createElement('div');
+    el.className = 'toast tone-' + type;
+    el.setAttribute('role', (type === 'warning' || type === 'danger') ? 'alert' : 'status');
+    el.innerHTML = icon(cfg.icon) +
+      '<div class="toast-body"></div>' +
+      '<div class="toast-actions">' +
+        (cfg.action ? '<button class="btn btn--sm btn--ghost" type="button" data-act>' + cfg.action + '</button>' : '') +
+        '<button class="icon-btn" type="button" aria-label="Cerrar aviso" data-x style="margin:0">' + icon('i-x') + '</button>' +
+      '</div>';
+    el.querySelector('.toast-body').textContent = customMsg || cfg.msg;
+
+    var timer = null;
+    function start() { if (cfg.auto) { clearTimeout(timer); timer = setTimeout(function () { dismiss(el); }, 5000); } }
+    function stop() { clearTimeout(timer); }
+    el.addEventListener('mouseenter', stop);
+    el.addEventListener('focusin', stop);
+    el.addEventListener('mouseleave', start);
+    el.addEventListener('focusout', start);
+    el.querySelector('[data-x]').addEventListener('click', function () { dismiss(el); });
+    var act = el.querySelector('[data-act]');
+    if (act) act.addEventListener('click', function () { dismiss(el); });
+
+    container.appendChild(el);
+    while (container.children.length > 3) { container.removeChild(container.firstElementChild); }
+    start();
+  }
+
+  document.querySelectorAll('[data-toast]').forEach(function (b) {
+    b.addEventListener('click', function () { showToast(b.getAttribute('data-toast')); });
+  });
+
+  /* ---------- Modales ---------- */
+  document.querySelectorAll('[data-open]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var dlg = document.getElementById(b.getAttribute('data-open'));
+      if (dlg && dlg.showModal) dlg.showModal();
+    });
+  });
+  document.querySelectorAll('dialog.modal').forEach(function (dlg) {
+    dlg.addEventListener('click', function (e) {
+      if (e.target === dlg) dlg.close(); /* clic en el fondo */
+    });
+    dlg.querySelectorAll('[data-close]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var after = b.getAttribute('data-toast-after');
+        dlg.close();
+        if (after) showToast('success', after);
+      });
+    });
+  });
+})();
+</script>
+</body>
+</html>

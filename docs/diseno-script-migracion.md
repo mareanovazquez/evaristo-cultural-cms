@@ -1,0 +1,133 @@
+# Diseño del script real de migración (muestra de 35 artículos)
+
+Estado (20/10/2026): diseño cerrado el 16/10/2026, implementado completo y **usado**: la muestra de 35 artículos está escrita en la base real (`evaristo_cms`) y verificada. Lo produjo Claude Code en solo lectura (`packages/compartido/out/diseno-script-migracion.md`, ignorado por git) y Mariano resolvió las decisiones abiertas. Complementa `plan-implementacion.md` (5.2) y `pendientes.md`. La escritura real sigue cerrada por un interruptor de código (`ESCRITURA_REAL_HABILITADA = false`) que solo se abre, con un commit aparte, para cada escritura real.
+
+## 1. Arquitectura
+
+- Una única función pura `armar()` produce un Plan en memoria (registros por tabla). La simulación y la escritura comparten el plan y se diferencian en el ejecutor: `EjecutorNulo` (simula) o la escritura de `escribir.ts`. La escritura no recalcula nada; las claves entre tablas son naturales (`wpId`, `wpUserId`, `slug`) y los ids numéricos los resuelve el ejecutor (el cuerpo del plan lleva `imagenWpId` en cada nodo de imagen y la escritura lo reemplaza por el `imagenId` real).
+- Archivos en `packages/compartido/scripts/migracion/`: `corrida-en-seco.ts`, `generar-snapshot-wp.ts`, `comparar-snapshot-vivo.ts` (a mano), `migrar.ts` (solo simula), `migrar-escribir.ts` (comando de escritura aparte, **archivo delgado**: carga el `.env`, importa el flujo y lo llama con las dependencias reales), `verificar-escritura.ts` (verificador posterior, solo lectura) y `lib/`. En `lib/`: `utilidades` (incluye `textoPlanoDe`), `leer-wordpress`, `armar`, `enlaces-imagenes`, `imagenes`, `validar`, `destinos`, `conexiones`, `credenciales`, `confirmaciones`, `comando-escribir`, **`flujo-escribir`**, `ejecutor` (nulo), `preparar`, `simular`, `informe`, `entrada-snapshot`, `entrada-vivo`, `snapshot-tipos`, **`verificar`**, y las de escritura `escribir`, `correr-escritura` e `informe-escritura`. Las dependencias de prueba del flujo viven en `tests/dependencias-prueba.ts`.
+- `armar(entrada)` es pura: recibe los datos de WordPress en la forma del snapshot (más el contenido de los 30 de la fixture), el mapeo, las cuentas de solo texto, las secciones, las categorías existentes y, opcionalmente, las mediciones de imágenes (`EntradaArmar.mediciones`, mapa clave NFC → medición). Acepta un segundo parámetro opcional `{ convertir }` que solo usan los tests. `preparar.ts` arma en tres pasadas: arma sin mediciones, mide, arma con mediciones, valida y arma de nuevo sin los excluidos.
+- **Solo `escribir.ts` y `leer-wordpress.ts` crean clientes de Prisma dentro de `scripts/migracion`.** `leer-wordpress.ts` abre sesiones READ ONLY (`abrirSoloCms`, `abrirSoloWordPress`); `escribir.ts` es el único con permiso de escritura (y la conexión de lectura de los tests). `migrar.ts` no alcanza `escribir.ts`, `correr-escritura.ts` ni `flujo-escribir.ts` (T16, grafo de 45 archivos); el único punto de entrada que los alcanza es `migrar-escribir.ts`, y nadie lo importa (T22).
+- **Flujo inyectable solo desde tests (decisión 47).** El flujo posterior a las comprobaciones previas es una función (`lib/flujo-escribir.ts`, `correrFlujoEscribir`) que recibe un objeto de dependencias (destino, interruptor, terminal, lectura de línea, conexiones) y devuelve el código de salida. Las dependencias reales solo las crea `dependenciasReales()` y se registran en un `WeakSet` no exportado (un objeto copiado con spread, `Object.create` o `Proxy` no pasa como real). Con dependencias que no son las reales, el flujo se niega, antes de leer credenciales y de conectar, si el destino es `DESTINO_REAL` o no es `DESTINO_PRUEBAS` (identidad de objeto). Segunda barrera: `escribir.ts:33` (`elegirDestinoEscritura`) niega `DESTINO_REAL` mientras el interruptor valga false.
+- **Verificador posterior** (`lib/verificar.ts` + `verificar-escritura.ts`): recibe la conexión de solo lectura ya abierta y compara la base contra el plan; no importa nada del código de escritura (T22, T26) y solo emite SELECT con sesión READ ONLY verificada. El script abre solo `abrirSoloCms()` y `abrirSoloWordPress()`, siempre contra `DESTINO_REAL`, y **no acepta `--base`**: contra `evaristo_cms_test` solo se usa desde los tests con su propia conexión.
+- `consultar()` solo admite SELECT (rechaza INSERT, UPDATE, DELETE, DDL, `;`, comentarios antepuestos, `INTO OUTFILE`, `INTO DUMPFILE`, `/*!…*/`, `FOR UPDATE` y `LOCK IN SHARE MODE`).
+
+## 2. Modo de uso y seguridad
+
+- **Simular:** `npm run migrar -w @evaristo/compartido -- (--ids=a,b | --muestra) [--simular] --originales=<carpeta>`. Simulación por defecto, con las dos bases en sesión READ ONLY. `--todos` queda rechazado hasta la fase 7; `--ids` acepta solo los 35 ids de la muestra; `--originales` es obligatorio y es la carpeta de los originales (`...\uploads-muestra\originales`, no la padre: con la padre todo da `original_faltante`). La simulación no distingue "sin cambios" de "difiere" contra la base real.
+- **Escribir:** `npm run migrar:escribir -w @evaristo/compartido -- (--ids=… | --muestra) --esperar-articulos=N --originales=<carpeta> [--abortar-al-primer-error] [--sobrescribir --esperar-sobrescribir=N]`. Orden de las comprobaciones, todas antes de abrir una conexión de escritura: argumentos válidos (`--todos` sale con 2 por error de argumentos); interruptor `ESCRITURA_REAL_HABILITADA`; credenciales de `DATABASE_URL_MIGRACION` (solo usuario y clave; sin respaldo a `DATABASE_URL`; nunca se imprimen); `N` igual a la cantidad de artículos del plan (**el plan cuenta también los ya existentes: para la muestra es 35**); y, para el destino real, terminal interactiva y tipeo del nombre de la base. `--sobrescribir --esperar-sobrescribir=N` se compara solo contra el total de filas (artículos + autores + imágenes); las listas de ids por tipo las recalcula el programa y son una segunda comprobación.
+- **Verificar:** `npm run verificar:escritura -w @evaristo/compartido -- (--id=N | --ids=a,b,c | --muestra) [--solo-estos] --originales=<carpeta>`. Tabla OK/DIFERENCIA, salida 0 sin diferencias y 1 con diferencias; un artículo pedido que no está cuenta como diferencia. Nunca imprime correos, bios ni claves. Una escritura real no se repite para verificar: la idempotencia se prueba en `test:migracion-flujo`.
+- **Destinos fijos** en `lib/destinos.ts`: `DESTINO_REAL` (127.0.0.1:3308, `evaristo_cms`) y `DESTINO_PRUEBAS` (127.0.0.1:3308, `evaristo_cms_test`), por identidad de objeto. Ningún flag, variable ni argumento construye un destino; las conexiones al de pruebas solo las abren los tests. Tras conectar se verifican `@@port`, `DATABASE()`, la versión 8.4 y `@@session.transaction_read_only`.
+- **Usuarios de base:** el comando de escritura usa `evaristo_migracion` (SELECT, INSERT, UPDATE y DELETE sobre `evaristo_cms` y, desde el 19/10/2026, sobre `evaristo_cms_test` para `test:migracion-flujo`; sin DDL). Los tests con base usan `evaristo` (ALL) sobre `evaristo_cms_test`, porque vacían tablas, y comprueban `DATABASE() = evaristo_cms_test` antes de cada `DELETE`. **Clave RSA (decisión 46):** la conexión de escritura pasa `allowPublicKeyRetrieval` (host fijo 127.0.0.1) por el caso de la caché de autenticación fría de `caching_sha2_password`; las de lectura no.
+- WordPress: 127.0.0.1:3307, `evaristo_lectura`, sesión READ ONLY (usuario `root` sin contraseña en una base local de solo lectura).
+- Antes de escribir se imprime: destino verificado, ids, filas por tabla (a crear y a omitir), categorías a crear, imágenes con bytes, originales faltantes, redirecciones por tipo, conflictos y avisos por código. Informes en `out/migracion/<fecha>-<modo>.*` (ignorados por git; sin correos ni bios, solo ids y nombres de campos).
+- **Ceremonia de cada escritura real (decisión 50):** respaldo con `mysqldump` (`--result-file`); ensayo en seco y aprobación de Mariano; commit aparte con el interruptor en `true`, sin push y sin correr tests (T20, T21 y T23 fallan con `true`); Mariano ejecuta `migrar:escribir` desde su terminal interactiva y tipea el nombre de la base; verificación en solo lectura; `git revert --no-commit` y commit con el interruptor en `false`; recién ahí el push.
+
+## 3. Orden de inserción y mapeo
+
+Secciones (solo se verifican; falta = error bloqueante), categorías, autores, imágenes, artículo con sus relaciones y redirecciones por artículo, y al final las redirecciones de autor. Categorías, autores e imágenes se escriben una por una sin transacción global; cada artículo es una transacción propia.
+
+| Tabla | Qué llena el script |
+|---|---|
+| `categorias` | Slug del conversor y nombre del mapeo (sin nombre = error bloqueante). Upsert con update vacío. |
+| `autores` | `wpUserId`, nombre y slug de WordPress (respaldo `autor-<id>`). `soloTexto` desde `cuentas.json`. Bio null para solo texto; para los demás, la bio de WordPress **tal cual, con el correo si lo trae** (decisión 14). Foto, redes y sitio web en null. El campo `bioConCorreo` del plan no es una columna. |
+| `imagenes` | `wpId` y `clave` de WordPress; `tipoMime`, `ancho`, `alto`, `bytes` y `hash` medidos del archivo. Sin original o sin poder medir: no se crea fila. |
+| `articulos` | Slug (regla de borrador o limpieza de U+200E), estado, título, bajada, cuerpo (con `imagenId`), **`textoPlano`** (función pura `textoPlanoDe` del cuerpo, decisión 52), fechas, sección, categoría principal, etiquetas, avisos, visitas, encabezado, crédito, datos para redes y `altPendientes`. |
+| `articulos_categorias`, `articulos_autores` | Se sincronizan dentro de la transacción del artículo (autores con orden). |
+| `articulos_galeria` | Sin fuente en el conversor para estos 35; `deleteMany` más `createMany` en la transacción del artículo. |
+| `fichas_tecnicas` | No se toca. |
+| `redirecciones` | `origen` desde `permalink_structure` con fecha local, código 301 y exactamente un destino. Sin redirección de autor para las cuentas de solo texto. |
+
+**Texto plano (decisión 52).** `textoPlanoDe` (`lib/utilidades.ts`) separa las fronteras de bloque (párrafos, títulos, ítems de lista, celdas y filas, citas, saltos de línea y notas) sin partir nodos con marcas adyacentes, e incluye el epígrafe de las imágenes, el autor y la fuente de las citas y el contenido de las notas al pie. No incluye el alt de imagen, los href ni los datos de video, y no limpia el guion blando U+00AD (queda para la fase 6). Sobre el corpus de 2.637 artículos, la secuencia de palabras coincide con un recorrido independiente en todos. Es función pura del cuerpo: se puede regenerar sin leer WordPress.
+
+## 4. Transacciones y re-ejecución
+
+- Transacción por artículo (con 2.637 es la única viable); timeout subido a 30 s.
+- Si falla un artículo: rollback completo de ese artículo, se reporta y la corrida sigue; salida distinta de 0 (también si hay conflictos). `--abortar-al-primer-error` corta en el primero. Si se interrumpe la corrida: un corte entre categorías, autores e imágenes deja filas sueltas; entre artículos deja los confirmados completos; dentro de una transacción hace rollback; al final puede faltar alguna redirección de autor. Repetir el comando es idempotente.
+- **Segunda corrida (decisión 17):** no se pisa nada de lo que existe. Categorías: update vacío. Autores e imágenes: si la fila es igual a lo que arma el plan no se llama a `update`; si difiere, no se pisa y se informan solo los nombres de los campos. Artículos: se compara lo que produciría el script contra la fila (ignorando `id`, `creadoEn` y `actualizadoEn`); igual → "sin cambios", difiere → se omite y se reportan los campos. Redirecciones: mismo origen y mismo destino es "sin cambios"; mismo origen con otro destino es conflicto y no se pisa nunca; **para artículos existentes ("sin cambios" o "difiere") se insertan las redirecciones que faltan, sin pisar ninguna** (`escribir.ts:495`). `imagenes.wpId` con la clave de otro `wpId` es conflicto.
+- **`--sobrescribir`:** reescribe lo que difiere, conservando `id` y `creadoEn`, solo con `--esperar-sobrescribir=N`, donde N es el total de filas (artículos + autores + imágenes) que se reescribirían. Si N no coincide, no se escribe nada, ni categorías. Los conflictos no se pisan ni con sobrescritura. Los únicos `update` de filas existentes son `autor.update`, `imagen.update` y `articulo.update`, y cada uno exige que el id esté en el conjunto permitido, que es vacío sin sobrescritura confirmada.
+
+## 5. Decisiones
+
+Del 16/10/2026:
+
+| # | Tema | Decisión |
+|---|---|---|
+| 1 | Cuerpo e imágenes | Los nodos de imagen del cuerpo llevan `imagenId` (atributo opcional nuevo en `validate.ts`) y el `src` se reescribe a `/media/<clave>` (con percent-encoding en cada segmento). Panel y sitio tienen que respetarlo y servir `/media/…`. |
+| 2 | Segunda corrida sobre artículos editados | Se omiten y se reportan los que difieren; solo `--sobrescribir`, confirmando el ámbito, los reescribe (decisión 17). Una columna con hash de lo migrado queda como mejora posible para la fase 7. |
+| 3 | Error en un artículo | Continuar y reportar. La primera escritura real usó `--abortar-al-primer-error`. |
+| 4 | Base de pruebas | `evaristo_cms_test` en el mismo MySQL 8.4 (3308), con `utf8mb4_es_0900_ai_ci`; los tests la vacían antes de cada corrida. No se usa `evaristo_cms_shadow`. |
+| 5 | TV & Cine | El mapeo pasa a `tv-y-cine`. Hecho (`fbb7314`). |
+| 6 | `imagenes.clave` | `_wp_attached_file` tal cual, en NFC, sin prefijo. |
+| 7 | Redirecciones de autores de solo texto | No se generan. Hecho (`946acee`): 60 pasa a 58. |
+| 8 | Imagen que no se puede medir | Sin fila y con el aviso `imagen_sin_medir`. Hoy 0 casos. |
+| 9 | Alt y crédito del encabezado sin original | Columnas en null; los datos viajan dentro del aviso `original_faltante`. |
+| 10 | Alcance de `--ids` | Solo ids de la muestra de 35; `--todos` para la fase 7. |
+| 11 | Tests puros | Se versiona `datos/migracion/snapshot-wp-muestra.json` (sin datos personales; correos de las bios reemplazados por `[correo omitido]`). Hecho (`c74d536`). |
+| 12 | Fecha de borradores y privado | `publicadoEn` de `post_date_gmt` si es válida; si es `0000-00-00 00:00:00` queda null y el `post_date` completo va dentro del aviso `fecha_borrador`. Hecho (`4276c53`). |
+| 13 | Originales faltantes (2462 y 22546) | Sin fila de imagen; el artículo migra sin encabezado y con el aviso `original_faltante`. |
+| 14 | Bios con correo | Se importan tal cual (usuario 39); la redacción vive solo en el snapshot y en el comparador. El aviso `bio_con_correo` va en cada artículo del autor, sin el correo. Hecho (`4276c53`; en la muestra, 22255). |
+| 15 | Estados de WordPress | Solo `publish`, `draft` y el privado 19300 (BORRADOR con slug `borrador-19300` y aviso `origen_privado`). Cualquier otro estado se excluye con `estado_desconocido`. |
+
+Del 17/10/2026:
+
+| # | Tema | Decisión |
+|---|---|---|
+| 16 | Imagen del cuerpo sin original o sin poder medir | El nodo queda con su `src` de WordPress y el artículo migra con el aviso (contexto "cuerpo" y el `src`). Ese `src` deja de andar al vencer el hosting (28/11/2026). |
+| 17 | Re-ejecución | No se pisa nada de lo existente; solo `--sobrescribir` con `--esperar-sobrescribir=N`. Los conflictos no se pisan nunca. |
+| 18 | Comando de escritura | Comando aparte (`migrar:escribir`); `migrar.ts` es exclusivo para simular (T16, T22). |
+| 19 | Usuario de base y credenciales | `evaristo_migracion` con SELECT, INSERT, UPDATE y DELETE, credenciales en `DATABASE_URL_MIGRACION`, sin respaldo a `DATABASE_URL`. |
+| 20 | Interruptor y confirmaciones | `ESCRITURA_REAL_HABILITADA = false` en el código; cambiarlo requiere un commit aparte con aprobación. `--esperar-articulos` exacto, `--esperar-sobrescribir` por total y, en el destino real, terminal interactiva y tipeo del nombre de la base. |
+| 21 | Colisión de slugs | Se excluyen los dos artículos (sin ganador arbitrario); la colisión la decide MySQL 8.4 con `COLLATE utf8mb4_es_0900_ai_ci`. |
+
+Del 19 y 20/10/2026 (numeración del plan):
+
+| # | Tema | Decisión |
+|---|---|---|
+| 46 | Clave RSA | `allowPublicKeyRetrieval` solo en la conexión de escritura (host fijo 127.0.0.1). Verificado con la caché fría. |
+| 47 | Flujo inyectable solo desde tests | Ver sección 1. |
+| 48 | `test:migracion-flujo` | Suite aparte de 7 casos contra `evaristo_cms_test` con las credenciales de `evaristo_migracion` (ver sección 8). |
+| 49 | Permisos de `evaristo_migracion` | Sobre `evaristo_cms` y `evaristo_cms_test`; recomendado dejarlo (a confirmar antes de la fase 7). |
+| 50 | Ceremonia de cada escritura real | Ver sección 2. |
+| 51 | Verificador posterior versionado | Ver sección 1. Regla de correos: los correos de artículos y de bios de autores del plan tienen que ser los del plan. |
+| 52 | Texto plano | Función `textoPlanoDe` corregida (sección 3). |
+| 53 | Texto plano de los 35 ya escritos | Se regenera en la fase 7 con `--sobrescribir` junto con el resto: 19 artículos de `evaristo_cms` tienen todavía el texto plano viejo. |
+
+## 6. Hallazgos que cambiaron lo hecho
+
+- El cuerpo no tenía referencia a la biblioteca (decisión 1). Las secciones no coincidían (`tv-cine` y `tv-y-cine`; corregido). La corrida en seco no colapsaba guiones (`millie-jackson--i-cry`; corregido, `75aca0a`).
+- Con `original_faltante`, 3 de los 35 quedan sin encabezado: 22590, 2462 y 22546 (el 22590 no tiene `_thumbnail_id` en WordPress).
+- La corrida en seco no verificaba la intercalación de las columnas; el script nuevo la lee de `information_schema` y bloquea la corrida si no es `utf8mb4_es_0900_ai_ci`.
+- El nodo de imagen no valida que `src` corresponda a `imagenId`; lo hace el script (`imagen_cuerpo_inconsistente` excluye al artículo). El plan entrega `imagenWpId` y la escritura lo traduce a `imagenId`; un `imagenId` literal en el plan se trata como inconsistencia.
+- `articulos_galeria` y `fichas_tecnicas` no tienen fuente en el conversor: quedan vacías.
+- Las pruebas de mutación sobre los tests encontraron huecos que se cerraron: T22 había dejado de proteger a `migrar-escribir.ts` (podía abrir su propia conexión), `export { REALES }` pasaba, la regla de correos del verificador no tenía prueba por comportamiento y la comprobación de la ficha técnica se había perdido.
+- **Texto plano:** la función vieja concatenaba nodos sin separador y dejaba afuera epígrafes y citas: 231 de 2.637 artículos tenían más de 1 % menos palabras que el cuerpo (casos testigo 5296 por tablas, 720 por saltos de línea y 4265 por epígrafes). Corregido en `eb1ac5e`.
+- **Notas al pie del 4265 (error del conversor):** cada nota tiene dos anclas (`name` y `href`) y el conversor las cuenta como dos; avisa `nota_duplicada` ×13 y no convierte ninguna. Los textos se conservan como texto plano.
+
+## 7. Validaciones
+
+- **Bloquean toda la corrida:** destino distinto del permitido; columnas con otra intercalación; cuentas que no coinciden con `wp_users`; sección faltante; categoría a crear sin nombre en el mapeo.
+- **Excluyen solo al artículo:** categoría principal fuera de las categorías; redirección sin exactamente un destino; estado desconocido; slug o título vacío o demasiado largo; publicado sin fecha; cuerpo inválido en modo migración; `borrador-<id>` que choca con un slug real; colisión de slug entre artículos reales; `imagen_cuerpo_inconsistente`.
+- Informe en `out/migracion/<fecha>-<modo>.json` y `.md` (ignorados por git).
+
+## 8. Plan de tests
+
+- **Puros (`npm run test:migracion`, también desde la raíz):** 90 con el baseline y 89 sin él (T02 se saltea con aviso porque `out/baseline-armar/` está ignorado por git). Cubren: T01 armado de los 35, T02 regresión, T03 `borrador-<id>`, T04 privado sintético, T05 colapso de guiones, T06 `_wp_old_slug`, T07 `original_faltante`, T08 categoría principal, T09 destino único, T10 medición de imágenes, T11 autores de solo texto, T12 categorías a crear, T13 guarda del destino, T14 argumentos, T15 imágenes del cuerpo, T16 la simulación no escribe, T17 longitudes y colisiones, T18 `fecha_borrador`, T19 `bio_con_correo`, T22 y T23 (comando de escritura aparte y su escáner de imports, ampliado al flujo y al verificador, con pruebas de comportamiento sobre el registro de dependencias), T24 y T25 (guarda de dependencias del flujo y credenciales sin respaldo a `DATABASE_URL`), T26 (el script verificador rechaza 15 combinaciones de argumentos, incluido `--base`, sin conectar) y las 12 pruebas del texto plano. **T02:** el baseline `out/baseline-armar` se regeneró el 17/10 y el 20/10/2026 desde la salida actual; el original de `7eda10c` se conserva en `out/baseline-armar-7eda10c` y un diff independiente confirmó que los únicos cambios son los esperados (el último: solo `textoPlano`, en 19 de los 35 artículos).
+- **Con base de pruebas (`npm run test:migracion-db -w @evaristo/compartido`, 43 pruebas; escriben solo en `evaristo_cms_test`):** D01 carga completa de los 35; D02 idempotencia; D03 reemplazo de galería; D04 fallo de un artículo; D05 colisión por intercalación; D06 conflicto de redirección; D07 `original_faltante`; D08 la simulación contra la base de pruebas no cambia nada; D09 política de no pisar y sobrescritura confirmada; D10 equivalencia incremental (escribir 1 id y luego los otros 34 equivale a escribir los 35); T20 guarda de destinos e interruptor; T21 confirmaciones; y V1 a V8 del verificador (con la muestra completa, un id, pruebas negativas con título, redirección, nombre de autor, texto plano y categorías alterados, artículo ausente, solo SELECT, correos de mentira `.invalid` en bajada, cuerpo, categoría, bio de otro autor e imagen, y ficha técnica).
+- **Flujo (`npm run test:migracion-flujo -w @evaristo/compartido`, 7 pruebas F-a a F-g):** flujo completo de punta a punta contra `evaristo_cms_test` con las credenciales de `evaristo_migracion` y lectura en vivo de WordPress (3307): F-a un id (artículo 12526) con comprobación de usuario; F-b muestra completa con el primero "sin cambios"; F-c repetición sin cambios; F-d N incorrecto sin escribir; F-e sobrescritura con UPDATE y DELETE; F-f permisos negativos (un `CREATE TABLE` en `evaristo_cms_test` y un `SELECT` en `evaristo_cms_shadow` fallan con el código 1142); F-g informes sin `@`, bios ni claves. Necesita el 3307, el 3308, `DATABASE_URL_MIGRACION`, el permiso sobre `evaristo_cms_test` y la carpeta de originales (`ORIGINALES_PRUEBA`).
+- **Conversor (`npm run test:conversor`):** 24 + 41 + 10 + 33.
+
+## 9. Orden de implementación y estado
+
+- **Hecho, pusheado y verificado (último: `c570d19`):** pasos 0 a 3 (`fbb7314` a `946acee`: mapeo, `imagenId`, utilidades, lectura de WordPress, snapshot, `armar()` pura y validaciones puras); simulación (`4276c53` a `9f3fab4`); escritura contra `evaristo_cms_test` (`d71e43a` a `06c4a3a`); sobrescritura confirmada, comando aparte, `--ids` y README (`4a4cb7d`, `bdcd23f`, `97e6f37`, `efacd73`); correcciones de la verificación de `efacd73` (`af011b8`); flujo inyectable y su guarda (`76882ed`, `46436e6`, `8bb8e28`, `46f0c42`, `d79c82d`) y refuerzo de tests (`b2d007a`, `514ec01`, `35c65ff`, `2f9f20b`, `a9a4dff`); verificador versionado (`17f141c`, `c2907df`, `790c5b9`, `c47a782`, `e4fab1e`) y sus correcciones (`6f2e042`, `b6a7197`, `b3b8250`); texto plano (`eb1ac5e`, `c570d19`). Cada tramo pasó una verificación independiente en clon limpio, con pruebas de mutación.
+- **Escrituras reales:** 19/10/2026, artículo 12526 (`97194f1` abrió el interruptor y `9f51b88` lo cerró); 20/10/2026, los otros 34 (`2828b37` y `e5a16d3`): `estado ok`, 0 fallidos. `verificar:escritura --muestra`: 1.059 comprobaciones y 0 diferencias en el momento de la escritura.
+- **Comparación independiente contra WordPress (20/10/2026):** script propio, sin código de la migración: 0 diferencias duras (identidad, autoría, bios, clasificación, títulos, imágenes con hash y bytes de los archivos, redirecciones, integridad y privacidad). Cierre de la fase 2.
+- **Pendiente:** regenerar el texto plano de los 19 artículos en la fase 7 (decisión 53); commit chico de README y tests del verificador (frase del guion blando, mención de las bios, `try/finally` en V7 y V8).
+
+## 10. Límites del esquema y cosas que no se pudieron determinar
+
+- Ningún punto del diseño exigió una migración nueva de Prisma. Posible mejora futura: una columna con hash de lo migrado (decisión 2).
+- `articulos_galeria` sin clave única obliga a que el reemplazo sea transaccional; `creadoEn` queda con la fecha de migración.
+- Límites conocidos para la fase 7: la consulta de colisiones de slug es una por artículo y no escala a 2.637; la simulación no distingue "sin cambios" de "difiere" ni lista como existente una categoría ya creada; las imágenes externas o sin adjunto en el cuerpo quedan intactas y sin aviso; `--todos` y las fichas técnicas sin implementar; orientación EXIF 5 a 8 sin revisar; la conexión a WordPress usa `root`; `migrar.ts` llega a una clase `PrismaClient` generada a través de `leer-wordpress.ts` (protegida por la sesión READ ONLY, el filtro de `consultar()` y la guarda de destino); `textoPlanoDe` y `validate.ts` no limitan la profundidad de anidado (falla con listas de 5.000 niveles, sin casos en el corpus); T22 usa expresiones regulares (un import dinámico armado con una variable no lo detecta) y T24 solo ejerce el caso "`DATABASE_URL` definida y `DATABASE_URL_MIGRACION` ausente o vacía"; los informes por fecha pueden pisarse si dos corridas caen en el mismo segundo; las conexiones de lectura con el usuario `evaristo` no pasan `allowPublicKeyRetrieval` y podrían fallar con la caché fría (falla segura).
+- Enlaces internos: el conversor conserva los enlaces propios al dominio y los registra en `assets.internalLinks` ("para reescribir luego", `types.ts:39`), pero no se reescriben (ver `pendientes.md`).
+- Sin determinar: orientación EXIF 5 a 8 en las 200 imágenes; si el editor del panel descartaría atributos desconocidos del nodo imagen; si `user_nicename` es único en todo `wp_users` (en la muestra no hay choques).

@@ -1,0 +1,72 @@
+# CMS Evaristo: lo que falta cerrar
+
+Actualizado el 20/10/2026 (mediodía). Resumen de lo pendiente, ordenado por qué lo destraba. El detalle está en `plan-implementacion.md` (fases, decisiones 1 a 53, riesgos), `diseno-script-migracion.md` (diseño, tests y estado del script), `decisiones-de-diseno.md` (decisiones visuales de la fase 3), `prueba-inicial.md` y `glosario-comandos-bases.md` (iniciar y detener las bases). Los tres primeros están al día al 20/10/2026.
+
+## Estado técnico (20/10/2026, mediodía)
+
+**La fase 2 (modelo de datos y migración de la muestra de 35 artículos) está cerrada.** La fase 3 (sitio público) está por empezar.
+
+- **CMS** (`evaristo-cultural-cms`, rama `main`, `C:\Users\Usuario\Documents\Proyectos frontend\evaristo-cultural-cms`): `origin/main` en `c570d19`, árbol limpio, `ESCRITURA_REAL_HABILITADA = false` (el `true` nunca queda en la rama al cierre de una sesión). Lista de commits en `diseno-script-migracion.md`, sección 9. `testing-tiptap` queda como archivo (`ba37c92`); el `validate.ts` de `packages/compartido` es la copia canónica.
+- **Tests (versión `c570d19`):** `npm run test:migracion` da 90 con el baseline de `out/` (89 sin él: T02 se saltea con aviso); `npm run test:migracion-db -w @evaristo/compartido` da 43 (escribe solo en `evaristo_cms_test`); `npm run test:migracion-flujo -w @evaristo/compartido` da 7; `npm run test:conversor` da 24 + 41 + 10 + 33; `npm run typecheck` sin errores. En un clon nuevo hay que correr `prisma generate` y `astro sync` (en `apps/sitio`) antes de `typecheck`. Para los tests con base, `DATABASE_URL` tiene que apuntar a `evaristo_cms`.
+- **Escrituras reales hechas:** 19/10/2026 el artículo 12526 y 20/10/2026 los otros 34 (`estado ok`, 0 fallidos). Verificadas contra el plan (`verificar:escritura --muestra`: 1.059 comprobaciones, 0 diferencias) y contra WordPress con un script independiente (0 diferencias duras). Ceremonia de cada escritura real: decisión 50 del plan.
+- **Bases (equipo "Galaxy"):**
+  - MySQL 8.4.11 (servicio MySQL84, puerto 3308): `evaristo_cms` (real, con los 35 artículos: articulos 35, articulos_autores 35, articulos_categorias 12, autores 25, categorias 8, imagenes 200, redirecciones 58, secciones 18, `_prisma_migrations` 3), `evaristo_cms_shadow` (todo en 0; es de Prisma) y `evaristo_cms_test` (con la carga completa de los 35).
+  - Usuarios: `evaristo` (ALL sobre las tres bases) y `evaristo_migracion` (SELECT, INSERT, UPDATE y DELETE sobre `evaristo_cms` y `evaristo_cms_test`; credenciales en `DATABASE_URL_MIGRACION` del `.env`). **Pendiente de confirmar:** dejar el permiso sobre `evaristo_cms_test` (recomendado) o revocarlo antes de la fase 7.
+  - MariaDB 11.8.9 con WordPress de solo lectura (127.0.0.1:3307, `evaristo_lectura`, root sin contraseña; 2.637 publicados, 48 borradores y 1 privado). Se arranca a mano y se apaga con `mariadb-admin.exe --host=127.0.0.1 --port=3307 --user=root shutdown` (opciones largas; nunca `Stop-Process`). Claude Code no puede arrancar servidores: antes de cada prompt hay que comprobar el 3307 (si lee WordPress) y el 3308 con `Test-NetConnection`. No tocar MySQL80, Laragon ni el `mysqld.exe` huérfano PID 11864.
+  - Respaldos (`C:\Users\Usuario\Documents\Proyectos frontend\CMS-EVARISTO(ASSETS)\respaldos\`): `evaristo_cms-antes-12526.sql` y `evaristo_cms-antes-muestra.sql`. Se hacen con `mysqldump` y `--result-file` (el `>` de Windows PowerShell guarda en UTF-16); la contraseña se tipea cuando la pide el comando, sin pegar otro comando en la misma tanda.
+- **Imágenes de la muestra:** 200 de 202 originales (SHA-256 verificado) en `C:\Users\Usuario\Documents\Proyectos frontend\CMS-EVARISTO(ASSETS)\uploads-muestra\originales` (solo lectura; se pasa con `--originales=<carpeta>`, no la carpeta padre). Faltan `escanear0006.jpg` y `mankell.jpg`.
+- **Repositorio de GitHub:** se quitó de las fuentes sincronizadas del proyecto de claude.ai el 20/10/2026 (ocupaba la mayor parte del espacio). Claude Code trabaja sobre la copia local, que es la fuente de verdad.
+- **Decisiones por defecto vigentes:** el artículo 16691 se migra con el correo que escribió su autor en el cuerpo (a revisar después, junto con las bios con correo); el 22255 y el 22590 quedan publicados en `sin-asignar`; los artículos 4265 y 15027 tienen slug numérico (a la revisión manual).
+
+- Contexto de la fase 3: ver docs/estado-fase3.md (vigente ante cualquier diferencia).
+
+## 1. Siguiente paso
+
+1. **Fase 3: sitio público (vista del artículo y de autores).** En curso: reconocimiento técnico terminado (20/10/2026, ver estado-fase3.md); próximo paso: el prompt del paso 1 (renderizador del cuerpo). Alcance del reconocimiento (estado del sitio de Astro, renderizador del cuerpo de `testing-tiptap`, inventario real de nodos de los 35 artículos, cómo servir `/media/<clave>` desde la carpeta de originales con `MEDIA_DIR` y sin path traversal, y un plan por pasos con el aspecto intercambiable por variables CSS). Las decisiones de diseño visual ya resueltas están en `decisiones-de-diseno.md`, con páginas de muestra en `referencias/maquetas/index.html` y `referencias/maquetas/nota-con-notas-al-pie.html`. El primer paso de implementación propuesto: el renderizador del cuerpo con tests, para ver los 35 artículos renderizados antes de tocar la página. Pendiente de saber: referencias del aspecto actual de la revista y qué quiere conservar la directora de la editorial.
+2. **Commit chico de README y tests del verificador (sin urgencia):** (a) la frase del texto plano debe decir "no limpia el guion blando U+00AD (queda para la fase 6)"; (b) mencionar que el verificador también revisa las bios de los autores del plan; (c) `try/finally` en V7 y V8 de `test-db-verificar.ts` (si una aserción falla a mitad, `evaristo_cms_test` queda alterada hasta la próxima corrida; no afecta `evaristo_cms`).
+3. **Antes de la fase 7 (migración completa):** regenerar el texto plano de los 19 artículos de la decisión 53 (620, 720, 1555, 1569, 2462, 3026, 4262, 4265, 4364, 4424, 4507, 4513, 5214, 5287, 5296, 5372, 10929, 12939 y 16691; mientras tanto `verificar:escritura --muestra` sale con 1, es esperado); corregir las notas al pie del 4265 (error del conversor: dos anclas por nota); decidir qué hacer con los enlaces internos de texto (28 a artículos y 28 a uploads; falta averiguar qué pasó con 26 de los de uploads); aclarar el guion blando U+00AD (el plan decía 228 apariciones en el 620 y la verificación del 20/10 no encontró ninguna); confirmar el permiso de `evaristo_migracion` sobre `evaristo_cms_test`; límites conocidos del script (consulta de colisiones de slug que no escala, `--todos` sin implementar, librería de imágenes, EXIF 5 a 8).
+4. **Límites menores de los tests** (detalle en `diseno-script-migracion.md`, sección 10): T22 usa expresiones regulares; T24 solo ejerce un caso; `--esperar-sobrescribir=N` se compara solo contra el total; los informes por fecha pueden pisarse si dos corridas caen en el mismo segundo; las conexiones de lectura con `evaristo` no pasan `allowPublicKeyRetrieval` (con la caché fría podrían fallar, de forma segura); `textoPlanoDe` y `validate.ts` no limitan la profundidad de anidado.
+
+## 2. Para cerrar la fase 1
+
+1. **Mirar el panel en el navegador:** con `npm run dev` y MySQL arriba, abrir `http://127.0.0.1:3000/admin/` (tiene que verse "Panel de Evaristo Cultural", "La API responde correctamente" con 0 filas y la línea con ñ, tildes y comillas tipográficas).
+2. **Despliegue en el entorno de pruebas.** Falta definir hosting, almacenamiento de imágenes (disco o S3/R2; el modelo guarda una clave relativa), método de despliegue, sesiones del panel y correos. El cuerpo de los artículos apunta a `/media/<clave>`: el sitio tendrá que servir esa ruta.
+3. **Menores del esqueleto:** helmet con política definida a propósito; cabeceras de caché en un solo lugar; revisar las 6 advertencias de `npm audit` sin `audit fix`; apagado ordenado en Linux; Renovate o Dependabot y documentación de despliegue.
+4. **Pasar a la Lenovo:** probar el README desde cero (Node, MySQL 8.4, clonar, `npm ci`, `prisma generate`, `astro sync`, `.env`, bases, `db:deploy`, `db:sembrar`); comprobar antes que Smart App Control no bloquea el binario nativo de Astro.
+
+## 3. Conversor: pendientes menores
+
+1. **Revisión manual:** el 593 ("Entrevista a Yasukata Tsutsui") queda en Asia por prioridad; el 18633 pasó a Entrevista (título vacío); y los dos títulos que empiezan con "Entrevista".
+2. **Artículo 19899:** el título "MILLIE JACKSON | I Cry" queda como título "Millie Jackson" con bajada "I Cry"; sumarlo a la revisión manual de títulos.
+
+## 4. Depende de bajar `wp-content/uploads` del hosting (fase 7)
+
+**Hosting (Hostinger, plan Premium compartido; dueño del plan; el plan expira el 28/11/2026).** `uploads` pesa unos 7,9 GB con todos los derivados, en carpeta plana. Hay acceso SSH (contraseña independiente de la de Hostinger y de WordPress). Hay que volver a exportar la base y bajar `uploads` completo antes del vencimiento, y confirmar con el dueño si se renueva. **Lección:** el `tar` de Windows altera los nombres con tildes y símbolos (hubo que renombrar 4 archivos a mano); para las 10.975 usar otra herramienta y verificar los nombres contra `_wp_attached_file` (sensible a mayúsculas).
+
+1. **Artículo 5360:** cuatro íconos de Word (`interior/image001.gif` a `004.gif`) sueltos con ruta relativa; es el único que falla en modo estricto.
+2. **77 imágenes del dominio temporal:** buscarlas por nombre de archivo (`imagenes.nombreOriginal` tiene índice).
+3. **Procesamiento de imágenes** (10.975 archivos): probablemente haga falta una librería (hoy el script mide JPEG, PNG y GIF sin dependencias; otro formato da `imagen_sin_medir`).
+4. **Originales faltantes:** `escanear0006.jpg` y `mankell.jpg`; puede que aparezcan al bajar `uploads` completo.
+
+## 5. Después de la importación (plan de revisión manual, desde el panel)
+
+- **Usuarios editores:** recrear los que van a seguir publicando (la tabla `usuarios` no se siembra; falta definir en la fase 4 el hash, las sesiones y el alta).
+- **Bios con correo:** sanear a mano la del usuario 39 y las que marque `bio_con_correo`. Y el correo del cuerpo del 16691.
+- **Títulos:** `palabra_ambigua` (361), `palabra_desconocida` (66), `revisar_autor_en_titulo` (51), `titulo_vacio` (2: 5562 y 5602) y las 193 bajadas que nombran a una persona. Más el 19899.
+- **Imágenes pendientes de texto alternativo:** 2.431 en 813 artículos (vista del panel apoyada en `articulos.altPendientes`), y los artículos con `original_faltante` o `imagen_sin_medir`.
+- **Notas al pie** que no cierran (unos 40; incluye el 4265), tablas y posibles bios en el cuerpo.
+- **Autoría:** 9 firmas que no coinciden con el autor de WordPress, 2 firmas en cuentas institucionales y las cuentas de solo texto (343 artículos de Evaristo Cultural, El Festivalón y Encuentro Internacional de Cultura Japonesa, más 29 de revistaseda, Anonimo, eva y Evaristo). Variantes del mismo crédito (por ejemplo "Luca Frondoni" y "lucafrondoni") se unifican a mano.
+- **`sin-asignar`:** repartir en una sección (103, incluidos el 22255 y el 22590).
+- **Borradores (48) y artículo privado 19300:** decidir si se publican o se eliminan, con la directora de la editorial. Mientras tanto quedan como BORRADOR (fecha de creación en `fecha_borrador`).
+- **Artículos con slug numérico (4265 y 15027)** y el 5360.
+- **Después del lanzamiento:** segunda pasada de fichas técnicas (~369 fichas escritas como texto).
+
+## 6. Dependen de la editorial o de otras especificaciones
+
+- **Confirmar con la editorial el modelo de secciones** (una sección más categorías y la marca de novedad, en vez de varias secciones a la vez) y el nombre "Asia".
+- **Qué muestra el sitio público para los artículos en `sin-asignar`** (propuesta: sin cintillo).
+- **Volanta:** el 61 % de los artículos migrados queda sin volanta (es opcional); mirar cómo se ve antes de decidir si hay que asignar más categorías.
+- **Reunión con la dueña de la editorial** para la portada: la especificación se pensó con cinco secciones y hay 17 (también topbar, footer y destacado). **Identidad visual del sitio público:** conservar, retocar o rediseñar, a hablar con la editorial antes de la plantilla del artículo.
+- **Especificaciones sin escribir:** navegación, buscador, páginas de sección y de categoría, y cómo se muestran las novedades. **Contador de visitas:** se guarda como histórico (`visitasWp`) y no se muestra.
+- **Fase 4, a no olvidar (reglas que la base no hace cumplir):** verificar `altPendiente` (aceptar la marca solo en imágenes que ya la tenían); exigir encabezado y texto alternativo en lo nuevo al publicar; **rechazar publicar un artículo con slug `borrador-…`**; **al pasar de BORRADOR a PUBLICADO**, proponer la fecha actual (`publicadoEn` null); respetar `imagenId` y `/media/<clave>` (no borrar una imagen en uso dentro del cuerpo; puntos focales entre 0 y 1); emails en minúsculas y sin espacios; categorías y autores con artículos no se borran (ofrecer "unir con otra"); no devolver `visitasWp` (`select` explícito); definir el hash de contraseñas y dónde viven las sesiones.
+- **Fases 3 y 7:** página 404 propia del sitio y redirecciones de las URLs viejas (hoy la ruta inexistente la responde Express con un texto simple).
