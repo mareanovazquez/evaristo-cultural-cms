@@ -21,7 +21,11 @@ Actualizado el 20/10/2026, 13:00. Resumen del reconocimiento de solo lectura de 
 - Decisiones mías, a revisar: la volanta va en su propia línea sobre el título, en Fraunces cursiva (decidido el 21/10/2026); las secciones internas (`sin-asignar`) no muestran cintillo; el texto alternativo pendiente del encabezado sale `alt=""` (los 32 con encabezado están pendientes); no hay `og:image` ni `canonical` en el `<head>` porque falta definir la URL base del sitio; las imágenes se sirven originales (no hay variantes de tamaño todavía, solo se ve el tamaño completo).
 - Los enlaces de autor (`/author/<slug>/`) dan 404 hasta el paso 5.
 
-**Próximo paso:** paso 5 (vista de autores y listado).
+**Paso 5 hecho (21/10/2026, rama `fase3-articulo`, sin mergear):** `/author/<slug>/` (`pages/author/[slug].astro`) y `/autores/` (`pages/autores.astro`), con `lib/autores.ts`. La página del autor muestra nombre (h1), foto o iniciales, bio (documento renderizado), redes y sus notas de la más nueva a la más vieja, de a 12 con `?pagina=N` (página inválida vale 1; fuera de rango, 404). Los autores de solo texto no tienen página (404); sin barra final redirige con 301. El listado trae a los autores con página y al menos una nota publicada, por orden alfabético del nombre, con su cantidad de notas (hoy 22 de 23: uno tiene solo un borrador). Redes: se acepta una dirección http(s) o un usuario (con o sin @), que se arma sobre instagram.com, x.com o facebook.com; lo demás se descarta, y los 25 autores migrados no tienen redes cargadas, así que el formato real lo va a fijar el panel (fase 4). Test: `npm run test:autores -- --originales="<carpeta>"` (23 con 200, 2 con 404, 34 enlaces de autor desde las notas resuelven, ninguna página contiene un correo).
+- Decisiones mías, a revisar: orden por nombre (no por apellido, porque no hay un campo de apellido); 12 notas por página (con los datos actuales no se ve la paginación, ningún autor pasa de 5 notas, así que esa parte no está probada con datos reales); sin foto se muestran las iniciales del nombre; el listado no incluye a los autores sin notas publicadas.
+- Los enlaces del menú y del footer a `Autores` ya funcionan.
+
+**Próximo paso:** paso 6 (redirecciones 301 de la muestra: los 58 orígenes).
 
 Antes de pegar cualquier prompt que use Prisma: comprobar el 3308 con `Test-NetConnection`. El prompt se pega desde `C:\Users\Usuario\Documents\Proyectos frontend`, sin push.
 
@@ -66,7 +70,7 @@ Antes de pegar cualquier prompt que use Prisma: comprobar el 3308 con `Test-NetC
 2. Tokens y layout base. **Hecho el 21/10/2026 (rama `fase3-renderizador`).** Corrección: la tipografía es Fraunces e Inter (no de sistema) y el modo oscuro es de segunda etapa; solo se nombran los tokens por función (bg, surface, text, border, accent).
 3. Ruta `/media/:clave` (propuesta de arriba). **Hecho el 21/10/2026 (rama `fase3-media`).**
 4. **Hecho el 21/10/2026 (rama `fase3-articulo`).** Vista del artículo (filtra `estado = PUBLICADO` y `publicadoEn <= ahora`; los 2 sin encabezado se muestran sin imagen de encabezado).
-5. Vista de autores (`/author/<slug>/`; 404 para los 2 de solo texto).
+5. **Hecho el 21/10/2026.** Vista de autores (`/author/<slug>/`; 404 para los 2 de solo texto).
 6. Redirecciones (middleware con 301; los 58 orígenes de la muestra).
 7. Build y prueba de humo (los 34 publicados responden 200 y el borrador 404).
 

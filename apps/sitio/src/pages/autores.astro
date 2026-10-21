@@ -1,0 +1,44 @@
+---
+import Base from "../layouts/Base.astro";
+import { posicionFocal, urlMedia } from "../lib/articulos";
+import { listarAutores } from "../lib/autores";
+
+// Listado de autores: los que tienen página y al menos una nota publicada, por orden alfabético.
+const autores = await listarAutores();
+const iniciales = (nombre: string) =>
+  nombre
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase() ?? "")
+    .join("");
+---
+
+<Base titulo="Autores" descripcion="Quiénes escriben en Evaristo Cultural.">
+  <section class="section col">
+    <h1 class="titulo-pagina">Autores</h1>
+    {
+      autores.length > 0 ? (
+        <ul class="lista-autores">
+          {autores.map((a) => (
+            <li>
+              <a href={`/author/${encodeURIComponent(a.slug)}/`}>
+                <span class="foto">
+                  {a.foto ? (
+                    <img src={urlMedia(a.foto.clave)} alt="" style={`object-position: ${posicionFocal(a.fotoPuntoFocalX, a.fotoPuntoFocalY)}`} loading="lazy" width="56" height="56" />
+                  ) : (
+                    <span aria-hidden="true">{iniciales(a.nombre)}</span>
+                  )}
+                </span>
+                <span class="nombre">{a.nombre}</span>
+                <span class="cuenta">{a._count.articulos === 1 ? "1 nota" : `${a._count.articulos} notas`}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p class="vacio">Todavía no hay autores para mostrar.</p>
+      )
+    }
+  </section>
+</Base>

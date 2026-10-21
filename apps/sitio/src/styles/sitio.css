@@ -577,3 +577,44 @@
 .bio-texto p:last-child {
   margin-bottom: 0;
 }
+
+/* Títulos de página, paginación y estados vacíos */
+.titulo-pagina {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 44px;
+  line-height: 1.15;
+  margin: 0 0 var(--space-6);
+}
+@media (max-width: 639px) {
+  .titulo-pagina {
+    font-size: 32px;
+    line-height: 1.2;
+  }
+}
+.vacio {
+  color: var(--text-muted);
+  font-size: 15px;
+}
+.paginacion {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-top: var(--space-10);
+  font-size: 15px;
+  color: var(--text-muted);
+}
+.paginacion a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* Bio en la página del autor (documento renderizado) */
+.autor-bio p {
+  margin: 0 0 var(--space-3);
+}
+.autor-bio p:last-child {
+  margin-bottom: 0;
+}

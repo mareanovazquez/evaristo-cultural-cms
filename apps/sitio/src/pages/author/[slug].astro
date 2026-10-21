@@ -1,0 +1,104 @@
+---
+import Base from "../../layouts/Base.astro";
+import Tarjeta from "../../components/Tarjeta.astro";
+import { renderArticleBody, type JSONNode } from "@evaristo/compartido/render";
+import { fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../../lib/articulos";
+import { buscarAutor, contarNotasDelAutor, enlacesDeRedes, NOTAS_POR_PAGINA, notasDelAutor, paginaPedida } from "../../lib/autores";
+
+// Página de un autor: /author/<slug>/ (la misma URL que tenía en WordPress). Los autores de solo texto no tienen página (404).
+// Las notas se paginan de a NOTAS_POR_PAGINA con ?pagina=N.
+const { slug } = Astro.params;
+const noEncontrado = () => new Response("No encontrado", { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+if (!slug) return noEncontrado();
+
+const autor = await buscarAutor(slug);
+if (!autor) return noEncontrado();
+
+const canonica = `/author/${encodeURIComponent(autor.slug)}/`;
+if (decodeURIComponent(Astro.url.pathname) !== decodeURIComponent(canonica)) {
+  return Astro.redirect(canonica + Astro.url.search, 301);
+}
+
+const total = await contarNotasDelAutor(autor.id);
+const paginas = Math.max(1, Math.ceil(total / NOTAS_POR_PAGINA));
+const pagina = paginaPedida(Astro.url.searchParams.get("pagina"));
+if (pagina > paginas) return noEncontrado();
+const notas = await notasDelAutor(autor.id, pagina);
+
+const bioHtml = autor.bio ? renderArticleBody(autor.bio as JSONNode).html : "";
+const redes = enlacesDeRedes(autor);
+const iniciales = autor.nombre
+  .split(/\s+/)
+  .filter(Boolean)
+  .slice(0, 2)
+  .map((p) => p[0]?.toUpperCase() ?? "")
+  .join("");
+const enlacePagina = (n: number) => (n === 1 ? canonica : `${canonica}?pagina=${n}`);
+---
+
+<Base titulo={pagina > 1 ? `${autor.nombre} (página ${pagina})` : autor.nombre}>
+  <section class="autor-cabecera">
+    <div class="foto">
+      {
+        autor.foto ? (
+          <img
+            src={urlMedia(autor.foto.clave)}
+            alt={autor.fotoAlt ?? ""}
+            style={`object-position: ${posicionFocal(autor.fotoPuntoFocalX, autor.fotoPuntoFocalY)}`}
+            width="160"
+            height="160"
+          />
+        ) : (
+          <span aria-hidden="true">{iniciales}</span>
+        )
+      }
+    </div>
+    <div>
+      <h1>{autor.nombre}</h1>
+      {bioHtml && <div class="autor-bio" set:html={bioHtml} />}
+      {
+        redes.length > 0 && (
+          <ul class="redes">
+            {redes.map((r) => (
+              <li>
+                <a href={r.href} rel="noopener noreferrer">
+                  {r.nombre} <svg class="icon" aria-hidden="true"><use href="#i-arrow-up-right" /></svg>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
+  </section>
+
+  <section class="autor-notas" aria-labelledby="notas-autor">
+    <h2 id="notas-autor">Notas de {autor.nombre}</h2>
+    {
+      notas.length > 0 ? (
+        <div class="grilla">
+          {notas.map((n) => (
+            <Tarjeta
+              href={rutaArticulo({ slug: n.slug, publicadoEn: n.publicadoEn! })}
+              titulo={n.titulo}
+              seccion={n.seccion.interna ? undefined : n.seccion.nombre}
+              imagen={n.imagenEncabezado ? { src: urlMedia(n.imagenEncabezado.clave), posicion: posicionFocal(n.encabezadoPuntoFocalX, n.encabezadoPuntoFocalY) } : undefined}
+              meta={fechaLarga(n.publicadoEn!)}
+            />
+          ))}
+        </div>
+      ) : (
+        <p class="vacio">Todavía no hay notas publicadas.</p>
+      )
+    }
+    {
+      paginas > 1 && (
+        <nav class="paginacion" aria-label="Páginas de notas">
+          {pagina > 1 ? <a href={enlacePagina(pagina - 1)} rel="prev">← Anterior</a> : <span></span>}
+          <span>Página {pagina} de {paginas}</span>
+          {pagina < paginas ? <a href={enlacePagina(pagina + 1)} rel="next">Siguiente →</a> : <span></span>}
+        </nav>
+      )
+    }
+  </section>
+</Base>
