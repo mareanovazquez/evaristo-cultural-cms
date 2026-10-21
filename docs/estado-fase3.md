@@ -12,7 +12,9 @@ Actualizado el 20/10/2026, 13:00. Resumen del reconocimiento de solo lectura de 
 - Provisorio y sin destino todavía: URLs de sección (`/seccion/<slug>/`) y de autores (`/autores/`), enlaces de la tienda, redes, "Quiénes somos" y "Contacto", y los textos del topbar y del footer. El botón de búsqueda de la maqueta no se implementó (no hay buscador).
 - No verificado: no se miró en un navegador (Claude Code no arranca servidores); solo typecheck y `build:sitio`.
 
-**Próximo paso:** mirar las páginas de prueba, sacar el correo de la bio del autor 39 y seguir con el paso 3 (`/media/<clave>`).
+**Paso 3 hecho (21/10/2026, rama `fase3-media`, sin mergear):** `apps/api/src/media.ts` sirve `GET`/`HEAD /media/<clave>` y `crearApp` la monta después de `/admin` y antes de los estáticos y el SSR. Configuración: `MEDIA_DIR` en el `.env` (ruta absoluta; sin ella, 503; está en `.env.example`). Como propuso el reconocimiento: la fila de `imagenes` decide el archivo (igualdad exacta en JavaScript); un solo segmento, sin `/`, `\`, NUL, `.`, `..` ni barras codificadas; tipos jpeg/png/gif/webp según `tipoMime`; `nosniff`; ETag con el SHA-256 y 304; `Cache-Control: public, max-age=86400`; 404 sin fila, sin archivo, carpeta u oculto; 405 con `Allow`; 400 si la codificación es inválida. Tests: `npm run test:media` (10, puros) y `npm run test:media-originales -- --originales="<carpeta>"` (base real en solo lectura: 200 de 200 imágenes con bytes y SHA-256 correctos; 172 de 172 de los cuerpos con 200). Las imágenes solo se ven con el servidor único (`npm run dev`, puerto 3000): `dev:sitio` (4321) no incluye la API.
+
+**Próximo paso:** decidir la URL del artículo (antes del paso 4), sacar el correo de la bio del autor 39 y seguir con el paso 4 (vista del artículo).
 
 Antes de pegar cualquier prompt que use Prisma: comprobar el 3308 con `Test-NetConnection`. El prompt se pega desde `C:\Users\Usuario\Documents\Proyectos frontend`, sin push.
 
@@ -55,7 +57,7 @@ Antes de pegar cualquier prompt que use Prisma: comprobar el 3308 con `Test-NetC
 0. Decisiones previas: URL del artículo y bio del 39.
 1. Exports de `compartido` y renderizador portado con tests y los 35 renderizados. **Hecho el 21/10/2026 (rama `fase3-renderizador`).**
 2. Tokens y layout base. **Hecho el 21/10/2026 (rama `fase3-renderizador`).** Corrección: la tipografía es Fraunces e Inter (no de sistema) y el modo oscuro es de segunda etapa; solo se nombran los tokens por función (bg, surface, text, border, accent).
-3. Ruta `/media/:clave` (propuesta de arriba).
+3. Ruta `/media/:clave` (propuesta de arriba). **Hecho el 21/10/2026 (rama `fase3-media`).**
 4. Vista del artículo (filtra `estado = PUBLICADO` y `publicadoEn <= ahora`; los 2 sin encabezado se muestran sin imagen de encabezado).
 5. Vista de autores (`/author/<slug>/`; 404 para los 2 de solo texto).
 6. Redirecciones (middleware con 301; los 58 orígenes de la muestra).

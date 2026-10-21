@@ -3,6 +3,7 @@ import { extname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import express, { type NextFunction, type Request, type RequestHandler, type Response } from "express";
 import { obtenerClientePrisma, type PrismaClient } from "@evaristo/compartido/db";
+import { crearManejadorMedia } from "./media.js";
 
 // Salida de `npm run build:sitio` (adaptador de Node de Astro, modo middleware).
 const dirSitioCompilado = fileURLToPath(new URL("../../sitio/dist/", import.meta.url));
@@ -15,7 +16,12 @@ const indicePanel = `${dirPanelCompilado}index.html`;
 
 type ManejadorAstro = (req: Request, res: Response, next: NextFunction) => void;
 
-export function crearApp(prisma: PrismaClient = obtenerClientePrisma()): express.Express {
+export interface OpcionesApp {
+  /** Carpeta de los originales de las imágenes. Por defecto, la variable MEDIA_DIR. */
+  dirMedia?: string | undefined;
+}
+
+export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones: OpcionesApp = {}): express.Express {
   const app = express();
 
   // Se carga una sola vez, la primera vez que hace falta y existe el build.
@@ -85,6 +91,16 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma()): express
       });
     });
   });
+
+  // (3b) Imágenes de la biblioteca: /media/<clave>. Va antes que los estáticos y el SSR.
+  app.use(
+    "/media",
+    crearManejadorMedia({
+      dirMedia: "dirMedia" in opciones ? opciones.dirMedia : process.env["MEDIA_DIR"] || undefined,
+      // select explícito: solo lo que la ruta necesita
+      buscar: (clave) => prisma.imagen.findMany({ where: { clave }, select: { clave: true, tipoMime: true, hash: true } }),
+    }),
+  );
 
   // (4) Archivos estáticos del cliente de Astro y, para todo lo demás, el SSR de Astro.
   app.use(express.static(dirCliente));

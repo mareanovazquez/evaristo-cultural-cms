@@ -207,6 +207,8 @@ Después abrir:
 | `npm run build:panel` | Compila el panel con Vite en `apps/panel/dist/` (no se versiona). |
 | `npm run dev:panel` | Servidor de desarrollo de Vite para el panel, con recarga en caliente (ver más abajo). |
 | `npm run dev:sitio` | `astro dev` del sitio solo, en http://127.0.0.1:4321, con recarga en caliente y el `.env` cargado. No incluye la API. |
+| `npm run test:media` | Pruebas puras de la ruta `/media/<clave>` (archivos temporales, sin base). |
+| `npm run test:media-originales -- --originales="<carpeta>"` | Comprueba `/media` contra la base real (solo lectura) y la carpeta de originales: bytes y SHA-256 de las 200 imágenes. |
 | `npm run start --workspace=@evaristo/api` | Arranca el servidor único sin compilar nada antes (pensado para producción). |
 
 > **Apagado ordenado:** el servidor atiende SIGINT y SIGTERM (cierra el servidor y desconecta Prisma), pero en Windows no se puede probar porque ahí las señales terminan el proceso sin pasar por los handlers. Se prueba en Linux al desplegar.
