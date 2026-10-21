@@ -12,6 +12,7 @@
     "test:media": "tsx src/tests/test-media.ts",
     "test:auth": "tsx src/tests/test-auth.ts",
     "test:auth-base": "tsx --env-file=../../.env src/tests/test-auth-base.ts",
+    "test:admin-articulos": "tsx --env-file=../../.env src/tests/test-admin-articulos-base.ts",
     "test:categorias": "tsx --env-file=../../.env src/tests/test-categorias.ts",
     "test:secciones": "tsx --env-file=../../.env src/tests/test-secciones.ts",
     "test:humo": "tsx --env-file=../../.env src/tests/test-humo.ts",

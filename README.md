@@ -221,6 +221,7 @@ Después abrir:
 | `npm run usuario:crear -- --base-dev --email=… --nombre=… --rol=EDITOR|ADMINISTRADOR` | Crea un usuario del panel; pide la contraseña por teclado. |
 | `npm run test:auth` | Pruebas de la autenticación (sin base). |
 | `npm run test:auth-base` | Ingreso y sesiones contra `evaristo_cms_dev` (crea y borra un usuario temporal). |
+| `npm run test:admin-articulos` | Listado de artículos del panel contra `evaristo_cms_dev` (crea y borra un usuario temporal). |
 | `npm run start --workspace=@evaristo/api` | Arranca el servidor único sin compilar nada antes (pensado para producción). |
 
 > **Apagado ordenado:** el servidor atiende SIGINT y SIGTERM (cierra el servidor y desconecta Prisma), pero en Windows no se puede probar porque ahí las señales terminan el proceso sin pasar por los handlers. Se prueba en Linux al desplegar.

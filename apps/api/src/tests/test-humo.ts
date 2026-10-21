@@ -133,6 +133,15 @@ try {
   if (panel) {
     const adm = await pedir("/admin/");
     if (adm.estado !== 200 || !String(adm.cabeceras["x-robots-tag"]).includes("noindex")) falla("/admin/", `dio ${adm.estado}, x-robots-tag ${String(adm.cabeceras["x-robots-tag"])}`);
+    // Las pantallas internas del panel (react-router) devuelven la misma página, y sus archivos se sirven
+    const interna = await pedir("/admin/ingresar");
+    if (interna.estado !== 200 || !interna.cuerpo.includes('<div id="root">')) falla("/admin/ingresar", `dio ${interna.estado}`);
+    const js = /src="(\/admin\/assets\/[^"]+\.js)"/.exec(adm.cuerpo)?.[1];
+    if (!js) falla("/admin/", "no enlaza un script del panel");
+    else if ((await pedir(js)).estado !== 200) falla(js, "no se sirve");
+    // Las rutas del panel de la API exigen sesión
+    const lista = await pedir("/api/admin/articulos");
+    if (lista.estado !== 401) falla("/api/admin/articulos", `sin sesión dio ${lista.estado}, se esperaba 401`);
   } else {
     console.log("Panel: omitido porque no está compilado (npm run build:panel); no es parte del sitio público.");
   }

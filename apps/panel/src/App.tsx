@@ -1,41 +1,39 @@
-import { useEffect, useState } from "react";
+import { Link, Navigate, Outlet, Route, Routes, useLocation } from "react-router";
+import { Estructura } from "./Estructura";
+import { Articulos } from "./paginas/Articulos";
+import { Ingreso } from "./paginas/Ingreso";
+import { useSesion } from "./sesion";
 
-type Estado =
-  | { tipo: "cargando" }
-  | { tipo: "ok"; filas: number }
-  | { tipo: "error" };
+// Todo lo que está adentro necesita una sesión; si no la hay, se va a la pantalla de ingreso y se vuelve acá después.
+function RutaProtegida() {
+  const { usuario } = useSesion();
+  const ubicacion = useLocation();
+  if (usuario === undefined) return <p className="cargando" role="status">Cargando…</p>;
+  if (usuario === null) return <Navigate to="/ingresar" replace state={{ desde: ubicacion.pathname + ubicacion.search }} />;
+  return <Outlet />;
+}
+
+function NoEncontrada() {
+  return (
+    <section className="pantalla">
+      <h1>No encontramos esa pantalla</h1>
+      <p>
+        <Link to="/">Volver a los artículos</Link>
+      </p>
+    </section>
+  );
+}
 
 export function App() {
-  const [estado, setEstado] = useState<Estado>({ tipo: "cargando" });
-
-  useEffect(() => {
-    const control = new AbortController();
-    fetch("/api/salud", { signal: control.signal })
-      .then((respuesta) => respuesta.json() as Promise<{ estado?: string; filas?: number }>)
-      .then((datos) => {
-        if (datos.estado === "ok" && typeof datos.filas === "number") {
-          setEstado({ tipo: "ok", filas: datos.filas });
-        } else {
-          setEstado({ tipo: "error" });
-        }
-      })
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        setEstado({ tipo: "error" });
-      });
-    return () => control.abort();
-  }, []);
-
   return (
-    <main className="pantalla">
-      <h1>Panel de Evaristo Cultural</h1>
-      <p>Prueba de conexión con la API</p>
-      <p className={`resultado resultado-${estado.tipo}`} role="status">
-        {estado.tipo === "cargando" && "Consultando…"}
-        {estado.tipo === "ok" && `La API responde correctamente (filas: ${estado.filas})`}
-        {estado.tipo === "error" && "No se pudo conectar con la API"}
-      </p>
-      <p className="nota">Texto de control: “Año nuevo”, canción, niño, ¿qué tal? — «cultura».</p>
-    </main>
+    <Routes>
+      <Route path="/ingresar" element={<Ingreso />} />
+      <Route element={<RutaProtegida />}>
+        <Route element={<Estructura />}>
+          <Route index element={<Articulos />} />
+          <Route path="*" element={<NoEncontrada />} />
+        </Route>
+      </Route>
+    </Routes>
   );
 }

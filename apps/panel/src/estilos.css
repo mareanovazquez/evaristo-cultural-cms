@@ -1,32 +1,88 @@
+/* Panel de administración: aspecto de herramienta de trabajo, neutro (decidido el 21/10/2026: no comparte la identidad del sitio).
+   Grises, un único color de acento para las acciones y colores de estado solo donde informan algo. */
 :root {
-  color-scheme: light dark;
-  font-family: system-ui, sans-serif;
+  --fondo: #f4f4f2;
+  --superficie: #ffffff;
+  --borde: #d6d6d2;
+  --borde-fuerte: #9a9a96;
+  --texto: #1d1d1b;
+  --texto-suave: #5b5b57;
+  --acento: #2b5d8f;
+  --acento-oscuro: #1f4670;
+  --peligro: #a8261d;
+  --peligro-fondo: #fceeed;
+  --alerta: #8a5300;
+  --alerta-fondo: #fdf4e3;
+  --ok: #1a6b3a;
+  --ok-fondo: #e8f4ec;
+  --radio: 4px;
+  color-scheme: light;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
-body {
-  margin: 0;
-}
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; background: var(--fondo); color: var(--texto); }
+h1 { font-size: 1.5rem; line-height: 1.25; margin: 0 0 1rem; }
+a { color: var(--acento); }
+a:hover { color: var(--acento-oscuro); }
+:focus-visible { outline: 2px solid var(--acento); outline-offset: 2px; }
+.solo-lectores { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.ayuda { color: var(--texto-suave); font-size: 0.9rem; }
+.cargando, .vacio { color: var(--texto-suave); padding: 1.5rem 1rem; text-align: center; }
+.pantalla { max-width: 40rem; margin: 0 auto; padding: 2rem 1rem; }
 
-.pantalla {
-  max-width: 40rem;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
+/* Barra superior y contenido */
+.barra { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; padding: 0.5rem 1rem; background: var(--superficie); border-bottom: 1px solid var(--borde); }
+.barra-titulo { font-weight: 600; color: var(--texto); text-decoration: none; }
+.barra-usuario { display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; color: var(--texto-suave); }
+.contenido { max-width: 80rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
 
-.resultado {
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
-  border: 1px solid currentColor;
-}
+/* Botones y campos */
+.boton { font: inherit; font-weight: 600; font-size: 0.9rem; min-height: 40px; padding: 0 1rem; border-radius: var(--radio); border: 1px solid transparent; cursor: pointer; }
+.boton:disabled { cursor: default; opacity: 0.6; }
+.boton-primario { background: var(--acento); color: #fff; }
+.boton-primario:hover:not(:disabled) { background: var(--acento-oscuro); }
+.boton-suave { background: var(--superficie); color: var(--texto); border-color: var(--borde-fuerte); }
+.boton-suave:hover:not(:disabled) { background: var(--fondo); }
+.campo { margin-bottom: 1rem; }
+.campo label { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 0.25rem; }
+input[type="email"], input[type="password"], input[type="search"], input[type="text"] { width: 100%; font: inherit; min-height: 44px; padding: 0 0.75rem; border: 1px solid var(--borde-fuerte); border-radius: var(--radio); background: var(--superficie); color: var(--texto); }
+input:hover { border-color: var(--texto); }
 
-.resultado-ok {
-  color: #1a7f37;
-}
+/* Avisos */
+.aviso { margin: 0 0 1rem; padding: 0.75rem 1rem; border-radius: var(--radio); border-left: 4px solid; font-size: 0.95rem; }
+.aviso-error { background: var(--peligro-fondo); border-color: var(--peligro); color: var(--peligro); }
 
-.resultado-error {
-  color: #cf222e;
-}
+/* Ingreso */
+.ingreso { min-height: 100vh; display: grid; place-items: center; padding: 1rem; }
+.ingreso-caja { width: 100%; max-width: 24rem; background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); padding: 1.5rem; }
+.ingreso-caja h1 { margin-bottom: 0.25rem; }
+.ingreso-caja .ayuda { margin: 0 0 1.25rem; }
+.ingreso-caja .boton { width: 100%; }
 
-.nota {
-  opacity: 0.7;
-}
+/* Listado */
+.busqueda { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+.busqueda input { flex: 1 1 14rem; width: auto; }
+.solapas { display: flex; flex-wrap: wrap; gap: 0.25rem; border-bottom: 1px solid var(--borde); margin-bottom: 1rem; }
+.solapa { font: inherit; font-size: 0.95rem; background: none; border: 0; border-bottom: 3px solid transparent; padding: 0.5rem 0.75rem; min-height: 44px; color: var(--texto-suave); cursor: pointer; }
+.solapa:hover { color: var(--texto); }
+.solapa[aria-current="true"] { color: var(--texto); font-weight: 600; border-bottom-color: var(--acento); }
+.solapa-cantidad { margin-left: 0.4rem; font-size: 0.8rem; background: var(--borde); border-radius: 999px; padding: 0.05rem 0.5rem; color: var(--texto); }
+.tabla-envoltorio { overflow-x: auto; background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); }
+.cargando-tabla { opacity: 0.6; }
+.tabla { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.tabla th { text-align: left; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--texto-suave); padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--borde); background: var(--fondo); white-space: nowrap; }
+.tabla td { padding: 0.65rem 0.75rem; border-bottom: 1px solid var(--borde); vertical-align: top; }
+.tabla tr:last-child td { border-bottom: 0; }
+.celda-titulo { min-width: 18rem; }
+.titulo-articulo { display: block; font-weight: 600; }
+.ver-en-sitio { font-size: 0.85rem; }
+.etiqueta { display: inline-block; font-size: 0.75rem; border-radius: var(--radio); padding: 0.1rem 0.5rem; margin: 0.25rem 0.5rem 0 0; }
+.etiqueta-alerta { background: var(--alerta-fondo); color: var(--alerta); }
+.estado { display: inline-block; font-size: 0.8rem; font-weight: 600; border-radius: var(--radio); padding: 0.1rem 0.5rem; white-space: nowrap; }
+.estado-publicado { background: var(--ok-fondo); color: var(--ok); }
+.estado-borrador { background: var(--borde); color: var(--texto); }
+.estado-programado { background: var(--alerta-fondo); color: var(--alerta); }
+.paginacion { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: 1rem; font-size: 0.9rem; color: var(--texto-suave); }

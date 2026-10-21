@@ -42,13 +42,13 @@ Lo que ya resuelve: títulos H2 a H4 en una línea (`titulo.ts`), citas textual 
 1. **Hash de contraseñas: `scrypt` de `node:crypto`** (sin dependencia nueva).
 2. **Sesiones: tabla propia `sesiones` en la base** (código aleatorio de 32 bytes guardado como SHA-256, cookie `httpOnly` y `SameSite=Strict`, vencimiento y cierre en el servidor). Sin `express-session`.
 3. **Dependencias aceptadas** (versiones exactas): `zod`, `helmet` y `express-rate-limit` (paso 1); `multer` y `sharp` (imágenes); paquetes de TipTap y `jsdom` (editor y sus tests); `react-router` (panel).
+5. **Diseño del panel: estilo propio y neutro** (decidido el 21/10/2026): no comparte la identidad ni los tokens del sitio. Grises, un único acento azul para las acciones y colores de estado solo donde informan algo (`apps/panel/src/estilos.css`).
 4. **Enrutado del panel: `react-router`** (decidido el 21/10/2026; es la preferencia de Mariano para las aplicaciones de React). Se instala con versión exacta, revisando antes la fecha de publicación.
 
 ## Decisiones pendientes (a plantear de a una)
 
 1. **Autoguardado de un artículo PUBLICADO.** Si se autoguarda directo sobre la fila, cada tecla cambia lo que ve el público. Opciones: no autoguardar los publicados (guardar con botón), o un "borrador de cambios" separado que se aplica al publicar de nuevo (mejor para el editor, más trabajo y una migración).
 2. **Ediciones simultáneas.** Recomendado: bloqueo optimista con `actualizadoEn`: si otra persona guardó mientras tanto, el servidor rechaza y avisa, en vez de pisar.
-3. **Diseño del panel.** El panel usa los tokens y componentes de `decisiones-de-diseno.md` (botones, formularios con etiqueta flotante, avisos); decidir si comparte la hoja de estilos del sitio.
 
 ## Orden propuesto
 
@@ -77,6 +77,14 @@ Autenticación de la API, sobre `evaristo_cms_dev`:
 
 Limitaciones conocidas: el límite de intentos vive en memoria (se reinicia con el servidor) y detrás de un proxy hay que configurar `trust proxy` para que cuente la dirección real; no hay recuperación de contraseña ni cierre de todas las sesiones de un usuario; la sesión no se renueva con el uso (12 horas fijas).
 
+## Paso 2 hecho (21/10/2026, rama `fase4-panel`, sin mergear)
+
+- **API:** `GET /api/admin/articulos` (`src/admin/articulos.ts`), protegida por sesión (editor o administrador) y por la revisión de origen. Filtro por estado, búsqueda por título (sin distinguir mayúsculas ni tildes), 25 por página, ordenado por última edición, con la cantidad por estado para las solapas. Devuelve solo lo que la pantalla muestra (sin cuerpo, `visitasWp` ni texto plano) y la dirección pública del artículo si ya se ve en el sitio.
+- **Panel:** `react-router` 8.4.0 (versión exacta; la 8.5.0 tenía 2 días), `BrowserRouter` con `basename="/admin"`. Pantallas: ingreso (`paginas/Ingreso.tsx`), marco con la barra superior y el botón Salir (`Estructura.tsx`) y el listado de artículos con solapas por estado, búsqueda y paginación (`paginas/Articulos.tsx`). Todo lo que no es el ingreso exige sesión (`RutaProtegida`); si el servidor responde 401, se vuelve al ingreso y después a la misma pantalla. Los mensajes de error están en lenguaje común (`api.ts`). El listado todavía no abre ningún artículo: el editor es el paso 4.
+- **Tests:** `npm run test:admin-articulos` (contra `evaristo_cms_dev`, con usuario temporal: sin sesión 401; totales, solapas, estados, paginación sin repetidos, orden, búsqueda, filtros inválidos y que la respuesta no traiga campos de más). La prueba de humo ahora también comprueba que Express sirve el panel y sus rutas internas, sus archivos, y que la API del panel exige sesión.
+- **No hay pruebas de las pantallas del panel** (no hay entorno de pruebas de React en el repo): solo typecheck y build; hay que mirarlas en el navegador.
+- Para verlo: `npm run build:panel`, crear un usuario con `npm run usuario:crear -- --base-dev …`, `npm run dev:desarrollo -w @evaristo/api` y abrir `http://127.0.0.1:3000/admin/`. Con recarga en caliente: la API como antes y `npm run dev:panel` (`http://127.0.0.1:5173/admin/`).
+
 ## Estado
 
-Reconocimiento y paso 1 hechos el 21/10/2026. Próximo paso: el paso 2 (panel: pantalla de ingreso, estructura y listado de artículos en solo lectura), que necesita la decisión sobre el enrutado del panel (6) y el diseño del panel (8).
+Reconocimiento y pasos 1 y 2 hechos el 21/10/2026. Próximo paso: el paso 3 (mover `textoPlanoDe` a `src`, agregar `conCapital` y la API para leer, crear y editar artículos), que necesita las decisiones 1 (autoguardado de publicados) y 2 (ediciones simultáneas).
