@@ -4,7 +4,9 @@ Actualizado el 20/10/2026, 13:00. Resumen del reconocimiento de solo lectura de 
 
 ## Dónde quedamos
 
-Todas las decisiones necesarias para el primer paso están tomadas. Lo único que falta es **armar el prompt para Claude Code del paso 1** (portar el renderizador del cuerpo con tests y renderizar los 35 artículos). Hay que pedirlo al empezar la próxima sesión.
+**Paso 1 hecho (21/10/2026, rama `fase3-renderizador`, sin merge ni push):** `@evaristo/compartido` exporta `./schema` y `./render`; el renderizador está en `packages/compartido/src/render/render.ts` (opciones `conCapital`, `prefijoIds`, `dimensionesImagenes`; constante `SPRITE_ICONO_VOLVER` para que el layout la incluya una vez por página). Tests: `npm run test:render` (38, puros), `npm run test:render-35` (lee `evaristo_cms` en el 3308, solo SELECT y sesión READ ONLY) y `npm run render:preview-35 -- --originales=<carpeta>` (páginas en `CMS-EVARISTO(ASSETS)\previews-fase3\`, con CSS neutro). El validador admite títulos H2 a H4; el renderizador acota a 2..6. El esquema no valida los atributos de `cita` (`variante`, `autor`, `fuente`), y `autor` y `fuente` son texto plano: una llamada a nota en la atribución de una cita destacada no es posible hoy, solo dentro del texto de la cita.
+
+**Próximo paso:** revisar las vistas previas, mergear la rama y seguir con el paso 2 (tokens y layout base).
 
 Antes de pegar cualquier prompt que use Prisma: comprobar el 3308 con `Test-NetConnection`. El prompt se pega desde `C:\Users\Usuario\Documents\Proyectos frontend`, sin push.
 
@@ -45,7 +47,7 @@ Antes de pegar cualquier prompt que use Prisma: comprobar el 3308 con `Test-NetC
 ## Plan por pasos (del informe, con dos correcciones)
 
 0. Decisiones previas: URL del artículo y bio del 39.
-1. Exports de `compartido` y renderizador portado con tests y los 35 renderizados. **Es el próximo paso.**
+1. Exports de `compartido` y renderizador portado con tests y los 35 renderizados. **Hecho el 21/10/2026 (rama `fase3-renderizador`).**
 2. Tokens y layout base. Corrección: la tipografía es Fraunces e Inter (no de sistema) y el modo oscuro es de segunda etapa; solo se nombran los tokens por función (bg, surface, text, border, accent).
 3. Ruta `/media/:clave` (propuesta de arriba).
 4. Vista del artículo (filtra `estado = PUBLICADO` y `publicadoEn <= ahora`; los 2 sin encabezado se muestran sin imagen de encabezado).
