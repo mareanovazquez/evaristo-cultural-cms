@@ -24,14 +24,8 @@ const hayMeta = autores.length > 0 || fecha;
 
 <article class="section nota">
   <header class="col">
-    {
-      (seccion || volanta) && (
-        <p class="rotulos">
-          {seccion && <span class="etiqueta">{seccion}</span>}
-          {volanta && <span class="volanta">{volanta}</span>}
-        </p>
-      )
-    }
+    {seccion && <p class="rotulos"><span class="etiqueta">{seccion}</span></p>}
+    {volanta && <p class="volanta">{volanta}</p>}
     <h1>{titulo}</h1>
     {bajada && <p class="bajada">{bajada}</p>}
     {

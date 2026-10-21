@@ -32,6 +32,7 @@ La paleta tiene tres colores: un acento verde agua, un blanco cálido y un negro
 | 21/10/2026 | Cita destacada | Caja con fondo accent-50, barra de 4px y comilla decorativa en #67beb0 (variante A; ver Tokens tipográficos) |
 | 21/10/2026 | Sección del artículo | Etiqueta rectangular suave: fondo accent-100, texto accent-900 y esquinas de 4px (ver Etiqueta de sección) |
 | 21/10/2026 | Menú del header | Seis secciones visibles (Entrevista, Reseña, Ensayo, Crónica, Crítica, Rastros), desplegable "Más" con el resto y "Autores"; en celular, un botón abre un panel con todas. Propuesta en `referencias/maquetas/header-footer-autor.html`, con textos provisorios hasta que la editorial defina contenido, logo y menú |
+| 21/10/2026 | Volanta | Línea propia pegada al título, debajo del cintillo: Fraunces cursiva 18px, peso 400, accent-800 (5,7:1). Se distingue del cintillo (Inter, mayúsculas, caja) sin sumar recursos nuevos |
 | 21/10/2026 | Imagen de encabezado del artículo | Proporción fija 3:2, con recorte según el punto focal; en celular, de borde a borde |
 | 21/10/2026 | Fuentes | Fraunces e Inter desde Google Fonts, como en las maquetas |
 | 21/10/2026 | Marca (wordmark) | "EVARISTO" en Roboto Black (900) con el negro #231f20, seguido de "CULTURAL" o "EDITORIAL" en Roboto SemiBold (600) con border-strong #a6a5a4, todo en mayúsculas y con interletrado apretado (`letter-spacing: -0.02em`, valor propuesto para ajustar). Es la única excepción a "sin Roboto": vale solo para la marca, no para botones ni menús. Ojo: #a6a5a4 sobre el fondo da 2,4:1, aceptable para un logotipo pero no para texto corriente |
@@ -54,6 +55,7 @@ Una fila por rol; la familia ya está definida para títulos, cuerpo y botones, 
 | Letra capital | Fraunces | 3 líneas de alto | 600 | normal | n/a | izquierda |
 | Botón | Inter | 15px | 600 | normal | 1,2 | centro |
 | Etiqueta | Inter | 12px | 600 | normal | 1,2 | izquierda |
+| Volanta | Fraunces | 18px | 400 | italic | 1,3 | izquierda |
 | Link | Inter | heredado | 500 | normal | heredado | heredada |
 
 La cita destacada (`blockquote.cita`, atribución en `cite`) es una caja con acento, decidida el 21/10/2026 (variante A, a pedido de la directora, que vio el diseño "lavado"): fondo accent-50 #ecf6f3, barra izquierda de 4px en #67beb0, `border-radius: 4px` y relleno de 24px (16px en celular). Lleva una comilla de apertura decorativa en Fraunces 72px, #67beb0, generada por CSS (`::before`, fuera del árbol de accesibilidad). Su atribución va en Inter 14px, #656262 (unos 5,6:1 sobre el fondo), precedida por un guion largo. Los valores son propuestos para revisar.
