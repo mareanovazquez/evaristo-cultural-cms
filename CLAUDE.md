@@ -37,4 +37,4 @@ Leer solo lo que la tarea necesite.
 | `docs/glosario-comandos-bases.md` | Comandos para iniciar y detener las bases en Windows. |
 | `docs/historico/prueba-inicial.md` | Prueba de TipTap y del conversor; la sección 5.5 es la normalización de títulos. Histórico. |
 | `referencias/maquetas/` | Muestras HTML. `nota-con-notas-al-pie.html` es la vigente, `index.html` el conjunto de componentes. Solo para trabajo visual. |
-| `referencias/datos/` | `muestra-convertida.json` (30 artículos, ~1,5 MB: la muestra original, sin los 5 de la ampliación) y `avisos-por-articulo.csv` (resumen por artículo, sin la columna `revision_humana`). **No leer** salvo pedido expreso: son salidas de referencia del conversor. |
+| `referencias/datos/` | `muestra-convertida.json` (30 artículos, ~1,5 MB: la muestra original, sin los 5 de la ampliación) y `avisos-por-articulo.csv` (resumen por artículo, sin la columna `revision_humana`). **No leer** salvo pedido expreso: son salidas de referencia del conversor. Los correos están tapados con `[correo omitido]`. |
