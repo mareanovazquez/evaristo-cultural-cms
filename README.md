@@ -26,6 +26,19 @@ CMS propio de la revista Evaristo Cultural, pensado para reemplazar el WordPress
 
 > Las claves y el archivo `.env` nunca se commitean. Solo se versiona `.env.example`, con valores de relleno.
 
+## Variables de entorno (`.env`)
+
+| Variable | Para qué sirve |
+| --- | --- |
+| `DATABASE_URL` | La base real (`evaristo_cms`). Prisma, el sitio, los tests de lectura. |
+| `SHADOW_DATABASE_URL` | La base shadow que usa Prisma al crear migraciones. |
+| `DATABASE_URL_DEV` | La base de desarrollo del panel y la API (`evaristo_cms_dev`). Se usa con `--base-dev`. |
+| `DATABASE_URL_MIGRACION` | Usuario de escritura de la migración (ver más abajo). |
+| `MEDIA_DIR` | Carpeta con los originales de las imágenes (ruta absoluta). Sin ella, `/media/<clave>` responde 503. |
+| `PORT` | Puerto del servidor único (3000 por defecto). |
+| `NODE_ENV` | Con `production` la cookie de sesión lleva `Secure`. |
+| `PRUEBA_LAYOUT` | Con `1`, habilita `/prueba-layout/` fuera de `astro dev` (página temporal de pruebas). |
+
 ## Crear las bases en MySQL
 
 Ejecutá esto con un usuario administrador de MySQL, reemplazando `CAMBIAR_CLAVE` por la clave elegida:
@@ -147,7 +160,9 @@ Hoy el esquema tiene el núcleo del contenido y sus complementos:
 | `imagenes` | Biblioteca de imágenes: clave del archivo original (ruta relativa en el almacenamiento), nombre original, tipo, medidas, tamaño, hash SHA-256 e id del adjunto de WordPress. |
 | `articulos_galeria` | Galería de cada artículo: imagen, orden, texto alternativo y epígrafe. |
 | `fichas_tecnicas` | Ficha técnica del libro reseñado (una por artículo; todos los campos son opcionales). |
-| `usuarios` | Usuarios del panel, con rol `EDITOR` o `ADMINISTRADOR`. Todavía no tienen sesiones ni inicio de sesión. |
+| `usuarios` | Usuarios del panel, con rol `EDITOR` o `ADMINISTRADOR` y la contraseña con `scrypt`. Se crean con `npm run usuario:crear`. |
+| `sesiones` | Sesiones del panel: solo el SHA-256 del código de la cookie, el usuario y el vencimiento. |
+| `articulos_borradores` | Cambios sin publicar de un artículo ya publicado (una fila por artículo): el autoguardado del panel va acá y el sitio sigue mostrando lo publicado. |
 | `redirecciones` | Redirecciones desde las URLs viejas de WordPress hacia un artículo, un autor o un destino manual. |
 
 Columnas nuevas en `articulos`: imagen de encabezado (con texto alternativo, crédito y punto focal), datos para redes (descripción e imagen que reemplazan a la bajada y al encabezado) y `altPendientes`, la cantidad de imágenes con texto alternativo pendiente. En `autores`: foto (con texto alternativo y punto focal).
@@ -171,9 +186,15 @@ El texto alternativo del encabezado, de la galería y de la foto del autor vive 
 | `npm run db:sembrar` | Carga las 18 secciones (definidas en `packages/compartido/src/secciones.ts`). Es idempotente: se puede correr las veces que haga falta sin duplicar ni cambiar ids. |
 | `npm run db:probar-modelo` | Prueba el modelo contra la base real: relaciones, orden de autores, fechas en UTC, cuerpos grandes, imágenes y sus usos, ficha técnica, usuarios, redirecciones, restricciones y unicidad. Todo lo que crea lo borra al final y no toca las secciones sembradas. |
 
-### Fase 4: API de artículos (pendiente)
+### API del panel (fase 4)
 
-- La API de artículos no debe devolver `visitasWp` hacia el sitio ni hacia el panel. Hay que usar `select` explícito en cada consulta y no devolver el artículo completo.
+Todas las rutas de `/api/admin` exigen una sesión de editor o administrador y que el pedido venga del propio sitio:
+
+- `GET /api/admin/articulos` (filtro por estado, búsqueda por título y paginación), `GET /api/admin/articulos/:id`, `POST /api/admin/articulos` (siempre crea un BORRADOR), `PUT /api/admin/articulos/:id` (cada guardado manda la `version` que se abrió; si otra persona guardó antes, responde 409 y no pisa nada), `DELETE /api/admin/articulos/:id/borrador` (descarta los cambios sin publicar) y `GET /api/admin/catalogos`.
+- Un BORRADOR se guarda directo; uno publicado o programado va a su borrador de cambios y se ve en el sitio recién cuando se publica.
+- Ingreso: `POST /api/auth/ingresar`, `POST /api/auth/salir` y `GET /api/auth/yo`.
+- La API nunca devuelve `visitasWp`: hay que usar `select` explícito en cada consulta y no devolver el artículo completo.
+- Detalle y decisiones en `docs/estado-fase4.md`.
 
 ## Servidor único (Express 5 + Panel + Astro)
 
@@ -195,8 +216,8 @@ Todo corre en **un solo proceso de Node** (`apps/api`):
 
 Después abrir:
 
-- http://127.0.0.1:3000/ : página de prueba del sitio, con las filas de `PruebaConexion` leídas de MySQL (o "Sin filas de prueba") y un texto con ñ, tildes y comillas tipográficas para comprobar la codificación UTF-8.
-- http://127.0.0.1:3000/admin/ : el panel de administración (hoy, solo una pantalla de prueba).
+- http://127.0.0.1:3000/ : el sitio (hoy, los 12 últimos artículos publicados; la portada real es la fase 5). Los artículos están en `/AAAA/MM/DD/slug/`, los autores en `/author/<slug>/`, las secciones en `/seccion/<slug>/` y las categorías en `/categoria/<slug>/`.
+- http://127.0.0.1:3000/admin/ : el panel de administración (ingreso y listado de artículos).
 - http://127.0.0.1:3000/api/salud : responde `{"estado":"ok","filas":N}`, o 503 con `{"estado":"error"}` si la base falla.
 
 | Comando | Para qué sirve |
@@ -231,7 +252,9 @@ Después abrir:
 
 ## Panel de administración (/admin)
 
-El panel es una app React + Vite + TypeScript (`apps/panel`). **Hoy es solo una pantalla de prueba** que consulta `/api/salud` y muestra si la API responde; todavía no tiene login, rutas internas ni editor.
+El panel es una app React + Vite + TypeScript con `react-router` (`apps/panel`). **Hoy tiene la pantalla de ingreso y el listado de artículos** (con solapas por estado, búsqueda y paginación); todavía no abre ni edita artículos (el editor es el paso 4 de la fase 4, ver `docs/estado-fase4.md`).
+
+**Para probarlo en desarrollo** (contra la base `evaristo_cms_dev`, que se arma según `docs/glosario-comandos-bases.md`): `npm run build:panel`; crear un usuario con `npm run usuario:crear -- --base-dev --email=<email> --nombre="<nombre>" --rol=ADMINISTRADOR` (pide la contraseña por teclado); arrancar la API con `npm run dev:desarrollo --workspace=@evaristo/api` y abrir http://127.0.0.1:3000/admin/.
 
 - **En producción:** `npm run build:panel` genera `apps/panel/dist/` y el mismo servidor Express lo sirve en http://127.0.0.1:3000/admin/. `/admin` (sin barra) redirige a `/admin/`, y cualquier ruta interna sin extensión (por ejemplo `/admin/articulos`) devuelve el `index.html` del panel. Una ruta con extensión que no existe da 404. Si el panel no está compilado, `/admin` responde 503 con "Falta compilar el panel: corré npm run build:panel"; el sitio y la API siguen funcionando, y el servidor lo comprueba en cada pedido, así que no hace falta reiniciarlo después de compilar.
 - **En desarrollo, con proxy:** con el servidor Express arriba (`npm run dev` o `npm run start --workspace=@evaristo/api`), correr `npm run dev:panel` en otra terminal. Vite queda en http://127.0.0.1:5173/admin/ con recarga en caliente y reenvía `/api` al puerto 3000. El puerto 5173 es fijo: si está ocupado, Vite falla en lugar de cambiar de puerto.

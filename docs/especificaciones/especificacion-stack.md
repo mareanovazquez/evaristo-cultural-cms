@@ -70,7 +70,7 @@ el resto   → páginas de Astro renderizadas en el servidor
 Middleware previstos:
 
 - **helmet:** cabeceras de seguridad.
-- **express-session** con cookies httpOnly: sesión del panel (más simple y seguro que JWT para pocos editores).
+- **Sesiones del panel** (decidido el 21/10/2026): tabla propia `sesiones` en MySQL con cookie `httpOnly` y `SameSite=Strict`, sin `express-session` (más simple y seguro que JWT para pocos editores). Contraseñas con `scrypt` de Node.
 - **express-rate-limit:** límite de intentos en el login.
 - **multer + sharp:** subida y procesamiento de imágenes.
 - **zod:** validación de lo que llega del panel (artículos, fichas técnicas, autores).
@@ -121,11 +121,13 @@ Lo que se deja listo desde el inicio:
 1. **Hosting:** proveedor del VPS, dominio y certificado.
 2. **Almacenamiento de imágenes:** disco del servidor o almacenamiento de objetos (tipo S3 / R2).
 3. **Despliegue:** PM2, Docker u otro; si hay entorno de pruebas además de producción.
-4. **Dónde se guardan las sesiones** del panel (MySQL o memoria).
-5. **Envío de correos** (recuperación de contraseña), si hace falta.
+4. **Envío de correos** (recuperación de contraseña), si hace falta.
 
 ### Decididos
 
+- **Sesiones del panel** en una tabla de MySQL (`sesiones`) y **hash de contraseñas** con `scrypt` (21/10/2026).
+- **Enrutado del panel:** `react-router` (21/10/2026).
+- **Base de desarrollo** separada de la real (`evaristo_cms_dev`).
 - **Lenguaje:** TypeScript (sección 3).
 - **Editor de texto:** TipTap, a confirmar con la prueba de la fase 0 (sección 5).
 - **Formato del cuerpo:** JSON estructurado, renderizado a HTML al mostrar (sección 6).

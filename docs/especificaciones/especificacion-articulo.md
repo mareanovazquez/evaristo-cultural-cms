@@ -1,6 +1,6 @@
 # Revista cultural Evaristo: especificación del artículo (vista individual) y autores
 
-Estado: cerrada la parte del artículo y la de autores (ficha, bio, página de autores y página individual de autor). Pendientes: navegación, buscador y páginas de sección y categoría. La portada (Home) tiene su propia especificación (`especificacion-home.md`), que asume cinco secciones y hay que replantear (ver sección 12). Actualizada el 13/10/2026 con la regla de secciones y la categoría principal ya implementadas en el conversor, el inventario de metadatos de WordPress y la decisión sobre el contador de visitas (secciones 12 y 13). Antes, el 9/10/2026: respuesta de la editorial sobre secciones y categorías (secciones 2, 3, 9, 12 y 13), decisión de autoría (8.5 y 13.1) y resultado de la validación de lo migrado (13.2). Y el 5/10/2026: el cuerpo admite imágenes, videos, tablas simples y salto de línea (sección 4), la migración se redefine con las cifras reales (sección 13) y se decide cómo tratar las imágenes migradas sin texto alternativo (secciones 4 y 13.2).
+Estado: cerrada la parte del artículo y la de autores (ficha, bio, página de autores y página individual de autor). Pendientes: navegación definitiva y buscador. *Nota del 21/10/2026: el sitio ya tiene la vista del artículo, las páginas de autor, de sección y de categoría y el listado de autores (ver `estado-fase3.md`); las de sección y categoría se hicieron sin especificación aparte (de la más nueva a la más vieja, 12 por página) y se ajustan si la editorial pide otra cosa.* La portada (Home) tiene su propia especificación (`especificacion-home.md`), que asume cinco secciones y hay que replantear (ver sección 12). Actualizada el 13/10/2026 con la regla de secciones y la categoría principal ya implementadas en el conversor, el inventario de metadatos de WordPress y la decisión sobre el contador de visitas (secciones 12 y 13). Antes, el 9/10/2026: respuesta de la editorial sobre secciones y categorías (secciones 2, 3, 9, 12 y 13), decisión de autoría (8.5 y 13.1) y resultado de la validación de lo migrado (13.2). Y el 5/10/2026: el cuerpo admite imágenes, videos, tablas simples y salto de línea (sección 4), la migración se redefine con las cifras reales (sección 13) y se decide cómo tratar las imágenes migradas sin texto alternativo (secciones 4 y 13.2).
 
 ## 1. Principios
 
@@ -156,9 +156,9 @@ Hoy no se construye. El modelo queda abierto para sumarlo sin tocar lo ya cargad
 - **Portada:** `especificacion-home.md` se pensó con cinco secciones (reseña, ensayo, crítica, entrevista, crónica). Con 17 secciones hay que replantear los bloques antes de la reunión con la editorial.
 - Página de autores (propuestas, sin confirmar):
   - Orden del listado: alfabético por apellido (alternativas: por cantidad de artículos o por último publicado).
-  - Qué muestra cada autor en el listado: foto y nombre, y quizás una línea corta de la bio.
+  - Qué muestra cada autor en el listado: foto (o iniciales) y nombre, con la cantidad de notas. *(Hecho el 21/10/2026, a revisar.)*
   - Autores sin artículos publicados: no aparecen en el listado.
-  - Dónde se enlaza el listado: en el menú o el footer, a definir con la navegación.
+  - Dónde se enlaza el listado: en el desplegable "Más" del menú y en el footer. *(Hecho el 21/10/2026, a revisar.)*
   - Si la lista de artículos de un autor se pagina cuando son muchos.
 
 Decidido el 5/10/2026:

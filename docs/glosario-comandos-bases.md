@@ -90,8 +90,14 @@ Para ejecutar varias sentencias juntas: Execute All (`Ctrl+Shift+Enter`, el rayo
 | Usuario | Permisos | Uso |
 |---|---|---|
 | `root` | todos | Administración desde Workbench |
-| `evaristo` | `ALL` sobre `evaristo_cms`, `evaristo_cms_shadow` y `evaristo_cms_test` | Prisma (migraciones), CMS, tests con base |
-| `evaristo_migracion` | `SELECT`, `INSERT`, `UPDATE`, `DELETE` sobre `evaristo_cms` (sin DDL) | Solo el comando de escritura de la migración. Credenciales en la variable `DATABASE_URL_MIGRACION` del `.env` (nunca en el repo ni en el chat) |
+| `evaristo` (host `localhost`) | `ALL` sobre `evaristo_cms`, `evaristo_cms_shadow`, `evaristo_cms_test` y `evaristo_cms_dev` | Prisma (migraciones), CMS, tests con base, desarrollo del panel |
+| `evaristo_migracion` | `SELECT`, `INSERT`, `UPDATE`, `DELETE` sobre `evaristo_cms` y `evaristo_cms_test` (sin DDL) | Solo el comando de escritura de la migración. Credenciales en la variable `DATABASE_URL_MIGRACION` del `.env` (nunca en el repo ni en el chat) |
+
+## Migraciones y la base de desarrollo
+
+- `db:nueva`, `db:deploy` y `db:generate` leen `DATABASE_URL` del `.env`. Para aplicar una migración a otra base sin tocar el `.env`, definir `DATABASE_URL` solo para ese comando (en PowerShell: `$env:DATABASE_URL = "<url>"; npm run db:deploy; Remove-Item Env:DATABASE_URL`), y comprobar siempre el nombre de la base antes. Se aplican a `evaristo_cms_dev` y a `evaristo_cms_test` cuando cambia el esquema; **a `evaristo_cms` (la real) no, hasta la fase 7**.
+- `npm run dev:desarrollo -w @evaristo/api` y `npm run usuario:crear -- --base-dev …` usan `evaristo_cms_dev` (`--base-dev`); las pruebas `test:auth-base`, `test:admin-articulos` y `test:admin-edicion` solo corren contra ella.
+- El cliente de MySQL y `mysqldump` no están en el PATH: están en `C:\Program Files\MySQL\MySQL Server 8.4\bin`.
 
 ## Claude Code
 

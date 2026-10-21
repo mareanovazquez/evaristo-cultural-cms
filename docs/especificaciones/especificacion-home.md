@@ -1,6 +1,6 @@
 # Revista cultural Evaristo: especificación de la portada (Home)
 
-Estado: borrador para llevar a reunión con la editorial. Cerrado el artículo (ver `especificacion-articulo.md`). Pendientes: navegación, buscador, páginas de sección, categoría y autor.
+Estado: borrador para llevar a reunión con la editorial. Cerrado el artículo (ver `especificacion-articulo.md`). Pendientes: navegación definitiva y buscador (las páginas de sección, categoría y autor ya están hechas en el sitio, ver `estado-fase3.md`). Hoy `/` muestra provisoriamente los 12 últimos artículos; la portada real espera la reunión con la editorial.
 
 ## 1. Principios
 

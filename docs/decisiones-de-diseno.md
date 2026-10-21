@@ -10,6 +10,8 @@ El CMS evita las roturas de plugins, temas y PHP de WordPress. Hay 2.637 artícu
 
 La identidad visual del sitio se define acá. Los colores, la tipografía, el espaciado y los componentes sirven de base para escribir las hojas de variables del frontend. El criterio general es de revista y no de blog: todos los artículos se ven iguales y se leen en una sola columna.
 
+> El panel de administración **no** usa estas decisiones: tiene un estilo propio y neutro (decidido el 21/10/2026, ver `estado-fase4.md`). Lo de acá es para el sitio público.
+
 ## Decisiones tomadas
 
 La paleta tiene tres colores: un acento verde agua, un blanco cálido y un negro cálido.
@@ -433,7 +435,7 @@ Cuerpo, cuerpo chico, epígrafe, botón, etiqueta y link mantienen el mismo tama
 
 ## Preguntas abiertas
 
-- [ ] Encabezado, footer y ficha de autor: hay una propuesta en `referencias/maquetas/header-footer-autor.html` (topbar, menú con "Más", panel en celular, footer de cuatro columnas, bio al final del artículo, página y listado de autores). Falta el visto bueno de Mariano y de la directora, el contenido real (logo, textos, contacto, redes) y cuáles son las seis secciones visibles.
+- [ ] Encabezado, footer y ficha de autor: **ya están implementados en el sitio** a partir de la propuesta de `referencias/maquetas/header-footer-autor.html` (topbar, menú con "Más", panel en celular, footer de cuatro columnas, bio al final del artículo, página y listado de autores). Falta el visto bueno de Mariano y de la directora, el contenido real (logo, textos, contacto, redes) y cuáles son las seis secciones visibles.
 - [x] Bio del autor 39 (id 60) con correo: el correo se sacó el 21/10/2026 directamente en la base. La del autor 40 (wpUserId 278) no tiene correo, solo un usuario de Instagram.
 - [ ] Manual de estilo para los artículos nuevos: se va a armar para homogeneizar el contenido que venga (por ejemplo, longitud y forma de la bajada, uso de subtítulos, citas, notas al pie, texto alternativo y epígrafes de las imágenes, créditos). Falta definir qué cubre, quién lo escribe y en qué formato se le muestra al equipo editorial.
 - [ ] Visto bueno de la directora de la editorial: se le envió `referencias/maquetas/nota-con-notas-al-pie.html` y no respondió todavía. Mientras tanto el diseño sigue como propuesta.
