@@ -42,13 +42,14 @@ Lo que ya resuelve: títulos H2 a H4 en una línea (`titulo.ts`), citas textual 
 1. **Hash de contraseñas: `scrypt` de `node:crypto`** (sin dependencia nueva).
 2. **Sesiones: tabla propia `sesiones` en la base** (código aleatorio de 32 bytes guardado como SHA-256, cookie `httpOnly` y `SameSite=Strict`, vencimiento y cierre en el servidor). Sin `express-session`.
 3. **Dependencias aceptadas** (versiones exactas): `zod`, `helmet` y `express-rate-limit` (paso 1); `multer` y `sharp` (imágenes); paquetes de TipTap y `jsdom` (editor y sus tests); `react-router` (panel).
+7. **Ediciones simultáneas: avisar y no pisar** (decidido el 21/10/2026). Bloqueo optimista: el editor manda con cada guardado la versión que abrió (`actualizadoEn`, o la del borrador de cambios); si otra persona guardó en el medio, el servidor responde 409 sin sobrescribir y el panel avisa "Este artículo cambió mientras lo editabas" y deja ver lo que cambió o copiar el propio texto. Sin bloqueos al abrir ni tablas extra.
 6. **Autoguardado de un artículo publicado: borrador de cambios aparte** (decidido el 21/10/2026). El sitio arma cada página al pedirla, leyendo la base (no hay build), así que todo lo que se guarda sobre un artículo PUBLICADO se ve al instante; por eso, mientras se edita uno publicado, el autoguardado va a una copia de trabajo y el sitio sigue mostrando la versión publicada hasta que se usa "Publicar cambios". Los BORRADOR se autoguardan directo sobre el artículo (el público no los ve). Implica una tabla nueva (por ejemplo `articulos_borradores`, una fila por artículo con título, bajada, cuerpo y demás campos editables, y quién y cuándo) y una migración; se diseña en el paso 3.
 5. **Diseño del panel: estilo propio y neutro** (decidido el 21/10/2026): no comparte la identidad ni los tokens del sitio. Grises, un único acento azul para las acciones y colores de estado solo donde informan algo (`apps/panel/src/estilos.css`).
 4. **Enrutado del panel: `react-router`** (decidido el 21/10/2026; es la preferencia de Mariano para las aplicaciones de React). Se instala con versión exacta, revisando antes la fecha de publicación.
 
-## Decisiones pendientes (a plantear de a una)
+## Decisiones pendientes
 
-1. **Ediciones simultáneas.** Recomendado: bloqueo optimista con `actualizadoEn`: si otra persona guardó mientras tanto, el servidor rechaza y avisa, en vez de pisar.
+Ninguna que frene el paso 3. A medida que aparezcan (por ejemplo, qué campos lleva el borrador de cambios o cómo se ve la comparación de versiones) se plantean de a una.
 
 ## Orden propuesto
 
@@ -87,4 +88,4 @@ Limitaciones conocidas: el límite de intentos vive en memoria (se reinicia con 
 
 ## Estado
 
-Reconocimiento y pasos 1 y 2 hechos el 21/10/2026. Próximo paso: el paso 3 (mover `textoPlanoDe` a `src`, agregar `conCapital` y la API para leer, crear y editar artículos), que necesita las decisiones 1 (autoguardado de publicados) y 2 (ediciones simultáneas).
+Reconocimiento y pasos 1 y 2 hechos el 21/10/2026. Próximo paso: el paso 3 (mover `textoPlanoDe` a `src`, agregar `conCapital`, la tabla de borradores de cambios y la API para leer, crear y editar artículos). Ya están tomadas las decisiones que lo frenaban (6 y 7).
