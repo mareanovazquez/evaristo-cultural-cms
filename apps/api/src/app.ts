@@ -4,6 +4,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import express, { type NextFunction, type Request, type RequestHandler, type Response } from "express";
 import { obtenerClientePrisma, type PrismaClient } from "@evaristo/compartido/db";
 import { crearManejadorMedia } from "./media.js";
+import { crearManejadorRedirecciones } from "./redirecciones.js";
 
 // Salida de `npm run build:sitio` (adaptador de Node de Astro, modo middleware).
 const dirSitioCompilado = fileURLToPath(new URL("../../sitio/dist/", import.meta.url));
@@ -104,6 +105,23 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
 
   // (4) Archivos estáticos del cliente de Astro y, para todo lo demás, el SSR de Astro.
   app.use(express.static(dirCliente));
+
+  // (4b) Redirecciones 301 de las URLs viejas de WordPress. Después de los estáticos (los archivos no consultan la base) y antes del SSR.
+  app.use(
+    crearManejadorRedirecciones((candidatos) =>
+      prisma.redireccion.findMany({
+        where: { origen: { in: candidatos } },
+        select: {
+          origen: true,
+          tipo: true,
+          codigo: true,
+          destino: true,
+          articulo: { select: { slug: true, estado: true, publicadoEn: true } },
+          autor: { select: { slug: true, soloTexto: true } },
+        },
+      }),
+    ),
+  );
   const ssr: RequestHandler = async (req, res, next) => {
     const manejador = await cargarManejadorAstro();
     if (!manejador) {

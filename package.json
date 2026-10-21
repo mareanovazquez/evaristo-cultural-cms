@@ -22,6 +22,8 @@
     "test:media-originales": "npm run test:media-originales --workspace=@evaristo/api --",
     "test:articulos": "npm run test:articulos --workspace=@evaristo/api --",
     "test:autores": "npm run test:autores --workspace=@evaristo/api --",
+    "test:redirecciones": "npm run test:redirecciones --workspace=@evaristo/api",
+    "test:redirecciones-base": "npm run test:redirecciones-base --workspace=@evaristo/api",
     "test:render": "npm run test:render --workspace=@evaristo/compartido",
     "test:render-35": "npm run test:render-35 --workspace=@evaristo/compartido",
     "render:preview-35": "npm run render:preview-35 --workspace=@evaristo/compartido --",

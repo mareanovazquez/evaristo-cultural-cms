@@ -20,6 +20,7 @@ Actualizado el 20/10/2026 (mediodía). Resumen de lo pendiente, ordenado por qu�
 
 - Contexto de la fase 3: ver docs/estado-fase3.md (vigente ante cualquier diferencia).
 - **URL del artículo (decidido el 21/10/2026):** canónica `/AAAA/MM/DD/slug/`, fecha de `publicadoEn` en UTC.
+- **Fase 7, redirecciones que faltan:** las URLs viejas de WordPress que no están en `redirecciones` (`/category/…`, `/tag/…`, `/feed/`, `/?p=ID`, `/wp-content/uploads/…` y páginas fijas) no se redirigen todavía; hay que decidir qué hacer con cada grupo al migrar los 2.637 artículos. El comentario de `Redireccion.origen` en el esquema dice que las URLs usan hora local y no UTC, pero en la muestra la fecha UTC coincide en 33 de 34 (WordPress tiene `gmt_offset` 0): conviene confirmarlo con el corpus completo.
 
 ## 1. Siguiente paso
 

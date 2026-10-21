@@ -25,7 +25,11 @@ Actualizado el 20/10/2026, 13:00. Resumen del reconocimiento de solo lectura de 
 - Decisiones mías, a revisar: orden por nombre (no por apellido, porque no hay un campo de apellido); 12 notas por página (con los datos actuales no se ve la paginación, ningún autor pasa de 5 notas, así que esa parte no está probada con datos reales); sin foto se muestran las iniciales del nombre; el listado no incluye a los autores sin notas publicadas.
 - Los enlaces del menú y del footer a `Autores` ya funcionan.
 
-**Próximo paso:** paso 6 (redirecciones 301 de la muestra: los 58 orígenes).
+**Paso 6 hecho (21/10/2026, rama `fase3-redirecciones`, sin mergear):** `apps/api/src/redirecciones.ts`, montado en `crearApp` después de los estáticos y antes del sitio (los archivos no consultan la base; la portada tampoco). Busca el pedido y su variante con/sin barra final, con los `%XX` en minúscula como los guarda WordPress, y elige la fila con igualdad exacta en JavaScript (la colación de la base es laxa). Destinos: ARTICULO y SLUG_ANTERIOR van a la URL canónica del artículo (solo si está PUBLICADO y su fecha ya llegó); AUTOR va a `/author/<slug>/` (no si es de solo texto); MANUAL acepta una ruta propia o una dirección http(s) y respeta el código (301, 302, 307 o 308). Si el destino es la misma ruta del pedido no redirige (es la canónica y la atiende el sitio), y la consulta (`?a=b`) se conserva. Si la base falla, el pedido sigue al sitio. Las funciones de URL (`rutaArticulo`, `rutaAutor`, `urlMedia`, `normalizarRuta`) pasaron a `@evaristo/compartido/urls`, que usan el sitio y la API. Tests: `npm run test:redirecciones` (14, puros) y `npm run test:redirecciones-base` (base real en solo lectura: de los 58 orígenes, 56 ya son la URL canónica y 2 redirigen con 301 a páginas que responden 200, también con `%XX` en mayúscula y sin barra final).
+- No cubre las URLs viejas de WordPress que no están en la tabla (`/category/…`, `/tag/…`, `/feed/`, `/?p=ID`, `/wp-content/uploads/…`, páginas fijas): queda para la fase 7.
+- Cada pedido que llega al sitio hace una consulta indexada a `redirecciones`; si la carga lo pide, se puede poner una caché en memoria.
+
+**Próximo paso:** paso 7 (build y prueba de humo: los 34 publicados responden 200 y el borrador 404; página 404 propia).
 
 Antes de pegar cualquier prompt que use Prisma: comprobar el 3308 con `Test-NetConnection`. El prompt se pega desde `C:\Users\Usuario\Documents\Proyectos frontend`, sin push.
 
@@ -71,7 +75,7 @@ Antes de pegar cualquier prompt que use Prisma: comprobar el 3308 con `Test-NetC
 3. Ruta `/media/:clave` (propuesta de arriba). **Hecho el 21/10/2026 (rama `fase3-media`).**
 4. **Hecho el 21/10/2026 (rama `fase3-articulo`).** Vista del artículo (filtra `estado = PUBLICADO` y `publicadoEn <= ahora`; los 2 sin encabezado se muestran sin imagen de encabezado).
 5. **Hecho el 21/10/2026.** Vista de autores (`/author/<slug>/`; 404 para los 2 de solo texto).
-6. Redirecciones (middleware con 301; los 58 orígenes de la muestra).
+6. **Hecho el 21/10/2026 (rama `fase3-redirecciones`).** Redirecciones (middleware con 301; los 58 orígenes de la muestra).
 7. Build y prueba de humo (los 34 publicados responden 200 y el borrador 404).
 
 ## Decisiones que quedan abiertas

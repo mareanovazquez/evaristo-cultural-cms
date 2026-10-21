@@ -1,15 +1,7 @@
 import { prisma } from "./prisma";
 
-// URL canónica del artículo: /AAAA/MM/DD/slug/ (decidido el 21/10/2026). La fecha sale de publicadoEn en UTC.
-const dos = (n: number): string => String(n).padStart(2, "0");
-
-export function rutaArticulo(a: { slug: string; publicadoEn: Date }): string {
-  const d = a.publicadoEn;
-  return `/${d.getUTCFullYear()}/${dos(d.getUTCMonth() + 1)}/${dos(d.getUTCDate())}/${encodeURIComponent(a.slug)}/`;
-}
-
-/** Ruta pública de un archivo de la biblioteca (la sirve apps/api en /media/<clave>). */
-export const urlMedia = (clave: string): string => `/media/${encodeURIComponent(clave)}`;
+// Las URLs públicas (artículo, autor, media) viven en @evaristo/compartido/urls, que también usa la API.
+export { rutaArticulo, urlMedia } from "@evaristo/compartido/urls";
 
 const formatoFecha = new Intl.DateTimeFormat("es-AR", { dateStyle: "long", timeZone: "UTC" });
 export const fechaLarga = (d: Date): string => formatoFecha.format(d);
