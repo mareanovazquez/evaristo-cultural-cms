@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "astro build",
-    "dev": "astro dev",
+    "dev": "node --env-file=../../.env ../../node_modules/astro/bin/astro.mjs dev",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
