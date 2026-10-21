@@ -62,6 +62,22 @@ Lo que ya resuelve: títulos H2 a H4 en una línea (`titulo.ts`), citas textual 
 7. Autores, secciones, categorías y herramientas de revisión posterior a la migración.
 8. Mensajes de error en lenguaje común y prueba con alguien de la editorial.
 
+## Paso 1 hecho (21/10/2026, rama `fase4-auth`, sin mergear)
+
+Autenticación de la API, sobre `evaristo_cms_dev`:
+- **Contraseñas:** `src/auth/clave.ts`, `scrypt` (N=32768, r=8, p=1), sal aleatoria, formato `scrypt$N$r$p$sal$hash` (los parámetros viajan con el hash), comparación en tiempo constante, mínimo de 10 y máximo de 200 caracteres.
+- **Sesiones:** tabla `sesiones` (migración `20261021151549_sesiones`, aplicada **solo** a `evaristo_cms_dev`; hay que aplicarla a `evaristo_cms` con `db:deploy` al lanzar). La cookie `evaristo_sesion` lleva un código aleatorio de 32 bytes; en la base queda solo su SHA-256. `httpOnly`, `SameSite=Strict`, `Path=/api` (las páginas públicas no llevan cookies), `Secure` con `NODE_ENV=production`, 12 horas de vida. Un usuario desactivado o una sesión vencida dejan de servir en el acto.
+- **Rutas:** `POST /api/auth/ingresar`, `POST /api/auth/salir`, `GET /api/auth/yo`, con `zod`. El mismo 401 y el mismo mensaje para email inexistente, usuario inactivo y contraseña mal escrita (se verifica siempre contra un hash, real o de mentira). Límite de intentos con `express-rate-limit`: 10 fallos cada 15 minutos por dirección; los ingresos correctos no cuentan.
+- **Origen:** los pedidos que cambian datos se rechazan si `Origin` no es el propio sitio o `Sec-Fetch-Site` es `cross-site` o `same-site`.
+- **Roles:** `exigirSesion` y `exigirRol(rol)` (el administrador pasa por todo). Todavía no hay rutas protegidas reales.
+- **API:** `helmet` y `express.json` (límite 2 MB) montados solo en `/api`. Los pedidos mal formados dan 400 y los demasiado grandes 413. El sitio y el panel no llevan `helmet` todavía: su política de contenido (fuentes de Google, YouTube y Vimeo) se diseña aparte.
+- **Base de desarrollo:** `--base-dev` (`src/entorno.ts`) apunta `DATABASE_URL` a `DATABASE_URL_DEV` y se niega si no es `evaristo_cms_dev`. `npm run dev:desarrollo -w @evaristo/api` arranca la API así. Las herramientas exigen elegir `--base-dev` o `--base-real`.
+- **Primer usuario:** `npm run usuario:crear -- --base-dev --email=<email> --nombre="<nombre>" --rol=ADMINISTRADOR` pide la contraseña por teclado, sin mostrarla.
+- **Tests:** `npm run test:auth` (18, sin base: repositorio en memoria y reloj controlable; se comprobó con tres mutaciones que detectan fallos reales) y `npm run test:auth-base` (contra `evaristo_cms_dev`, con un usuario temporal que se borra; se niega a correr contra otra base).
+- **Dependencias agregadas (versión exacta):** `zod` 4.6.5 (la 4.6.6 y la 4.6.7 tenían menos de dos semanas), `helmet` 8.3.0 y `express-rate-limit` 8.7.1, solo en `apps/api`.
+
+Limitaciones conocidas: el límite de intentos vive en memoria (se reinicia con el servidor) y detrás de un proxy hay que configurar `trust proxy` para que cuente la dirección real; no hay recuperación de contraseña ni cierre de todas las sesiones de un usuario; la sesión no se renueva con el uso (12 horas fijas).
+
 ## Estado
 
-Reconocimiento hecho el 21/10/2026. Sin código de la fase 4 todavía. Próximo paso: resolver las decisiones 1 a 3 y empezar por el paso 1.
+Reconocimiento y paso 1 hechos el 21/10/2026. Próximo paso: el paso 2 (panel: pantalla de ingreso, estructura y listado de artículos en solo lectura), que necesita la decisión sobre el enrutado del panel (6) y el diseño del panel (8).

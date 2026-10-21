@@ -5,9 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "tsx --env-file=../../.env src/servidor.ts",
+    "dev:desarrollo": "tsx --env-file=../../.env src/servidor.ts --base-dev",
+    "usuario:crear": "tsx --env-file=../../.env src/herramientas/crear-usuario.ts",
     "start": "tsx --env-file=../../.env src/servidor.ts",
     "typecheck": "tsc --noEmit",
     "test:media": "tsx src/tests/test-media.ts",
+    "test:auth": "tsx src/tests/test-auth.ts",
+    "test:auth-base": "tsx --env-file=../../.env src/tests/test-auth-base.ts",
     "test:categorias": "tsx --env-file=../../.env src/tests/test-categorias.ts",
     "test:secciones": "tsx --env-file=../../.env src/tests/test-secciones.ts",
     "test:humo": "tsx --env-file=../../.env src/tests/test-humo.ts",
@@ -19,7 +23,10 @@
   },
   "dependencies": {
     "@evaristo/compartido": "0.0.0",
-    "express": "5.2.1"
+    "express": "5.2.1",
+    "express-rate-limit": "8.7.1",
+    "helmet": "8.3.0",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@types/express": "5.0.6",

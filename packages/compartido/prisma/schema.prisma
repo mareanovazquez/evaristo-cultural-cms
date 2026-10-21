@@ -255,8 +255,25 @@ model Usuario {
   ultimoAccesoEn DateTime?
   creadoEn       DateTime   @default(now())
   actualizadoEn  DateTime   @updatedAt
+  sesiones       Sesion[]
 
   @@map("usuarios")
+}
+
+// Sesión del panel. El navegador recibe un código aleatorio en una cookie; acá se guarda solo su SHA-256, así que una
+// copia de la base no sirve para entrar. Vence a una hora fija (venceEn) y se puede cerrar borrando la fila.
+model Sesion {
+  id          Int      @id @default(autoincrement())
+  tokenHash   String   @unique @db.Char(64)
+  usuarioId   Int
+  usuario     Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  creadaEn    DateTime @default(now())
+  venceEn     DateTime
+  ultimoUsoEn DateTime @default(now())
+
+  @@index([usuarioId])
+  @@index([venceEn])
+  @@map("sesiones")
 }
 
 model Redireccion {

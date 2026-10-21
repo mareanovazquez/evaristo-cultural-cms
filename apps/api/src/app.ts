@@ -2,7 +2,10 @@ import { existsSync } from "node:fs";
 import { extname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import express, { type NextFunction, type Request, type RequestHandler, type Response } from "express";
+import helmet from "helmet";
 import { obtenerClientePrisma, type PrismaClient } from "@evaristo/compartido/db";
+import { crearAuth, type OpcionesAuth } from "./auth/rutas.js";
+import { repositorioPrisma } from "./auth/repositorio.js";
 import { crearManejadorMedia } from "./media.js";
 import { crearManejadorRedirecciones } from "./redirecciones.js";
 
@@ -20,6 +23,8 @@ type ManejadorAstro = (req: Request, res: Response, next: NextFunction) => void;
 export interface OpcionesApp {
   /** Carpeta de los originales de las imágenes. Por defecto, la variable MEDIA_DIR. */
   dirMedia?: string | undefined;
+  /** Para las pruebas: reemplaza partes de la autenticación (repositorio, límite de intentos, cookie Secure). */
+  auth?: Partial<OpcionesAuth>;
 }
 
 export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones: OpcionesApp = {}): express.Express {
@@ -41,7 +46,12 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
     next();
   });
 
-  // (2) API.
+  // (2) API: cabeceras de seguridad, JSON con límite (un cuerpo grande de artículo ronda los 120 KB) e ingreso/sesiones.
+  app.use("/api", helmet());
+  app.use("/api", express.json({ limit: "2mb" }));
+  const auth = crearAuth({ repo: repositorioPrisma(prisma), seguro: process.env["NODE_ENV"] === "production", ...opciones.auth });
+  app.use("/api/auth", auth.router);
+
   app.get("/api/salud", async (_req, res) => {
     try {
       const filas = await prisma.pruebaConexion.count();
@@ -150,6 +160,11 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
 
   // Errores no previstos: sin detalles hacia afuera.
   app.use((error: unknown, _req: Request, res: Response, next: NextFunction) => {
+    const tipo = (error as { type?: string } | null)?.type;
+    if (tipo === "entity.parse.failed" || tipo === "entity.too.large") {
+      res.status(tipo === "entity.too.large" ? 413 : 400).json({ estado: "error", mensaje: "El pedido no se pudo leer." });
+      return;
+    }
     console.error("Error no controlado:", error instanceof Error ? error.message : "error desconocido");
     if (res.headersSent) {
       next(error);
