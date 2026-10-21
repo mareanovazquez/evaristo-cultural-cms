@@ -42,13 +42,13 @@ Lo que ya resuelve: títulos H2 a H4 en una línea (`titulo.ts`), citas textual 
 1. **Hash de contraseñas: `scrypt` de `node:crypto`** (sin dependencia nueva).
 2. **Sesiones: tabla propia `sesiones` en la base** (código aleatorio de 32 bytes guardado como SHA-256, cookie `httpOnly` y `SameSite=Strict`, vencimiento y cierre en el servidor). Sin `express-session`.
 3. **Dependencias aceptadas** (versiones exactas): `zod`, `helmet` y `express-rate-limit` (paso 1); `multer` y `sharp` (imágenes); paquetes de TipTap y `jsdom` (editor y sus tests); `react-router` (panel).
+6. **Autoguardado de un artículo publicado: borrador de cambios aparte** (decidido el 21/10/2026). El sitio arma cada página al pedirla, leyendo la base (no hay build), así que todo lo que se guarda sobre un artículo PUBLICADO se ve al instante; por eso, mientras se edita uno publicado, el autoguardado va a una copia de trabajo y el sitio sigue mostrando la versión publicada hasta que se usa "Publicar cambios". Los BORRADOR se autoguardan directo sobre el artículo (el público no los ve). Implica una tabla nueva (por ejemplo `articulos_borradores`, una fila por artículo con título, bajada, cuerpo y demás campos editables, y quién y cuándo) y una migración; se diseña en el paso 3.
 5. **Diseño del panel: estilo propio y neutro** (decidido el 21/10/2026): no comparte la identidad ni los tokens del sitio. Grises, un único acento azul para las acciones y colores de estado solo donde informan algo (`apps/panel/src/estilos.css`).
 4. **Enrutado del panel: `react-router`** (decidido el 21/10/2026; es la preferencia de Mariano para las aplicaciones de React). Se instala con versión exacta, revisando antes la fecha de publicación.
 
 ## Decisiones pendientes (a plantear de a una)
 
-1. **Autoguardado de un artículo PUBLICADO.** Si se autoguarda directo sobre la fila, cada tecla cambia lo que ve el público. Opciones: no autoguardar los publicados (guardar con botón), o un "borrador de cambios" separado que se aplica al publicar de nuevo (mejor para el editor, más trabajo y una migración).
-2. **Ediciones simultáneas.** Recomendado: bloqueo optimista con `actualizadoEn`: si otra persona guardó mientras tanto, el servidor rechaza y avisa, en vez de pisar.
+1. **Ediciones simultáneas.** Recomendado: bloqueo optimista con `actualizadoEn`: si otra persona guardó mientras tanto, el servidor rechaza y avisa, en vez de pisar.
 
 ## Orden propuesto
 
