@@ -41,15 +41,14 @@ Lo que ya resuelve: títulos H2 a H4 en una línea (`titulo.ts`), citas textual 
 
 1. **Hash de contraseñas: `scrypt` de `node:crypto`** (sin dependencia nueva).
 2. **Sesiones: tabla propia `sesiones` en la base** (código aleatorio de 32 bytes guardado como SHA-256, cookie `httpOnly` y `SameSite=Strict`, vencimiento y cierre en el servidor). Sin `express-session`.
-3. **Dependencias aceptadas** (versiones exactas): `zod`, `helmet` y `express-rate-limit` (paso 1); `multer` y `sharp` (imágenes); paquetes de TipTap y `jsdom` (editor y sus tests).
+3. **Dependencias aceptadas** (versiones exactas): `zod`, `helmet` y `express-rate-limit` (paso 1); `multer` y `sharp` (imágenes); paquetes de TipTap y `jsdom` (editor y sus tests); `react-router` (panel).
+4. **Enrutado del panel: `react-router`** (decidido el 21/10/2026; es la preferencia de Mariano para las aplicaciones de React). Se instala con versión exacta, revisando antes la fecha de publicación.
 
 ## Decisiones pendientes (a plantear de a una)
 
-4. **Autoguardado de un artículo PUBLICADO.** Si se autoguarda directo sobre la fila, cada tecla cambia lo que ve el público. Opciones: no autoguardar los publicados (guardar con botón), o un "borrador de cambios" separado que se aplica al publicar de nuevo (mejor para el editor, más trabajo y una migración).
-5. **Ediciones simultáneas.** Recomendado: bloqueo optimista con `actualizadoEn`: si otra persona guardó mientras tanto, el servidor rechaza y avisa, en vez de pisar.
-6. **Enrutado del panel.** Recomendado: sin librería (pocas pantallas, rutas por hash). Alternativa: `react-router`.
-7. **Primer administrador.** Recomendado: script de línea de comandos que pide la contraseña por teclado (nunca en el repo ni en el chat).
-8. **Diseño del panel.** El panel usa los tokens y componentes de `decisiones-de-diseno.md` (botones, formularios con etiqueta flotante, avisos); decidir si comparte la hoja de estilos del sitio.
+1. **Autoguardado de un artículo PUBLICADO.** Si se autoguarda directo sobre la fila, cada tecla cambia lo que ve el público. Opciones: no autoguardar los publicados (guardar con botón), o un "borrador de cambios" separado que se aplica al publicar de nuevo (mejor para el editor, más trabajo y una migración).
+2. **Ediciones simultáneas.** Recomendado: bloqueo optimista con `actualizadoEn`: si otra persona guardó mientras tanto, el servidor rechaza y avisa, en vez de pisar.
+3. **Diseño del panel.** El panel usa los tokens y componentes de `decisiones-de-diseno.md` (botones, formularios con etiqueta flotante, avisos); decidir si comparte la hoja de estilos del sitio.
 
 ## Orden propuesto
 
