@@ -214,7 +214,8 @@ export async function verificarEscritura(o: OpcionesVerificacion): Promise<Resul
     };
     for (const [t, n] of Object.entries(esperado)) chk(null, `(a) conteo ${t}`, conteos[t] === n, `esperado ${n}, hay ${conteos[t]}`);
     chk(null, "(i) secciones no cambiaron", conteos["secciones"] === 18, `hay ${conteos["secciones"]}`);
-    if ("_prisma_migrations" in conteos) chk(null, "(i) _prisma_migrations no cambió", conteos["_prisma_migrations"] === 3, `hay ${conteos["_prisma_migrations"]}`);
+    // La migración no toca esta tabla. Eran 3 al cerrar la fase 2; la fase 4 suma más (sesiones, borradores de cambios), así que se pide que no falte ninguna de las 3 originales.
+    if ("_prisma_migrations" in conteos) chk(null, "(i) _prisma_migrations no perdió migraciones", (conteos["_prisma_migrations"] ?? 0) >= 3, `hay ${conteos["_prisma_migrations"]}`);
     const otras = tablas.filter((t) => !(t in esperado) && !["secciones", "_prisma_migrations"].includes(t));
     chk(null, "(i) ninguna tabla desconocida con filas", otras.every((t) => conteos[t] === 0), `tablas no listadas: ${JSON.stringify(otras)}`);
   }

@@ -130,6 +130,11 @@ model Articulo {
   // Cantidad de imágenes del artículo (cuerpo, encabezado y galería) con texto alternativo pendiente.
   // La calcula el servidor al guardar; sirve para la vista de artículos pendientes del panel.
   altPendientes         Int           @default(0)
+  // Letra capital en el primer párrafo del cuerpo. Opcional por artículo: la activa la editora con una casilla y viene
+  // desactivada (los migrados también). Va aparte del cuerpo para que cambiarla no toque el contenido guardado.
+  conCapital            Boolean       @default(false)
+  // Copia de trabajo con los cambios sin publicar (una por artículo, solo si está PUBLICADO o PROGRAMADO).
+  borrador              ArticuloBorrador?
   galeria               GaleriaItem[]
   // Una por artículo.
   fichaTecnica          FichaTecnica?
@@ -256,8 +261,28 @@ model Usuario {
   creadoEn       DateTime   @default(now())
   actualizadoEn  DateTime   @updatedAt
   sesiones       Sesion[]
+  borradores     ArticuloBorrador[]
 
   @@map("usuarios")
+}
+
+// Cambios sin publicar de un artículo que ya está publicado (o programado). Mientras se edita, el autoguardado va acá y el sitio
+// sigue mostrando la versión publicada; "Publicar cambios" aplica los datos al artículo y borra esta fila. `datos` guarda todos los
+// campos editables (título, bajada, cuerpo, sección, categorías, autores, imagen de encabezado, letra capital...) con el mismo
+// formato que recibe la API. `baseVersion` es el `actualizadoEn` del artículo cuando se empezó a editar: si el artículo cambió
+// después, hay conflicto (decisión del 21/10/2026: avisar y no pisar).
+model ArticuloBorrador {
+  articuloId    Int      @id
+  datos         Json
+  baseVersion   DateTime
+  usuarioId     Int?
+  creadoEn      DateTime @default(now())
+  actualizadoEn DateTime @updatedAt
+  articulo      Articulo @relation(fields: [articuloId], references: [id], onDelete: Cascade)
+  usuario       Usuario? @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
+
+  @@index([usuarioId])
+  @@map("articulos_borradores")
 }
 
 // Sesión del panel. El navegador recibe un código aleatorio en una cookie; acá se guarda solo su SHA-256, así que una

@@ -32,6 +32,7 @@
     "test:auth": "npm run test:auth --workspace=@evaristo/api",
     "test:auth-base": "npm run test:auth-base --workspace=@evaristo/api",
     "test:admin-articulos": "npm run test:admin-articulos --workspace=@evaristo/api",
+    "test:admin-edicion": "npm run test:admin-edicion --workspace=@evaristo/api",
     "test:render": "npm run test:render --workspace=@evaristo/compartido",
     "test:render-35": "npm run test:render-35 --workspace=@evaristo/compartido",
     "render:preview-35": "npm run render:preview-35 --workspace=@evaristo/compartido --",

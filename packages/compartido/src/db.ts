@@ -1,7 +1,7 @@
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-import { PrismaClient } from "./generated/prisma/client.js";
+import { Prisma, PrismaClient } from "./generated/prisma/client.js";
 
-export { PrismaClient };
+export { PrismaClient, Prisma };
 export type { PruebaConexion } from "./generated/prisma/client.js";
 
 // Arma el cliente de Prisma con el adaptador de MariaDB/MySQL.
