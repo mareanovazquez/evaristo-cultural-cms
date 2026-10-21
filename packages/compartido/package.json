@@ -6,7 +6,9 @@
   "exports": {
     ".": "./src/index.ts",
     "./db": "./src/db.ts",
-    "./secciones": "./src/secciones.ts"
+    "./secciones": "./src/secciones.ts",
+    "./schema": "./src/schema/validate.ts",
+    "./render": "./src/render/render.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
@@ -26,6 +28,9 @@
     "test:migracion": "tsx scripts/migracion/tests/test-utilidades.ts && tsx scripts/migracion/tests/test-leer-wordpress.ts && tsx scripts/migracion/tests/test-imagenes.ts && tsx scripts/migracion/tests/test-validar.ts && tsx scripts/migracion/tests/test-conexiones.ts && tsx scripts/migracion/tests/test-simulacion.ts && tsx scripts/migracion/tests/test-armar.ts && tsx scripts/migracion/tests/test-comando.ts",
     "test:migracion-db": "tsx scripts/migracion/tests/test-db-base.ts && tsx scripts/migracion/tests/test-db-articulos.ts && tsx scripts/migracion/tests/test-db-reescritura.ts && tsx scripts/migracion/tests/test-db-cli.ts && tsx scripts/migracion/tests/test-db-incremental.ts && tsx scripts/migracion/tests/test-db-verificar.ts",
     "test:migracion-flujo": "tsx scripts/migracion/tests/test-flujo.ts",
+    "test:render": "tsx src/render/tests/test-render.ts",
+    "test:render-35": "tsx scripts/render/test-render-35.ts",
+    "render:preview-35": "tsx scripts/render/vista-previa-35.ts",
     "test:conversor": "tsx src/conversor/tests/test.ts && tsx src/conversor/tests/test-titulos.ts && tsx src/conversor/tests/test-integracion-titulos.ts && tsx src/conversor/tests/test-taxonomia.ts"
   },
   "devDependencies": {
