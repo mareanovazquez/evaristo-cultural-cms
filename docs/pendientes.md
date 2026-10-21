@@ -19,6 +19,7 @@ Actualizado el 20/10/2026 (mediodía). Resumen de lo pendiente, ordenado por qu�
 - **Decisiones por defecto vigentes:** el artículo 16691 se migra con el correo que escribió su autor en el cuerpo (a revisar después, junto con las bios con correo); el 22255 y el 22590 quedan publicados en `sin-asignar`; los artículos 4265 y 15027 tienen slug numérico (a la revisión manual).
 
 - Contexto de la fase 3: ver docs/estado-fase3.md (vigente ante cualquier diferencia).
+- **URL del artículo (decidido el 21/10/2026):** canónica `/AAAA/MM/DD/slug/`, fecha de `publicadoEn` en UTC.
 
 ## 1. Siguiente paso
 
@@ -51,7 +52,7 @@ Actualizado el 20/10/2026 (mediodía). Resumen de lo pendiente, ordenado por qu�
 ## 5. Después de la importación (plan de revisión manual, desde el panel)
 
 - **Usuarios editores:** recrear los que van a seguir publicando (la tabla `usuarios` no se siembra; falta definir en la fase 4 el hash, las sesiones y el alta).
-- **Bios con correo:** sanear a mano la del usuario 39 y las que marque `bio_con_correo`. Y el correo del cuerpo del 16691.
+- **Bios con correo:** la del usuario 39 (autor 60) está saneada desde el 21/10/2026 (editada en la base; copia anterior en `packages/compartido/out/verif/bio-autor60-antes.json`). Falta la del usuario 278 (autor 40) y las que marque `bio_con_correo`. Ojo: una nueva corrida de la migración la informaría como "difiere" y solo la pisaría con la opción de sobrescribir. Y el correo del cuerpo del 16691.
 - **Títulos:** `palabra_ambigua` (361), `palabra_desconocida` (66), `revisar_autor_en_titulo` (51), `titulo_vacio` (2: 5562 y 5602) y las 193 bajadas que nombran a una persona. Más el 19899.
 - **Imágenes pendientes de texto alternativo:** 2.431 en 813 artículos (vista del panel apoyada en `articulos.altPendientes`), y los artículos con `original_faltante` o `imagen_sin_medir`.
 - **Firmas dentro del cuerpo:** el 620 empieza con un párrafo "Por Riordan Roett" que duplica al autor (en la muestra de 35 es el único caso con la firma como primer párrafo). Con la letra capital activada recibe la capital en vez del texto. Decidido el 21/10/2026: no se agrega ninguna regla al renderizador; se quitan a mano en la revisión posterior y se busca cuántos más hay antes de la fase 7 (párrafos iniciales "Por …"). Los migrados no tienen capital activada.
