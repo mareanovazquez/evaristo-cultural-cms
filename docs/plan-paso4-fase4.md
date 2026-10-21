@@ -4,6 +4,17 @@
 
 Estimación total: 4 a 6 horas de trabajo, en 3 o 4 sesiones. La incertidumbre grande es que Claude Code no puede abrir un navegador: lo que se verifica solo es la parte de datos; la pantalla la tiene que mirar Mariano y las vueltas de ajuste dependen de eso.
 
+## NO OLVIDAR (hacer vos antes de empezar)
+
+Cuatro cosas de Mariano, antes de abrir la sesión de Claude Code:
+
+- [ ] **`MEDIA_DIR` en el `.env`:** agregar la línea `MEDIA_DIR=C:\Users\Usuario\Documents\Proyectos frontend\CMS-EVARISTO(ASSETS)\uploads-muestra\originales`. Hoy no está cargada: sin ella `/media` responde 503 y las imágenes no se ven.
+- [ ] **Prender la MariaDB de WordPress (puerto 3307)**, solo si se quiere correr `test:migracion-flujo` (el 21/10/2026 no se pudo ejecutar porque estaba apagada). Si no se prende, ese test queda sin verificar otra vez.
+- [ ] **Crear tu usuario del panel en la base de desarrollo**, para poder mirar el panel apenas esté la pantalla de edición: `npm run usuario:crear -- --base-dev --email=<tu email> --nombre="<tu nombre>" --rol=ADMINISTRADOR` (pide la contraseña por teclado: no se muestra ni se pega en el chat).
+- [ ] **Confirmar que el último push se hizo** (`git status -sb` no tiene que decir "ahead").
+
+Después se sigue con el checklist de abajo, que lo recorre Claude Code.
+
 ## Cómo arrancar (checklist de la primera sesión)
 
 1. `Test-NetConnection 127.0.0.1 -Port 3308` (tiene que dar `True`). El 3307 solo hace falta para `test:migracion-flujo`.
