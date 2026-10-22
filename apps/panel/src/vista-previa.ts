@@ -1,4 +1,5 @@
 import { escapeHtml, renderArticleBody, type JSONNode } from "@evaristo/compartido/render";
+import type { FichaDatos } from "./api";
 
 // Vista previa del artículo: arma el mismo HTML que la página pública (apps/sitio/src/components/Articulo.astro) con el mismo
 // renderizador del cuerpo. Es una función pura (recibe las hojas de estilo del sitio como texto) para poder probarla sin navegador.
@@ -16,6 +17,10 @@ export interface DatosVistaPrevia {
   fecha: string;
   encabezado?: { src: string; alt: string; credito: string | null; posicion: string } | undefined;
   cuerpo: JSONNode;
+  /** Ficha técnica del libro (se ve después de las notas). */
+  ficha?: FichaDatos | null | undefined;
+  /** Imágenes de la galería (se ve después de la ficha). El visor ampliado no está en la vista previa (no ejecuta scripts). */
+  galeria?: Array<{ src: string; alt: string; epigrafe: string | null }> | undefined;
   conCapital: boolean;
 }
 
@@ -54,6 +59,22 @@ export function videosSinScripts(html: string): string {
   });
 }
 
+/** La ficha técnica como la arma el sitio (components/FichaTecnica.astro): solo los campos que tienen algo; nada si no hay ninguno. */
+export function htmlFicha(ficha: FichaDatos | null | undefined): string {
+  if (!ficha) return "";
+  const campos: Array<[string, string | number | null]> = [["Título", ficha.titulo], ["Autor", ficha.autor], ["Traductor", ficha.traductor], ["Editorial", ficha.editorial], ["Colección", ficha.coleccion], ["Año", ficha.anio], ["Páginas", ficha.paginas], ["ISBN", ficha.isbn], ["Precio", ficha.precio]];
+  const filas = campos.filter(([, valor]) => valor !== null && String(valor).trim() !== "");
+  if (filas.length === 0) return "";
+  return `<section class="col ficha-tecnica" aria-labelledby="ficha-titulo"><h2 id="ficha-titulo">Ficha técnica</h2><dl>${filas.map(([e, val]) => `<div><dt>${escapeHtml(e)}</dt><dd>${escapeHtml(String(val))}</dd></div>`).join("")}</dl></section>`;
+}
+
+/** La galería como la arma el sitio (components/Galeria.astro), sin el visor ampliado. */
+export function htmlGaleria(items: Array<{ src: string; alt: string; epigrafe: string | null }>): string {
+  if (items.length === 0) return "";
+  const lista = items.map((i) => `<li><figure><a class="galeria-abrir" href="${escapeHtml(i.src)}"><img src="${escapeHtml(i.src)}" alt="${escapeHtml(i.alt)}"></a>${i.epigrafe ? `<figcaption>${escapeHtml(i.epigrafe)}</figcaption>` : ""}</figure></li>`).join("");
+  return `<section class="wide galeria" aria-labelledby="galeria-titulo"><h2 id="galeria-titulo">Galería</h2><ul class="galeria-grilla">${lista}</ul></section>`;
+}
+
 export function htmlVistaPrevia(d: DatosVistaPrevia, hojas: string): string {
   const { html: cuerpoHtml, notesHtml } = renderArticleBody(d.cuerpo, { conCapital: d.conCapital });
   const html = videosSinScripts(cuerpoHtml);
@@ -85,6 +106,8 @@ ${meta ? `<p class="meta">${meta}</p>` : ""}
 ${encabezado}
 <div class="col nota-cuerpo">${enlacesAfuera(html)}</div>
 ${notesHtml ? `<div class="col">${enlacesAfuera(notesHtml)}</div>` : ""}
+${htmlFicha(d.ficha)}
+${htmlGaleria(d.galeria ?? [])}
 </article>
 </main>
 </body>

@@ -29,6 +29,8 @@ const cuerpoOriginal = {
 }
 let cuerpoServido: unknown = cuerpoOriginal
 let publicadoEnServido: string | null = null
+let galeriaServida: Array<{ imagenId: number; alt: string | null; epigrafe: string | null }> = []
+let fichaServida: Record<string, unknown> | null = null
 const articulo = (estado: string) => ({
   id: 7,
   wpId: 123,
@@ -50,11 +52,14 @@ const articulo = (estado: string) => ({
     encabezadoCredito: null,
     encabezadoPuntoFocalX: 0.5,
     encabezadoPuntoFocalY: 0.25,
+    galeria: galeriaServida,
+    ficha: fichaServida,
     conCapital: false,
     novedadHasta: null,
     slug: estado === 'BORRADOR' ? 'borrador-abc' : 'una-nota',
   },
   imagenEncabezado: { id: 5, clave: 'foto.jpg', nombreOriginal: 'foto.jpg' },
+  imagenesGaleria: galeriaServida.map((g) => ({ id: g.imagenId, clave: `galeria-${g.imagenId}.jpg`, nombreOriginal: `galeria-${g.imagenId}.jpg` })),
 })
 const catalogos = {
   secciones: [{ id: 1, slug: 'cine', nombre: 'Cine' }, { id: 2, slug: 'arte', nombre: 'Arte' }],
@@ -215,7 +220,7 @@ await t('guardar sin tocar manda el mismo cuerpo, la versión que se abrió y to
   const g = guardados[0]! as { version: string; datos: J }
   assert.equal(g.version, '2026-10-22T10:00:00.000Z')
   assert.deepEqual(canonico(g.datos['cuerpo']), canonico(cuerpoOriginal), 'el cuerpo vuelve igual desde la pantalla')
-  assert.deepEqual(Object.keys(g.datos).sort(), ['autorIds', 'bajada', 'categoriaIds', 'categoriaPrincipalId', 'conCapital', 'cuerpo', 'encabezadoAlt', 'encabezadoCredito', 'encabezadoPuntoFocalX', 'encabezadoPuntoFocalY', 'imagenEncabezadoId', 'novedadHasta', 'seccionId', 'slug', 'titulo'])
+  assert.deepEqual(Object.keys(g.datos).sort(), ['autorIds', 'bajada', 'categoriaIds', 'categoriaPrincipalId', 'conCapital', 'cuerpo', 'encabezadoAlt', 'encabezadoCredito', 'encabezadoPuntoFocalX', 'encabezadoPuntoFocalY', 'ficha', 'galeria', 'imagenEncabezadoId', 'novedadHasta', 'seccionId', 'slug', 'titulo'])
   await hasta(() => /^Guardado a las/.test(document.querySelector('.estado-guardado')?.textContent ?? ''), 'el aviso de guardado')
 })
 
@@ -995,6 +1000,207 @@ await t('programado: se ve cuándo sale y se puede cancelar la programación', a
   await hasta(() => !!boton('Publicar…'), 'el borrador')
   assert.ok(preguntas.at(-1)!.includes('Se cancela la programación'))
   assert.ok(document.querySelector('.aviso-ok')?.textContent?.includes('Se canceló la programación'))
+})
+
+// ---- Paso 6 (resto): galería de imágenes y ficha técnica ----
+
+const abrirConGaleria = async (galeria: typeof galeriaServida, ficha: typeof fichaServida = null) => {
+  galeriaServida = galeria
+  fichaServida = ficha
+  await abrirBorrador()
+}
+const reiniciarGaleria = () => {
+  galeriaServida = []
+  fichaServida = null
+}
+const valorDe = (id: string) => (document.getElementById(id) as HTMLInputElement).value
+const ultimoGuardado = () => (guardados.at(-1) as { datos: J }).datos
+
+await t('galería y ficha: se ven vacías en un artículo que no las tiene y la ficha está plegada', async () => {
+  await abrirConGaleria([])
+  const legendas = Array.from(document.querySelectorAll('legend')).map((l) => l.textContent)
+  assert.ok(legendas.includes('Galería de imágenes (opcional)') && legendas.includes('Ficha técnica del libro (opcional)'))
+  assert.ok(document.body.textContent?.includes('Todavía no hay imágenes en la galería.'))
+  assert.equal(document.querySelector<HTMLDetailsElement>('.ficha-editor details')!.open, false, 'sin datos la ficha está plegada')
+  assert.ok(boton('Agregar una imagen'))
+  assert.equal(boton('Quitar la ficha técnica'), undefined, 'no hay nada que quitar')
+})
+
+await t('galería: se agrega una imagen de la biblioteca, pide su texto alternativo y se guarda con su epígrafe', async () => {
+  await abrirConGaleria([])
+  await clic(boton('Agregar una imagen')!)
+  await hasta(() => !!document.querySelector('.imagen-opcion'), 'la biblioteca')
+  await clic(document.querySelector('.imagen-opcion')!)
+  assert.equal(document.querySelector('.galeria-grilla'), null)
+  await hasta(() => document.querySelectorAll('.galeria-item').length === 1, 'la imagen en la galería')
+  assert.ok(document.querySelector('.galeria-item img[src="/media/otra.jpg"]'), 'con su miniatura')
+  assert.ok(document.querySelector('.galeria-editor .form-aviso')?.textContent?.includes('Falta el texto alternativo de una imagen'), 'avisa que falta el texto alternativo')
+  await escribir(document.getElementById('galeria-alt-6') as HTMLInputElement, 'Tapa del libro')
+  await escribir(document.getElementById('galeria-epigrafe-6') as HTMLInputElement, 'La tapa')
+  assert.equal(document.querySelector('.galeria-editor .form-aviso'), null, 'con el texto alternativo ya no avisa')
+  guardados.length = 0
+  await clic(boton('Guardar')!)
+  await hasta(() => guardados.length === 1, 'el guardado')
+  assert.deepEqual(ultimoGuardado()['galeria'], [{ imagenId: 6, alt: 'Tapa del libro', epigrafe: 'La tapa' }])
+  // La misma imagen dos veces no
+  await clic(boton('Agregar una imagen')!)
+  await hasta(() => !!document.querySelector('.imagen-opcion'), 'la biblioteca otra vez')
+  await clic(document.querySelector('.imagen-opcion')!)
+  assert.ok(document.querySelector('.galeria-editor .form-error')?.textContent?.includes('ya está en la galería'))
+  assert.equal(document.querySelectorAll('.galeria-item').length, 1)
+})
+
+await t('galería: se reordena y se quita, y lo que está en blanco se manda como vacío', async () => {
+  await abrirConGaleria([{ imagenId: 11, alt: 'Uno', epigrafe: null }, { imagenId: 12, alt: 'Dos', epigrafe: 'Epígrafe dos' }, { imagenId: 13, alt: 'Tres', epigrafe: null }])
+  const nombres = () => Array.from(document.querySelectorAll('.galeria-item-nombre')).map((n) => n.textContent)
+  assert.deepEqual(nombres(), ['galeria-11.jpg', 'galeria-12.jpg', 'galeria-13.jpg'], 'las imágenes en su orden')
+  assert.equal(boton('Subir la imagen galeria-11.jpg')!.disabled, true, 'la primera no sube')
+  assert.equal(boton('Bajar la imagen galeria-13.jpg')!.disabled, true, 'la última no baja')
+  await clic(boton('Bajar la imagen galeria-11.jpg')!)
+  assert.deepEqual(nombres(), ['galeria-12.jpg', 'galeria-11.jpg', 'galeria-13.jpg'])
+  await clic(boton('Subir la imagen galeria-13.jpg')!)
+  assert.deepEqual(nombres(), ['galeria-12.jpg', 'galeria-13.jpg', 'galeria-11.jpg'])
+  await clic(boton('Quitar la imagen galeria-13.jpg de la galería')!)
+  assert.deepEqual(nombres(), ['galeria-12.jpg', 'galeria-11.jpg'])
+  await escribir(document.getElementById('galeria-epigrafe-12') as HTMLInputElement, '   ')
+  guardados.length = 0
+  await clic(boton('Guardar')!)
+  await hasta(() => guardados.length === 1, 'el guardado')
+  assert.deepEqual(ultimoGuardado()['galeria'], [{ imagenId: 12, alt: 'Dos', epigrafe: null }, { imagenId: 11, alt: 'Uno', epigrafe: null }], 'en el nuevo orden y con el epígrafe en blanco como vacío')
+  reiniciarGaleria()
+})
+
+await t('ficha técnica: se completa, los números se mandan como números y una ficha en blanco se manda vacía', async () => {
+  await abrirConGaleria([])
+  await clic(document.querySelector('.ficha-editor summary')!)
+  await escribir(document.getElementById('ficha-titulo') as HTMLInputElement, 'Cien años de soledad')
+  await escribir(document.getElementById('ficha-autor') as HTMLInputElement, 'Gabriel García Márquez')
+  await escribir(document.getElementById('ficha-editorial') as HTMLInputElement, 'Sudamericana')
+  await escribir(document.getElementById('ficha-anio') as HTMLInputElement, '1967')
+  await escribir(document.getElementById('ficha-paginas') as HTMLInputElement, '471')
+  await escribir(document.getElementById('ficha-isbn') as HTMLInputElement, '978-950-07-0000-0')
+  await escribir(document.getElementById('ficha-precio') as HTMLInputElement, '$ 25.000')
+  guardados.length = 0
+  await clic(boton('Guardar')!)
+  await hasta(() => guardados.length === 1, 'el guardado')
+  assert.deepEqual(ultimoGuardado()['ficha'], { titulo: 'Cien años de soledad', autor: 'Gabriel García Márquez', traductor: null, editorial: 'Sudamericana', coleccion: null, anio: 1967, paginas: 471, isbn: '978-950-07-0000-0', precio: '$ 25.000' })
+  assert.ok(boton('Quitar la ficha técnica'), 'con datos aparece "Quitar la ficha técnica"')
+  // Borrar un número lo deja vacío
+  await escribir(document.getElementById('ficha-anio') as HTMLInputElement, '')
+  await clic(boton('Guardar')!)
+  await hasta(() => guardados.length === 2, 'el segundo guardado')
+  assert.equal((ultimoGuardado()['ficha'] as J)['anio'], null)
+  // Una ficha con solo espacios es lo mismo que no tener ficha
+  await clic(boton('Quitar la ficha técnica')!)
+  assert.equal(valorDe('ficha-titulo'), '', 'se vaciaron los campos')
+  await escribir(document.getElementById('ficha-titulo') as HTMLInputElement, '   ')
+  await clic(boton('Guardar')!)
+  await hasta(() => guardados.length === 3, 'el tercer guardado')
+  assert.equal(ultimoGuardado()['ficha'], null)
+})
+
+await t('ficha técnica: un artículo que ya la tiene la muestra abierta y completa', async () => {
+  await abrirConGaleria([], { titulo: 'Un libro', autor: 'Alguien', traductor: null, editorial: 'Una editorial', coleccion: null, anio: 2001, paginas: 120, isbn: null, precio: null })
+  assert.equal(document.querySelector<HTMLDetailsElement>('.ficha-editor details')!.open, true)
+  assert.equal(valorDe('ficha-titulo'), 'Un libro')
+  assert.equal(valorDe('ficha-anio'), '2001')
+  assert.equal(valorDe('ficha-paginas'), '120')
+  assert.equal(valorDe('ficha-traductor'), '')
+  reiniciarGaleria()
+})
+
+await t('vista previa: muestra la ficha y la galería después del texto, como el sitio, sin el visor', async () => {
+  await abrirConGaleria([{ imagenId: 11, alt: 'Una foto', epigrafe: 'Con epígrafe' }, { imagenId: 12, alt: 'Otra foto', epigrafe: null }], { titulo: 'Un libro', autor: null, traductor: null, editorial: 'Una editorial', coleccion: null, anio: 2001, paginas: null, isbn: null, precio: null })
+  await clic(boton('Vista previa')!)
+  await hasta(() => !!document.querySelector('iframe.vista-previa'), 'la vista previa')
+  const doc = document.querySelector('iframe.vista-previa')!.getAttribute('srcdoc')!
+  assert.ok(doc.includes('<h2 id="ficha-titulo">Ficha técnica</h2>'))
+  assert.ok(doc.includes('<dt>Título</dt><dd>Un libro</dd>') && doc.includes('<dt>Editorial</dt><dd>Una editorial</dd>') && doc.includes('<dt>Año</dt><dd>2001</dd>'))
+  assert.ok(!doc.includes('<dt>Autor</dt>') && !doc.includes('<dt>ISBN</dt>'), 'los campos vacíos no se ven')
+  assert.ok(doc.includes('class="wide galeria"') && doc.includes('src="/media/galeria-11.jpg"') && doc.includes('alt="Una foto"') && doc.includes('<figcaption>Con epígrafe</figcaption>'))
+  assert.ok(doc.indexOf('Ficha técnica') < doc.indexOf('id="galeria-titulo"'), 'la ficha va antes que la galería')
+  assert.ok(doc.indexOf('id="ficha-titulo"') > doc.indexOf('Primer párrafo'), 'y las dos después del texto')
+  assert.ok(!doc.includes('<dialog'), 'el visor no está en la vista previa (no ejecuta scripts)')
+  reiniciarGaleria()
+})
+
+await t('vista previa: sin ficha ni galería no agrega nada', async () => {
+  await abrirConGaleria([])
+  await clic(boton('Vista previa')!)
+  await hasta(() => !!document.querySelector('iframe.vista-previa'), 'la vista previa')
+  const doc = document.querySelector('iframe.vista-previa')!.getAttribute('srcdoc')!
+  assert.ok(!doc.includes('ficha-tecnica') && !doc.includes('galeria-grilla'))
+})
+
+// ---- Visor de la galería del sitio (apps/sitio/src/lib/visor-galeria.ts), con jsdom ----
+
+await t('visor de la galería: abre la imagen, pasa a la anterior y la siguiente, se cierra, y con una sola no hay flechas', async () => {
+  const { iniciarVisor } = await import('../../../sitio/src/lib/visor-galeria')
+  const Dialogo = window.HTMLDialogElement.prototype as unknown as Record<string, unknown>
+  // jsdom no implementa showModal ni close: se simulan con el atributo open
+  Dialogo['showModal'] ??= function (this: HTMLDialogElement) { this.setAttribute('open', '') }
+  Dialogo['close'] ??= function (this: HTMLDialogElement) { this.removeAttribute('open') }
+  const armar = (n: number) => {
+    const seccion = document.createElement('section')
+    seccion.className = 'wide galeria'
+    seccion.innerHTML =
+      '<ul>' +
+      Array.from({ length: n }, (_, i) => `<li><figure><a class="galeria-abrir" href="/media/f${i + 1}.jpg"><img src="/media/f${i + 1}.jpg" alt="Foto ${i + 1}"></a>${i === 1 ? '<figcaption>Epígrafe 2</figcaption>' : ''}</figure></li>`).join('') +
+      '</ul><dialog class="visor"><div><span class="visor-contador"></span><button class="visor-cerrar">×</button></div><figure><img class="visor-imagen" alt=""><figcaption class="visor-epigrafe"></figcaption></figure><button class="visor-anterior">‹</button><button class="visor-siguiente">›</button></dialog>'
+    document.body.appendChild(seccion)
+    iniciarVisor(seccion)
+    return seccion
+  }
+  const seccion = armar(3)
+  const dialogo = seccion.querySelector('dialog')!
+  const visor = () => ({ src: seccion.querySelector<HTMLImageElement>('.visor-imagen')!.getAttribute('src'), alt: seccion.querySelector<HTMLImageElement>('.visor-imagen')!.alt, pie: seccion.querySelector('.visor-epigrafe')!.textContent, cuenta: seccion.querySelector('.visor-contador')!.textContent })
+  assert.ok(!dialogo.hasAttribute('open'), 'arranca cerrado')
+  // Clic en la segunda imagen: se abre ahí y el enlace no navega
+  const clicEnlace = new window.MouseEvent('click', { bubbles: true, cancelable: true })
+  seccion.querySelectorAll('a.galeria-abrir')[1]!.dispatchEvent(clicEnlace)
+  assert.equal(clicEnlace.defaultPrevented, true, 'el enlace no abre el archivo en otra página')
+  assert.ok(dialogo.hasAttribute('open'))
+  assert.deepEqual(visor(), { src: '/media/f2.jpg', alt: 'Foto 2', pie: 'Epígrafe 2', cuenta: '2 de 3' })
+  // Siguiente y anterior, dando la vuelta
+  seccion.querySelector<HTMLElement>('.visor-siguiente')!.click()
+  assert.deepEqual(visor(), { src: '/media/f3.jpg', alt: 'Foto 3', pie: '', cuenta: '3 de 3' })
+  seccion.querySelector<HTMLElement>('.visor-siguiente')!.click()
+  assert.equal(visor().cuenta, '1 de 3', 'después de la última vuelve a la primera')
+  seccion.querySelector<HTMLElement>('.visor-anterior')!.click()
+  assert.equal(visor().cuenta, '3 de 3', 'y antes de la primera va a la última')
+  // Flechas del teclado
+  dialogo.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true, cancelable: true }))
+  assert.equal(visor().cuenta, '2 de 3')
+  dialogo.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }))
+  assert.equal(visor().cuenta, '3 de 3')
+  // Se cierra con la X y con un clic en el fondo, pero no con un clic adentro
+  seccion.querySelector<HTMLElement>('.visor-cerrar')!.click()
+  assert.ok(!dialogo.hasAttribute('open'), 'la X lo cierra')
+  seccion.querySelectorAll('a.galeria-abrir')[0]!.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }))
+  assert.ok(dialogo.hasAttribute('open'))
+  seccion.querySelector<HTMLElement>('.visor-imagen')!.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
+  assert.ok(dialogo.hasAttribute('open'), 'un clic en la imagen no lo cierra')
+  dialogo.dispatchEvent(new window.MouseEvent('click', { bubbles: true }))
+  assert.ok(!dialogo.hasAttribute('open'), 'un clic en el fondo lo cierra')
+  // Con una sola imagen no hay flechas ni contador, y las flechas del teclado no hacen nada
+  const una = armar(1)
+  const dUna = una.querySelector('dialog')!
+  una.querySelector('a.galeria-abrir')!.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }))
+  assert.ok(dUna.hasAttribute('open'))
+  assert.equal(una.querySelector<HTMLElement>('.visor-anterior')!.hidden, true)
+  assert.equal(una.querySelector<HTMLElement>('.visor-siguiente')!.hidden, true)
+  assert.equal(una.querySelector('.visor-contador')!.textContent, '')
+  dUna.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }))
+  assert.equal(una.querySelector<HTMLImageElement>('.visor-imagen')!.getAttribute('src'), '/media/f1.jpg')
+  // Si el navegador no tiene <dialog>, no se toca nada: queda el enlace al archivo
+  const sinDialog = document.createElement('section')
+  sinDialog.className = 'galeria'
+  sinDialog.innerHTML = '<a class="galeria-abrir" href="/media/x.jpg"><img alt="x"></a>'
+  document.body.appendChild(sinDialog)
+  iniciarVisor(sinDialog)
+  const eventoSin = new window.MouseEvent('click', { bubbles: true, cancelable: true })
+  sinDialog.querySelector('a')!.dispatchEvent(eventoSin)
+  assert.equal(eventoSin.defaultPrevented, false, 'sin visor, el enlace funciona normal')
 })
 
 console.log(`\n${ok} pruebas de la pantalla ok`)

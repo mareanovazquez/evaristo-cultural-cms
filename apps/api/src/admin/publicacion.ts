@@ -5,7 +5,7 @@ import type { JSONNode } from "@evaristo/compartido/schema";
 import { textoPlanoDe } from "@evaristo/compartido/texto-plano";
 import { rutaArticulo } from "@evaristo/compartido/urls";
 import { DatosSchema, erroresDelCuerpo, SlugSchema, type DatosArticulo } from "./datos-articulo.js";
-import { Conflicto, datosDeLaFila, escribirDatos, type FilaArticulo, IdSchema, iso, problemasDeReferencias, problemasDeZod, seleccion, sinProblemas, versionVigente } from "./edicion.js";
+import { Conflicto, datosDeLaFila, datosDelBorrador, escribirDatos, type FilaArticulo, IdSchema, iso, problemasDeReferencias, problemasDeZod, seleccion, sinProblemas, versionVigente } from "./edicion.js";
 import { estadoEfectivo } from "./estado.js";
 
 // Publicar: pasar un borrador a PUBLICADO (ya, o con una fecha futura que lo programa), publicar los cambios de uno publicado
@@ -14,7 +14,8 @@ import { estadoEfectivo } from "./estado.js";
 //  - Despublicar deja el artículo en BORRADOR conservando su dirección y su fecha, para volver a publicarlo en la misma URL.
 //    No se puede despublicar uno con cambios sin publicar (publicarlos o descartarlos antes): así no se pierde nada.
 //  - Cada operación manda la versión que se vio; si otra persona guardó en el medio, 409 y no se cambia nada.
-// Reglas al publicar: sección elegida (no una interna), imagen de encabezado con su texto alternativo, texto en el artículo,
+// Reglas al publicar: sección elegida (no una interna), imagen de encabezado con su texto alternativo, texto en el artículo, texto alternativo
+// en cada imagen de la galería,
 // dirección válida y libre (si todavía es "borrador-…", se genera desde el título) y fecha razonable.
 // Si la URL pública cambia respecto de una anterior, se crea la redirección 301 (SLUG_ANTERIOR).
 
@@ -74,6 +75,14 @@ async function problemasParaPublicar(prisma: PrismaClient, a: FilaArticulo, dato
     if (!igualYVacio) problemas.push("Falta el texto alternativo de la imagen principal (describe la foto para quien no puede verla).");
   }
   if (!cuerpoConContenido(datos.cuerpo)) problemas.push("El artículo todavía no tiene texto.");
+
+  // Cada imagen de la galería lleva su texto alternativo. En uno ya publicado puede seguir vacío solo en las que ya estaban así (vienen de la migración).
+  const sinTextoAlt = datos.galeria.filter((g) => !g.alt?.trim());
+  if (sinTextoAlt.length > 0) {
+    const yaVacias = new Set(esNuevo ? [] : a.galeria.filter((g) => !g.alt?.trim()).map((g) => g.imagenId));
+    const faltan = sinTextoAlt.filter((g) => !yaVacias.has(g.imagenId)).length;
+    if (faltan > 0) problemas.push(faltan === 1 ? "Falta el texto alternativo de una imagen de la galería (describe la foto para quien no puede verla)." : `Falta el texto alternativo de ${faltan} imágenes de la galería (describen cada foto para quien no puede verla).`);
+  }
 
   problemas.push(...(await problemasDeReferencias(prisma, datos, a.seccionId)));
   problemas.push(...erroresDelCuerpo(datos.cuerpo, [a.cuerpo as unknown as JSONNode]));
@@ -142,7 +151,7 @@ export function crearRutasAdminPublicacion(prisma: PrismaClient): express.Router
         return;
       }
       if (a.borrador) {
-        const parseo = DatosSchema.safeParse(a.borrador.datos);
+        const parseo = DatosSchema.safeParse(datosDelBorrador(a));
         const problemas = parseo.success ? await problemasParaPublicar(prisma, a, parseo.data, { esNuevo: false }) : problemasDeZod(parseo.error);
         res.json({ estado: "ok", accion: "cambios", problemas });
         return;
@@ -184,9 +193,8 @@ export function crearRutasAdminPublicacion(prisma: PrismaClient): express.Router
 
       // La URL que tenía (si ya estuvo publicado y la cambia) pasa a redirigir a la nueva.
       const rutaAnterior = a.publicadoEn && !esProvisoria(a.slug) ? rutaArticulo({ slug: a.slug, publicadoEn: a.publicadoEn }) : null;
-      const galeriaPendientes = await prisma.galeriaItem.count({ where: { articuloId: a.id, OR: [{ alt: null }, { alt: "" }] } });
       const nuevaVersion = await prisma.$transaction(async (tx) => {
-        const version = await escribirDatos(tx, a.id, a.actualizadoEn, { ...datos, slug }, galeriaPendientes, { estado: "PUBLICADO", publicadoEn });
+        const version = await escribirDatos(tx, a.id, a.actualizadoEn, { ...datos, slug }, { estado: "PUBLICADO", publicadoEn });
         // Una redirección vieja que apuntaba a esta misma URL ya no hace falta.
         await tx.redireccion.deleteMany({ where: { origen: ruta, articuloId: a.id } });
         if (rutaAnterior && rutaAnterior !== ruta) {
@@ -221,17 +229,16 @@ export function crearRutasAdminPublicacion(prisma: PrismaClient): express.Router
       const cambioElArticulo = a.actualizadoEn > a.borrador.baseVersion;
       if (iso(versionVigente(a)) !== cuerpo.data.version || cambioElArticulo) return void conflicto(res, versionVigente(a));
 
-      const parseo = DatosSchema.safeParse(a.borrador.datos);
+      const parseo = DatosSchema.safeParse(datosDelBorrador(a));
       if (!parseo.success) return void sinProblemas(res, problemasDeZod(parseo.error));
       const datos = parseo.data;
       const problemas = await problemasParaPublicar(prisma, a, datos, { esNuevo: false });
       if (problemas.length > 0) return void sinProblemas(res, problemas);
 
-      const galeriaPendientes = await prisma.galeriaItem.count({ where: { articuloId: a.id, OR: [{ alt: null }, { alt: "" }] } });
       const nuevaVersion = await prisma.$transaction(async (tx) => {
         // La dirección y la fecha no cambian con los cambios (no se editan en un publicado).
         const { slug: _slug, ...sinSlug } = datos;
-        const version = await escribirDatos(tx, a.id, a.actualizadoEn, sinSlug, galeriaPendientes);
+        const version = await escribirDatos(tx, a.id, a.actualizadoEn, sinSlug);
         await tx.articuloBorrador.deleteMany({ where: { articuloId: a.id } });
         return version;
       });

@@ -47,7 +47,7 @@ export async function usosDeLaImagen(prisma: PrismaClient, id: number): Promise<
     prisma.$queryRaw<Array<{ id: number; titulo: string }>>(Prisma.sql`SELECT id, titulo FROM articulos WHERE JSON_CONTAINS(JSON_EXTRACT(cuerpo, '$**.imagenId'), JSON_ARRAY(${id})) LIMIT 10`),
     prisma.$queryRaw<Array<{ id: number; titulo: string }>>(
       Prisma.sql`SELECT a.id, a.titulo FROM articulos_borradores b JOIN articulos a ON a.id = b.articuloId
-        WHERE JSON_CONTAINS(JSON_EXTRACT(b.datos, '$.cuerpo**.imagenId'), JSON_ARRAY(${id})) OR JSON_EXTRACT(b.datos, '$.imagenEncabezadoId') = ${id} LIMIT 10`,
+        WHERE JSON_CONTAINS(JSON_EXTRACT(b.datos, '$.cuerpo**.imagenId'), JSON_ARRAY(${id})) OR JSON_CONTAINS(JSON_EXTRACT(b.datos, '$.galeria[*].imagenId'), JSON_ARRAY(${id})) OR JSON_EXTRACT(b.datos, '$.imagenEncabezadoId') = ${id} LIMIT 10`,
     ),
   ]);
   for (const a of encabezados) usos.push({ tipo: "encabezado", id: a.id, nombre: a.titulo });

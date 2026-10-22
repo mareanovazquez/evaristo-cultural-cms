@@ -3,6 +3,7 @@ import type { Editor } from "@tiptap/core";
 import { renderArticleBody } from "@evaristo/compartido/render";
 import { Link, useParams } from "react-router";
 import { ErrorApi, pedirApi, urlImagen, type ArticuloEditable, type Catalogos, type DatosArticulo, type ImagenDeLista, type RespuestaPublicar } from "../api";
+import { EditorFicha, EditorGaleria, fichaParaEnviar, type Miniatura } from "../GaleriaYFicha";
 import { PublicarDialog } from "../PublicarDialog";
 import { tiempos } from "../autoguardado";
 import { EditorCuerpo, textoDelEditor } from "../editor/EditorCuerpo";
@@ -112,6 +113,8 @@ function Formulario({ articulo, catalogos, recargar, exito: exitoInicial }: { ar
   const { sesionVencida } = useSesion();
   const [campos, setCampos] = useState<DatosArticulo>(articulo.datos);
   const [imagenEncabezado, setImagenEncabezado] = useState(articulo.imagenEncabezado);
+  // Cómo se ve cada imagen de la galería (por su id), para las miniaturas.
+  const [miniaturas, setMiniaturas] = useState<Record<number, Miniatura>>(() => Object.fromEntries(articulo.imagenesGaleria.map((i) => [i.id, { clave: i.clave, nombreOriginal: i.nombreOriginal }])));
   const [conCambiosSinPublicar, setConCambiosSinPublicar] = useState(articulo.conCambiosSinPublicar);
   // El aviso de lo recién publicado vale solo en ese momento: desaparece con el primer cambio nuevo o al empezar otra acción.
   const [exito, setExito] = useState<Exito | null>(exitoInicial);
@@ -177,6 +180,8 @@ function Formulario({ articulo, catalogos, recargar, exito: exitoInicial }: { ar
       bajada: vacioANull(c.bajada),
       encabezadoAlt: vacioANull(c.encabezadoAlt),
       encabezadoCredito: vacioANull(c.encabezadoCredito),
+      galeria: c.galeria.map((g) => ({ imagenId: g.imagenId, alt: vacioANull(g.alt), epigrafe: vacioANull(g.epigrafe) })),
+      ficha: fichaParaEnviar(c.ficha),
       cuerpo: textoDelEditor(editor.current),
     };
     try {
@@ -344,6 +349,8 @@ function Formulario({ articulo, catalogos, recargar, exito: exitoInicial }: { ar
         ? { src: urlImagen(imagenEncabezado.clave), alt: c.encabezadoAlt?.trim() ?? "", credito: vacioANull(c.encabezadoCredito)?.trim() ?? null, posicion: posicionFocal(c.encabezadoPuntoFocalX, c.encabezadoPuntoFocalY) }
         : undefined,
       cuerpo: textoDelEditor(e),
+      ficha: fichaParaEnviar(c.ficha),
+      galeria: c.galeria.flatMap((g) => (miniaturas[g.imagenId] ? [{ src: urlImagen(miniaturas[g.imagenId]!.clave), alt: g.alt?.trim() ?? "", epigrafe: vacioANull(g.epigrafe)?.trim() ?? null }] : [])),
       conCapital: c.conCapital,
     });
     setVista("previa");
@@ -485,6 +492,13 @@ function Formulario({ articulo, catalogos, recargar, exito: exitoInicial }: { ar
             </span>
             <EditorCuerpo contenido={campos.cuerpo} onCambio={marcarCambio} onEditor={alEditor} onVentanaAbierta={setVentanaAbierta} />
           </div>
+          <EditorFicha ficha={campos.ficha} onCambio={(ficha) => poner({ ficha })} />
+          <EditorGaleria
+            items={campos.galeria}
+            miniaturas={miniaturas}
+            onCambio={(galeria) => poner({ galeria })}
+            onMiniatura={(id, m) => setMiniaturas((prev) => ({ ...prev, [id]: m }))}
+          />
         </div>
 
         <aside className="edicion-lateral" aria-label="Datos del artículo">

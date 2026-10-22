@@ -96,7 +96,7 @@ Para ejecutar varias sentencias juntas: Execute All (`Ctrl+Shift+Enter`, el rayo
 ## Migraciones y la base de desarrollo
 
 - `db:nueva`, `db:deploy` y `db:generate` leen `DATABASE_URL` del `.env`. Para aplicar una migración a otra base sin tocar el `.env`, definir `DATABASE_URL` solo para ese comando (en PowerShell: `$env:DATABASE_URL = "<url>"; npm run db:deploy; Remove-Item Env:DATABASE_URL`), y comprobar siempre el nombre de la base antes. Se aplican a `evaristo_cms_dev` y a `evaristo_cms_test` cuando cambia el esquema; **a `evaristo_cms` (la real) no, hasta la fase 7**.
-- `npm run dev:desarrollo -w @evaristo/api` y `npm run usuario:crear -- --base-dev …` usan `evaristo_cms_dev` (`--base-dev`); las pruebas `test:auth-base`, `test:admin-articulos`, `test:admin-edicion`, `test:admin-imagenes`, `test:admin-subida`, `test:admin-publicacion` y `test:editor` (la parte de ida y vuelta) solo corren contra ella.
+- `npm run dev:desarrollo -w @evaristo/api` y `npm run usuario:crear -- --base-dev …` usan `evaristo_cms_dev` (`--base-dev`); las pruebas `test:auth-base`, `test:admin-articulos`, `test:admin-edicion`, `test:admin-imagenes`, `test:admin-subida`, `test:admin-publicacion`, `test:admin-galeria-ficha` y `test:editor` (la parte de ida y vuelta) solo corren contra ella.
 - El cliente de MySQL y `mysqldump` no están en el PATH: están en `C:\Program Files\MySQL\MySQL Server 8.4\bin`.
 
 ## Claude Code

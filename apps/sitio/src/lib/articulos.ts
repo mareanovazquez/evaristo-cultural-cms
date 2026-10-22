@@ -31,6 +31,8 @@ export async function buscarArticulo(slug: string) {
       categoriaPrincipal: { select: { nombre: true, slug: true } },
       categorias: { select: { categoriaId: true } },
       imagenEncabezado: { select: { clave: true } },
+      galeria: { orderBy: { orden: "asc" }, select: { alt: true, epigrafe: true, imagen: { select: { clave: true, ancho: true, alto: true } } } },
+      fichaTecnica: { select: { titulo: true, autor: true, traductor: true, editorial: true, coleccion: true, anio: true, paginas: true, isbn: true, precio: true } },
       encabezadoAlt: true,
       encabezadoCredito: true,
       encabezadoPuntoFocalX: true,

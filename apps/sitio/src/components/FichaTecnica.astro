@@ -1,0 +1,49 @@
+---
+// Ficha técnica del libro (reseñas), al final de la nota, después de las notas al pie. Solo muestra los campos que tienen algo; si no hay
+// ninguno, no muestra nada.
+export interface FichaDatos {
+  titulo: string | null;
+  autor: string | null;
+  traductor: string | null;
+  editorial: string | null;
+  coleccion: string | null;
+  anio: number | null;
+  paginas: number | null;
+  isbn: string | null;
+  precio: string | null;
+}
+interface Props {
+  ficha: FichaDatos | null;
+}
+const { ficha } = Astro.props;
+const campos: Array<[string, string | number | null]> = ficha
+  ? [
+      ["Título", ficha.titulo],
+      ["Autor", ficha.autor],
+      ["Traductor", ficha.traductor],
+      ["Editorial", ficha.editorial],
+      ["Colección", ficha.coleccion],
+      ["Año", ficha.anio],
+      ["Páginas", ficha.paginas],
+      ["ISBN", ficha.isbn],
+      ["Precio", ficha.precio],
+    ]
+  : [];
+const filas = campos.filter(([, valor]) => valor !== null && String(valor).trim() !== "");
+---
+
+{
+  filas.length > 0 && (
+    <section class="col ficha-tecnica" aria-labelledby="ficha-titulo">
+      <h2 id="ficha-titulo">Ficha técnica</h2>
+      <dl>
+        {filas.map(([etiqueta, valor]) => (
+          <div>
+            <dt>{etiqueta}</dt>
+            <dd>{valor}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+  )
+}

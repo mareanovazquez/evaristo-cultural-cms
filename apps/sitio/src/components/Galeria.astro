@@ -1,0 +1,62 @@
+---
+// Galería de imágenes del artículo, al final de la nota (después de la ficha técnica). Cada imagen se ve ampliada en un visor con flechas
+// (lib/visor-galeria.ts). Sin JavaScript, el enlace de cada imagen abre el archivo.
+import { urlMedia } from "../lib/articulos";
+
+export interface ItemGaleria {
+  alt: string | null;
+  epigrafe: string | null;
+  imagen: { clave: string; ancho: number; alto: number };
+}
+interface Props {
+  items: ItemGaleria[];
+}
+const { items } = Astro.props;
+---
+
+{
+  items.length > 0 && (
+    <section class="wide galeria" aria-labelledby="galeria-titulo">
+      <h2 id="galeria-titulo">Galería</h2>
+      <ul class="galeria-grilla">
+        {items.map((item, i) => (
+          <li>
+            <figure>
+              <a
+                href={urlMedia(item.imagen.clave)}
+                class="galeria-abrir"
+                aria-label={`Ampliar la imagen ${i + 1} de ${items.length}${item.epigrafe ? `: ${item.epigrafe}` : ""}`}
+              >
+                <img src={urlMedia(item.imagen.clave)} alt={item.alt ?? ""} width={item.imagen.ancho} height={item.imagen.alto} loading="lazy" />
+              </a>
+              {item.epigrafe && <figcaption>{item.epigrafe}</figcaption>}
+            </figure>
+          </li>
+        ))}
+      </ul>
+      <dialog class="visor" aria-label="Imagen ampliada de la galería">
+        <div class="visor-barra">
+          <span class="visor-contador" aria-live="polite" />
+          <button type="button" class="visor-cerrar" aria-label="Cerrar">
+            ×
+          </button>
+        </div>
+        <figure class="visor-figura">
+          <img class="visor-imagen" alt="" />
+          <figcaption class="visor-epigrafe" />
+        </figure>
+        <button type="button" class="visor-anterior" aria-label="Imagen anterior">
+          ‹
+        </button>
+        <button type="button" class="visor-siguiente" aria-label="Imagen siguiente">
+          ›
+        </button>
+      </dialog>
+    </section>
+  )
+}
+
+<script>
+  import { iniciarVisores } from "../lib/visor-galeria";
+  iniciarVisores(document);
+</script>

@@ -6,7 +6,7 @@ import type { JSONNode } from "@evaristo/compartido/schema";
 import { textoPlanoDe } from "@evaristo/compartido/texto-plano";
 import { rutaArticulo } from "@evaristo/compartido/urls";
 import { estadoEfectivo } from "./estado.js";
-import { contarAltPendientes, cuerpoVacio, DatosSchema, erroresDelCuerpo, imagenIdsDelCuerpo, NuevoSchema, SlugSchema, type DatosArticulo } from "./datos-articulo.js";
+import { contarAltPendientes, cuerpoVacio, DatosSchema, erroresDelCuerpo, imagenIdsDelCuerpo, normalizarFicha, NuevoSchema, SlugSchema, type DatosArticulo } from "./datos-articulo.js";
 
 // Leer, crear y editar artículos desde el panel.
 //  - Un artículo en BORRADOR se guarda directo sobre su fila.
@@ -41,12 +41,16 @@ export const seleccion = {
   encabezadoPuntoFocalY: true,
   conCapital: true,
   novedadHasta: true,
+  galeria: { orderBy: { orden: "asc" as const }, select: { imagenId: true, alt: true, epigrafe: true } },
+  fichaTecnica: { select: { titulo: true, autor: true, traductor: true, editorial: true, coleccion: true, anio: true, paginas: true, isbn: true, precio: true } },
   borrador: { select: { datos: true, baseVersion: true, actualizadoEn: true } },
 } as const;
 
 export type FilaArticulo = NonNullable<Awaited<ReturnType<PrismaClient["articulo"]["findFirst"]>>> & {
   categorias: Array<{ categoriaId: number }>;
   autores: Array<{ autorId: number }>;
+  galeria: Array<{ imagenId: number; alt: string | null; epigrafe: string | null }>;
+  fichaTecnica: DatosArticulo["ficha"];
   borrador: { datos: unknown; baseVersion: Date; actualizadoEn: Date } | null;
 };
 
@@ -66,10 +70,20 @@ export function datosDeLaFila(a: FilaArticulo): DatosArticulo {
     encabezadoCredito: a.encabezadoCredito,
     encabezadoPuntoFocalX: a.encabezadoPuntoFocalX,
     encabezadoPuntoFocalY: a.encabezadoPuntoFocalY,
+    galeria: a.galeria.map((g) => ({ imagenId: g.imagenId, alt: g.alt, epigrafe: g.epigrafe })),
+    ficha: a.fichaTecnica,
     conCapital: a.conCapital,
     novedadHasta: a.novedadHasta ? iso(a.novedadHasta) : null,
     slug: a.slug,
   };
+}
+
+/**
+ * Los datos del borrador de cambios, completos: lo que no esté en él (por ejemplo, la galería y la ficha en un borrador guardado antes
+ * de que existieran) se toma de la fila del artículo, para que publicarlo no borre nada.
+ */
+export function datosDelBorrador(a: FilaArticulo): Record<string, unknown> {
+  return { ...datosDeLaFila(a), ...((a.borrador?.datos ?? {}) as Record<string, unknown>) };
 }
 
 /** Versión que tiene que mandar el panel al guardar: la del borrador de cambios si existe, si no la del artículo. */
@@ -98,7 +112,9 @@ export async function problemasDeReferencias(prisma: PrismaClient, d: DatosArtic
   if (new Set(d.autorIds).size !== d.autorIds.length) problemas.push("Hay autores repetidos.");
   if (d.autorIds.length && (await prisma.autor.count({ where: { id: { in: d.autorIds } } })) !== new Set(d.autorIds).size) problemas.push("Algún autor elegido no existe.");
 
-  const idsImagenes = [...new Set([...imagenIdsDelCuerpo(d.cuerpo), ...(d.imagenEncabezadoId !== null ? [d.imagenEncabezadoId] : [])])];
+  const idsGaleria = d.galeria.map((g) => g.imagenId);
+  if (new Set(idsGaleria).size !== idsGaleria.length) problemas.push("Hay una imagen repetida en la galería.");
+  const idsImagenes = [...new Set([...imagenIdsDelCuerpo(d.cuerpo), ...idsGaleria, ...(d.imagenEncabezadoId !== null ? [d.imagenEncabezadoId] : [])])];
   if (idsImagenes.length && (await prisma.imagen.count({ where: { id: { in: idsImagenes } } })) !== idsImagenes.length) problemas.push("Alguna imagen del artículo no está en la biblioteca.");
   return problemas;
 }
@@ -114,7 +130,6 @@ export async function escribirDatos(
   id: number,
   actualizadoEnEsperado: Date,
   datos: DatosArticulo,
-  galeriaPendientes: number,
   extra: Prisma.ArticuloUncheckedUpdateManyInput = {},
 ): Promise<Date> {
   const r = await tx.articulo.updateMany({
@@ -133,7 +148,7 @@ export async function escribirDatos(
       encabezadoPuntoFocalY: datos.encabezadoPuntoFocalY,
       conCapital: datos.conCapital,
       novedadHasta: datos.novedadHasta ? new Date(datos.novedadHasta) : null,
-      altPendientes: contarAltPendientes(datos, galeriaPendientes),
+      altPendientes: contarAltPendientes(datos),
       ...(datos.slug !== undefined ? { slug: datos.slug } : {}),
       ...extra,
     },
@@ -143,6 +158,11 @@ export async function escribirDatos(
   if (datos.categoriaIds.length) await tx.articuloCategoria.createMany({ data: datos.categoriaIds.map((categoriaId) => ({ articuloId: id, categoriaId })) });
   await tx.articuloAutor.deleteMany({ where: { articuloId: id } });
   if (datos.autorIds.length) await tx.articuloAutor.createMany({ data: datos.autorIds.map((autorId, orden) => ({ articuloId: id, autorId, orden })) });
+  await tx.galeriaItem.deleteMany({ where: { articuloId: id } });
+  if (datos.galeria.length) await tx.galeriaItem.createMany({ data: datos.galeria.map((g, orden) => ({ articuloId: id, imagenId: g.imagenId, orden, alt: g.alt, epigrafe: g.epigrafe })) });
+  const ficha = normalizarFicha(datos.ficha);
+  if (ficha) await tx.fichaTecnica.upsert({ where: { articuloId: id }, create: { articuloId: id, ...ficha }, update: ficha });
+  else await tx.fichaTecnica.deleteMany({ where: { articuloId: id } });
   return (await tx.articulo.findUniqueOrThrow({ where: { id }, select: { actualizadoEn: true } })).actualizadoEn;
 }
 
@@ -178,9 +198,13 @@ export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
         return;
       }
       const conBorrador = a.estado !== "BORRADOR" && a.borrador !== null;
-      const datos = conBorrador ? { ...(a.borrador!.datos as DatosArticulo), slug: a.slug } : datosDeLaFila(a);
+      const datos = (conBorrador ? { ...datosDelBorrador(a), slug: a.slug } : datosDeLaFila(a)) as DatosArticulo;
       // Para mostrar la miniatura del encabezado (el borrador de cambios puede tener otra imagen que el artículo).
       const imagenEncabezado = datos.imagenEncabezadoId !== null ? await prisma.imagen.findUnique({ where: { id: datos.imagenEncabezadoId }, select: { id: true, clave: true, nombreOriginal: true } }) : null;
+      // Y las de la galería, en el mismo orden que los datos.
+      const idsGaleria = datos.galeria.map((g) => g.imagenId);
+      const filasGaleria = idsGaleria.length ? await prisma.imagen.findMany({ where: { id: { in: idsGaleria } }, select: { id: true, clave: true, nombreOriginal: true } }) : [];
+      const imagenesGaleria = idsGaleria.flatMap((id) => filasGaleria.filter((f) => f.id === id));
       const ahora = new Date();
       res.setHeader("Cache-Control", "no-store");
       res.json({
@@ -197,6 +221,7 @@ export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
           ruta: a.estado === "PUBLICADO" && a.publicadoEn && a.publicadoEn <= ahora ? rutaArticulo({ slug: a.slug, publicadoEn: a.publicadoEn }) : null,
           datos,
           imagenEncabezado,
+          imagenesGaleria,
         },
       });
     } catch (e) {
@@ -255,7 +280,8 @@ export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
         sinProblemas(res, problemasDeZod(datosZod.error));
         return;
       }
-      const datos = datosZod.data;
+      // Una ficha sin ningún campo es lo mismo que no tener ficha.
+      const datos: DatosArticulo = { ...datosZod.data, ficha: normalizarFicha(datosZod.data.ficha) };
 
       const a = (await prisma.articulo.findUnique({ where: { id: id.data }, select: seleccion })) as FilaArticulo | null;
       if (!a) {
@@ -301,9 +327,8 @@ export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
       let nuevaVersion: Date;
 
       if (esBorrador) {
-        const galeriaPendientes = await prisma.galeriaItem.count({ where: { articuloId: a.id, OR: [{ alt: null }, { alt: "" }] } });
         nuevaVersion = await prisma.$transaction(async (tx) => {
-          const version = await escribirDatos(tx, a.id, a.actualizadoEn, datos, galeriaPendientes);
+          const version = await escribirDatos(tx, a.id, a.actualizadoEn, datos);
           // Un borrador que ya estuvo publicado (se despublicó) y cambia de dirección: la URL que tenía pasa a redirigir a la nueva.
           // Se anota ahora porque después, al volver a publicarlo, la fila ya no recuerda cuál fue la pública. Mientras el artículo sea
           // un borrador la redirección no se aplica (el sitio solo redirige a lo que se ve).

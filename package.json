@@ -36,6 +36,7 @@
     "test:admin-imagenes": "npm run test:admin-imagenes --workspace=@evaristo/api",
     "test:admin-subida": "npm run test:admin-subida --workspace=@evaristo/api",
     "test:admin-publicacion": "npm run test:admin-publicacion --workspace=@evaristo/api",
+    "test:admin-galeria-ficha": "npm run test:admin-galeria-ficha --workspace=@evaristo/api",
     "test:editor": "npm run test:editor --workspace=@evaristo/panel",
     "test:pantalla": "npm run test:pantalla --workspace=@evaristo/panel",
     "test:render": "npm run test:render --workspace=@evaristo/compartido",

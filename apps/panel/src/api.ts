@@ -89,6 +89,26 @@ export interface RespuestaLista {
 
 // ---------- Edición de artículos ----------
 
+/** Una imagen de la galería de un artículo, con su texto alternativo y su epígrafe (viven en cada uso). */
+export interface GaleriaItemDatos {
+  imagenId: number;
+  alt: string | null;
+  epigrafe: string | null;
+}
+
+/** Ficha técnica del libro (reseñas): una por artículo, todos los campos opcionales. */
+export interface FichaDatos {
+  titulo: string | null;
+  autor: string | null;
+  traductor: string | null;
+  editorial: string | null;
+  coleccion: string | null;
+  anio: number | null;
+  paginas: number | null;
+  isbn: string | null;
+  precio: string | null;
+}
+
 /** Los campos que se editan de un artículo (los mismos que valida la API). */
 export interface DatosArticulo {
   titulo: string;
@@ -103,6 +123,8 @@ export interface DatosArticulo {
   encabezadoCredito: string | null;
   encabezadoPuntoFocalX: number;
   encabezadoPuntoFocalY: number;
+  galeria: GaleriaItemDatos[];
+  ficha: FichaDatos | null;
   conCapital: boolean;
   novedadHasta: string | null;
   slug?: string;
@@ -120,6 +142,8 @@ export interface ArticuloEditable {
   datos: DatosArticulo;
   /** La imagen de encabezado de datos, para mostrar su miniatura. */
   imagenEncabezado: { id: number; clave: string; nombreOriginal: string } | null;
+  /** Las imágenes de la galería de datos, en el mismo orden, para mostrar sus miniaturas. */
+  imagenesGaleria: Array<{ id: number; clave: string; nombreOriginal: string }>;
 }
 
 export interface Catalogos {
@@ -151,6 +175,9 @@ export interface RespuestaSubida {
   repetida: boolean;
   imagen: ImagenDeLista;
 }
+
+/** Cantidad máxima de imágenes de la galería de un artículo (la misma que valida la API). */
+export const MAX_GALERIA = 40;
 
 /** Tamaño máximo de una imagen al subirla (el mismo que valida la API). */
 export const MAX_BYTES_IMAGEN = 10 * 1024 * 1024;
