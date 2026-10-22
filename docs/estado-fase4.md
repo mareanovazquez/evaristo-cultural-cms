@@ -1,6 +1,6 @@
 # Fase 4 (panel y API): estado, decisiones y lo que falta
 
-Actualizado el 22/10/2026. Pasos 1 a 3 hechos y mergeados en `main`; el paso 4 está en curso (etapas 4a y 4b hechas en la rama `fase4-editor`, sin mergear); faltan los pasos 5 a 8. El plan de la fase está en `plan-implementacion.md`, sección 7; los pendientes generales en `pendientes.md`, sección 1.
+Actualizado el 22/10/2026. Pasos 1 a 3 hechos y mergeados en `main`; el paso 4 está en curso (etapas 4a, 4b y 4c hechas en la rama `fase4-editor`, sin mergear); faltan los pasos 5 a 8. El plan de la fase está en `plan-implementacion.md`, sección 7; los pendientes generales en `pendientes.md`, sección 1.
 
 ## Base de desarrollo
 
@@ -61,7 +61,19 @@ Se desarrolla contra **`evaristo_cms_dev`** (copia de `evaristo_cms` del 21/10/2
 - **API:** nueva `GET /api/admin/imagenes?q=&pagina=` (`apps/api/src/admin/imagenes.ts`; solo `id`, `clave`, `nombreOriginal`, `ancho` y `alto`; 24 por página, solo lectura). `GET /api/admin/articulos/:id` devuelve además `imagenEncabezado` (id, clave y nombre) para mostrar su miniatura. `ErrorApi` del panel lleva ahora la lista `problemas` de los 422.
 - **Tests:** `test:admin-imagenes` (200 imágenes, 9 páginas, búsqueda, filtros inválidos y sin campos de más), `test:admin-edicion` (suma la comprobación de `imagenEncabezado`) y `test:pantalla` en el panel (9 pruebas con jsdom y la API simulada: abrir un borrador con todos los campos, guardar sin tocar manda el mismo cuerpo y la versión que se abrió, ediciones, 422, 409 y recarga, selector del encabezado, imagen nueva en el cuerpo, alta y artículo publicado con la dirección de solo lectura; se comprobó con una mutación que detecta una versión equivocada). `entorno-jsdom.ts` responde "sin medidas" a los rangos que ProseMirror pide a jsdom. `comparar-cuerpos.ts` es la comparación de la ida y vuelta, compartida con `test:pantalla`.
 - **Sin ver en un navegador.** El bundle del panel pasó de ~270 KB a ~770 KB (240 KB comprimido) por TipTap; para un panel interno es aceptable, pero queda anotado (si hiciera falta: partir el código con `import()` dinámico).
-- **Pendiente de esta etapa:** la pantalla no avisa al salir con cambios sin guardar (4c); un artículo en BORRADOR con la dirección `borrador-…` no se puede publicar todavía (paso 6).
+- **Pendiente de esta etapa:** un artículo en BORRADOR con la dirección `borrador-…` no se puede publicar todavía (paso 6).
+
+## Paso 4, etapa 4c: autoguardado, conflicto, descartar y vista previa (22/10/2026, rama `fase4-editor`)
+
+Decisiones de Mariano (22/10/2026): **(8)** ante un conflicto la pantalla ofrece dos botones, "Copiar mi texto" y "Cargar la versión nueva", sin "guardar de todos modos" ni comparación de versiones; **(9)** la vista previa va en un `iframe` con las hojas de estilo del sitio importadas como texto; **(10)** el autoguardado espera 2 segundos después del último cambio y también guarda al salir de un campo.
+
+- **Autoguardado** (`EditarArticulo.tsx`, tiempos en `autoguardado.ts`): 2 s después del último cambio y al salir de un campo (`focusout`). Estado visible: "Guardando…", "Guardado a las …", "Hay cambios sin guardar", "No se pudo guardar. Probamos de nuevo…" (falla de conexión o 5xx: reintenta cada 5 s sin perder lo escrito) y "No se guardó. Revisá los avisos de arriba." (422 y otros 4xx: **no** se reenvía solo; el próximo cambio vuelve a habilitarlo). No guarda mientras hay una ventana del editor abierta (nota, imagen o video: el texto puede estar a medio armar, por ejemplo una imagen nueva sin dirección). El botón Guardar sigue y reintenta a pedido. Un publicado sigue yendo a su borrador de cambios: el sitio no cambia (lo comprueba `test:admin-edicion`).
+- **Aviso al salir** (`salida.ts`): con cambios sin guardar, `beforeunload` (cerrar o recargar la pestaña), y una pregunta al hacer clic en un enlace del panel o en Salir. `BrowserRouter` no permite frenar el botón Atrás del navegador: ahí el respaldo es el autoguardado.
+- **Conflicto (409):** "Este artículo cambió mientras lo editabas", Guardar bloqueado, "Copiar mi texto" (portapapeles con texto plano y HTML con formato: título, bajada, cuerpo y notas; si el navegador no deja, avisa que se copie a mano) y "Cargar la versión nueva" (con confirmación, porque descarta lo local). Nunca se pisa lo de otra persona.
+- **Descartar cambios sin publicar:** en un artículo con borrador de cambios, el aviso trae el botón "Descartar los cambios" (confirmación, `DELETE /api/admin/articulos/:id/borrador` y recarga). No se ofrece en un BORRADOR. Espera si hay un guardado en curso para no recrear el borrador.
+- **Vista previa** (`VistaPrevia.tsx`, `vista-previa.ts`): solapas "Editar" y "Vista previa". Arma la misma estructura que `apps/sitio/src/components/Articulo.astro` (cintillo de sección, volanta con la categoría principal, título, bajada, autores, fecha, encabezado con punto focal, cuerpo con `renderArticleBody` y `conCapital`, notas) con lo que hay en pantalla, guardado o no, dentro de un `iframe srcdoc` con `sandbox="allow-popups allow-popups-to-escape-sandbox"` (sin scripts). Las hojas `tokens`, `base`, `articulo` y `sitio` del sitio se importan con `?raw` y se piden recién al abrir la vista previa (fragmento aparte del bundle). Los enlaces externos abren en otra pestaña; los de las notas (`#`) quedan dentro. Las fuentes vienen de Google Fonts, como en el sitio. Si cambia la estructura de `Articulo.astro`, hay que cambiarla también en `vista-previa.ts`. Limitaciones: las imágenes del cuerpo salen sin `width` y `height` (el panel no tiene las medidas) y no incluye bios ni relacionados. No se ve la fecha de un artículo todavía sin publicar: dice "Todavía sin fecha de publicación".
+- **Tests:** `test:pantalla` pasó a 21 pruebas (autoguardado con debounce, guardado al salir de un campo, 422 sin bucle, reintento sin conexión, pausa con ventana abierta, aviso al salir, conflicto con copia, descartar, vista previa y su escape de HTML). Se comprobó con tres mutaciones (sin la guarda del 422, sin la pausa por ventana, sin el aviso al salir) que las pruebas fallan. `fuente.cargar` y `tiempos` se reemplazan en las pruebas (fuera de Vite no existe `?raw`).
+- **Pendiente para 4d (mirar en el navegador):** cómo se siente el autoguardado al escribir, el aviso al salir, la barra en celular y que la vista previa se vea igual que el sitio.
 
 ## El editor de la fase 0 (a portar en el paso 4)
 
@@ -78,11 +90,9 @@ Está en `testing-tiptap/src/editor` (unas 1.100 líneas) y `App.tsx` (793 líne
 
 **Paso 4: el editor** (lo más grande).
 - ~~Portar las extensiones de TipTap con `imagenId`, y la prueba de ida y vuelta de los 35 con jsdom.~~ Hecho (etapa 4a).
-- Pantalla de edición: título, bajada, editor del cuerpo, sección, categorías con la principal marcada, autores en orden, imagen de encabezado (con texto alternativo, crédito y punto focal), letra capital (casilla), `novedadHasta`, dirección (solo en un borrador).
-- Alta de un artículo nuevo; abrir un artículo desde el listado.
-- Autoguardado con retardo y estado visible ("Guardado", "Guardando…", "No se pudo guardar"); aviso de conflicto con opción de ver los cambios o copiar el propio texto; "Descartar los cambios sin publicar"; aviso de que hay cambios sin publicar en un artículo publicado.
-- Vista previa con el renderizador compartido (`conCapital` incluido).
-- Mensajes de error en lenguaje común.
+- ~~Pantalla de edición, alta de artículos, abrir desde el listado.~~ Hecho (etapa 4b).
+- ~~Autoguardado con estado visible, aviso de conflicto con copia del texto propio, "Descartar los cambios sin publicar", aviso de cambios sin publicar, vista previa con el renderizador compartido (`conCapital` incluido).~~ Hecho (etapa 4c).
+- Falta (etapa 4d): mirar el panel en el navegador (escritorio y celular), ajustes, pasada de accesibilidad y mensajes de error en lenguaje común, y cerrar el paso 4 (borrar `plan-paso4-fase4.md`).
 
 **Paso 5: imágenes.**
 - Subida con `multer` y procesamiento con `sharp` (tipo real del archivo, tamaño máximo, orientación EXIF, medidas, SHA-256, clave segura), guardado en `MEDIA_DIR`.

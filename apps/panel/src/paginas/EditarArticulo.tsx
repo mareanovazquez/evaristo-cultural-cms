@@ -1,13 +1,20 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/core";
+import { renderArticleBody } from "@evaristo/compartido/render";
 import { Link, useParams } from "react-router";
 import { ErrorApi, pedirApi, urlImagen, type ArticuloEditable, type Catalogos, type DatosArticulo, type ImagenDeLista } from "../api";
+import { tiempos } from "../autoguardado";
 import { EditorCuerpo, textoDelEditor } from "../editor/EditorCuerpo";
 import { SelectorImagen } from "../editor/SelectorImagen";
+import { useAvisarAlSalir } from "../salida";
 import { useSesion } from "../sesion";
+import type { DatosVistaPrevia } from "../vista-previa";
+import { posicionFocal } from "../vista-previa";
+import { VistaPrevia } from "../VistaPrevia";
 
 const ESTADOS = { PUBLICADO: "Publicado", BORRADOR: "Borrador", PROGRAMADO: "Programado" } as const;
 const hora = new Intl.DateTimeFormat("es-AR", { timeStyle: "short" });
+const fechaLarga = new Intl.DateTimeFormat("es-AR", { dateStyle: "long", timeZone: "UTC" });
 
 const vacioANull = (v: string | null): string | null => (v && v.trim() ? v : null);
 
@@ -28,12 +35,26 @@ function fechaDesdeCampo(valor: string): string | null {
 
 const porcentaje = (v: number): string => String(Math.round(v * 100));
 
+/** Pone en el portapapeles el texto propio (con formato y en texto plano) para pegarlo en otro lado. */
+async function copiarAlPortapapeles(texto: string, html: string): Promise<boolean> {
+  try {
+    if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+      await navigator.clipboard.write([new ClipboardItem({ "text/plain": new Blob([texto], { type: "text/plain" }), "text/html": new Blob([html], { type: "text/html" }) })]);
+      return true;
+    }
+    await navigator.clipboard.writeText(texto);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function EditarArticulo() {
   const { id } = useParams();
   const { sesionVencida } = useSesion();
   const [carga, setCarga] = useState<{ articulo: ArticuloEditable; catalogos: Catalogos } | null>(null);
   const [error, setError] = useState<string | null>(null);
-  // Cambia cada vez que hay que volver a leer el artículo del servidor (por ejemplo, tras un conflicto).
+  // Cambia cada vez que hay que volver a leer el artículo del servidor (tras un conflicto o al descartar cambios).
   const [lectura, setLectura] = useState(0);
 
   useEffect(() => {
@@ -72,30 +93,46 @@ export function EditarArticulo() {
   return <Formulario key={`${carga.articulo.id}-${lectura}`} articulo={carga.articulo} catalogos={carga.catalogos} recargar={() => setLectura((n) => n + 1)} />;
 }
 
+type Falla = "red" | "invalido" | null;
+
 function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEditable; catalogos: Catalogos; recargar: () => void }) {
   const { sesionVencida } = useSesion();
   const [campos, setCampos] = useState<DatosArticulo>(articulo.datos);
   const [imagenEncabezado, setImagenEncabezado] = useState(articulo.imagenEncabezado);
-  const [version, setVersion] = useState(articulo.version);
   const [conCambiosSinPublicar, setConCambiosSinPublicar] = useState(articulo.conCambiosSinPublicar);
   const [sucio, setSucio] = useState(false);
+  const [cambiosN, setCambiosN] = useState(0);
   const [guardando, setGuardando] = useState(false);
   const [guardadoA, setGuardadoA] = useState<Date | null>(null);
+  const [falla, setFalla] = useState<Falla>(null);
   const [problemas, setProblemas] = useState<string[]>([]);
   const [aviso, setAviso] = useState<string | null>(null);
   const [conflicto, setConflicto] = useState(false);
+  const [descartando, setDescartando] = useState(false);
+  const [copiado, setCopiado] = useState<"si" | "no" | null>(null);
+  const [vista, setVista] = useState<"editar" | "previa">("editar");
+  const [datosPrevia, setDatosPrevia] = useState<DatosVistaPrevia | null>(null);
   const [eligiendoEncabezado, setEligiendoEncabezado] = useState(false);
   const [autorAgregar, setAutorAgregar] = useState("");
+  const [ventanaAbierta, setVentanaAbierta] = useState(false);
 
   const editor = useRef<Editor | null>(null);
-  // Cuenta los cambios para no marcar "guardado" si alguien siguió escribiendo mientras se guardaba.
-  const cambios = useRef(0);
   const alEditor = useCallback((e: Editor | null) => {
     editor.current = e;
   }, []);
+  // El autoguardado corre fuera de los renders: lee siempre lo último desde acá.
+  const camposRef = useRef(campos);
+  camposRef.current = campos;
+  const version = useRef(articulo.version);
+  const enCurso = useRef(false);
+  // Cuenta los cambios para no marcar "guardado" si alguien siguió escribiendo mientras se guardaba,
+  // y para no reenviar en bucle lo que el servidor rechazó (422) hasta que haya un cambio nuevo.
+  const cambios = useRef(0);
+  const rechazadoEn = useRef(-1);
 
   const marcarCambio = useCallback(() => {
     cambios.current += 1;
+    setCambiosN(cambios.current);
     setSucio(true);
   }, []);
   const poner = (parcial: Partial<DatosArticulo>) => {
@@ -106,36 +143,130 @@ function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEdita
   const esBorrador = articulo.estado === "BORRADOR";
   const nombreDe = (autorId: number) => catalogos.autores.find((a) => a.id === autorId)?.nombre ?? `Autor ${autorId}`;
 
-  const guardar = async () => {
-    if (!editor.current || guardando) return;
+  const guardar = useCallback(async () => {
+    if (!editor.current || enCurso.current) return;
+    enCurso.current = true;
     const cambiosAlEmpezar = cambios.current;
     setGuardando(true);
     setProblemas([]);
     setAviso(null);
+    const c = camposRef.current;
     const datos: DatosArticulo = {
-      ...campos,
-      bajada: vacioANull(campos.bajada),
-      encabezadoAlt: vacioANull(campos.encabezadoAlt),
-      encabezadoCredito: vacioANull(campos.encabezadoCredito),
+      ...c,
+      bajada: vacioANull(c.bajada),
+      encabezadoAlt: vacioANull(c.encabezadoAlt),
+      encabezadoCredito: vacioANull(c.encabezadoCredito),
       cuerpo: textoDelEditor(editor.current),
     };
     try {
-      const r = await pedirApi<{ version: string; conCambiosSinPublicar: boolean }>(`/api/admin/articulos/${articulo.id}`, { metodo: "PUT", cuerpo: { version, datos } });
-      setVersion(r.version);
+      const r = await pedirApi<{ version: string; conCambiosSinPublicar: boolean }>(`/api/admin/articulos/${articulo.id}`, { metodo: "PUT", cuerpo: { version: version.current, datos } });
+      version.current = r.version;
       setConCambiosSinPublicar(r.conCambiosSinPublicar);
       setGuardadoA(new Date());
+      setFalla(null);
       if (cambios.current === cambiosAlEmpezar) setSucio(false);
     } catch (e) {
       if (e instanceof ErrorApi && e.estado === 401) {
         sesionVencida();
         return;
       }
-      if (e instanceof ErrorApi && e.estado === 409) setConflicto(true);
-      else if (e instanceof ErrorApi && e.problemas.length > 0) setProblemas(e.problemas);
+      if (e instanceof ErrorApi && e.estado === 409) {
+        setConflicto(true);
+      } else if (e instanceof ErrorApi && e.estado === 422) {
+        // No se reintenta solo: hay que corregir algo. El próximo cambio vuelve a habilitar el autoguardado.
+        rechazadoEn.current = cambiosAlEmpezar;
+        setFalla("invalido");
+        setProblemas(e.problemas);
+      } else if (e instanceof ErrorApi && (e.estado === 0 || e.estado >= 500)) {
+        setFalla("red");
+      } else {
+        // 400, 403, 404, 413...: tampoco se reintenta solo.
+        rechazadoEn.current = cambiosAlEmpezar;
+        setFalla("invalido");
+      }
       setAviso(e instanceof ErrorApi ? e.message : "No se pudo guardar. Probá de nuevo.");
     } finally {
+      enCurso.current = false;
       setGuardando(false);
     }
+  }, [articulo.id, sesionVencida]);
+
+  const puedeAutoguardar = sucio && !guardando && !conflicto && !descartando && !ventanaAbierta && rechazadoEn.current !== cambiosN;
+
+  // Autoguardado: unos segundos después del último cambio; si falló por la conexión, vuelve a probar cada tanto.
+  useEffect(() => {
+    if (!puedeAutoguardar) return;
+    const espera = falla === "red" ? tiempos.reintento : tiempos.espera;
+    const temporizador = setTimeout(() => void guardar(), espera);
+    return () => clearTimeout(temporizador);
+  }, [puedeAutoguardar, cambiosN, falla, guardar]);
+
+  // También se guarda al salir de un campo.
+  const alSalirDeUnCampo = () => {
+    if (puedeAutoguardar) void guardar();
+  };
+
+  useAvisarAlSalir(sucio || guardando);
+
+  // ---- Conflicto ----
+  const copiarMiTexto = async () => {
+    const e = editor.current;
+    if (!e) return;
+    const c = camposRef.current;
+    const cuerpo = textoDelEditor(e);
+    const { html, notesHtml } = renderArticleBody(cuerpo);
+    const texto = [c.titulo, c.bajada ?? "", e.getText({ blockSeparator: "\n\n" })].filter((p) => p.trim()).join("\n\n");
+    const htmlCompleto = `<h1>${escapar(c.titulo)}</h1>${c.bajada ? `<p>${escapar(c.bajada)}</p>` : ""}${html}${notesHtml}`;
+    setCopiado((await copiarAlPortapapeles(texto, htmlCompleto)) ? "si" : "no");
+  };
+  const cargarVersionNueva = () => {
+    if (window.confirm("Vas a perder lo que escribiste en esta pantalla y se va a cargar la versión que guardó la otra persona. ¿Seguís?")) recargar();
+  };
+
+  // ---- Descartar los cambios sin publicar ----
+  const descartarCambios = async () => {
+    if (enCurso.current) {
+      setAviso("Esperá a que termine de guardar y probá de nuevo.");
+      return;
+    }
+    if (!window.confirm("Vas a descartar todos los cambios sin publicar y volver a la versión publicada. No se puede deshacer. ¿Seguís?")) return;
+    setDescartando(true);
+    setProblemas([]);
+    setAviso(null);
+    try {
+      await pedirApi(`/api/admin/articulos/${articulo.id}/borrador`, { metodo: "DELETE" });
+      recargar();
+    } catch (e) {
+      if (e instanceof ErrorApi && e.estado === 401) {
+        sesionVencida();
+        return;
+      }
+      setAviso(e instanceof ErrorApi ? e.message : "No se pudieron descartar los cambios. Probá de nuevo.");
+      setDescartando(false);
+    }
+  };
+
+  // ---- Vista previa ----
+  const abrirVistaPrevia = () => {
+    const e = editor.current;
+    if (!e) return;
+    const c = camposRef.current;
+    const seccion = catalogos.secciones.find((s) => s.id === c.seccionId)?.nombre;
+    const principal = catalogos.categorias.find((k) => k.id === c.categoriaPrincipalId)?.nombre;
+    setDatosPrevia({
+      titulo: c.titulo,
+      bajada: vacioANull(c.bajada),
+      seccion,
+      volanta: principal,
+      autores: c.autorIds.map(nombreDe),
+      fecha: articulo.publicadoEn ? fechaLarga.format(new Date(articulo.publicadoEn)) : "Todavía sin fecha de publicación",
+      encabezado: imagenEncabezado
+        ? { src: urlImagen(imagenEncabezado.clave), alt: c.encabezadoAlt?.trim() ?? "", credito: vacioANull(c.encabezadoCredito)?.trim() ?? null, posicion: posicionFocal(c.encabezadoPuntoFocalX, c.encabezadoPuntoFocalY) }
+        : undefined,
+      cuerpo: textoDelEditor(e),
+      conCapital: c.conCapital,
+    });
+    setVista("previa");
   };
 
   const elegirEncabezado = (imagen: ImagenDeLista) => {
@@ -170,6 +301,14 @@ function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEdita
     poner({ [eje]: Math.min(100, Math.max(0, n)) / 100 });
   };
 
+  const textoEstado = useMemo(() => {
+    if (guardando) return "Guardando…";
+    if (falla === "red") return "No se pudo guardar. Probamos de nuevo…";
+    if (falla === "invalido") return "No se guardó. Revisá los avisos de arriba.";
+    if (sucio) return "Hay cambios sin guardar.";
+    return guardadoA ? `Guardado a las ${hora.format(guardadoA)}.` : "Sin cambios.";
+  }, [guardando, falla, sucio, guardadoA]);
+
   return (
     <section className="edicion">
       <p className="migas">
@@ -186,19 +325,29 @@ function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEdita
       </div>
 
       {conCambiosSinPublicar && (
-        <p className="aviso aviso-alerta" role="status">
-          Este artículo tiene cambios sin publicar. El sitio sigue mostrando la versión publicada.
-        </p>
+        <div className="aviso aviso-alerta" role="status">
+          <p>Este artículo tiene cambios sin publicar. El sitio sigue mostrando la versión publicada.</p>
+          <button type="button" className="boton boton-suave" disabled={descartando} onClick={() => void descartarCambios()}>
+            {descartando ? "Descartando…" : "Descartar los cambios"}
+          </button>
+        </div>
       )}
       {conflicto && (
         <div className="aviso aviso-error" role="alert">
           <p>
             <strong>Este artículo cambió mientras lo editabas.</strong> Tus cambios de esta pantalla no se guardaron, para no pisar lo que guardó otra persona.
           </p>
-          <p>Si necesitás conservar lo que escribiste, copialo ahora. Después cargá la versión nueva.</p>
-          <button type="button" className="boton boton-suave" onClick={recargar}>
-            Cargar la versión nueva
-          </button>
+          <p>Si necesitás conservar lo que escribiste, copialo ahora y pegalo donde quieras. Después cargá la versión nueva.</p>
+          <div className="acciones-fila">
+            <button type="button" className="boton boton-suave" onClick={() => void copiarMiTexto()}>
+              Copiar mi texto
+            </button>
+            <button type="button" className="boton boton-suave" onClick={cargarVersionNueva}>
+              Cargar la versión nueva
+            </button>
+          </div>
+          {copiado === "si" && <p role="status">Listo: tu texto está en el portapapeles.</p>}
+          {copiado === "no" && <p role="status">No se pudo copiar solo. Seleccioná el texto del artículo y copialo a mano antes de cargar la versión nueva.</p>}
         </div>
       )}
       {!conflicto && aviso && (
@@ -214,7 +363,18 @@ function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEdita
         </div>
       )}
 
-      <div className="edicion-grilla">
+      <nav className="solapas" aria-label="Vista del artículo">
+        <button type="button" className="solapa" aria-current={vista === "editar" ? "true" : undefined} onClick={() => setVista("editar")}>
+          Editar
+        </button>
+        <button type="button" className="solapa" aria-current={vista === "previa" ? "true" : undefined} onClick={abrirVistaPrevia}>
+          Vista previa
+        </button>
+      </nav>
+
+      {vista === "previa" && datosPrevia && <VistaPrevia datos={datosPrevia} />}
+
+      <div className="edicion-grilla" hidden={vista !== "editar"} onBlur={alSalirDeUnCampo}>
         <div className="edicion-principal">
           <div className="campo">
             <label htmlFor="titulo">Título</label>
@@ -229,7 +389,7 @@ function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEdita
             <span className="etiqueta-campo" id="etiqueta-cuerpo">
               Texto del artículo
             </span>
-            <EditorCuerpo contenido={campos.cuerpo} onCambio={marcarCambio} onEditor={alEditor} />
+            <EditorCuerpo contenido={campos.cuerpo} onCambio={marcarCambio} onEditor={alEditor} onVentanaAbierta={setVentanaAbierta} />
           </div>
         </div>
 
@@ -394,15 +554,27 @@ function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEdita
       </div>
 
       <div className="barra-guardar">
-        <button type="button" className="boton boton-primario" disabled={guardando || conflicto} onClick={() => void guardar()}>
+        <button
+          type="button"
+          className="boton boton-primario"
+          disabled={guardando || conflicto || descartando}
+          onClick={() => {
+            rechazadoEn.current = -1;
+            void guardar();
+          }}
+        >
           {guardando ? "Guardando…" : "Guardar"}
         </button>
         <span className="estado-guardado" role="status">
-          {guardando ? "" : sucio ? "Hay cambios sin guardar." : guardadoA ? `Guardado a las ${hora.format(guardadoA)}.` : "Sin cambios."}
+          {textoEstado}
         </span>
       </div>
 
       {eligiendoEncabezado && <SelectorImagen onElegir={elegirEncabezado} onCancelar={() => setEligiendoEncabezado(false)} />}
     </section>
   );
+}
+
+function escapar(texto: string): string {
+  return texto.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }

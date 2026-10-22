@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, Outlet } from "react-router";
+import { confirmarSalida } from "./salida";
 import { useSesion } from "./sesion";
 
 // Marco de todas las pantallas del panel: barra superior con quién ingresó y el botón para salir.
@@ -23,6 +24,7 @@ export function Estructura() {
             className="boton boton-suave"
             disabled={saliendo}
             onClick={() => {
+              if (!confirmarSalida()) return;
               setSaliendo(true);
               void salir();
             }}

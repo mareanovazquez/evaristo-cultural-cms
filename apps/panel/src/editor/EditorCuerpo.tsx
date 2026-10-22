@@ -16,6 +16,8 @@ interface EditorCuerpoProps {
   onCambio: () => void
   /** Entrega el editor para pedirle el texto cuando hace falta (por ejemplo, al guardar). */
   onEditor: (editor: Editor | null) => void
+  /** Avisa si hay una ventana abierta (nota, imagen o video): mientras tanto el texto puede estar a medio armar y no conviene autoguardar. */
+  onVentanaAbierta?: (abierta: boolean) => void
 }
 
 interface NotaAlPie {
@@ -46,7 +48,7 @@ function Herramienta({ activo, deshabilitado, titulo, onClick, children, clase }
   )
 }
 
-export function EditorCuerpo({ contenido, onCambio, onEditor }: EditorCuerpoProps) {
+export function EditorCuerpo({ contenido, onCambio, onEditor, onVentanaAbierta }: EditorCuerpoProps) {
   const [enlaceAbierto, setEnlaceAbierto] = useState(false)
   const [enlace, setEnlace] = useState('')
   const [errorEnlace, setErrorEnlace] = useState<string | null>(null)
@@ -79,6 +81,11 @@ export function EditorCuerpo({ contenido, onCambio, onEditor }: EditorCuerpoProp
     onEditor(editor)
     return () => onEditor(null)
   }, [editor, onEditor])
+
+  const hayVentana = nota.abierta || imagen.abierta || videoAbierto
+  useEffect(() => {
+    onVentanaAbierta?.(hayVentana)
+  }, [hayVentana, onVentanaAbierta])
 
   const estado = useEditorState({
     editor,

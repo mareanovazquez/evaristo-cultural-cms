@@ -47,7 +47,7 @@ Después se sigue con el checklist de abajo, que lo recorre Claude Code.
 - Estilo propio y neutro de `estilos.css` (formularios con etiqueta arriba, no flotante); barra de herramientas del editor accesible por teclado y que no rompa en celular.
 - **Hecho cuando:** se puede abrir cualquiera de los 34 artículos, guardar sin tocar (en uno publicado queda como borrador de cambios y el sitio no cambia), crear uno nuevo, editarlo y guardarlo, y todo pasa typecheck y build. Prueba de API ya existente (`test:admin-edicion`) sigue en verde.
 
-## Etapa 4c: autoguardado, conflictos, descarte y vista previa
+## Etapa 4c: autoguardado, conflictos, descarte y vista previa (HECHA el 22/10/2026; ver estado-fase4.md)
 
 **Objetivo:** que la editora pueda trabajar sin perder nada y sin pisar a otra persona.
 

@@ -9,6 +9,9 @@ import { MemoryRouter } from 'react-router'
 import { App } from '../App'
 import { ProveedorSesion } from '../sesion'
 import { canonico } from './comparar-cuerpos'
+import { tiempos } from '../autoguardado'
+import { fuente } from '../VistaPrevia'
+import { htmlVistaPrevia } from '../vista-previa'
 
 ;(globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -28,7 +31,7 @@ const articulo = (estado: string) => ({
   estado,
   publicadoEn: null,
   version: '2026-10-22T10:00:00.000Z',
-  conCambiosSinPublicar: false,
+  conCambiosSinPublicar,
   ruta: null,
   datos: {
     titulo: 'Título de prueba',
@@ -55,8 +58,25 @@ const catalogos = {
   autores: [{ id: 2, nombre: 'Ana', soloTexto: false }, { id: 3, nombre: 'Beto', soloTexto: false }, { id: 4, nombre: 'Carla', soloTexto: false }],
 }
 
+// ---- Entorno simulado ----
+// El autoguardado arranca apagado: las pruebas que lo necesitan lo prenden con tiempos cortos.
+tiempos.espera = 1e9
+tiempos.reintento = 1e9
+let respuestaConfirm = true
+const preguntas: string[] = []
+window.confirm = (mensaje?: string) => {
+  preguntas.push(String(mensaje))
+  return respuestaConfirm
+}
+const portapapeles: string[] = []
+Object.defineProperty(navigator, 'clipboard', { value: { writeText: async (t: string) => void portapapeles.push(t) }, configurable: true })
+fuente.cargar = async () => 'body { margin: 0 }'
+
 // ---- API simulada ----
 let estadoArticulo = 'BORRADOR'
+let conCambiosSinPublicar = false
+let redCaida = false
+const descartados: string[] = []
 let respuestaPut: { estado: number; cuerpo: J } = { estado: 200, cuerpo: { estado: 'ok', version: '2026-10-22T10:05:00.000Z', conCambiosSinPublicar: false } }
 const guardados: J[] = []
 const creados: J[] = []
@@ -64,6 +84,13 @@ globalThis.fetch = (async (entrada: string | URL | Request, init?: RequestInit) 
   const url = String(entrada)
   const metodo = init?.method ?? 'GET'
   const responder = (estado: number, cuerpo: J) => new Response(JSON.stringify(cuerpo), { status: estado, headers: { 'Content-Type': 'application/json' } })
+  if (redCaida && metodo === 'PUT') throw new TypeError('Failed to fetch')
+  if (url === '/api/admin/articulos' && metodo === 'GET') return responder(200, { estado: 'ok', total: 0, pagina: 1, paginas: 1, conteos: { BORRADOR: 0, PUBLICADO: 0, PROGRAMADO: 0 }, articulos: [] })
+  if (url === '/api/admin/articulos/7/borrador' && metodo === 'DELETE') {
+    descartados.push(url)
+    conCambiosSinPublicar = false
+    return responder(200, { estado: 'ok' })
+  }
   if (url === '/api/auth/yo') return responder(200, { usuario: { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINISTRADOR' } })
   if (url === '/api/admin/catalogos') return responder(200, { estado: 'ok', ...catalogos })
   if (url === '/api/admin/articulos/7' && metodo === 'GET') return responder(200, { estado: 'ok', articulo: articulo(estadoArticulo) })
@@ -269,6 +296,197 @@ await t('un artículo publicado muestra la dirección sin poder editarla', async
   assert.equal((document.getElementById('slug') as HTMLInputElement).readOnly, true)
   assert.equal((document.getElementById('slug') as HTMLInputElement).value, 'una-nota')
   assert.ok(document.body.textContent?.includes('Publicado'))
+})
+
+// ---- Etapa 4c: autoguardado, aviso al salir, conflicto, descartar y vista previa ----
+
+const abrirBorrador = async () => {
+  estadoArticulo = 'BORRADOR'
+  conCambiosSinPublicar = false
+  respuestaPut = { estado: 200, cuerpo: { estado: 'ok', version: '2026-10-22T10:05:00.000Z', conCambiosSinPublicar: false } }
+  await irA('/articulos/7')
+  await hasta(() => !!document.getElementById('titulo') && !!document.querySelector('.ProseMirror'), 'la pantalla de edición')
+  guardados.length = 0
+}
+const estadoGuardado = () => document.querySelector('.estado-guardado')?.textContent ?? ''
+
+await t('autoguardado: guarda solo unos segundos después del último cambio, sin apretar nada', async () => {
+  await abrirBorrador()
+  tiempos.espera = 150
+  await escribir(document.getElementById('titulo') as HTMLInputElement, 'Uno')
+  await escribir(document.getElementById('titulo') as HTMLInputElement, 'Uno dos')
+  await escribir(document.getElementById('titulo') as HTMLInputElement, 'Uno dos tres')
+  assert.equal(estadoGuardado(), 'Hay cambios sin guardar.')
+  assert.equal(guardados.length, 0, 'todavía no guardó')
+  await hasta(() => guardados.length === 1, 'el autoguardado')
+  await esperar(300)
+  assert.equal(guardados.length, 1, 'tres cambios seguidos son un solo guardado')
+  assert.equal(((guardados[0] as { datos: J }).datos)['titulo'], 'Uno dos tres')
+  await hasta(() => /^Guardado a las/.test(estadoGuardado()), 'el aviso de guardado')
+  tiempos.espera = 1e9
+})
+
+await t('autoguardado: guarda también al salir de un campo, sin esperar', async () => {
+  await abrirBorrador()
+  await escribir(document.getElementById('titulo') as HTMLInputElement, 'Salgo del campo')
+  await act(async () => {
+    document.getElementById('titulo')!.dispatchEvent(new window.FocusEvent('focusout', { bubbles: true }))
+  })
+  await hasta(() => guardados.length === 1, 'el guardado al salir del campo')
+})
+
+await t('autoguardado: un 422 no se reenvía en bucle; con el próximo cambio vuelve a probar', async () => {
+  await abrirBorrador()
+  respuestaPut = { estado: 422, cuerpo: { estado: 'error', mensaje: 'Revisá el artículo antes de guardar.', problemas: ['Escribí el título del artículo.'] } }
+  tiempos.espera = 100
+  await escribir(document.getElementById('titulo') as HTMLInputElement, 'Rechazado')
+  await hasta(() => guardados.length === 1, 'el primer intento')
+  await hasta(() => estadoGuardado().startsWith('No se guardó'), 'el aviso de que no se guardó')
+  await esperar(500)
+  assert.equal(guardados.length, 1, 'no vuelve a intentar sola')
+  assert.ok(document.querySelector('.aviso-error')?.textContent?.includes('Escribí el título del artículo.'))
+  await escribir(document.getElementById('titulo') as HTMLInputElement, 'Corregido')
+  await hasta(() => guardados.length === 2, 'el intento después de un cambio')
+  tiempos.espera = 1e9
+})
+
+await t('autoguardado: si falla la conexión avisa y vuelve a probar hasta que se pueda', async () => {
+  await abrirBorrador()
+  redCaida = true
+  tiempos.espera = 80
+  tiempos.reintento = 150
+  await escribir(document.getElementById('titulo') as HTMLInputElement, 'Sin conexión')
+  await hasta(() => estadoGuardado() === 'No se pudo guardar. Probamos de nuevo…', 'el aviso de reintento')
+  redCaida = false
+  await hasta(() => guardados.length === 1 && /^Guardado a las/.test(estadoGuardado()), 'el guardado cuando vuelve la conexión')
+  assert.equal(((guardados[0] as { datos: J }).datos)['titulo'], 'Sin conexión', 'no se pierde lo escrito')
+  tiempos.espera = 1e9
+  tiempos.reintento = 1e9
+})
+
+await t('no autoguarda mientras hay una ventana del editor abierta (la imagen nueva todavía está a medio armar)', async () => {
+  await abrirBorrador()
+  tiempos.espera = 100
+  await clic(boton('Insertar una imagen de la biblioteca')!)
+  await hasta(() => !!boton('Elegir imagen'), 'la ventana de imagen')
+  await esperar(400)
+  assert.equal(guardados.length, 0, 'con la ventana abierta no guarda')
+  await clic(boton('Cancelar (Esc)')!)
+  await esperar(400)
+  assert.equal(document.querySelectorAll('.ProseMirror figure.imagen').length, 1, 'la imagen cancelada se descarta')
+  tiempos.espera = 1e9
+})
+
+await t('salir con cambios sin guardar: pregunta, y si se cancela se queda', async () => {
+  await abrirBorrador()
+  preguntas.length = 0
+  await clic(Array.from(document.querySelectorAll('a')).find((a) => a.textContent?.includes('Volver a los artículos'))!)
+  assert.equal(preguntas.length, 0, 'sin cambios no pregunta')
+  await abrirBorrador()
+  await escribir(document.getElementById('titulo') as HTMLInputElement, 'Cambio sin guardar')
+  const antesDeCerrar = new window.Event('beforeunload', { cancelable: true })
+  window.dispatchEvent(antesDeCerrar)
+  assert.equal(antesDeCerrar.defaultPrevented, true, 'al cerrar la pestaña, el navegador avisa')
+  respuestaConfirm = false
+  await clic(Array.from(document.querySelectorAll('a')).find((a) => a.textContent?.includes('Volver a los artículos'))!)
+  assert.equal(preguntas.length, 1)
+  assert.ok(preguntas[0]!.includes('cambios sin guardar'))
+  assert.ok(document.getElementById('titulo'), 'sigue en la pantalla de edición')
+  assert.equal((document.getElementById('titulo') as HTMLInputElement).value, 'Cambio sin guardar')
+  respuestaConfirm = true
+  await clic(Array.from(document.querySelectorAll('a')).find((a) => a.textContent?.includes('Volver a los artículos'))!)
+  await hasta(() => !document.getElementById('titulo') && !!document.querySelector('h1'), 'la pantalla del listado')
+  const alCerrar = new window.Event('beforeunload', { cancelable: true })
+  window.dispatchEvent(alCerrar)
+  assert.equal(alCerrar.defaultPrevented, false, 'fuera de la pantalla de edición ya no avisa')
+})
+
+await t('conflicto: "Copiar mi texto" deja el texto propio en el portapapeles y no se pisa nada', async () => {
+  await abrirBorrador()
+  respuestaPut = { estado: 409, cuerpo: { estado: 'conflicto', mensaje: 'Este artículo cambió mientras lo editabas.' } }
+  await escribir(document.getElementById('titulo') as HTMLInputElement, 'Mi título de antes del conflicto')
+  await clic(boton('Guardar')!)
+  await hasta(() => !!boton('Copiar mi texto'), 'el aviso de conflicto')
+  portapapeles.length = 0
+  await clic(boton('Copiar mi texto')!)
+  await hasta(() => portapapeles.length === 1, 'la copia')
+  assert.ok(portapapeles[0]!.includes('Mi título de antes del conflicto'))
+  assert.ok(portapapeles[0]!.includes('Primer párrafo con una nota'))
+  assert.ok(document.body.textContent?.includes('tu texto está en el portapapeles'))
+  respuestaConfirm = false
+  await clic(boton('Cargar la versión nueva')!)
+  assert.equal((document.getElementById('titulo') as HTMLInputElement).value, 'Mi título de antes del conflicto', 'si se cancela, no se pierde nada')
+  respuestaConfirm = true
+  await clic(boton('Cargar la versión nueva')!)
+  await hasta(() => (document.getElementById('titulo') as HTMLInputElement | null)?.value === 'Título de prueba' && !boton('Copiar mi texto'), 'la versión nueva')
+})
+
+await t('descartar cambios sin publicar: avisa, pide confirmación y vuelve a la versión publicada', async () => {
+  estadoArticulo = 'PUBLICADO'
+  conCambiosSinPublicar = true
+  await irA('/articulos/7')
+  await hasta(() => !!boton('Descartar los cambios'), 'el aviso de cambios sin publicar')
+  assert.ok(document.body.textContent?.includes('Este artículo tiene cambios sin publicar.'))
+  respuestaConfirm = false
+  descartados.length = 0
+  await clic(boton('Descartar los cambios')!)
+  assert.equal(descartados.length, 0, 'si no se confirma, no descarta')
+  respuestaConfirm = true
+  await clic(boton('Descartar los cambios')!)
+  await hasta(() => descartados.length === 1 && !boton('Descartar los cambios'), 'el descarte y la recarga')
+  assert.ok(!document.body.textContent?.includes('tiene cambios sin publicar'))
+})
+
+await t('un artículo en borrador no ofrece descartar (no tiene versión publicada)', async () => {
+  await abrirBorrador()
+  assert.equal(boton('Descartar los cambios'), undefined)
+})
+
+await t('vista previa: muestra el artículo con la estructura del sitio y lo que hay escrito ahora, sin guardar', async () => {
+  await abrirBorrador()
+  await escribir(document.getElementById('titulo') as HTMLInputElement, 'Título sin guardar')
+  await clic(Array.from(document.querySelectorAll('input[type=checkbox]')).find((c) => c.closest('label')?.textContent?.includes('Letra capital')) as Element)
+  await clic(boton('Vista previa')!)
+  await hasta(() => !!document.querySelector('iframe.vista-previa'), 'la vista previa')
+  const marco = document.querySelector('iframe.vista-previa') as HTMLIFrameElement
+  const doc = marco.getAttribute('srcdoc')!
+  assert.ok(doc.includes('<h1>Título sin guardar</h1>'))
+  assert.ok(doc.includes('<p class="bajada">Una bajada</p>'))
+  assert.ok(doc.includes('class="etiqueta">Cine<'), 'el cintillo de la sección')
+  assert.ok(doc.includes('class="volanta"><a>Entrevistas</a>'), 'la volanta es la categoría principal')
+  assert.ok(doc.includes('Por Ana y Beto'))
+  assert.ok(doc.includes('class="hero-img" src="/media/foto.jpg"') && doc.includes('object-position: 50% 25%'))
+  assert.ok(doc.includes('Un subtítulo'), 'el cuerpo')
+  assert.ok(doc.includes('La nota'), 'las notas al pie')
+  assert.ok(doc.includes('body { margin: 0 }'), 'las hojas del sitio')
+  assert.equal(marco.getAttribute('sandbox'), 'allow-popups allow-popups-to-escape-sandbox', 'sin scripts')
+  assert.equal(document.querySelector('.edicion-grilla')!.hasAttribute('hidden'), true, 'el formulario queda oculto pero no se pierde')
+  await clic(boton('Editar')!)
+  assert.equal(document.querySelector('.edicion-grilla')!.hasAttribute('hidden'), false)
+  assert.equal((document.getElementById('titulo') as HTMLInputElement).value, 'Título sin guardar', 'lo escrito sigue ahí')
+})
+
+await t('vista previa: el título y los textos se escapan, y los enlaces externos abren en otra pestaña', async () => {
+  const doc = htmlVistaPrevia(
+    {
+      titulo: '<script>alert(1)</script>',
+      bajada: null,
+      autores: [],
+      fecha: '',
+      cuerpo: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'enlace', marks: [{ type: 'link', attrs: { href: 'https://ejemplo.org/' } }] }] }] },
+      conCapital: false,
+    },
+    'p { color: red }',
+  )
+  assert.ok(!doc.includes('<script>'), 'el título no inyecta HTML')
+  assert.ok(doc.includes('&lt;script&gt;'))
+  assert.ok(doc.includes('<a target="_blank" rel="noopener noreferrer" href="https://ejemplo.org/">'))
+})
+
+await t('vista previa: la letra capital se marca solo si está activada y el cuerpo empieza con un párrafo', async () => {
+  const base = { titulo: 'T', bajada: null, autores: [], fecha: '', cuerpo: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Había una vez' }] }] } }
+  assert.ok(htmlVistaPrevia({ ...base, conCapital: true }, '').includes('con-capital'))
+  assert.ok(!htmlVistaPrevia({ ...base, conCapital: false }, '').includes('con-capital'))
 })
 
 console.log(`\n${ok} pruebas de la pantalla ok`)
