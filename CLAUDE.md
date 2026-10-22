@@ -4,7 +4,7 @@ CMS propio para reemplazar WordPress en la revista cultural Evaristo Cultural (e
 
 **Stack:** TypeScript en todo. Monorepo con npm workspaces: `apps/sitio` (Astro, SSR en modo middleware), `apps/panel` (React + Vite), `apps/api` (Express 5) y `packages/compartido` (Prisma 7, validador, conversor, migración). MySQL 8.4 + Prisma. Editor: TipTap. Un solo proceso en el puerto 3000.
 
-**Estado (21/10/2026):** las fases 0 a 3 están hechas (la 3 es el sitio público completo: artículo, autores, secciones, categorías, redirecciones y 404). La fase 4 (panel y API) está en curso: ingreso y sesiones, listado de artículos y API de edición con borrador de cambios; faltan el editor, las imágenes, publicar, la administración y el cierre. Las fases 5 (portada), 6 (buscador y novedades) y 7 (migración completa y lanzamiento) no empezaron. Para retomar, leer `docs/estado-fase4.md` y `docs/pendientes.md`.
+**Estado (22/10/2026):** las fases 0 a 3 están hechas (la 3 es el sitio público completo: artículo, autores, secciones, categorías, redirecciones y 404). La fase 4 (panel y API) está en curso: ingreso y sesiones, listado de artículos, API de edición con borrador de cambios y el editor del panel (pantalla de edición, alta, autoguardado, conflicto, vista previa; pasos 1 a 4); faltan las imágenes (subida), publicar, la administración y el cierre (pasos 5 a 8). Las fases 5 (portada), 6 (buscador y novedades) y 7 (migración completa y lanzamiento) no empezaron. Para retomar, leer `docs/estado-fase4.md` y `docs/pendientes.md`.
 
 ## Reglas de trabajo
 
@@ -18,7 +18,7 @@ CMS propio para reemplazar WordPress en la revista cultural Evaristo Cultural (e
 - Windows/PowerShell: usar opciones largas en `mariadb-admin` (`--host=...`). El `tar` de Windows altera nombres con tildes.
 - No devolver `visitasWp` hacia el sitio ni el panel (`select` explícito).
 - El panel y la API se desarrollan contra `evaristo_cms_dev` (flag `--base-dev`, variable `DATABASE_URL_DEV`); nunca contra `evaristo_cms` (la muestra verificada) ni `evaristo_cms_test` (la vacían los tests de la migración). Las migraciones de la fase 4 no se aplican a la base real hasta la fase 7.
-- Dependencias nuevas: preguntar antes, con versión exacta y revisando la fecha de publicación (no usar versiones de menos de dos semanas). Aprobadas y sin instalar: `multer`, `sharp`, TipTap y `jsdom`. Enrutado del panel: `react-router`.
+- Dependencias nuevas: preguntar antes, con versión exacta y revisando la fecha de publicación (no usar versiones de menos de dos semanas). Aprobadas y sin instalar: `multer` y `sharp` (TipTap 3.31.4 y `jsdom` 30.1.2 ya están en `apps/panel`). Enrutado del panel: `react-router`.
 - Al tomar una decisión o cambiar el estado, actualizar el `.md` correspondiente en `docs/` en el mismo trabajo (estado, pendientes, decisiones de diseño o decisión numerada del plan).
 
 ## Índice de documentación
@@ -28,10 +28,9 @@ Leer solo lo que la tarea necesite.
 | Archivo | Qué contiene y cuándo leerlo |
 |---|---|
 | `docs/estado-fase3.md` | Fase 3 (sitio público): qué hay, decisiones, tests, inventario de los 35 artículos y qué quedó abierto. Leer antes de tocar el sitio. |
-| `docs/estado-fase4.md` | Fase 4 (panel y API): decisiones, lo hecho (pasos 1 a 3), problemas del editor de la fase 0 y lo que falta (pasos 4 a 8). Leer al retomar la fase 4. |
-| `docs/plan-paso4-fase4.md` | **Temporal (borrar al terminar el paso 4 de la fase 4).** Plan en 4 etapas del editor del panel: checklist de arranque, etapas 4a a 4d con criterio de "hecho", decisiones a plantear y riesgos. Leer al empezar el paso 4. |
+| `docs/estado-fase4.md` | Fase 4 (panel y API): decisiones, lo hecho (pasos 1 a 4, con las reglas y cosas a tener en cuenta del editor) y lo que falta (pasos 5 a 8). Leer al retomar la fase 4. |
 | `docs/pendientes.md` | Estado técnico vivo (bases, tests, commits) y lista de pendientes. Leer al empezar y antes de planificar. |
-| `docs/plan-implementacion.md` | Roadmap de fases 0 a 7, decisiones 1 a 63 y riesgos. Largo: buscar la fase o decisión, no leerlo entero. |
+| `docs/plan-implementacion.md` | Roadmap de fases 0 a 7, decisiones 1 a 64 y riesgos. Largo: buscar la fase o decisión, no leerlo entero. |
 | `docs/decisiones-de-diseno.md` | Paleta, tipografía, tokens, componentes, notas al pie, letra capital, celular. Leer antes de tocar CSS o UI. |
 | `docs/especificaciones/especificacion-articulo.md` | Artículo, autores, secciones y categorías, migración desde WordPress. Leer antes de tocar modelo de datos, validador, plantillas o migración. |
 | `docs/especificaciones/especificacion-home.md` | Portada. Solo en la fase 5. |

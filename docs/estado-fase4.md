@@ -1,6 +1,6 @@
 # Fase 4 (panel y API): estado, decisiones y lo que falta
 
-Actualizado el 22/10/2026. Pasos 1 a 3 hechos y mergeados en `main`; el paso 4 está en curso (etapas 4a, 4b y 4c hechas en la rama `fase4-editor`, sin mergear); faltan los pasos 5 a 8. El plan de la fase está en `plan-implementacion.md`, sección 7; los pendientes generales en `pendientes.md`, sección 1.
+Actualizado el 22/10/2026. Pasos 1 a 4 hechos y mergeados en `main` (el 4, el editor, se cerró el 22/10/2026); faltan los pasos 5 a 8. El plan de la fase está en `plan-implementacion.md`, sección 7; los pendientes generales en `pendientes.md`, sección 1.
 
 ## Base de desarrollo
 
@@ -75,9 +75,9 @@ Decisiones de Mariano (22/10/2026): **(8)** ante un conflicto la pantalla ofrece
 - **Tests:** `test:pantalla` pasó a 21 pruebas (autoguardado con debounce, guardado al salir de un campo, 422 sin bucle, reintento sin conexión, pausa con ventana abierta, aviso al salir, conflicto con copia, descartar, vista previa y su escape de HTML). Se comprobó con tres mutaciones (sin la guarda del 422, sin la pausa por ventana, sin el aviso al salir) que las pruebas fallan. `fuente.cargar` y `tiempos` se reemplazan en las pruebas (fuera de Vite no existe `?raw`).
 - **Pendiente para 4d (mirar en el navegador):** cómo se siente el autoguardado al escribir, el aviso al salir, la barra en celular y que la vista previa se vea igual que el sitio.
 
-## Paso 4, etapa 4d (parte automática): lenguaje común y accesibilidad (22/10/2026, rama `fase4-editor`)
+## Paso 4, etapa 4d: lenguaje común, accesibilidad y recorrido en el navegador (22/10/2026)
 
-Hecho sin navegador. **Falta lo que depende de mirar el panel** (recorrido de Mariano en escritorio y celular, anotar lo que falle o confunda y corregirlo) y cerrar el paso 4.
+La parte automática se hizo sin navegador. Después Mariano recorrió el panel en el navegador (escritorio y celular) y salió bien; lo que apareció se corrigió en el momento: el foco que volvía al texto al escribir el autor de una cita, la cita única (decisión 64) y los videos de la vista previa (recuadro con miniatura, ver arriba). Con eso se cerró el paso 4.
 
 - **Mensajes en lenguaje común:** `apps/panel/src/mensajes.ts` traduce los avisos técnicos de los 422 antes de mostrarlos (imagen sin texto alternativo, enlace no válido, video, nota al pie vacía, bloque vacío, tabla, formato no admitido, y todo lo que mencione rutas como `doc.content[3]`); los textos por defecto de `zod` (en inglés) quedan como "un dato con un valor que no se acepta". Lo que la API ya dice en lenguaje común pasa tal cual y los repetidos se juntan. En la API (`datos-articulo.ts`) ahora están en español los avisos de más de 30 categorías, más de 20 autores, punto focal fuera de 0 a 100, crédito y texto alternativo largos, y dirección vacía. `test:admin-edicion` lo comprueba.
 - **Foco de las ventanas** (`useAtraparFoco.ts`): al abrirse una ventana (nota al pie, imagen, video, biblioteca) el foco entra al primer elemento útil, Tab y Mayús+Tab dan la vuelta sin salir a la página de atrás, y al cerrarse el foco vuelve a donde estaba (al texto del artículo si se venía escribiendo). Reintenta unos instantes porque el `focus()` de TipTap devuelve el foco al editor con `requestAnimationFrame`.
@@ -87,6 +87,16 @@ Hecho sin navegador. **Falta lo que depende de mirar el panel** (recorrido de Ma
 - **Tests:** `test:pantalla` pasa a 26 pruebas (suma mensajes en lenguaje común, 422 técnico en pantalla, títulos y enlace de salto, nombres accesibles de la barra y foco de las ventanas). Se comprobó con mutaciones que fallan sin la traducción de mensajes y sin la vuelta con Tab.
 - **Una sola cita (22/10/2026, decisión 64 del plan):** Mariano comparó con la maqueta (`referencias/maquetas/nota-con-notas-al-pie.html`, `blockquote.cita` con `cite`) y vio que la "cita textual" no se le parecía: la caja de la maqueta era la cita destacada, que en el panel no admitía autor, y la textual, con autor, tenía un estilo provisorio. Se resolvió con una sola cita (opción C): el renderizador emite siempre `<blockquote class="cita">` con `<cite>` opcional; el CSS del sitio perdió `.cita-textual`; el panel tiene un solo botón "Cita" y la barra de autor y fuente (opcionales) sin selector de tipo; el editor la muestra como caja con el pie "— autor, fuente" y acepta pegar las formas anteriores (`figure.cita-textual`). `variante` queda en los datos, sin efecto. Se arregló además que escribir en el autor de la cita devolvía el foco al texto con cada letra. `test:render` (39) y `test:pantalla` (28) lo cubren. Pendiente de mirar en el navegador.
 - **Una corrida de `test:admin-edicion` falló una vez sin causa conocida (las tres siguientes y las de la regresión pasaron):** si vuelve a pasar, anotar el mensaje completo.
+
+## Reglas y cosas a tener en cuenta del editor (lo duradero del plan del paso 4)
+
+- **Sin `localStorage` como respaldo del texto en edición:** la copia de seguridad es el borrador de cambios del servidor (y el autoguardado).
+- **Datos en atributos:** el nodo de imagen y la nota al pie guardan datos en atributos (`attrs.content` del `footnote` es un documento anidado). Cualquier cambio del editor tiene que pasar `test:editor` (la ida y vuelta de los cuerpos de `evaristo_cms_dev` y el modo estricto del validador): si el editor serializara algo distinto, el síntoma sería un 422 al guardar sin haber tocado nada.
+- **`jsdom` no es un navegador:** no reproduce selección, foco ni pegado reales. `test:pantalla` y `test:editor` atrapan errores de ejecución, pero lo visual y el comportamiento real se prueban mirando el panel.
+- **Bundle del panel:** unos 770 KB (240 KB comprimido) por TipTap; aceptable para un panel interno. Si hiciera falta, partir el código con `import()` dinámico (la vista previa ya carga sus hojas así).
+- **Imágenes:** hasta el paso 5 no hay subida; el editor y el encabezado solo eligen de las ya cargadas.
+- **Mejoras anotadas, sin hacer:** la barra de herramientas tiene un `Tab` por botón (unos 19 pasos), mejoraría con navegación por flechas; no se midió el contraste con una herramienta ni se probó con un lector de pantalla; el botón Atrás del navegador no se puede frenar con `BrowserRouter` (el respaldo es el autoguardado); la vista previa no tiene medidas de imagen, bios ni relacionados y no reproduce videos.
+- **Citas migradas:** el conversor escribe cada `<blockquote>` de WordPress como cita, y todas salen con la caja de la maqueta (decisión 64); revisar cómo quedan con la migración completa.
 
 ## El editor de la fase 0 (a portar en el paso 4)
 
@@ -105,7 +115,7 @@ Está en `testing-tiptap/src/editor` (unas 1.100 líneas) y `App.tsx` (793 líne
 - ~~Portar las extensiones de TipTap con `imagenId`, y la prueba de ida y vuelta de los 35 con jsdom.~~ Hecho (etapa 4a).
 - ~~Pantalla de edición, alta de artículos, abrir desde el listado.~~ Hecho (etapa 4b).
 - ~~Autoguardado con estado visible, aviso de conflicto con copia del texto propio, "Descartar los cambios sin publicar", aviso de cambios sin publicar, vista previa con el renderizador compartido (`conCapital` incluido).~~ Hecho (etapa 4c).
-- Falta (etapa 4d): mirar el panel en el navegador (escritorio y celular), ajustes, pasada de accesibilidad y mensajes de error en lenguaje común, y cerrar el paso 4 (borrar `plan-paso4-fase4.md`).
+- ~~Mirar el panel en el navegador, accesibilidad y mensajes en lenguaje común, cerrar el paso 4.~~ Hecho (etapa 4d, 22/10/2026). El paso 4 está cerrado y su plan temporal (`plan-paso4-fase4.md`) se borró; lo duradero está en las secciones de las etapas 4a a 4d y en "Reglas y cosas a tener en cuenta del editor".
 
 **Paso 5: imágenes.**
 - Subida con `multer` y procesamiento con `sharp` (tipo real del archivo, tamaño máximo, orientación EXIF, medidas, SHA-256, clave segura), guardado en `MEDIA_DIR`.
