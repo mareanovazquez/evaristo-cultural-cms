@@ -31,7 +31,7 @@ Actualizado el 21/10/2026. Estado técnico vivo y lista de pendientes, ordenada 
 
 Detalle, decisiones y orden en `estado-fase4.md`. Hecho: ingreso, sesiones y roles (paso 1); pantalla de ingreso y listado de artículos (paso 2); API para leer, crear y editar artículos con borrador de cambios (paso 3). **Falta:**
 
-1. **Editor (paso 4; plan en `plan-paso4-fase4.md`, temporal):** portar el de la fase 0 agregando el atributo `imagenId` al nodo de imagen (hoy se perdería), prueba de ida y vuelta de los 35 cuerpos, pantalla de edición con autoguardado, aviso de conflicto, descartar cambios, letra capital, vista previa con el renderizador y alta de artículos nuevos.
+1. **Editor (paso 4; plan en `plan-paso4-fase4.md`, temporal):** etapa 4a hecha (editor portado con `imagenId` y prueba de ida y vuelta de los 35; ver `estado-fase4.md`). Falta: pantalla de edición con autoguardado, aviso de conflicto, descartar cambios, letra capital, vista previa con el renderizador y alta de artículos nuevos.
 2. **Imágenes (paso 5):** subida (`multer` y `sharp`), recorte y punto focal, biblioteca, texto alternativo, no borrar una imagen en uso (cuerpo, encabezado, galería, foto de autor, redes).
 3. **Publicar (paso 6):** pasar a PUBLICADO o PROGRAMADO, "Publicar cambios" (aplicar el borrador de cambios), reglas de publicación (encabezado y texto alternativo en lo nuevo, rechazar slug `borrador-…`, proponer la fecha actual si `publicadoEn` es null), generar el slug desde el título y crear la redirección `SLUG_ANTERIOR` si cambia el de uno publicado, `novedadHasta`, ficha técnica y galería.
 4. **Administración (paso 7):** autores (fichas, bio con itálica y enlaces, foto, redes con el formato definitivo), secciones y categorías (solo administrador; "unir con otra" en vez de borrar), usuarios (alta, baja, cambio de rol y de contraseña), herramientas de la revisión posterior a la migración (filtros por aviso, artículos con imágenes pendientes, `sin-asignar`, borradores migrados).
@@ -67,7 +67,7 @@ Después de la reunión con la dueña de la editorial: la especificación (`espe
 ## 5. Fase 1: lo que falta del esqueleto
 
 1. **Despliegue en el entorno de pruebas:** hosting, almacenamiento de imágenes (disco o S3/R2; el modelo guarda una clave relativa y `/media/<clave>` ya la sirve desde `MEDIA_DIR`), método de despliegue, correos.
-2. **Menores:** cabeceras de caché en un solo lugar; revisar las advertencias de `npm audit` sin `audit fix`; apagado ordenado en Linux; Renovate o Dependabot y documentación de despliegue.
+2. **Menores:** cabeceras de caché en un solo lugar; revisar las advertencias de `npm audit` sin `audit fix` (22/10/2026: marca `prisma`/`@prisma/config` por `deepmerge-ts` y `mariadb` 3.3.0 a 3.5.3 con vulnerabilidades altas; el arreglo sugerido es `prisma` y `@prisma/adapter-mariadb` 7.10.1; mirar la fecha de publicación antes de actualizar); apagado ordenado en Linux; Renovate o Dependabot y documentación de despliegue.
 3. **Pasar a la Lenovo:** probar el README desde cero (Node, MySQL 8.4, clonar, `npm ci`, `prisma generate`, `astro sync`, `.env`, bases, `db:deploy`, `db:sembrar`); comprobar antes que Smart App Control no bloquea el binario nativo de Astro.
 
 ## 6. Fase 7: migración completa y lanzamiento

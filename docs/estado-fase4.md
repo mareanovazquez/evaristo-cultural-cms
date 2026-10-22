@@ -1,6 +1,6 @@
 # Fase 4 (panel y API): estado, decisiones y lo que falta
 
-Actualizado el 21/10/2026. Pasos 1 a 3 hechos y mergeados en `main`; faltan los pasos 4 a 8. El plan de la fase está en `plan-implementacion.md`, sección 7; los pendientes generales en `pendientes.md`, sección 1.
+Actualizado el 22/10/2026. Pasos 1 a 3 hechos y mergeados en `main`; el paso 4 está en curso (etapa 4a hecha en la rama `fase4-editor`); faltan los pasos 5 a 8. El plan de la fase está en `plan-implementacion.md`, sección 7; los pendientes generales en `pendientes.md`, sección 1.
 
 ## Base de desarrollo
 
@@ -43,6 +43,14 @@ Se desarrolla contra **`evaristo_cms_dev`** (copia de `evaristo_cms` del 21/10/2
 - Test: `test:admin-edicion` (recorre los 35: el cuerpo vuelve igual desde la API, cada publicado se guarda como borrador de cambios sin alterar nada de lo publicado y se conservan los 172 `imagenId`; conflictos, más de 30 validaciones, `altPendiente`, guardado directo, origen y tamaño; se comprobó con tres mutaciones). Los 35 cuerpos migrados pasan el modo estricto sin errores ni avisos.
 - El verificador de la migración (`verificar.ts`) pedía exactamente 3 migraciones; ahora pide que no falte ninguna de las 3 originales.
 
+## Paso 4, etapa 4a: editor portado (22/10/2026, rama `fase4-editor`)
+
+- Dependencias instaladas en `apps/panel` (versión exacta, fechas revisadas): TipTap 3.31.4 (`core`, `pm`, `react`, `starter-kit`, `extension-heading`, `extension-table`, `extension-text-align`; publicada el 30/09), `jsdom` 30.1.2 (04/10), `tsx` 4.23.15 y `@types/node` 24.19.1 (las mismas que ya usa el repo). Se descartaron TipTap 3.32.0 y jsdom 30.1.3 por tener menos de dos semanas. `npm` avisa que algunas dependencias de jsdom piden Node 24.15 y hay 24.14.0: jsdom carga y los tests pasan.
+- El panel depende ahora de `@evaristo/compartido` (usa `/render` y `/schema`) y compila con `allowImportingTsExtensions`.
+- Código en `apps/panel/src/editor/` (copiado de `testing-tiptap/src/editor`, que no se tocó). El nodo `imagen` tiene el atributo `imagenId` (se serializa solo si es un número; sobrevive a `parseHTML`/`renderHTML` con `data-imagen-id`, al diálogo y a copiar y pegar). El enlace guarda solo `href` (se sacaron `rel`, `target`, `class` y `title`, que el renderizador no usa).
+- `npm run test:editor -w @evaristo/panel`: 20 pruebas del editor (15 del editor viejo + 5 de `imagenId`) y la prueba de ida y vuelta (`test-ida-vuelta.ts`): los 35 cuerpos de `evaristo_cms_dev` se cargan en TipTap, se serializan y vuelven iguales (172 `imagenId` conservados) y pasan el modo estricto. Se ignora, en los dos lados: el orden de las claves, el orden de las marcas de un texto (`<em><strong>` pasa a `<strong><em>`, igual a la vista) y los atributos con su valor por defecto (`textAlign` left, `altPendiente` false, `decorativa` false, `epigrafe` vacío, `imagenId` null, `colspan`/`rowspan` 1, `start` 1 y `type` null en listas ordenadas, `class`/`rel`/`target`/`title` null en enlaces). Se comprobó con una mutación (sin el atributo `imagenId`) que las dos pruebas fallan.
+- El diálogo de imagen sigue pidiendo la dirección a mano; se cambia por la biblioteca en la etapa 4b.
+
 ## El editor de la fase 0 (a portar en el paso 4)
 
 Está en `testing-tiptap/src/editor` (unas 1.100 líneas) y `App.tsx` (793 líneas: barra de herramientas, diálogos y pestañas de vista previa, JSON, texto y validación). TipTap 3.31.4 (`core`, `pm`, `react`, `starter-kit`, `extension-heading`, `extension-table`, `extension-text-align`) y React 19.2.x; tiene un test sin navegador con jsdom (`test:editor`, 183 líneas). Ya resuelve títulos H2 a H4 en una línea, citas textual y destacada con autor y fuente, notas al pie con ventana de edición, imagen con alt, decorativa, epígrafe y `altPendiente`, video de YouTube y Vimeo, tablas simples sin celdas combinadas, alineación izquierda, centro y justificado, y enlaces solo http, https y mailto.
@@ -57,7 +65,7 @@ Está en `testing-tiptap/src/editor` (unas 1.100 líneas) y `App.tsx` (793 líne
 ## Lo que falta
 
 **Paso 4: el editor** (lo más grande).
-- Portar las extensiones de TipTap con `imagenId`, y la prueba de ida y vuelta de los 35 con jsdom.
+- ~~Portar las extensiones de TipTap con `imagenId`, y la prueba de ida y vuelta de los 35 con jsdom.~~ Hecho (etapa 4a).
 - Pantalla de edición: título, bajada, editor del cuerpo, sección, categorías con la principal marcada, autores en orden, imagen de encabezado (con texto alternativo, crédito y punto focal), letra capital (casilla), `novedadHasta`, dirección (solo en un borrador).
 - Alta de un artículo nuevo; abrir un artículo desde el listado.
 - Autoguardado con retardo y estado visible ("Guardado", "Guardando…", "No se pudo guardar"); aviso de conflicto con opción de ver los cambios o copiar el propio texto; "Descartar los cambios sin publicar"; aviso de que hay cambios sin publicar en un artículo publicado.

@@ -6,17 +6,29 @@
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "test:editor": "tsx --env-file=../../.env src/editor/test-editor.ts && tsx --env-file=../../.env src/editor/test-ida-vuelta.ts"
   },
   "dependencies": {
+    "@evaristo/compartido": "0.0.0",
+    "@tiptap/core": "3.31.4",
+    "@tiptap/extension-heading": "3.31.4",
+    "@tiptap/extension-table": "3.31.4",
+    "@tiptap/extension-text-align": "3.31.4",
+    "@tiptap/pm": "3.31.4",
+    "@tiptap/react": "3.31.4",
+    "@tiptap/starter-kit": "3.31.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-router": "8.4.0"
   },
   "devDependencies": {
+    "@types/node": "24.19.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
+    "jsdom": "30.1.2",
+    "tsx": "4.23.15",
     "vite": "8.3.4"
   }
 }
