@@ -1,6 +1,6 @@
 # Fase 4 (panel y API): estado, decisiones y lo que falta
 
-Actualizado el 22/10/2026. Pasos 1 a 5 hechos y mergeados en `main` (el 4, el editor, y el 5, las imágenes, se cerraron el 22/10/2026); el paso 6 está a medias en la rama `fase4-publicar` (publicar, programar, publicar cambios y despublicar hechos; faltan la ficha técnica y la galería); faltan los pasos 7 y 8. El plan de la fase está en `plan-implementacion.md`, sección 7; los pendientes generales en `pendientes.md`, sección 1.
+Actualizado el 22/10/2026. Pasos 1 a 5 hechos y mergeados en `main` (el 4, el editor, y el 5, las imágenes, se cerraron el 22/10/2026); el paso 6 está a medias (publicar, programar, publicar cambios y despublicar hechos y mergeados; faltan la ficha técnica y la galería); faltan los pasos 7 y 8. El plan de la fase está en `plan-implementacion.md`, sección 7; los pendientes generales en `pendientes.md`, sección 1.
 
 ## Base de desarrollo
 
@@ -100,7 +100,7 @@ Decisiones de Mariano (22/10/2026), registradas como decisión 65 del plan: carp
 - **No se hizo (queda anotado):** variantes de tamaño y `srcset`; límite de subidas por minuto; mostrar en la biblioteca dónde se usa cada imagen (hoy solo se ve al intentar borrar); recorte real del archivo; punto focal en las imágenes del cuerpo; arrastrar y soltar archivos; subir varias imágenes juntas; reemplazar el archivo de una imagen existente. Una carrera entre borrar una imagen y usarla en el cuerpo al mismo tiempo no está protegida por la base (el cuerpo no tiene clave foránea); la ventana es mínima.
 - **Probado en el navegador por Mariano (22/10/2026):** subida, rotación y metadatos, rechazos, repetidas, punto focal y borrado funcionan bien.
 
-## Paso 6: publicar (22/10/2026, rama `fase4-publicar`)
+## Paso 6: publicar (22/10/2026)
 
 Decisión de Mariano (22/10/2026), decisión 66 del plan: **programar es dejar el artículo PUBLICADO con una fecha futura.** Hoy todas las consultas del sitio muestran un artículo solo si `estado = PUBLICADO` y `publicadoEn` ya llegó, así que aparece solo cuando llega la fecha, sin procesos ni cambios en el sitio. (La nota anterior de que "no hace falta un proceso" valía solo con esa regla; un estado `PROGRAMADO` real nunca se habría visto.) El estado que muestra el panel se calcula (`apps/api/src/admin/estado.ts`): BORRADOR; PROGRAMADO = PUBLICADO con fecha futura (o, en datos viejos, estado PROGRAMADO); PUBLICADO = fecha cumplida. El estado `PROGRAMADO` de la base queda sin usar. El listado y sus solapas filtran y cuentan por ese estado.
 
