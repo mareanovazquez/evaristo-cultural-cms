@@ -1,9 +1,12 @@
 // Llamadas a la API del panel. Los errores salen con un mensaje en lenguaje común, listo para mostrar.
+import type { JSONNode } from "@evaristo/compartido/schema";
 
 export class ErrorApi extends Error {
   constructor(
     readonly estado: number,
     mensaje: string,
+    /** Lo que hay que corregir, en lenguaje común (respuestas 422). */
+    readonly problemas: string[] = [],
   ) {
     super(mensaje);
   }
@@ -13,6 +16,7 @@ function mensajePorEstado(estado: number): string {
   if (estado === 401) return "Tu sesión terminó. Ingresá de nuevo.";
   if (estado === 403) return "No tenés permiso para hacer esto.";
   if (estado === 404) return "No encontramos lo que buscabas.";
+  if (estado === 409) return "Este artículo cambió mientras lo editabas.";
   if (estado === 413) return "Lo que querés enviar es demasiado grande.";
   if (estado === 429) return "Hubo demasiados intentos. Esperá unos minutos y probá de nuevo.";
   if (estado >= 500) return "Algo salió mal de nuestro lado. Probá de nuevo en un momento.";
@@ -32,8 +36,11 @@ export async function pedirApi<T>(ruta: string, opciones: { metodo?: string; cue
     if (error instanceof DOMException && error.name === "AbortError") throw error;
     throw new ErrorApi(0, "No hay conexión con el servidor. Revisá tu conexión y probá de nuevo.");
   }
-  const datos = (await respuesta.json().catch(() => null)) as { mensaje?: string } | null;
-  if (!respuesta.ok) throw new ErrorApi(respuesta.status, datos?.mensaje ?? mensajePorEstado(respuesta.status));
+  const datos = (await respuesta.json().catch(() => null)) as { mensaje?: string; problemas?: unknown } | null;
+  if (!respuesta.ok) {
+    const problemas = Array.isArray(datos?.problemas) ? datos.problemas.filter((p): p is string => typeof p === "string") : [];
+    throw new ErrorApi(respuesta.status, datos?.mensaje ?? mensajePorEstado(respuesta.status), problemas);
+  }
   return datos as T;
 }
 
@@ -66,3 +73,62 @@ export interface RespuestaLista {
   conteos: Record<EstadoArticulo, number>;
   articulos: ArticuloDeLista[];
 }
+
+// ---------- Edición de artículos ----------
+
+/** Los campos que se editan de un artículo (los mismos que valida la API). */
+export interface DatosArticulo {
+  titulo: string;
+  bajada: string | null;
+  cuerpo: JSONNode;
+  seccionId: number;
+  categoriaIds: number[];
+  categoriaPrincipalId: number | null;
+  autorIds: number[];
+  imagenEncabezadoId: number | null;
+  encabezadoAlt: string | null;
+  encabezadoCredito: string | null;
+  encabezadoPuntoFocalX: number;
+  encabezadoPuntoFocalY: number;
+  conCapital: boolean;
+  novedadHasta: string | null;
+  slug?: string;
+}
+
+export interface ArticuloEditable {
+  id: number;
+  wpId: number | null;
+  estado: EstadoArticulo;
+  publicadoEn: string | null;
+  /** Se manda de vuelta al guardar: así la API detecta si otra persona guardó en el medio. */
+  version: string;
+  conCambiosSinPublicar: boolean;
+  ruta: string | null;
+  datos: DatosArticulo;
+  /** La imagen de encabezado de datos, para mostrar su miniatura. */
+  imagenEncabezado: { id: number; clave: string; nombreOriginal: string } | null;
+}
+
+export interface Catalogos {
+  secciones: Array<{ id: number; slug: string; nombre: string }>;
+  categorias: Array<{ id: number; slug: string; nombre: string }>;
+  autores: Array<{ id: number; nombre: string; soloTexto: boolean }>;
+}
+
+export interface ImagenDeLista {
+  id: number;
+  clave: string;
+  nombreOriginal: string;
+  ancho: number;
+  alto: number;
+}
+
+export interface RespuestaImagenes {
+  total: number;
+  pagina: number;
+  paginas: number;
+  imagenes: ImagenDeLista[];
+}
+
+/** Dirección con la que el panel y el sitio muestran una imagen de la biblioteca (la clave es un solo tramo, codificado). */
+export const urlImagen = (clave: string): string => `/media/${encodeURIComponent(clave)}`;

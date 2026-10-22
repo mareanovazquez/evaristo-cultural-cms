@@ -110,6 +110,9 @@ try {
     assert.deepEqual(art.datos.cuerpo, a.cuerpo, `el cuerpo de ${a.wpId} no vuelve igual`);
     assert.equal(art.datos.titulo, a.titulo);
     assert.equal(art.conCambiosSinPublicar, false);
+    // La miniatura del encabezado: la imagen que dice el artículo, o null si no tiene
+    if (art.datos.imagenEncabezadoId === null) assert.equal(art.imagenEncabezado, null);
+    else assert.deepEqual(Object.keys(art.imagenEncabezado).sort(), ["clave", "id", "nombreOriginal"]);
     imagenIdsVistos += (JSON.stringify(art.datos.cuerpo).match(/"imagenId"/g) ?? []).length;
     if (a.estado === "BORRADOR") {
       // Un borrador migrado no se toca en esta prueba: solo se comprueba que una versión vieja da conflicto.

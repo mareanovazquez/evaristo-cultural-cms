@@ -134,6 +134,9 @@ export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
         return;
       }
       const conBorrador = a.estado !== "BORRADOR" && a.borrador !== null;
+      const datos = conBorrador ? { ...(a.borrador!.datos as DatosArticulo), slug: a.slug } : datosDeLaFila(a);
+      // Para mostrar la miniatura del encabezado (el borrador de cambios puede tener otra imagen que el artículo).
+      const imagenEncabezado = datos.imagenEncabezadoId !== null ? await prisma.imagen.findUnique({ where: { id: datos.imagenEncabezadoId }, select: { id: true, clave: true, nombreOriginal: true } }) : null;
       const ahora = new Date();
       res.setHeader("Cache-Control", "no-store");
       res.json({
@@ -147,7 +150,8 @@ export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
           // Hay cambios sin publicar: los datos que se devuelven son los del borrador de cambios, no los publicados.
           conCambiosSinPublicar: conBorrador,
           ruta: a.estado === "PUBLICADO" && a.publicadoEn && a.publicadoEn <= ahora ? rutaArticulo({ slug: a.slug, publicadoEn: a.publicadoEn }) : null,
-          datos: conBorrador ? { ...(a.borrador!.datos as DatosArticulo), slug: a.slug } : datosDeLaFila(a),
+          datos,
+          imagenEncabezado,
         },
       });
     } catch (e) {

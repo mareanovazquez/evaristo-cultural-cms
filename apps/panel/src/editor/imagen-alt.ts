@@ -11,7 +11,7 @@ import type { ImagenAttributes } from './imagen'
 export function validarFormularioImagen(form: ImagenAttributes): Partial<Record<'src' | 'alt', string>> {
   const errors: Partial<Record<'src' | 'alt', string>> = {}
   if (!isAllowedImageSrc(form.src)) {
-    errors.src = 'Ingresá una dirección válida: http://, https:// o una ruta que empiece con "/".'
+    errors.src = 'Elegí una imagen de la biblioteca.'
   }
   if (!form.decorativa && !form.alt.trim() && !form.altPendiente) {
     errors.alt = 'El texto alternativo es obligatorio, salvo que la imagen sea decorativa.'

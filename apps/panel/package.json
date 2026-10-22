@@ -7,7 +7,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.node.json",
     "dev": "vite",
     "build": "vite build",
-    "test:editor": "tsx --env-file=../../.env src/editor/test-editor.ts && tsx --env-file=../../.env src/editor/test-ida-vuelta.ts"
+    "test:editor": "tsx --env-file=../../.env src/editor/test-editor.ts && tsx --env-file=../../.env src/editor/test-ida-vuelta.ts",
+    "test:pantalla": "tsx src/editor/test-pantalla.tsx"
   },
   "dependencies": {
     "@evaristo/compartido": "0.0.0",

@@ -77,7 +77,12 @@ export function Articulos() {
 
   return (
     <section>
-      <h1>Artículos</h1>
+      <div className="listado-encabezado">
+        <h1>Artículos</h1>
+        <Link to="/articulos/nuevo" className="boton boton-primario boton-enlace">
+          Nuevo artículo
+        </Link>
+      </div>
 
       <form className="busqueda" role="search" onSubmit={buscar}>
         <label htmlFor="busqueda" className="solo-lectores">
@@ -129,7 +134,9 @@ export function Articulos() {
               {datos.articulos.map((a) => (
                 <tr key={a.id}>
                   <td className="celda-titulo">
-                    <span className="titulo-articulo">{a.titulo}</span>
+                    <Link className="titulo-articulo" to={`/articulos/${a.id}`}>
+                      {a.titulo}
+                    </Link>
                     {a.altPendientes > 0 && <span className="etiqueta etiqueta-alerta">{a.altPendientes === 1 ? "1 imagen sin texto alternativo" : `${a.altPendientes} imágenes sin texto alternativo`}</span>}
                     {a.ruta && (
                       <a className="ver-en-sitio" href={a.ruta} target="_blank" rel="noopener noreferrer">
@@ -177,9 +184,6 @@ export function Articulos() {
         </nav>
       )}
 
-      <p className="ayuda">
-        El editor de artículos todavía no está disponible. <Link to="/">Volver al inicio</Link>
-      </p>
     </section>
   );
 }

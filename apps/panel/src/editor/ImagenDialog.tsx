@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react'
+import { urlImagen } from '../api'
 import type { ImagenAttributes } from './imagen'
 import { atributosAlGuardar, imagenPendiente, validarFormularioImagen } from './imagen-alt'
+import { SelectorImagen } from './SelectorImagen'
 
 interface ImagenDialogProps {
   isOpen: boolean
@@ -22,6 +24,7 @@ export const ImagenDialog: React.FC<ImagenDialogProps> = ({ isOpen, ...rest }) =
 const ImagenDialogForm: React.FC<Omit<ImagenDialogProps, 'isOpen'>> = ({ initialAttrs, isNew, onSave, onCancel, onDelete }) => {
   const [form, setForm] = useState<ImagenAttributes>(initialAttrs ?? EMPTY_IMAGEN)
   const [showErrors, setShowErrors] = useState(false)
+  const [eligiendo, setEligiendo] = useState(false)
 
   const errors = validarFormularioImagen(form)
   const pendiente = imagenPendiente(form)
@@ -36,6 +39,7 @@ const ImagenDialogForm: React.FC<Omit<ImagenDialogProps, 'isOpen'>> = ({ initial
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (eligiendo) return // el selector de la biblioteca tiene sus propios atajos
       if (e.key === 'Escape') {
         e.preventDefault()
         onCancel()
@@ -63,16 +67,13 @@ const ImagenDialogForm: React.FC<Omit<ImagenDialogProps, 'isOpen'>> = ({ initial
 
         <div className="modal-body modal-form">
           <div className="form-field">
-            <label htmlFor="imagen-src">URL de la imagen</label>
-            <input
-              id="imagen-src"
-              type="text"
-              placeholder="https://… o /ruta/imagen.jpg"
-              value={form.src}
-              onChange={(e) => update({ src: e.target.value })}
-              aria-invalid={showErrors && !!errors.src}
-              autoFocus
-            />
+            <span className="form-etiqueta">Imagen</span>
+            {form.src ? <img className="imagen-miniatura" src={form.src} alt="" /> : <p className="ayuda">Todavía no elegiste ninguna imagen.</p>}
+            <div>
+              <button type="button" className="boton boton-suave" onClick={() => setEligiendo(true)}>
+                {form.src ? 'Cambiar imagen' : 'Elegir imagen'}
+              </button>
+            </div>
             {showErrors && errors.src && <p className="form-error">{errors.src}</p>}
           </div>
 
@@ -129,6 +130,15 @@ const ImagenDialogForm: React.FC<Omit<ImagenDialogProps, 'isOpen'>> = ({ initial
           </div>
         </div>
       </div>
+      {eligiendo && (
+        <SelectorImagen
+          onCancelar={() => setEligiendo(false)}
+          onElegir={(imagen) => {
+            update({ imagenId: imagen.id, src: urlImagen(imagen.clave) })
+            setEligiendo(false)
+          }}
+        />
+      )}
     </div>
   )
 }

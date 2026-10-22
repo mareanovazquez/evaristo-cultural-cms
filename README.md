@@ -244,6 +244,9 @@ Después abrir:
 | `npm run test:auth-base` | Ingreso y sesiones contra `evaristo_cms_dev` (crea y borra un usuario temporal). |
 | `npm run test:admin-articulos` | Listado de artículos del panel contra `evaristo_cms_dev` (crea y borra un usuario temporal). |
 | `npm run test:admin-edicion` | Edición de artículos del panel contra `evaristo_cms_dev` (crea y borra datos temporales; guarda los 35 como borrador de cambios sin alterar lo publicado). |
+| `npm run test:admin-imagenes` | Biblioteca de imágenes del panel (`GET /api/admin/imagenes`) contra `evaristo_cms_dev` (solo lee). |
+| `npm run test:editor` | Editor del panel con TipTap sobre jsdom: 20 pruebas y la ida y vuelta de los 35 cuerpos de `evaristo_cms_dev` (solo lee). |
+| `npm run test:pantalla` | Pantallas de edición y alta del panel montadas en jsdom con la API simulada (sin base ni servidor). |
 | `npm run start --workspace=@evaristo/api` | Arranca el servidor único sin compilar nada antes (pensado para producción). |
 
 > **Apagado ordenado:** el servidor atiende SIGINT y SIGTERM (cierra el servidor y desconecta Prisma), pero en Windows no se puede probar porque ahí las señales terminan el proceso sin pasar por los handlers. Se prueba en Linux al desplegar.

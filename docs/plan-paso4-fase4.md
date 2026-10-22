@@ -25,7 +25,7 @@ Después se sigue con el checklist de abajo, que lo recorre Claude Code.
 6. El panel todavía no depende de `@evaristo/compartido`: agregarlo (`"@evaristo/compartido": "0.0.0"`) y poner `allowImportingTsExtensions` en `apps/panel/tsconfig.json`, como en el sitio y la API, para usar `/render` y `/schema`.
 7. Leer solo lo que haga falta: `estado-fase4.md` (sección del editor), y del editor viejo `..\testing-tiptap\src\editor\` (solo lectura, no se modifica).
 
-## Etapa 4a: portar las extensiones y la prueba de ida y vuelta
+## Etapa 4a: portar las extensiones y la prueba de ida y vuelta (HECHA el 22/10/2026)
 
 **Objetivo:** el editor de TipTap vive en `apps/panel/src/editor/`, conserva el `imagenId` y guardar sin tocar no cambia los 35 cuerpos migrados.
 
@@ -35,7 +35,7 @@ Después se sigue con el checklist de abajo, que lo recorre Claude Code.
 - Pasar también los tests del editor viejo (títulos sin saltos de línea, imagen con texto alternativo, `altPendiente`) y sumar uno para `imagenId`.
 - **Hecho cuando:** `test:editor` pasa con los 35, typecheck y `build:panel` sin errores, y sin tocar `testing-tiptap`.
 
-## Etapa 4b: pantalla de edición y alta de artículos
+## Etapa 4b: pantalla de edición y alta de artículos (HECHA el 22/10/2026; ver estado-fase4.md)
 
 **Objetivo:** abrir un artículo del listado, editar todos sus campos y guardarlo con un botón (todavía sin autoguardado).
 
