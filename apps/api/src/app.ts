@@ -26,12 +26,15 @@ type ManejadorAstro = (req: Request, res: Response, next: NextFunction) => void;
 export interface OpcionesApp {
   /** Carpeta de los originales de las imágenes. Por defecto, la variable MEDIA_DIR. */
   dirMedia?: string | undefined;
+  /** Carpeta de las imágenes subidas desde el panel. Por defecto, la variable MEDIA_DIR_SUBIDAS. */
+  dirSubidas?: string | undefined;
   /** Para las pruebas: reemplaza partes de la autenticación (repositorio, límite de intentos, cookie Secure). */
   auth?: Partial<OpcionesAuth>;
 }
 
 export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones: OpcionesApp = {}): express.Express {
   const app = express();
+  const dirSubidas = "dirSubidas" in opciones ? opciones.dirSubidas : process.env["MEDIA_DIR_SUBIDAS"] || undefined;
 
   // Se carga una sola vez, la primera vez que hace falta y existe el build.
   let manejadorAstro: ManejadorAstro | undefined;
@@ -55,7 +58,7 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
   const auth = crearAuth({ repo: repositorioPrisma(prisma), seguro: process.env["NODE_ENV"] === "production", ...opciones.auth });
   app.use("/api/auth", auth.router);
   // Rutas del panel: hace falta una sesión (editor o administrador) y que el pedido venga del propio sitio.
-  app.use("/api/admin", auth.protegerOrigen, auth.cargarSesion, auth.exigirSesion, crearRutasAdminArticulos(prisma), crearRutasAdminEdicion(prisma), crearRutasAdminImagenes(prisma));
+  app.use("/api/admin", auth.protegerOrigen, auth.cargarSesion, auth.exigirSesion, crearRutasAdminArticulos(prisma), crearRutasAdminEdicion(prisma), crearRutasAdminImagenes(prisma, { dirSubidas }));
 
   app.get("/api/salud", async (_req, res) => {
     try {
@@ -113,6 +116,7 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
     "/media",
     crearManejadorMedia({
       dirMedia: "dirMedia" in opciones ? opciones.dirMedia : process.env["MEDIA_DIR"] || undefined,
+      dirSubidas,
       // select explícito: solo lo que la ruta necesita
       buscar: (clave) => prisma.imagen.findMany({ where: { clave }, select: { clave: true, tipoMime: true, hash: true } }),
     }),

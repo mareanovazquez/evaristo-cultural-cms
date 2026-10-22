@@ -25,8 +25,10 @@ const CACHE_CONTROL = "public, max-age=86400";
 
 export interface OpcionesMedia {
   buscar: BuscarImagenes;
-  /** Carpeta de los originales. Sin ella, la ruta responde 503. */
+  /** Carpeta de los originales. Sin ella ni carpeta de subidas, la ruta responde 503. */
   dirMedia: string | undefined;
+  /** Carpeta de las imágenes subidas desde el panel. Se busca primero acá y después en `dirMedia` (en desarrollo, la muestra queda intacta). */
+  dirSubidas?: string | undefined;
 }
 
 function texto(res: Response, estado: number, mensaje: string): void {
@@ -48,7 +50,9 @@ function claveDelPedido(req: Request): string | 400 | 404 {
   return clave;
 }
 
-export function crearManejadorMedia({ buscar, dirMedia }: OpcionesMedia): RequestHandler {
+export function crearManejadorMedia({ buscar, dirMedia, dirSubidas }: OpcionesMedia): RequestHandler {
+  // Carpetas donde buscar el archivo, en orden: las subidas primero.
+  const raices = [dirSubidas, dirMedia].filter((r): r is string => !!r).map((r) => resolve(r));
   return async (req, res, next) => {
     try {
       if (req.method !== "GET" && req.method !== "HEAD") {
@@ -56,7 +60,7 @@ export function crearManejadorMedia({ buscar, dirMedia }: OpcionesMedia): Reques
         texto(res, 405, "Método no permitido");
         return;
       }
-      if (!dirMedia) {
+      if (raices.length === 0) {
         texto(res, 503, "Falta configurar MEDIA_DIR");
         return;
       }
@@ -77,13 +81,12 @@ export function crearManejadorMedia({ buscar, dirMedia }: OpcionesMedia): Reques
         return;
       }
 
-      const raiz = resolve(dirMedia);
-      const ruta = resolve(raiz, fila.clave);
-      if (!ruta.startsWith(raiz + sep) || basename(ruta) !== fila.clave) {
-        texto(res, 404, "No encontrado");
-        return;
-      }
-      if (!existsSync(ruta) || !statSync(ruta).isFile()) {
+      // El archivo se busca en cada carpeta, y se comprueba que quede adentro de ella.
+      const raiz = raices.find((r) => {
+        const ruta = resolve(r, fila.clave);
+        return ruta.startsWith(r + sep) && basename(ruta) === fila.clave && existsSync(ruta) && statSync(ruta).isFile();
+      });
+      if (!raiz) {
         texto(res, 404, "No encontrado");
         return;
       }

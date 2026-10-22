@@ -15,6 +15,7 @@
     "test:admin-articulos": "tsx --env-file=../../.env src/tests/test-admin-articulos-base.ts",
     "test:admin-edicion": "tsx --env-file=../../.env src/tests/test-admin-edicion-base.ts",
     "test:admin-imagenes": "tsx --env-file=../../.env src/tests/test-admin-imagenes-base.ts",
+    "test:admin-subida": "tsx --env-file=../../.env src/tests/test-admin-subida-base.ts",
     "test:categorias": "tsx --env-file=../../.env src/tests/test-categorias.ts",
     "test:secciones": "tsx --env-file=../../.env src/tests/test-secciones.ts",
     "test:humo": "tsx --env-file=../../.env src/tests/test-humo.ts",
@@ -29,10 +30,13 @@
     "express": "5.2.1",
     "express-rate-limit": "8.7.1",
     "helmet": "8.3.0",
+    "multer": "2.4.0",
+    "sharp": "0.35.5",
     "zod": "4.6.5"
   },
   "devDependencies": {
     "@types/express": "5.0.6",
+    "@types/multer": "2.3.0",
     "tsx": "4.23.15"
   }
 }

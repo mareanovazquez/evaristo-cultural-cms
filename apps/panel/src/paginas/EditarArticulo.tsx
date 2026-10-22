@@ -6,6 +6,7 @@ import { ErrorApi, pedirApi, urlImagen, type ArticuloEditable, type Catalogos, t
 import { tiempos } from "../autoguardado";
 import { EditorCuerpo, textoDelEditor } from "../editor/EditorCuerpo";
 import { SelectorImagen } from "../editor/SelectorImagen";
+import { PuntoFocal } from "../PuntoFocal";
 import { useAvisarAlSalir } from "../salida";
 import { useSesion } from "../sesion";
 import { useTitulo } from "../titulo";
@@ -506,17 +507,26 @@ function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEdita
                   <label htmlFor="encabezado-credito">Crédito</label>
                   <input id="encabezado-credito" type="text" value={campos.encabezadoCredito ?? ""} maxLength={255} onChange={(e) => poner({ encabezadoCredito: e.target.value })} />
                 </div>
-                <div className="par-campos">
-                  <div className="campo">
-                    <label htmlFor="foco-x">Punto focal horizontal (%)</label>
-                    <input id="foco-x" type="number" min={0} max={100} step={5} value={porcentaje(campos.encabezadoPuntoFocalX)} onChange={(e) => puntoFocal("encabezadoPuntoFocalX", e.target.value)} />
+                <PuntoFocal
+                  src={urlImagen(imagenEncabezado.clave)}
+                  x={campos.encabezadoPuntoFocalX}
+                  y={campos.encabezadoPuntoFocalY}
+                  onCambio={(x, y) => poner({ encabezadoPuntoFocalX: x, encabezadoPuntoFocalY: y })}
+                />
+                <details className="ajuste-fino">
+                  <summary>Ajuste fino del punto focal (con números)</summary>
+                  <div className="par-campos">
+                    <div className="campo">
+                      <label htmlFor="foco-x">Punto focal horizontal (%)</label>
+                      <input id="foco-x" type="number" min={0} max={100} step={5} value={porcentaje(campos.encabezadoPuntoFocalX)} onChange={(e) => puntoFocal("encabezadoPuntoFocalX", e.target.value)} />
+                    </div>
+                    <div className="campo">
+                      <label htmlFor="foco-y">Punto focal vertical (%)</label>
+                      <input id="foco-y" type="number" min={0} max={100} step={5} value={porcentaje(campos.encabezadoPuntoFocalY)} onChange={(e) => puntoFocal("encabezadoPuntoFocalY", e.target.value)} />
+                    </div>
                   </div>
-                  <div className="campo">
-                    <label htmlFor="foco-y">Punto focal vertical (%)</label>
-                    <input id="foco-y" type="number" min={0} max={100} step={5} value={porcentaje(campos.encabezadoPuntoFocalY)} onChange={(e) => puntoFocal("encabezadoPuntoFocalY", e.target.value)} />
-                  </div>
-                </div>
-                <p className="ayuda">Indica qué parte de la imagen no debe quedar cortada: 0 es izquierda o arriba, 100 es derecha o abajo.</p>
+                  <p className="ayuda">0 es izquierda o arriba, 100 es derecha o abajo.</p>
+                </details>
               </>
             )}
           </fieldset>

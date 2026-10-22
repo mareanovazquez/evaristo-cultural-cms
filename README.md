@@ -34,7 +34,8 @@ CMS propio de la revista Evaristo Cultural, pensado para reemplazar el WordPress
 | `SHADOW_DATABASE_URL` | La base shadow que usa Prisma al crear migraciones. |
 | `DATABASE_URL_DEV` | La base de desarrollo del panel y la API (`evaristo_cms_dev`). Se usa con `--base-dev`. |
 | `DATABASE_URL_MIGRACION` | Usuario de escritura de la migración (ver más abajo). |
-| `MEDIA_DIR` | Carpeta con los originales de las imágenes (ruta absoluta). Sin ella, `/media/<clave>` responde 503. |
+| `MEDIA_DIR` | Carpeta con los originales de las imágenes (ruta absoluta). Sin ella ni `MEDIA_DIR_SUBIDAS`, `/media/<clave>` responde 503. |
+| `MEDIA_DIR_SUBIDAS` | Carpeta donde se guardan las imágenes subidas desde el panel (ruta absoluta; la API la crea en la primera subida). `/media` busca primero acá y después en `MEDIA_DIR`. Sin ella, subir responde 503. En desarrollo conviene una carpeta propia para no mezclar las pruebas con la muestra. |
 | `PORT` | Puerto del servidor único (3000 por defecto). |
 | `NODE_ENV` | Con `production` la cookie de sesión lleva `Secure`. |
 | `PRUEBA_LAYOUT` | Con `1`, habilita `/prueba-layout/` fuera de `astro dev` (página temporal de pruebas). |
@@ -245,6 +246,7 @@ Después abrir:
 | `npm run test:admin-articulos` | Listado de artículos del panel contra `evaristo_cms_dev` (crea y borra un usuario temporal). |
 | `npm run test:admin-edicion` | Edición de artículos del panel contra `evaristo_cms_dev` (crea y borra datos temporales; guarda los 35 como borrador de cambios sin alterar lo publicado). |
 | `npm run test:admin-imagenes` | Biblioteca de imágenes del panel (`GET /api/admin/imagenes`) contra `evaristo_cms_dev` (solo lee). |
+| `npm run test:admin-subida` | Subida y borrado de imágenes (`POST` y `DELETE /api/admin/imagenes`) contra `evaristo_cms_dev`, con imágenes armadas con `sharp` y carpetas temporales (crea y borra datos temporales; no toca la muestra). |
 | `npm run test:editor` | Editor del panel con TipTap sobre jsdom: 20 pruebas y la ida y vuelta de los 35 cuerpos de `evaristo_cms_dev` (solo lee). |
 | `npm run test:pantalla` | Pantallas de edición y alta del panel montadas en jsdom con la API simulada (sin base ni servidor). |
 | `npm run start --workspace=@evaristo/api` | Arranca el servidor único sin compilar nada antes (pensado para producción). |

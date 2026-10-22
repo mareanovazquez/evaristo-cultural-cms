@@ -242,4 +242,27 @@ a.titulo-articulo:hover { color: var(--acento); text-decoration: underline; }
 .imagen-opcion:hover { border-color: var(--acento); }
 .imagen-opcion img { display: block; width: 100%; height: 7rem; object-fit: cover; background: var(--fondo); }
 .imagen-opcion-nombre { padding: 0.35rem 0.5rem; font-size: 0.78rem; color: var(--texto-suave); overflow-wrap: anywhere; }
+/* Subida y borrado de imágenes en la biblioteca */
+.subida { margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--borde); }
+.subida-etiqueta { display: block; font-size: 0.9rem; font-weight: 600; margin-bottom: 0.35rem; }
+.subida input[type="file"] { max-width: 100%; font: inherit; }
+.subida-lista { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 1rem; margin-top: 0.75rem; padding: 0.75rem; background: var(--ok-fondo); border-left: 4px solid var(--ok); border-radius: var(--radio); }
+.subida-lista img { width: 8rem; max-height: 6rem; object-fit: cover; border: 1px solid var(--borde); border-radius: var(--radio); background: #fff; }
+.subida-lista p { margin: 0 0 0.5rem; overflow-wrap: anywhere; }
+.aviso-ok { background: var(--ok-fondo); border-color: var(--ok); color: var(--ok); }
+.subtitulo-biblioteca { margin: 0 0 0.5rem; font-size: 1rem; }
+.imagen-item { position: relative; display: flex; flex-direction: column; }
+.imagen-item .imagen-opcion { flex: 1; }
+.imagen-borrar { font: inherit; font-size: 0.8rem; padding: 0.3rem 0.5rem; min-height: 32px; background: var(--superficie); color: var(--peligro); border: 1px solid var(--borde); border-top: 0; border-radius: 0 0 var(--radio) var(--radio); cursor: pointer; }
+.imagen-borrar:hover { background: var(--peligro-fondo); border-color: var(--peligro); }
+
+/* Punto focal de la imagen de encabezado */
+.punto-focal { margin: 0.5rem 0 0.75rem; }
+.punto-focal-marco { position: relative; display: block; width: 100%; line-height: 0; cursor: crosshair; touch-action: none; user-select: none; border: 1px solid var(--borde-fuerte); border-radius: var(--radio); overflow: hidden; background: #fff; }
+.punto-focal-marco img { display: block; width: 100%; height: auto; pointer-events: none; }
+.punto-focal-marca { position: absolute; width: 1.75rem; height: 1.75rem; margin: -0.875rem 0 0 -0.875rem; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 2px var(--acento-oscuro), inset 0 0 0 2px var(--acento-oscuro); background: rgba(43, 93, 143, 0.25); pointer-events: none; }
+.punto-focal-previa { width: 100%; overflow: hidden; border: 1px solid var(--borde-fuerte); border-radius: var(--radio); background: var(--fondo); }
+.punto-focal-previa img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.ajuste-fino { margin: 0.5rem 0; }
+.ajuste-fino summary { cursor: pointer; font-size: 0.9rem; color: var(--acento); padding: 0.25rem 0; }
 .paginacion-selector { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: var(--texto-suave); }

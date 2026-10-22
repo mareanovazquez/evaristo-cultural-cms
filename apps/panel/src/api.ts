@@ -19,20 +19,32 @@ function mensajePorEstado(estado: number): string {
   if (estado === 404) return "No encontramos lo que buscabas.";
   if (estado === 409) return "Este artículo cambió mientras lo editabas.";
   if (estado === 413) return "Lo que querés enviar es demasiado grande.";
+  if (estado === 415) return "Ese tipo de archivo no se puede subir.";
   if (estado === 429) return "Hubo demasiados intentos. Esperá unos minutos y probá de nuevo.";
   if (estado >= 500) return "Algo salió mal de nuestro lado. Probá de nuevo en un momento.";
   return "No se pudo completar la acción. Revisá los datos y probá de nuevo.";
 }
 
 export async function pedirApi<T>(ruta: string, opciones: { metodo?: string; cuerpo?: unknown; signal?: AbortSignal } = {}): Promise<T> {
+  return enviar<T>(ruta, {
+    method: opciones.metodo ?? "GET",
+    credentials: "same-origin",
+    ...(opciones.cuerpo !== undefined ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(opciones.cuerpo) } : {}),
+    ...(opciones.signal ? { signal: opciones.signal } : {}),
+  });
+}
+
+/** Sube un archivo (multipart). No se fija el Content-Type: el navegador agrega el límite del formulario. */
+export async function subirArchivo<T>(ruta: string, campo: string, archivo: File, signal?: AbortSignal): Promise<T> {
+  const cuerpo = new FormData();
+  cuerpo.append(campo, archivo);
+  return enviar<T>(ruta, { method: "POST", credentials: "same-origin", body: cuerpo, ...(signal ? { signal } : {}) });
+}
+
+async function enviar<T>(ruta: string, init: RequestInit): Promise<T> {
   let respuesta: Response;
   try {
-    respuesta = await fetch(ruta, {
-      method: opciones.metodo ?? "GET",
-      credentials: "same-origin",
-      ...(opciones.cuerpo !== undefined ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(opciones.cuerpo) } : {}),
-      ...(opciones.signal ? { signal: opciones.signal } : {}),
-    });
+    respuesta = await fetch(ruta, init);
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") throw error;
     throw new ErrorApi(0, "No hay conexión con el servidor. Revisá tu conexión y probá de nuevo.");
@@ -133,3 +145,15 @@ export interface RespuestaImagenes {
 
 /** Dirección con la que el panel y el sitio muestran una imagen de la biblioteca (la clave es un solo tramo, codificado). */
 export const urlImagen = (clave: string): string => `/media/${encodeURIComponent(clave)}`;
+
+export interface RespuestaSubida {
+  /** true si ya había una imagen con el mismo contenido: no se guardó otra. */
+  repetida: boolean;
+  imagen: ImagenDeLista;
+}
+
+/** Tamaño máximo de una imagen al subirla (el mismo que valida la API). */
+export const MAX_BYTES_IMAGEN = 10 * 1024 * 1024;
+
+/** Proporción con la que el sitio muestra la imagen de encabezado (hero-img en apps/sitio/src/styles/articulo.css). */
+export const PROPORCION_ENCABEZADO = "3 / 2";

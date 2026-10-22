@@ -80,6 +80,11 @@ let estadoArticulo = 'BORRADOR'
 let conCambiosSinPublicar = false
 let redCaida = false
 const descartados: string[] = []
+const subidas: Array<{ nombre: string; tamano: number }> = []
+const borrados: number[] = []
+const IMAGEN_NUEVA = { id: 9, clave: 'nueva-abc123.jpg', nombreOriginal: 'nueva.jpg', ancho: 300, alto: 200 }
+let respuestaSubida: { estado: number; cuerpo: J } = { estado: 201, cuerpo: { estado: 'ok', repetida: false, imagen: IMAGEN_NUEVA } }
+let respuestaBorrado: { estado: number; cuerpo: J } = { estado: 200, cuerpo: { estado: 'ok' } }
 let respuestaPut: { estado: number; cuerpo: J } = { estado: 200, cuerpo: { estado: 'ok', version: '2026-10-22T10:05:00.000Z', conCambiosSinPublicar: false } }
 const guardados: J[] = []
 const creados: J[] = []
@@ -100,6 +105,16 @@ globalThis.fetch = (async (entrada: string | URL | Request, init?: RequestInit) 
   if (url === '/api/admin/articulos/7' && metodo === 'PUT') {
     guardados.push(JSON.parse(String(init?.body)) as J)
     return responder(respuestaPut.estado, respuestaPut.cuerpo)
+  }
+  if (url === '/api/admin/imagenes' && metodo === 'POST') {
+    const archivo = (init?.body as FormData).get('archivo') as File
+    subidas.push({ nombre: archivo.name, tamano: archivo.size })
+    return responder(respuestaSubida.estado, respuestaSubida.cuerpo)
+  }
+  const borrar = /^\/api\/admin\/imagenes\/(\d+)$/.exec(url)
+  if (borrar && metodo === 'DELETE') {
+    borrados.push(Number(borrar[1]))
+    return responder(respuestaBorrado.estado, respuestaBorrado.cuerpo)
   }
   if (url.startsWith('/api/admin/imagenes')) return responder(200, { estado: 'ok', total: 1, pagina: 1, paginas: 1, imagenes: [{ id: 6, clave: 'otra.jpg', nombreOriginal: 'otra.jpg', ancho: 10, alto: 10 }] })
   if (url === '/api/admin/articulos' && metodo === 'POST') {
@@ -645,6 +660,114 @@ await t('vista previa: los videos no usan iframe (el sandbox sin scripts bloquea
   assert.ok(renderArticleBody(cuerpo as never).html.includes('<iframe src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"'))
   // Un video inválido no deja nada (lo decide el renderizador)
   assert.ok(!htmlVistaPrevia({ titulo: 'T', bajada: null, autores: [], fecha: '', cuerpo: { type: 'doc', content: [{ type: 'video', attrs: { provider: 'otro', id: 'x' } }] }, conCapital: false }, '').includes('video-previa'))
+})
+
+// ---- Paso 5: subir y borrar imágenes, punto focal ----
+
+const abrirSelectorDelEncabezado = async () => {
+  await abrirBorrador()
+  await clic(boton('Cambiar imagen')!)
+  await hasta(() => !!document.getElementById('selector-subir'), 'el selector con la subida')
+}
+const elegirArchivo = async (archivo: File) => {
+  const input = document.getElementById('selector-subir') as HTMLInputElement
+  Object.defineProperty(input, 'files', { value: [archivo], configurable: true })
+  await act(async () => { input.dispatchEvent(new window.Event('change', { bubbles: true })) })
+}
+const respuestaOk = (repetida: boolean) => ({ estado: 201, cuerpo: { estado: 'ok', repetida, imagen: IMAGEN_NUEVA } })
+
+await t('subir una imagen: se manda el archivo, se muestra lista y se usa como encabezado', async () => {
+  await abrirSelectorDelEncabezado()
+  subidas.length = 0
+  respuestaSubida = respuestaOk(false)
+  assert.ok(document.body.textContent?.includes('JPEG, PNG, WebP o GIF, de hasta 10 MB'))
+  assert.match(document.getElementById('selector-subir')!.getAttribute('accept') ?? '', /image\/jpeg.*image\/png.*image\/webp.*image\/gif/)
+  await elegirArchivo(new File([new Uint8Array(1234)], 'nueva.jpg', { type: 'image/jpeg' }))
+  await hasta(() => !!boton('Usar esta imagen'), 'la imagen subida')
+  assert.deepEqual(subidas, [{ nombre: 'nueva.jpg', tamano: 1234 }])
+  assert.ok(document.querySelector('.subida-lista')?.textContent?.includes('Imagen subida.'))
+  assert.ok(document.querySelector('.subida-lista img[src="/media/nueva-abc123.jpg"]'), 'se ve la miniatura subida')
+  await clic(boton('Usar esta imagen')!)
+  assert.equal(document.querySelector('.galeria-imagenes'), null, 'el selector se cierra')
+  guardados.length = 0
+  await clic(boton('Guardar')!)
+  await hasta(() => guardados.length === 1, 'el guardado')
+  assert.equal(((guardados[0] as { datos: J }).datos)['imagenEncabezadoId'], 9, 'el encabezado es la imagen subida')
+})
+
+await t('subir una imagen que ya estaba en la biblioteca: lo avisa y usa la existente', async () => {
+  await abrirSelectorDelEncabezado()
+  respuestaSubida = { estado: 200, cuerpo: { estado: 'ok', repetida: true, imagen: IMAGEN_NUEVA } }
+  await elegirArchivo(new File([new Uint8Array(10)], 'otra-copia.jpg', { type: 'image/jpeg' }))
+  await hasta(() => !!boton('Usar esta imagen'), 'el resultado')
+  const texto = document.querySelector('.subida-lista')!.textContent!
+  assert.ok(texto.includes('Esta imagen ya estaba en la biblioteca.') && texto.includes('no se guardó otra copia'))
+  await clic(boton('Subir otra')!)
+  assert.equal(document.querySelector('.subida-lista'), null, '"Subir otra" limpia el resultado')
+})
+
+await t('subir: una imagen de más de 10 MB se rechaza sin mandarla, y los errores del servidor se muestran en lenguaje común', async () => {
+  await abrirSelectorDelEncabezado()
+  subidas.length = 0
+  await elegirArchivo(new File([new Uint8Array(10 * 1024 * 1024 + 1)], 'enorme.jpg', { type: 'image/jpeg' }))
+  assert.equal(subidas.length, 0, 'no se manda un archivo que se sabe demasiado grande')
+  assert.ok(document.querySelector('.aviso-error')?.textContent?.includes('pesa más de 10 MB'))
+  respuestaSubida = { estado: 415, cuerpo: { estado: 'error', mensaje: 'Solo se pueden subir imágenes JPEG, PNG, WebP o GIF.' } }
+  await elegirArchivo(new File([new Uint8Array(10)], 'dibujo.svg', { type: 'image/svg+xml' }))
+  await hasta(() => document.querySelector('.aviso-error')?.textContent?.includes('JPEG, PNG, WebP o GIF') === true, 'el aviso del servidor')
+  assert.equal(subidas.length, 1)
+  assert.equal(document.querySelector('.subida-lista'), null)
+  respuestaSubida = respuestaOk(false)
+})
+
+await t('borrar una imagen de la biblioteca: pide confirmación, y si está en uso muestra por qué', async () => {
+  await abrirSelectorDelEncabezado()
+  borrados.length = 0
+  respuestaConfirm = false
+  await clic(boton('Borrar la imagen otra.jpg')!)
+  assert.equal(borrados.length, 0, 'si no se confirma, no se borra')
+  assert.ok(preguntas.at(-1)!.includes('otra.jpg') && preguntas.at(-1)!.includes('No se puede deshacer'))
+  respuestaConfirm = true
+  respuestaBorrado = { estado: 409, cuerpo: { estado: 'error', mensaje: 'No se puede borrar esta imagen porque se usa en el texto del artículo «Una nota». Sacala de ahí primero.' } }
+  await clic(boton('Borrar la imagen otra.jpg')!)
+  await hasta(() => document.querySelector('.aviso-error')?.textContent?.includes('se usa en el texto del artículo «Una nota»') === true, 'el motivo')
+  assert.deepEqual(borrados, [6])
+  respuestaBorrado = { estado: 200, cuerpo: { estado: 'ok' } }
+  await clic(boton('Borrar la imagen otra.jpg')!)
+  await hasta(() => document.querySelector('.aviso-ok')?.textContent?.includes('Se borró la imagen «otra.jpg»') === true, 'el aviso de borrado')
+  assert.equal(borrados.length, 2)
+})
+
+await t('punto focal: un clic sobre la imagen lo mueve, la marca y el recuadro del sitio lo siguen, y se guarda', async () => {
+  await abrirBorrador()
+  const marco = document.querySelector('.punto-focal-marco') as HTMLElement
+  assert.ok(marco, 'el control de punto focal está')
+  marco.getBoundingClientRect = () => ({ left: 10, top: 20, width: 200, height: 100, right: 210, bottom: 120, x: 10, y: 20, toJSON: () => ({}) })
+  const marca = () => document.querySelector('.punto-focal-marca') as HTMLElement
+  assert.equal(marca().style.left, '50%')
+  assert.equal(marca().style.top, '25%', 'arranca en el punto del artículo (x 50%, y 25%)')
+  await act(async () => { marco.dispatchEvent(new window.MouseEvent('pointerdown', { clientX: 60, clientY: 95, bubbles: true })) })
+  assert.equal(marca().style.left, '25%')
+  assert.equal(marca().style.top, '75%')
+  assert.equal((document.querySelector('.punto-focal-previa img') as HTMLElement).style.objectPosition, '25% 75%', 'el recuadro del sitio muestra esa parte')
+  assert.equal((document.querySelector('.punto-focal-previa') as HTMLElement).style.aspectRatio, '3 / 2', 'con la proporción del sitio')
+  assert.equal((document.getElementById('foco-x') as HTMLInputElement).value, '25', 'los campos numéricos acompañan')
+  assert.equal((document.getElementById('foco-y') as HTMLInputElement).value, '75')
+  // Arrastrar y salirse del borde no pasa de 0 a 100
+  await act(async () => { marco.dispatchEvent(new window.MouseEvent('pointermove', { clientX: 900, clientY: -50, bubbles: true })) })
+  assert.equal(marca().style.left, '100%')
+  assert.equal(marca().style.top, '0%')
+  await act(async () => { marco.dispatchEvent(new window.MouseEvent('pointerup', { bubbles: true })) })
+  await act(async () => { marco.dispatchEvent(new window.MouseEvent('pointermove', { clientX: 60, clientY: 95, bubbles: true })) })
+  assert.equal(marca().style.left, '100%', 'sin el botón apretado no se mueve')
+  await act(async () => { marco.dispatchEvent(new window.MouseEvent('pointerdown', { clientX: 160, clientY: 70, bubbles: true })) })
+  await act(async () => { marco.dispatchEvent(new window.MouseEvent('pointerup', { bubbles: true })) })
+  guardados.length = 0
+  await clic(boton('Guardar')!)
+  await hasta(() => guardados.length === 1, 'el guardado')
+  const datos = (guardados[0] as { datos: J }).datos
+  assert.equal(datos['encabezadoPuntoFocalX'], 0.75)
+  assert.equal(datos['encabezadoPuntoFocalY'], 0.5)
 })
 
 console.log(`\n${ok} pruebas de la pantalla ok`)
