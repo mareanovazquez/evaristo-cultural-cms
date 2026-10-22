@@ -26,6 +26,7 @@ const cuerpoOriginal = {
     { type: 'imagen', attrs: { imagenId: 5, src: '/media/foto.jpg', alt: 'Una foto', decorativa: false, epigrafe: 'Pie' } },
   ],
 }
+let cuerpoServido: unknown = cuerpoOriginal
 const articulo = (estado: string) => ({
   id: 7,
   wpId: 123,
@@ -37,7 +38,7 @@ const articulo = (estado: string) => ({
   datos: {
     titulo: 'Título de prueba',
     bajada: 'Una bajada',
-    cuerpo: cuerpoOriginal,
+    cuerpo: cuerpoServido,
     seccionId: 1,
     categoriaIds: [10, 11],
     categoriaPrincipalId: 10,
@@ -537,7 +538,7 @@ await t('accesibilidad: título de la pestaña por pantalla y enlace para saltar
 await t('accesibilidad: el nombre accesible de cada botón de la barra contiene el texto que se ve', async () => {
   await abrirBorrador()
   const botones = Array.from(document.querySelectorAll<HTMLButtonElement>('[role=toolbar] button.btn-tool'))
-  assert.ok(botones.length >= 20, 'hay botones en la barra')
+  assert.equal(botones.length, 19, 'hay 19 botones en la barra (una sola cita)')
   for (const b of botones) {
     const visible = (b.textContent ?? '').trim().toLowerCase()
     const nombre = (b.getAttribute('aria-label') ?? '').toLowerCase()
@@ -573,6 +574,62 @@ await t('accesibilidad: el foco entra a las ventanas, no se escapa con Tab y vue
   await hasta(() => !boton('Elegir imagen'), 'que se cierre la ventana')
   // Insertar una imagen devuelve el foco al texto, y ahí es donde sigue escribiendo la persona.
   assert.ok(document.activeElement === document.querySelector('.ProseMirror'), 'el foco vuelve al texto del artículo: quedó en ' + document.activeElement?.outerHTML.slice(0, 80))
+})
+
+await t('cita: se puede escribir el autor y la fuente sin que el foco vuelva al texto con cada letra', async () => {
+  cuerpoServido = { type: 'doc', content: [{ type: 'paragraph', content: [T('Una frase para citar')] }] }
+  await abrirBorrador()
+  assert.equal(boton('Cita destacada, sin autor'), undefined, 'ya no hay una segunda cita')
+  await clic(boton('Cita, con autor y fuente opcionales')!)
+  await hasta(() => !!document.getElementById('cita-autor'), 'la barra de la cita')
+  const autor = document.getElementById('cita-autor') as HTMLInputElement
+  autor.focus()
+  let escrito = ''
+  for (const letra of 'Jorge Luis Borges') {
+    escrito += letra
+    await escribir(document.getElementById('cita-autor') as HTMLInputElement, escrito)
+    assert.ok(document.activeElement === document.getElementById('cita-autor'), `con "${escrito}" el foco salió del campo y quedó en ${document.activeElement?.outerHTML.slice(0, 60)}`)
+    assert.equal((document.getElementById('cita-autor') as HTMLInputElement).value, escrito, 'el campo conserva lo escrito')
+  }
+  const fuente = document.getElementById('cita-fuente') as HTMLInputElement
+  fuente.focus()
+  await escribir(fuente, 'Ficciones')
+  assert.ok(document.activeElement === document.getElementById('cita-fuente'), 'tampoco en la fuente')
+  // Lo escrito llega al texto del artículo
+  guardados.length = 0
+  await clic(boton('Guardar')!)
+  await hasta(() => guardados.length === 1, 'el guardado')
+  const cita = ((guardados[0] as { datos: { cuerpo: { content: Array<{ type: string; attrs?: J }> } } }).datos.cuerpo.content).find((n) => n.type === 'cita')
+  assert.ok(cita, 'el artículo tiene la cita')
+  assert.equal(cita.attrs!['autor'], 'Jorge Luis Borges')
+  assert.equal(cita.attrs!['fuente'], 'Ficciones')
+  // Una sola cita: no hay selector de tipo, y el autor y la fuente son opcionales
+  assert.equal(document.getElementById('cita-variante'), null, 'ya no hay selector de tipo de cita')
+  assert.ok(document.body.textContent?.includes('Autor (opcional)'))
+  // La vista previa la muestra con el diseño de la maqueta: blockquote.cita con cite
+  await clic(boton('Vista previa')!)
+  await hasta(() => !!document.querySelector('iframe.vista-previa'), 'la vista previa')
+  const doc = document.querySelector('iframe.vista-previa')!.getAttribute('srcdoc')!
+  assert.ok(doc.includes('<blockquote class="cita"><p>Una frase para citar</p><cite>Jorge Luis Borges, Ficciones</cite></blockquote>'))
+  assert.ok(!doc.includes('cita-textual') && !doc.includes('cita-destacada'))
+  cuerpoServido = cuerpoOriginal
+})
+
+await t('cita: las citas guardadas con la variante anterior (textual o destacada) se abren, se ven igual y se guardan sin cambios', async () => {
+  const citas = [
+    { type: 'cita', attrs: { variante: 'textual', autor: 'Ana', fuente: '' }, content: [{ type: 'paragraph', content: [T('Una textual')] }] },
+    { type: 'cita', attrs: { variante: 'destacada', autor: '', fuente: '' }, content: [{ type: 'paragraph', content: [T('Una destacada')] }] },
+  ]
+  cuerpoServido = { type: 'doc', content: citas }
+  await abrirBorrador()
+  assert.equal(document.querySelectorAll('.ProseMirror figure.cita').length, 2, 'las dos se muestran como cita')
+  assert.ok(document.querySelector('.ProseMirror figure.cita figcaption')?.textContent === 'Ana', 'el autor sale en el pie')
+  await clic(boton('Guardar')!)
+  await hasta(() => guardados.length === 1, 'el guardado')
+  assert.deepEqual(canonico((guardados[0] as { datos: J }).datos['cuerpo']), canonico({ type: 'doc', content: citas }), 'no se pierde ni se cambia nada')
+  const ctx = (guardados[0] as { datos: { cuerpo: { content: Array<{ attrs: J }> } } }).datos.cuerpo.content
+  assert.deepEqual([ctx[0]!.attrs['variante'], ctx[1]!.attrs['variante']], ['textual', 'destacada'], 'la variante heredada se conserva en los datos')
+  cuerpoServido = cuerpoOriginal
 })
 
 console.log(`\n${ok} pruebas de la pantalla ok`)

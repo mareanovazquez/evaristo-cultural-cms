@@ -48,7 +48,7 @@ Detalle, decisiones y orden en `estado-fase4.md`. Hecho: ingreso, sesiones y rol
 3. **Galería (con visor) y ficha técnica** del artículo: la vista no las muestra (ninguno de los 35 las tiene).
 4. **Botón de búsqueda del header** (está en la maqueta, no se implementó) y menú en celular a revisar con uso real.
 5. **Páginas de categoría no enlazadas desde el menú** (la especificación dice que no van en el menú principal): solo se llega por la volanta.
-6. **Cita textual** (la que no es destacada): estilo sobrio provisorio, sin diseño decidido.
+6. ~~**Cita textual** sin diseño decidido.~~ Resuelto el 22/10/2026 (decisión 64): hay una sola cita, con el diseño de la maqueta. Falta mirarla en el navegador, sobre todo las citas que migre el conversor desde los `<blockquote>` de WordPress (ahora salen todas con la caja).
 7. **Sitio y panel no se vieron en un navegador:** Claude Code no arranca servidores. Hay que mirar el sitio (escritorio y celular) y el panel (ingreso y listado) y anotar lo que falte.
 8. **Visto bueno de la directora** (Roxana Artal): dijo que el diseño estaba bien pero "un poco lavado"; falta confirmar si es color, tipografía o falta de elementos de marca. Maqueta del header, footer y ficha de autor (`referencias/maquetas/header-footer-autor.html`) también pendiente de su mirada.
 9. **Manual de estilo para los artículos nuevos:** se va a armar; falta definir qué cubre, quién lo escribe y en qué formato.

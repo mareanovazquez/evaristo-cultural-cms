@@ -62,7 +62,7 @@ Una fila por rol; la familia ya está definida para títulos, cuerpo y botones, 
 | Volanta | Fraunces | 18px | 400 | italic | 1,3 | izquierda |
 | Link | Inter | heredado | 500 | normal | heredado | heredada |
 
-La cita destacada (`blockquote.cita`, atribución en `cite`) es una caja con acento, decidida el 21/10/2026 (variante A, a pedido de la directora, que vio el diseño "lavado"): fondo accent-50 #ecf6f3, barra izquierda de 4px en #67beb0, `border-radius: 4px` y relleno de 24px (16px en celular). Lleva una comilla de apertura decorativa en Fraunces 72px, #67beb0, generada por CSS (`::before`, fuera del árbol de accesibilidad). Su atribución va en Inter 14px, #656262 (unos 5,6:1 sobre el fondo), precedida por un guion largo. Los valores son propuestos para revisar.
+**Desde el 22/10/2026 es la única cita del sitio** (decisión 64 del plan): se sacó la cita textual provisoria, y cualquier cita, con o sin autor y fuente, usa este diseño. La cita (`blockquote.cita`, atribución opcional en `cite`) es una caja con acento, decidida el 21/10/2026 (variante A, a pedido de la directora, que vio el diseño "lavado"): fondo accent-50 #ecf6f3, barra izquierda de 4px en #67beb0, `border-radius: 4px` y relleno de 24px (16px en celular). Lleva una comilla de apertura decorativa en Fraunces 72px, #67beb0, generada por CSS (`::before`, fuera del árbol de accesibilidad). Su atribución va en Inter 14px, #656262 (unos 5,6:1 sobre el fondo), precedida por un guion largo. Los valores son propuestos para revisar.
 
 ### Etiqueta de sección (chip)
 

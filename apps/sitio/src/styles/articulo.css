@@ -1,6 +1,6 @@
 /* Artículo: cabecera y marcado que produce @evaristo/compartido/render (renderArticleBody).
    Clases del renderizador: alin-centro, alin-justificado, con-capital, nota-ref, notas-al-pie, nota-volver, nw,
-   cuerpo-img, cita, cita-textual, video, tabla-scroll. */
+   cuerpo-img, cita, video, tabla-scroll. */
 
 /* ---------- Cabecera ---------- */
 .nota h1 {
@@ -172,7 +172,7 @@
   margin: 0;
 }
 
-/* Cita destacada (blockquote.cita con cite): caja con acento */
+/* Cita (blockquote.cita, autor y fuente opcionales en cite): caja con acento. Es la única cita del sitio (decisión del 22/10/2026). */
 .cita {
   margin: var(--space-10) 0;
   padding: var(--space-6);
@@ -220,19 +220,6 @@
   .cita p {
     font-size: 22px;
   }
-}
-
-/* Cita textual (la que no es destacada): sin diseño propio decidido, estilo sobrio */
-.cita-textual {
-  margin: var(--space-8) 0;
-  padding-left: var(--space-6);
-  border-left: 1px solid var(--border-strong);
-}
-.cita-textual blockquote {
-  margin: 0;
-}
-.cita-textual figcaption {
-  margin-top: var(--space-2);
 }
 
 /* ---------- Notas al pie ---------- */

@@ -57,7 +57,8 @@ export const Cita = Node.create<CitaOptions>({
   parseHTML() {
     return [
       {
-        tag: 'figure.cita-textual',
+        // figure.cita es el formato actual; figure.cita-textual, el de antes
+        tag: 'figure.cita, figure.cita-textual',
         getAttrs: (element) => {
           if (typeof element === 'string') return false
           const el = element as HTMLElement
@@ -103,16 +104,9 @@ export const Cita = Node.create<CitaOptions>({
   },
 
   renderHTML({ node, HTMLAttributes }) {
-    const { variante, autor, fuente } = node.attrs
-    const className = variante === 'destacada' ? 'cita-destacada' : 'cita-textual'
-
-    if (variante === 'destacada') {
-      return [
-        'figure',
-        mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, { class: className }),
-        ['blockquote', 0],
-      ]
-    }
+    // Una sola cita (decisión del 22/10/2026): el autor y la fuente, si los hay, van en el pie. `variante` es un resto de formatos
+    // anteriores: se conserva en los datos para no alterarlos, pero ya no cambia nada.
+    const { autor, fuente } = node.attrs
 
     const captionParts: string[] = []
     if (autor) captionParts.push(autor)
@@ -121,7 +115,7 @@ export const Cita = Node.create<CitaOptions>({
 
     return [
       'figure',
-      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, { class: className }),
+      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, { class: 'cita' }),
       ['blockquote', 0],
       ...(captionText ? [['figcaption', {}, captionText]] : []),
     ]

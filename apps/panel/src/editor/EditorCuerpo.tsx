@@ -110,8 +110,6 @@ export function EditorCuerpo({ contenido, onCambio, onEditor, onVentanaAbierta }
         centro: ed.isActive({ textAlign: 'center' }),
         justificado: ed.isActive({ textAlign: 'justify' }),
         cita: esCita,
-        citaDestacada: esCita && atributosCita?.variante === 'destacada',
-        citaTextual: esCita && (!atributosCita?.variante || atributosCita?.variante === 'textual'),
         citaAutor: (atributosCita?.autor as string | undefined) ?? '',
         citaFuente: (atributosCita?.fuente as string | undefined) ?? '',
         puedeDeshacer: ed.can().undo(),
@@ -205,9 +203,12 @@ export function EditorCuerpo({ contenido, onCambio, onEditor, onVentanaAbierta }
     setEnlace('')
   }
 
-  const actualizarCita = (cambios: { variante?: 'textual' | 'destacada'; autor?: string; fuente?: string }) =>
-    cadena()
-      .updateCita({ variante: cambios.variante ?? (estado.citaDestacada ? 'destacada' : 'textual'), autor: cambios.autor ?? estado.citaAutor, fuente: cambios.fuente ?? estado.citaFuente })
+  // Sin .focus(): se escribe en los campos de la barra (autor, fuente) y el foco tiene que quedarse ahí, no volver al texto con cada letra.
+  // La selección sigue en la cita aunque el editor no tenga el foco.
+  const actualizarCita = (cambios: { autor?: string; fuente?: string }) =>
+    editor
+      .chain()
+      .updateCita({ autor: cambios.autor ?? estado.citaAutor, fuente: cambios.fuente ?? estado.citaFuente })
       .run()
 
   return (
@@ -235,8 +236,7 @@ export function EditorCuerpo({ contenido, onCambio, onEditor, onVentanaAbierta }
           <Herramienta activo={estado.justificado} titulo="Texto justificado" onClick={() => cadena().setTextAlign('justify').run()}>Justificado</Herramienta>
         </div>
         <div className="toolbar-group">
-          <Herramienta activo={estado.citaTextual} titulo="Cita textual, con autor y fuente" onClick={() => cadena().toggleCita({ variante: 'textual' }).run()}>Cita</Herramienta>
-          <Herramienta activo={estado.citaDestacada} titulo="Cita destacada, sin autor" onClick={() => cadena().toggleCita({ variante: 'destacada' }).run()}>Cita destacada</Herramienta>
+          <Herramienta activo={estado.cita} titulo="Cita, con autor y fuente opcionales" onClick={() => cadena().toggleCita().run()}>Cita</Herramienta>
         </div>
         <div className="toolbar-group">
           <Herramienta clase="btn-footnote-add" titulo="Insertar una nota al pie en el cursor" onClick={insertarNota}>Nota al pie</Herramienta>
@@ -278,19 +278,12 @@ export function EditorCuerpo({ contenido, onCambio, onEditor, onVentanaAbierta }
 
       {estado.cita && (
         <div className="barra-contextual">
-          <label htmlFor="cita-variante">Tipo de cita</label>
-          <select id="cita-variante" value={estado.citaDestacada ? 'destacada' : 'textual'} onChange={(e) => actualizarCita({ variante: e.target.value as 'textual' | 'destacada' })}>
-            <option value="textual">Cita textual (con autor y fuente)</option>
-            <option value="destacada">Cita destacada (sin autor)</option>
-          </select>
-          {estado.citaTextual && (
-            <>
-              <label htmlFor="cita-autor">Autor</label>
-              <input id="cita-autor" type="text" value={estado.citaAutor} onChange={(e) => actualizarCita({ autor: e.target.value })} />
-              <label htmlFor="cita-fuente">Fuente u obra</label>
-              <input id="cita-fuente" type="text" value={estado.citaFuente} onChange={(e) => actualizarCita({ fuente: e.target.value })} />
-            </>
-          )}
+          <span className="barra-contextual-titulo">Cita</span>
+          <label htmlFor="cita-autor">Autor (opcional)</label>
+          <input id="cita-autor" type="text" value={estado.citaAutor} onChange={(e) => actualizarCita({ autor: e.target.value })} />
+          <label htmlFor="cita-fuente">Fuente u obra (opcional)</label>
+          <input id="cita-fuente" type="text" value={estado.citaFuente} onChange={(e) => actualizarCita({ fuente: e.target.value })} />
+          <span className="ayuda">Salen debajo de la cita, separados por una coma.</span>
         </div>
       )}
 

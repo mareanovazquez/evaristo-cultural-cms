@@ -173,18 +173,13 @@ export function renderArticleBody(doc: JSONNode, opciones: OpcionesRender = {}):
       case 'listItem':
         return `<li>${childrenHtml}</li>`
       case 'cita': {
-        const variante = node.attrs?.variante || 'textual'
+        // Una sola cita (decisión del 22/10/2026): la caja de la maqueta, con autor y fuente opcionales en <cite>.
+        // El atributo `variante` (textual o destacada) quedó de formatos anteriores y ya no se usa.
         const autor = node.attrs?.autor ? String(node.attrs.autor).trim() : ''
         const fuente = node.attrs?.fuente ? String(node.attrs.fuente).trim() : ''
         const atribucion = [autor, fuente].filter(Boolean).map(escapeHtml).join(', ')
-
-        if (variante === 'destacada') {
-          const cite = atribucion ? `<cite>${atribucion}</cite>` : ''
-          return `<blockquote class="cita">${childrenHtml}${cite}</blockquote>`
-        }
-
-        const caption = atribucion ? `<figcaption>${atribucion}</figcaption>` : ''
-        return `<figure class="cita-textual"><blockquote>${childrenHtml}</blockquote>${caption}</figure>`
+        const cite = atribucion ? `<cite>${atribucion}</cite>` : ''
+        return `<blockquote class="cita">${childrenHtml}${cite}</blockquote>`
       }
       case 'imagen': {
         const src = node.attrs?.src

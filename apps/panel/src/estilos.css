@@ -180,8 +180,10 @@ a.titulo-articulo:hover { color: var(--acento); text-decoration: underline; }
 .ProseMirror ul, .ProseMirror ol { margin: 0 0 1rem 1.5rem; padding: 0; }
 .ProseMirror [style*="text-align: center"] { text-align: center; }
 .ProseMirror [style*="text-align: justify"] { text-align: justify; }
-.ProseMirror figure.cita-textual, .ProseMirror figure.cita-destacada { margin: 1.5rem 0; padding: 0.75rem 1rem; border-left: 4px solid var(--borde-fuerte); background: var(--fondo); }
-.ProseMirror figure.cita-destacada { border-left-color: var(--acento); font-style: italic; }
+/* La cita en el editor se parece a la del sitio (caja con barra a la izquierda, cursiva); la vista previa muestra el diseño exacto. */
+.ProseMirror figure.cita { margin: 1.5rem 0; padding: 0.75rem 1rem 0.75rem 1.25rem; border-left: 4px solid var(--acento); border-radius: var(--radio); background: #eef3f8; }
+.ProseMirror figure.cita blockquote { font-style: italic; font-size: 1.15rem; }
+.ProseMirror figure.cita figcaption::before { content: "\2014\00a0"; }
 .ProseMirror figure blockquote { margin: 0; }
 .ProseMirror figure blockquote p:last-child { margin-bottom: 0; }
 .ProseMirror figure figcaption { margin-top: 0.5rem; font-size: 0.85rem; color: var(--texto-suave); font-style: normal; text-align: right; }

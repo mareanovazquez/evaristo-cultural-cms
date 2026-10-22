@@ -43,7 +43,7 @@ La clasificación sigue el modelo de la prensa gráfica, no el de un blog: la **
 - **Salto de línea dentro de un párrafo** (Shift+Enter): para versos, fichas y listas cortas, donde el corte de línea tiene sentido y no corresponde un párrafo nuevo. Se dibuja como un salto simple, sin el espacio de un párrafo. No se admite dentro de los títulos internos ni del título del artículo.
 - **Alineación por párrafo:** izquierda por defecto; se puede cambiar a centrado o justificado.
   - El justificado usa división silábica automática y, de ser necesario, se aplica solo en pantallas anchas para evitar espacios excesivos en el celular.
-- **Citas:** formato propio para citas textuales, con autor y fuente opcionales. Propuesta a confirmar: sumar un segundo formato de cita destacada (*pull quote*).
+- **Citas:** un solo formato de cita (decidido el 22/10/2026, decisión 64 del plan): la caja de la maqueta, con autor y fuente opcionales. No hay un segundo formato de cita destacada (*pull quote*).
 - **Imágenes dentro del texto:** la imagen se coloca en el punto exacto donde va. Lleva texto alternativo (obligatorio, o marcarla como decorativa) y epígrafe opcional. El documento guarda una referencia a la biblioteca de imágenes; solo se admiten direcciones http(s) o rutas propias del sitio. Es distinta de la imagen de encabezado (sección 5) y de la galería final (sección 6). **Regla para imágenes nuevas:** el texto alternativo es obligatorio. **Regla para imágenes migradas sin texto alternativo:** el panel deja guardar el artículo, muestra un aviso visible junto a cada imagen pendiente y no exige completarlas (ver 13.2).
 - **Videos:** se pega la dirección de YouTube o Vimeo y se muestra el reproductor al renderizar la página (lista blanca de proveedores). Los enlaces de Facebook o Instagram quedan como enlace común.
 - **Tablas simples:** filas, celdas de encabezado y celdas con texto. Sin celdas combinadas.
@@ -147,7 +147,7 @@ Hoy no se construye. El modelo queda abierto para sumarlo sin tocar lo ya cargad
 ## 12. Puntos a confirmar
 
 - Niveles de título internos: H2 a H4 o hasta H6.
-- Un solo formato de cita, o cita textual más cita destacada.
+- ~~Un solo formato de cita, o cita textual más cita destacada.~~ Resuelto el 22/10/2026: un solo formato.
 - Proporción de la imagen de encabezado (16:9 propuesto).
 - Ubicación exacta del cintillo (sobre la imagen de encabezado o pegado al título): detalle de diseño a definir con la portada y la navegación.
 - **Modelo de secciones con la editorial.** La dueña pidió que un artículo pueda estar en varias secciones a la vez (por ejemplo, una entrevista sobre un libro negro recién publicado en Novedades, Reseñas, Literatura y Rastros). El modelo cerrado lo resuelve con una sección, categorías con página propia y la marca de novedad. Hay que confirmárselo, junto con el nombre "Asia" para la sección que era Seda.

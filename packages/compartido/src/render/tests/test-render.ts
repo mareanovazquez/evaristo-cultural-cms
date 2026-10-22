@@ -213,7 +213,7 @@ t('imagen: escape de alt, src y epígrafe', () => {
 })
 
 // --- Citas ---
-t('cita destacada: blockquote.cita con p y cite', () => {
+t('cita: blockquote.cita con p y cite', () => {
   const d = doc({ type: 'cita', attrs: { variante: 'destacada', autor: 'Borges', fuente: 'Ficciones' }, content: [P(T('Frase'))] })
   assert.equal(html(d), '<blockquote class="cita"><p>Frase</p><cite>Borges, Ficciones</cite></blockquote>')
   const sinAtribucion = doc({ type: 'cita', attrs: { variante: 'destacada' }, content: [P(T('Frase'))] })
@@ -221,7 +221,7 @@ t('cita destacada: blockquote.cita con p y cite', () => {
   const soloAutor = doc({ type: 'cita', attrs: { variante: 'destacada', autor: 'Arlt' }, content: [P(T('Frase'))] })
   assert.ok(html(soloAutor).includes('<cite>Arlt</cite>'))
 })
-t('cita destacada con llamada a nota (caso sintético)', () => {
+t('cita con llamada a nota (caso sintético)', () => {
   const d = doc(P(T('Antes'), nota(T('Primera'))), {
     type: 'cita',
     attrs: { variante: 'destacada', autor: 'Arlt' },
@@ -232,11 +232,20 @@ t('cita destacada con llamada a nota (caso sintético)', () => {
   assert.ok(r.html.includes(`<blockquote class="cita"><p>Frase${llamada(2)}</p><cite>Arlt</cite></blockquote>`))
   assert.ok(r.notesHtml.includes('<li id="nota-2">Segunda'))
 })
-t('cita textual: se mantiene figure.cita-textual con figcaption', () => {
-  const d = doc({ type: 'cita', attrs: { variante: 'textual', autor: 'A', fuente: 'B' }, content: [P(T('x'))] })
-  assert.equal(html(d), '<figure class="cita-textual"><blockquote><p>x</p></blockquote><figcaption>A, B</figcaption></figure>')
-  const sin = doc({ type: 'cita', content: [P(T('x'))] })
-  assert.equal(html(sin), '<figure class="cita-textual"><blockquote><p>x</p></blockquote></figure>')
+t('cita: una sola, sin importar la variante heredada (textual, destacada o ninguna)', () => {
+  const esperado = '<blockquote class="cita"><p>x</p><cite>A, B</cite></blockquote>'
+  for (const variante of ['textual', 'destacada', undefined]) {
+    const d = doc({ type: 'cita', attrs: { ...(variante ? { variante } : {}), autor: 'A', fuente: 'B' }, content: [P(T('x'))] })
+    assert.equal(html(d), esperado, `variante ${String(variante)}`)
+  }
+  // Sin autor ni fuente (lo que genera el conversor con las citas de WordPress): sin <cite>
+  assert.equal(html(doc({ type: 'cita', attrs: { variante: 'textual', autor: '', fuente: '' }, content: [P(T('x'))] })), '<blockquote class="cita"><p>x</p></blockquote>')
+  assert.equal(html(doc({ type: 'cita', content: [P(T('x'))] })), '<blockquote class="cita"><p>x</p></blockquote>')
+  assert.ok(!html(doc({ type: 'cita', content: [P(T('x'))] })).includes('cita-textual'), 'ya no existe la cita textual')
+})
+t('cita: el autor y la fuente se escapan', () => {
+  const d = doc({ type: 'cita', attrs: { autor: '<b>A</b> & Cía' }, content: [P(T('x'))] })
+  assert.ok(html(d).includes('<cite>&lt;b&gt;A&lt;/b&gt; &amp; Cía</cite>'))
 })
 
 // --- Tablas, videos, saltos, enlaces, escape ---
