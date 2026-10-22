@@ -1,6 +1,6 @@
 # Fase 4 (panel y API): estado, decisiones y lo que falta
 
-Actualizado el 22/10/2026. Pasos 1 a 4 hechos y mergeados en `main` (el 4, el editor, se cerró el 22/10/2026); el paso 5 (imágenes) está hecho en la rama `fase4-imagenes`, sin mergear; faltan los pasos 6 a 8. El plan de la fase está en `plan-implementacion.md`, sección 7; los pendientes generales en `pendientes.md`, sección 1.
+Actualizado el 22/10/2026. Pasos 1 a 5 hechos y mergeados en `main` (el 4, el editor, y el 5, las imágenes, se cerraron el 22/10/2026); faltan los pasos 6 a 8. El plan de la fase está en `plan-implementacion.md`, sección 7; los pendientes generales en `pendientes.md`, sección 1.
 
 ## Base de desarrollo
 
@@ -88,7 +88,7 @@ La parte automática se hizo sin navegador. Después Mariano recorrió el panel 
 - **Una sola cita (22/10/2026, decisión 64 del plan):** Mariano comparó con la maqueta (`referencias/maquetas/nota-con-notas-al-pie.html`, `blockquote.cita` con `cite`) y vio que la "cita textual" no se le parecía: la caja de la maqueta era la cita destacada, que en el panel no admitía autor, y la textual, con autor, tenía un estilo provisorio. Se resolvió con una sola cita (opción C): el renderizador emite siempre `<blockquote class="cita">` con `<cite>` opcional; el CSS del sitio perdió `.cita-textual`; el panel tiene un solo botón "Cita" y la barra de autor y fuente (opcionales) sin selector de tipo; el editor la muestra como caja con el pie "— autor, fuente" y acepta pegar las formas anteriores (`figure.cita-textual`). `variante` queda en los datos, sin efecto. Se arregló además que escribir en el autor de la cita devolvía el foco al texto con cada letra. `test:render` (39) y `test:pantalla` (28) lo cubren. Pendiente de mirar en el navegador.
 - **Una corrida de `test:admin-edicion` falló una vez sin causa conocida (las tres siguientes y las de la regresión pasaron):** si vuelve a pasar, anotar el mensaje completo.
 
-## Paso 5: imágenes (22/10/2026, rama `fase4-imagenes`)
+## Paso 5: imágenes (22/10/2026)
 
 Decisiones de Mariano (22/10/2026), registradas como decisión 65 del plan: carpeta aparte para las subidas, JPEG/PNG/WebP/GIF de hasta 10 MB, versión normalizada sin metadatos, punto focal visual solo en el encabezado, imagen repetida se reusa, variantes de tamaño para después. Dependencias aprobadas e instaladas en `apps/api` (versión exacta, fechas revisadas): `multer` 2.4.0 (14/09; la 2.5.0 salió el mismo día y se descartó), `@types/multer` 2.3.0 (28/09) y `sharp` 0.35.5 (27/09). El binario nativo de `sharp` funciona en el Windows de Mariano. `npm audit` no suma nada por estos paquetes (las vulnerabilidades son las de Prisma y `mariadb`).
 
@@ -98,7 +98,7 @@ Decisiones de Mariano (22/10/2026), registradas como decisión 65 del plan: carp
 - **Panel:** el selector de imágenes (cuerpo y encabezado) tiene "Subir una imagen nueva" (con aviso de si ya estaba) y "Borrar" en cada imagen, con confirmación y el motivo si está en uso (`SelectorImagen.tsx`, `subirArchivo` en `api.ts`). El encabezado tiene un control visual de punto focal (`PuntoFocal.tsx`): clic o arrastre sobre la imagen entera, con la marca y un recuadro de cómo se verá en el sitio; los campos numéricos quedan en "Ajuste fino". **El sitio muestra el encabezado en 3:2** (`aspect-ratio: 3 / 2` en `articulo.css`), no 16:9 como decía la especificación; el panel lo toma de `PROPORCION_ENCABEZADO`.
 - **Tests:** `test:admin-subida` (imágenes armadas con `sharp`: EXIF con rotación, GPS y perfil de color, los cuatro formatos, GIF animado, archivos inválidos, enorme, más de 10 MB, repetida, servir desde las dos carpetas, usos en cuerpo, encabezado y borrador de cambios, borrar sin tocar la muestra, funciones de nombre y clave; se comprobó con mutaciones que falla si se conservan los metadatos o si no se revisan los usos) y 5 pruebas nuevas en `test:pantalla` (34 en total: subida, repetida, límites, borrado con motivo y punto focal).
 - **No se hizo (queda anotado):** variantes de tamaño y `srcset`; límite de subidas por minuto; mostrar en la biblioteca dónde se usa cada imagen (hoy solo se ve al intentar borrar); recorte real del archivo; punto focal en las imágenes del cuerpo; arrastrar y soltar archivos; subir varias imágenes juntas; reemplazar el archivo de una imagen existente. Una carrera entre borrar una imagen y usarla en el cuerpo al mismo tiempo no está protegida por la base (el cuerpo no tiene clave foránea); la ventana es mínima.
-- **Sin ver en un navegador.**
+- **Probado en el navegador por Mariano (22/10/2026):** subida, rotación y metadatos, rechazos, repetidas, punto focal y borrado funcionan bien.
 
 ## Reglas y cosas a tener en cuenta del editor (lo duradero del plan del paso 4)
 
