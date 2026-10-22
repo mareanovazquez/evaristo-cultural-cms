@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/core";
 import { renderArticleBody } from "@evaristo/compartido/render";
 import { Link, useParams } from "react-router";
-import { ErrorApi, pedirApi, urlImagen, type ArticuloEditable, type Catalogos, type DatosArticulo, type ImagenDeLista } from "../api";
+import { ErrorApi, pedirApi, urlImagen, type ArticuloEditable, type Catalogos, type DatosArticulo, type ImagenDeLista, type RespuestaPublicar } from "../api";
+import { PublicarDialog } from "../PublicarDialog";
 import { tiempos } from "../autoguardado";
 import { EditorCuerpo, textoDelEditor } from "../editor/EditorCuerpo";
 import { SelectorImagen } from "../editor/SelectorImagen";
@@ -17,6 +18,14 @@ import { VistaPrevia } from "../VistaPrevia";
 const ESTADOS = { PUBLICADO: "Publicado", BORRADOR: "Borrador", PROGRAMADO: "Programado" } as const;
 const hora = new Intl.DateTimeFormat("es-AR", { timeStyle: "short" });
 const fechaLarga = new Intl.DateTimeFormat("es-AR", { dateStyle: "long", timeZone: "UTC" });
+const fechaHora = new Intl.DateTimeFormat("es-AR", { dateStyle: "long", timeStyle: "short" });
+
+/** Lo que se muestra arriba después de publicar, programar o despublicar (sobrevive a la recarga del artículo). */
+interface Exito {
+  mensaje: string;
+  /** Dirección pública, si ya se ve en el sitio. */
+  ruta: string | null;
+}
 
 const vacioANull = (v: string | null): string | null => (v && v.trim() ? v : null);
 
@@ -58,6 +67,7 @@ export function EditarArticulo() {
   const [error, setError] = useState<string | null>(null);
   // Cambia cada vez que hay que volver a leer el artículo del servidor (tras un conflicto o al descartar cambios).
   const [lectura, setLectura] = useState(0);
+  const [exito, setExito] = useState<Exito | null>(null);
 
   useEffect(() => {
     const control = new AbortController();
@@ -92,12 +102,12 @@ export function EditarArticulo() {
     );
   }
   if (!carga) return <p className="cargando" role="status">Abriendo el artículo…</p>;
-  return <Formulario key={`${carga.articulo.id}-${lectura}`} articulo={carga.articulo} catalogos={carga.catalogos} recargar={() => setLectura((n) => n + 1)} />;
+  return <Formulario key={`${carga.articulo.id}-${lectura}`} articulo={carga.articulo} catalogos={carga.catalogos} exito={exito} recargar={(e) => { setExito(e ?? null); setLectura((n) => n + 1); }} />;
 }
 
 type Falla = "red" | "invalido" | null;
 
-function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEditable; catalogos: Catalogos; recargar: () => void }) {
+function Formulario({ articulo, catalogos, recargar, exito }: { articulo: ArticuloEditable; catalogos: Catalogos; recargar: (exito?: Exito) => void; exito: Exito | null }) {
   useTitulo(`Editando: ${articulo.datos.titulo}`);
   const { sesionVencida } = useSesion();
   const [campos, setCampos] = useState<DatosArticulo>(articulo.datos);
@@ -118,6 +128,8 @@ function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEdita
   const [eligiendoEncabezado, setEligiendoEncabezado] = useState(false);
   const [autorAgregar, setAutorAgregar] = useState("");
   const [ventanaAbierta, setVentanaAbierta] = useState(false);
+  const [publicarAbierto, setPublicarAbierto] = useState(false);
+  const [accionando, setAccionando] = useState(false);
 
   const editor = useRef<Editor | null>(null);
   const alEditor = useCallback((e: Editor | null) => {
@@ -132,6 +144,8 @@ function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEdita
   // y para no reenviar en bucle lo que el servidor rechazó (422) hasta que haya un cambio nuevo.
   const cambios = useRef(0);
   const rechazadoEn = useRef(-1);
+  // El contador de cambios con el que se guardó por última vez: si coincide con `cambios`, no hay nada sin guardar.
+  const guardadoEn = useRef(0);
 
   const marcarCambio = useCallback(() => {
     cambios.current += 1;
@@ -146,8 +160,9 @@ function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEdita
   const esBorrador = articulo.estado === "BORRADOR";
   const nombreDe = (autorId: number) => catalogos.autores.find((a) => a.id === autorId)?.nombre ?? `Autor ${autorId}`;
 
-  const guardar = useCallback(async () => {
-    if (!editor.current || enCurso.current) return;
+  const guardar = useCallback(async (): Promise<boolean> => {
+    if (!editor.current || enCurso.current) return false;
+    let correcto = false;
     enCurso.current = true;
     const cambiosAlEmpezar = cambios.current;
     setGuardando(true);
@@ -167,11 +182,13 @@ function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEdita
       setConCambiosSinPublicar(r.conCambiosSinPublicar);
       setGuardadoA(new Date());
       setFalla(null);
+      guardadoEn.current = cambiosAlEmpezar;
       if (cambios.current === cambiosAlEmpezar) setSucio(false);
+      correcto = true;
     } catch (e) {
       if (e instanceof ErrorApi && e.estado === 401) {
         sesionVencida();
-        return;
+        return false;
       }
       if (e instanceof ErrorApi && e.estado === 409) {
         setConflicto(true);
@@ -192,9 +209,10 @@ function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEdita
       enCurso.current = false;
       setGuardando(false);
     }
+    return correcto;
   }, [articulo.id, sesionVencida]);
 
-  const puedeAutoguardar = sucio && !guardando && !conflicto && !descartando && !ventanaAbierta && rechazadoEn.current !== cambiosN;
+  const puedeAutoguardar = sucio && !guardando && !conflicto && !descartando && !ventanaAbierta && !publicarAbierto && !accionando && rechazadoEn.current !== cambiosN;
 
   // Autoguardado: unos segundos después del último cambio; si falló por la conexión, vuelve a probar cada tanto.
   useEffect(() => {
@@ -248,6 +266,61 @@ function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEdita
       setDescartando(false);
     }
   };
+
+  // ---- Publicar, publicar los cambios y despublicar ----
+  const estado = articulo.estado;
+
+  /** Antes de publicar nada, lo que hay en pantalla tiene que estar guardado. */
+  const asegurarGuardado = async (): Promise<boolean> => {
+    while (enCurso.current) await new Promise((r) => setTimeout(r, 50));
+    if (conflicto) return false;
+    if (cambios.current === guardadoEn.current) return true;
+    rechazadoEn.current = -1;
+    return guardar();
+  };
+  const abrirPublicar = async () => {
+    setAviso(null);
+    setProblemas([]);
+    if (await asegurarGuardado()) setPublicarAbierto(true);
+  };
+  const alPublicado = (r: RespuestaPublicar, programado: boolean) => {
+    setPublicarAbierto(false);
+    recargar({ mensaje: programado ? `Quedó programado: se va a ver en el sitio el ${fechaHora.format(new Date(r.publicadoEn))}.` : "Se publicó el artículo.", ruta: programado ? null : r.ruta });
+  };
+  /** Una acción de publicación sobre un artículo ya guardado: pide confirmación, la manda con la versión y muestra lo que falte. */
+  const accion = async (ruta: "publicar-cambios" | "despublicar", pregunta: string, exitoAlTerminar: () => Exito) => {
+    if (accionando || !window.confirm(pregunta)) return;
+    setAviso(null);
+    setProblemas([]);
+    setAccionando(true);
+    try {
+      if (!(await asegurarGuardado())) return;
+      await pedirApi(`/api/admin/articulos/${articulo.id}/${ruta}`, { metodo: "POST", cuerpo: { version: version.current } });
+      recargar(exitoAlTerminar());
+    } catch (e) {
+      if (e instanceof ErrorApi && e.estado === 401) {
+        sesionVencida();
+        return;
+      }
+      if (e instanceof ErrorApi && e.estado === 409) setConflicto(true);
+      else {
+        setProblemas(e instanceof ErrorApi ? e.problemas : []);
+        setAviso(e instanceof ErrorApi ? e.message : "No se pudo completar la acción. Probá de nuevo.");
+      }
+    } finally {
+      setAccionando(false);
+    }
+  };
+  const publicarCambios = () =>
+    accion("publicar-cambios", "Los cambios se van a ver en el sitio ahora. ¿Querés publicarlos?", () => ({ mensaje: "Se publicaron los cambios.", ruta: articulo.ruta }));
+  const despublicar = () =>
+    accion(
+      "despublicar",
+      estado === "PROGRAMADO"
+        ? "Se cancela la programación y el artículo vuelve a ser un borrador. ¿Seguís?"
+        : "El artículo deja de verse en el sitio y vuelve a ser un borrador. Su dirección se guarda por si lo volvés a publicar. ¿Seguís?",
+      () => ({ mensaje: estado === "PROGRAMADO" ? "Se canceló la programación: el artículo es un borrador." : "El artículo dejó de verse en el sitio: es un borrador.", ruta: null }),
+    );
 
   // ---- Vista previa ----
   const abrirVistaPrevia = () => {
@@ -325,7 +398,19 @@ function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEdita
             Ver en el sitio
           </a>
         )}
+        {estado === "PROGRAMADO" && articulo.publicadoEn && <span className="programado-fecha">Sale en el sitio el {fechaHora.format(new Date(articulo.publicadoEn))}</span>}
       </div>
+
+      {exito && (
+        <p className="aviso aviso-ok" role="status">
+          {exito.mensaje}{" "}
+          {exito.ruta && (
+            <a href={exito.ruta} target="_blank" rel="noopener noreferrer">
+              Ver en el sitio
+            </a>
+          )}
+        </p>
+      )}
 
       {conCambiosSinPublicar && (
         <div className="aviso aviso-alerta" role="status">
@@ -568,8 +653,8 @@ function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEdita
       <div className="barra-guardar">
         <button
           type="button"
-          className="boton boton-primario"
-          disabled={guardando || conflicto || descartando}
+          className="boton boton-suave"
+          disabled={guardando || conflicto || descartando || accionando}
           onClick={() => {
             rechazadoEn.current = -1;
             void guardar();
@@ -580,7 +665,26 @@ function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEdita
         <span className="estado-guardado" role="status">
           {textoEstado}
         </span>
+        <span className="barra-publicacion">
+          {estado !== "BORRADOR" && (
+            <button type="button" className="boton boton-suave" disabled={conflicto || descartando || accionando} onClick={() => void despublicar()}>
+              {estado === "PROGRAMADO" ? "Cancelar programación" : "Despublicar"}
+            </button>
+          )}
+          {estado !== "BORRADOR" && conCambiosSinPublicar && (
+            <button type="button" className="boton boton-primario" disabled={conflicto || descartando || accionando} onClick={() => void publicarCambios()}>
+              Publicar cambios
+            </button>
+          )}
+          {estado === "BORRADOR" && (
+            <button type="button" className="boton boton-primario" disabled={conflicto || descartando || accionando} onClick={() => void abrirPublicar()}>
+              Publicar…
+            </button>
+          )}
+        </span>
       </div>
+
+      {publicarAbierto && <PublicarDialog articuloId={articulo.id} version={() => version.current} onPublicado={alPublicado} onCancelar={() => setPublicarAbierto(false)} onRecargar={() => recargar()} />}
 
       {eligiendoEncabezado && <SelectorImagen onElegir={elegirEncabezado} onCancelar={() => setEligiendoEncabezado(false)} />}
     </section>

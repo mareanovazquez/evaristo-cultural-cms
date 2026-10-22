@@ -4,7 +4,7 @@ CMS propio para reemplazar WordPress en la revista cultural Evaristo Cultural (e
 
 **Stack:** TypeScript en todo. Monorepo con npm workspaces: `apps/sitio` (Astro, SSR en modo middleware), `apps/panel` (React + Vite), `apps/api` (Express 5) y `packages/compartido` (Prisma 7, validador, conversor, migración). MySQL 8.4 + Prisma. Editor: TipTap. Un solo proceso en el puerto 3000.
 
-**Estado (22/10/2026):** las fases 0 a 3 están hechas (la 3 es el sitio público completo: artículo, autores, secciones, categorías, redirecciones y 404). La fase 4 (panel y API) está en curso: ingreso y sesiones, listado de artículos, API de edición con borrador de cambios y el editor del panel (pantalla de edición, alta, autoguardado, conflicto, vista previa; pasos 1 a 4); las imágenes (subida, biblioteca, punto focal del encabezado; paso 5); faltan publicar, la administración y el cierre (pasos 6 a 8). Las fases 5 (portada), 6 (buscador y novedades) y 7 (migración completa y lanzamiento) no empezaron. Para retomar, leer `docs/estado-fase4.md` y `docs/pendientes.md`.
+**Estado (22/10/2026):** las fases 0 a 3 están hechas (la 3 es el sitio público completo: artículo, autores, secciones, categorías, redirecciones y 404). La fase 4 (panel y API) está en curso: ingreso y sesiones, listado de artículos, API de edición con borrador de cambios y el editor del panel (pantalla de edición, alta, autoguardado, conflicto, vista previa; pasos 1 a 4); las imágenes (subida, biblioteca, punto focal del encabezado; paso 5); publicar, programar y despublicar (paso 6, en la rama `fase4-publicar` hasta que se mergee; falta la ficha técnica y la galería); faltan la administración y el cierre (pasos 7 y 8). Las fases 5 (portada), 6 (buscador y novedades) y 7 (migración completa y lanzamiento) no empezaron. Para retomar, leer `docs/estado-fase4.md` y `docs/pendientes.md`.
 
 ## Reglas de trabajo
 
@@ -30,7 +30,7 @@ Leer solo lo que la tarea necesite.
 | `docs/estado-fase3.md` | Fase 3 (sitio público): qué hay, decisiones, tests, inventario de los 35 artículos y qué quedó abierto. Leer antes de tocar el sitio. |
 | `docs/estado-fase4.md` | Fase 4 (panel y API): decisiones, lo hecho (pasos 1 a 5, con las reglas y cosas a tener en cuenta del editor) y lo que falta (pasos 6 a 8). Leer al retomar la fase 4. |
 | `docs/pendientes.md` | Estado técnico vivo (bases, tests, commits) y lista de pendientes. Leer al empezar y antes de planificar. |
-| `docs/plan-implementacion.md` | Roadmap de fases 0 a 7, decisiones 1 a 65 y riesgos. Largo: buscar la fase o decisión, no leerlo entero. |
+| `docs/plan-implementacion.md` | Roadmap de fases 0 a 7, decisiones 1 a 66 y riesgos. Largo: buscar la fase o decisión, no leerlo entero. |
 | `docs/decisiones-de-diseno.md` | Paleta, tipografía, tokens, componentes, notas al pie, letra capital, celular. Leer antes de tocar CSS o UI. |
 | `docs/especificaciones/especificacion-articulo.md` | Artículo, autores, secciones y categorías, migración desde WordPress. Leer antes de tocar modelo de datos, validador, plantillas o migración. |
 | `docs/especificaciones/especificacion-home.md` | Portada. Solo en la fase 5. |

@@ -157,3 +157,24 @@ export const MAX_BYTES_IMAGEN = 10 * 1024 * 1024;
 
 /** Proporción con la que el sitio muestra la imagen de encabezado (hero-img en apps/sitio/src/styles/articulo.css). */
 export const PROPORCION_ENCABEZADO = "3 / 2";
+
+// ---------- Publicación ----------
+
+/** Lo que falta y lo que se propone para publicar (GET /api/admin/articulos/:id/publicacion). */
+export interface RevisionPublicacion {
+  /** publicar: un borrador; cambios: uno publicado con cambios sin publicar; ninguna: nada que publicar. */
+  accion: "publicar" | "cambios" | "ninguna";
+  problemas: string[];
+  slugPropuesto?: string;
+  /** Fecha con la que ya estuvo publicado (si se despublicó). */
+  publicadoOriginal?: string | null;
+  ahora?: string;
+}
+
+export interface RespuestaPublicar {
+  version: string;
+  articuloEstado: EstadoArticulo;
+  publicadoEn: string;
+  slug: string;
+  ruta: string;
+}

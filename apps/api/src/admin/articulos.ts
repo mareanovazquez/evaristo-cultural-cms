@@ -2,6 +2,7 @@ import express, { type NextFunction, type Request, type Response } from "express
 import { z } from "zod";
 import type { PrismaClient } from "@evaristo/compartido/db";
 import { rutaArticulo } from "@evaristo/compartido/urls";
+import { estadoEfectivo, type EstadoBase } from "./estado.js";
 
 // Listado de artículos del panel (solo lectura). Lo ven los editores y los administradores.
 // select explícito: no se devuelve el cuerpo ni visitasWp ni nada que la pantalla no use.
@@ -26,9 +27,14 @@ export function crearRutasAdminArticulos(prisma: PrismaClient): express.Router {
         return;
       }
       const { estado, q, pagina } = consulta.data;
-      const donde = { ...(estado ? { estado } : {}), ...(q ? { titulo: { contains: q } } : {}) };
+      const ahora = new Date();
+      // El estado que se filtra y se cuenta es el efectivo (ver estado.ts): programado = publicado con fecha futura.
+      const porEstado = (e: EstadoBase) =>
+        e === "BORRADOR" ? { estado: "BORRADOR" as const } : e === "PUBLICADO" ? { estado: "PUBLICADO" as const, publicadoEn: { lte: ahora } } : { OR: [{ estado: "PROGRAMADO" as const }, { estado: "PUBLICADO" as const, publicadoEn: { gt: ahora } }] };
+      const porTitulo = q ? { titulo: { contains: q } } : {};
+      const donde = { ...(estado ? porEstado(estado) : {}), ...porTitulo };
 
-      const [total, filas, porEstado] = await Promise.all([
+      const [total, filas, nBorrador, nPublicado, nProgramado] = await Promise.all([
         prisma.articulo.count({ where: donde }),
         prisma.articulo.findMany({
           where: donde,
@@ -49,12 +55,12 @@ export function crearRutasAdminArticulos(prisma: PrismaClient): express.Router {
           },
         }),
         // Cantidad por estado, con la búsqueda aplicada, para las solapas del listado.
-        prisma.articulo.groupBy({ by: ["estado"], where: q ? { titulo: { contains: q } } : {}, _count: { _all: true } }),
+        prisma.articulo.count({ where: { ...porEstado("BORRADOR"), ...porTitulo } }),
+        prisma.articulo.count({ where: { ...porEstado("PUBLICADO"), ...porTitulo } }),
+        prisma.articulo.count({ where: { ...porEstado("PROGRAMADO"), ...porTitulo } }),
       ]);
 
-      const ahora = new Date();
-      const conteos = { BORRADOR: 0, PUBLICADO: 0, PROGRAMADO: 0 };
-      for (const g of porEstado) conteos[g.estado] = g._count._all;
+      const conteos = { BORRADOR: nBorrador, PUBLICADO: nPublicado, PROGRAMADO: nProgramado };
 
       res.setHeader("Cache-Control", "no-store");
       res.json({
@@ -67,7 +73,7 @@ export function crearRutasAdminArticulos(prisma: PrismaClient): express.Router {
           id: a.id,
           wpId: a.wpId,
           titulo: a.titulo,
-          estado: a.estado,
+          estado: estadoEfectivo(a.estado, a.publicadoEn, ahora),
           publicadoEn: a.publicadoEn,
           actualizadoEn: a.actualizadoEn,
           altPendientes: a.altPendientes,

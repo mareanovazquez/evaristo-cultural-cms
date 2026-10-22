@@ -151,7 +151,7 @@ export function Articulos() {
                   <td>
                     <span className={`estado estado-${a.estado.toLowerCase()}`}>{NOMBRES[a.estado]}</span>
                   </td>
-                  <td>{a.publicadoEn ? fechaPublicacion.format(new Date(a.publicadoEn)) : "—"}</td>
+                  <td>{a.estado === "PROGRAMADO" && a.publicadoEn ? `Sale el ${fechaEdicion.format(new Date(a.publicadoEn))}` : a.publicadoEn ? fechaPublicacion.format(new Date(a.publicadoEn)) : "—"}</td>
                   <td>{fechaEdicion.format(new Date(a.actualizadoEn))}</td>
                 </tr>
               ))}

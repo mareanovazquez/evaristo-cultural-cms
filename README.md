@@ -246,6 +246,7 @@ Después abrir:
 | `npm run test:admin-articulos` | Listado de artículos del panel contra `evaristo_cms_dev` (crea y borra un usuario temporal). |
 | `npm run test:admin-edicion` | Edición de artículos del panel contra `evaristo_cms_dev` (crea y borra datos temporales; guarda los 35 como borrador de cambios sin alterar lo publicado). |
 | `npm run test:admin-imagenes` | Biblioteca de imágenes del panel (`GET /api/admin/imagenes`) contra `evaristo_cms_dev` (solo lee). |
+| `npm run test:admin-publicacion` | Publicar, programar, publicar cambios y despublicar contra `evaristo_cms_dev`, mirando también lo que muestra el sitio compilado (hace falta `npm run build:sitio`; crea y borra datos temporales). |
 | `npm run test:admin-subida` | Subida y borrado de imágenes (`POST` y `DELETE /api/admin/imagenes`) contra `evaristo_cms_dev`, con imágenes armadas con `sharp` y carpetas temporales (crea y borra datos temporales; no toca la muestra). |
 | `npm run test:editor` | Editor del panel con TipTap sobre jsdom: 20 pruebas y la ida y vuelta de los 35 cuerpos de `evaristo_cms_dev` (solo lee). |
 | `npm run test:pantalla` | Pantallas de edición y alta del panel montadas en jsdom con la API simulada (sin base ni servidor). |

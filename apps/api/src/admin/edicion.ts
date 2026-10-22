@@ -5,6 +5,7 @@ import { Prisma, type PrismaClient } from "@evaristo/compartido/db";
 import type { JSONNode } from "@evaristo/compartido/schema";
 import { textoPlanoDe } from "@evaristo/compartido/texto-plano";
 import { rutaArticulo } from "@evaristo/compartido/urls";
+import { estadoEfectivo } from "./estado.js";
 import { contarAltPendientes, cuerpoVacio, DatosSchema, erroresDelCuerpo, imagenIdsDelCuerpo, NuevoSchema, SlugSchema, type DatosArticulo } from "./datos-articulo.js";
 
 // Leer, crear y editar artículos desde el panel.
@@ -14,12 +15,12 @@ import { contarAltPendientes, cuerpoVacio, DatosSchema, erroresDelCuerpo, imagen
 //  - Cada guardado manda la versión que se abrió; si otra persona guardó en el medio, responde 409 y no pisa nada.
 // El estado y la fecha de publicación no se editan acá.
 
-class Conflicto extends Error {}
+export class Conflicto extends Error {}
 
-const IdSchema = z.coerce.number().int().positive();
+export const IdSchema = z.coerce.number().int().positive();
 const GuardarSchema = z.object({ version: z.string().min(1).max(40), datos: z.unknown() }).strict();
 
-const seleccion = {
+export const seleccion = {
   id: true,
   wpId: true,
   slug: true,
@@ -43,15 +44,15 @@ const seleccion = {
   borrador: { select: { datos: true, baseVersion: true, actualizadoEn: true } },
 } as const;
 
-type FilaArticulo = NonNullable<Awaited<ReturnType<PrismaClient["articulo"]["findFirst"]>>> & {
+export type FilaArticulo = NonNullable<Awaited<ReturnType<PrismaClient["articulo"]["findFirst"]>>> & {
   categorias: Array<{ categoriaId: number }>;
   autores: Array<{ autorId: number }>;
   borrador: { datos: unknown; baseVersion: Date; actualizadoEn: Date } | null;
 };
 
-const iso = (d: Date): string => d.toISOString();
+export const iso = (d: Date): string => d.toISOString();
 
-function datosDeLaFila(a: FilaArticulo): DatosArticulo {
+export function datosDeLaFila(a: FilaArticulo): DatosArticulo {
   return {
     titulo: a.titulo,
     bajada: a.bajada,
@@ -72,38 +73,81 @@ function datosDeLaFila(a: FilaArticulo): DatosArticulo {
 }
 
 /** Versión que tiene que mandar el panel al guardar: la del borrador de cambios si existe, si no la del artículo. */
-const versionVigente = (a: FilaArticulo): Date => (a.estado !== "BORRADOR" && a.borrador ? a.borrador.actualizadoEn : a.actualizadoEn);
+export const versionVigente = (a: FilaArticulo): Date => (a.estado !== "BORRADOR" && a.borrador ? a.borrador.actualizadoEn : a.actualizadoEn);
 
-const problemasDeZod = (error: z.ZodError): string[] => [...new Set(error.issues.map((i) => i.message))].slice(0, 10);
+export const problemasDeZod = (error: z.ZodError): string[] => [...new Set(error.issues.map((i) => i.message))].slice(0, 10);
 
-function sinProblemas(res: Response, problemas: string[]): void {
+export function sinProblemas(res: Response, problemas: string[]): void {
   res.status(422).json({ estado: "error", mensaje: "Revisá el artículo antes de guardar.", problemas: problemas.slice(0, 10) });
+}
+
+/** Revisa lo que depende de la base: que existan la sección, las categorías, los autores y las imágenes. */
+export async function problemasDeReferencias(prisma: PrismaClient, d: DatosArticulo, seccionActual: number | null): Promise<string[]> {
+  const problemas: string[] = [];
+  const seccion = await prisma.seccion.findUnique({ where: { id: d.seccionId }, select: { id: true, interna: true } });
+  if (!seccion) problemas.push("La sección elegida no existe.");
+  else if (seccion.interna && seccion.id !== seccionActual) problemas.push("Elegí una sección de la lista.");
+
+  if (new Set(d.categoriaIds).size !== d.categoriaIds.length) problemas.push("Hay categorías repetidas.");
+  if (d.categoriaIds.length) {
+    const hay = await prisma.categoria.count({ where: { id: { in: d.categoriaIds } } });
+    if (hay !== new Set(d.categoriaIds).size) problemas.push("Alguna categoría elegida no existe.");
+  }
+  if (d.categoriaPrincipalId !== null && !d.categoriaIds.includes(d.categoriaPrincipalId)) problemas.push("La categoría principal tiene que ser una de las categorías del artículo.");
+
+  if (new Set(d.autorIds).size !== d.autorIds.length) problemas.push("Hay autores repetidos.");
+  if (d.autorIds.length && (await prisma.autor.count({ where: { id: { in: d.autorIds } } })) !== new Set(d.autorIds).size) problemas.push("Algún autor elegido no existe.");
+
+  const idsImagenes = [...new Set([...imagenIdsDelCuerpo(d.cuerpo), ...(d.imagenEncabezadoId !== null ? [d.imagenEncabezadoId] : [])])];
+  if (idsImagenes.length && (await prisma.imagen.count({ where: { id: { in: idsImagenes } } })) !== idsImagenes.length) problemas.push("Alguna imagen del artículo no está en la biblioteca.");
+  return problemas;
+}
+
+
+/**
+ * Escribe los datos editables sobre la fila de un artículo (y sus categorías y autores en orden), dentro de una transacción.
+ * Solo escribe si el artículo sigue en la versión que se leyó (`actualizadoEn`); si no, lanza Conflicto. `extra` suma otros campos
+ * (por ejemplo, el estado o la fecha al publicar). Devuelve la versión nueva.
+ */
+export async function escribirDatos(
+  tx: Prisma.TransactionClient,
+  id: number,
+  actualizadoEnEsperado: Date,
+  datos: DatosArticulo,
+  galeriaPendientes: number,
+  extra: Prisma.ArticuloUncheckedUpdateManyInput = {},
+): Promise<Date> {
+  const r = await tx.articulo.updateMany({
+    where: { id, actualizadoEn: actualizadoEnEsperado },
+    data: {
+      titulo: datos.titulo,
+      bajada: datos.bajada,
+      cuerpo: datos.cuerpo as unknown as Prisma.InputJsonValue,
+      textoPlano: textoPlanoDe(datos.cuerpo as never),
+      seccionId: datos.seccionId,
+      categoriaPrincipalId: datos.categoriaPrincipalId,
+      imagenEncabezadoId: datos.imagenEncabezadoId,
+      encabezadoAlt: datos.encabezadoAlt,
+      encabezadoCredito: datos.encabezadoCredito,
+      encabezadoPuntoFocalX: datos.encabezadoPuntoFocalX,
+      encabezadoPuntoFocalY: datos.encabezadoPuntoFocalY,
+      conCapital: datos.conCapital,
+      novedadHasta: datos.novedadHasta ? new Date(datos.novedadHasta) : null,
+      altPendientes: contarAltPendientes(datos, galeriaPendientes),
+      ...(datos.slug !== undefined ? { slug: datos.slug } : {}),
+      ...extra,
+    },
+  });
+  if (r.count !== 1) throw new Conflicto();
+  await tx.articuloCategoria.deleteMany({ where: { articuloId: id } });
+  if (datos.categoriaIds.length) await tx.articuloCategoria.createMany({ data: datos.categoriaIds.map((categoriaId) => ({ articuloId: id, categoriaId })) });
+  await tx.articuloAutor.deleteMany({ where: { articuloId: id } });
+  if (datos.autorIds.length) await tx.articuloAutor.createMany({ data: datos.autorIds.map((autorId, orden) => ({ articuloId: id, autorId, orden })) });
+  return (await tx.articulo.findUniqueOrThrow({ where: { id }, select: { actualizadoEn: true } })).actualizadoEn;
 }
 
 export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
   const router = express.Router();
-
-  /** Revisa lo que depende de la base: que existan la sección, las categorías, los autores y las imágenes. */
-  async function problemasDeReferencias(d: DatosArticulo, seccionActual: number | null): Promise<string[]> {
-    const problemas: string[] = [];
-    const seccion = await prisma.seccion.findUnique({ where: { id: d.seccionId }, select: { id: true, interna: true } });
-    if (!seccion) problemas.push("La sección elegida no existe.");
-    else if (seccion.interna && seccion.id !== seccionActual) problemas.push("Elegí una sección de la lista.");
-
-    if (new Set(d.categoriaIds).size !== d.categoriaIds.length) problemas.push("Hay categorías repetidas.");
-    if (d.categoriaIds.length) {
-      const hay = await prisma.categoria.count({ where: { id: { in: d.categoriaIds } } });
-      if (hay !== new Set(d.categoriaIds).size) problemas.push("Alguna categoría elegida no existe.");
-    }
-    if (d.categoriaPrincipalId !== null && !d.categoriaIds.includes(d.categoriaPrincipalId)) problemas.push("La categoría principal tiene que ser una de las categorías del artículo.");
-
-    if (new Set(d.autorIds).size !== d.autorIds.length) problemas.push("Hay autores repetidos.");
-    if (d.autorIds.length && (await prisma.autor.count({ where: { id: { in: d.autorIds } } })) !== new Set(d.autorIds).size) problemas.push("Algún autor elegido no existe.");
-
-    const idsImagenes = [...new Set([...imagenIdsDelCuerpo(d.cuerpo), ...(d.imagenEncabezadoId !== null ? [d.imagenEncabezadoId] : [])])];
-    if (idsImagenes.length && (await prisma.imagen.count({ where: { id: { in: idsImagenes } } })) !== idsImagenes.length) problemas.push("Alguna imagen del artículo no está en la biblioteca.");
-    return problemas;
-  }
 
   // ---------- Catálogos para los desplegables ----------
   router.get("/catalogos", async (_req: Request, res: Response, next: NextFunction) => {
@@ -144,7 +188,8 @@ export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
         articulo: {
           id: a.id,
           wpId: a.wpId,
-          estado: a.estado,
+          // El estado que ve el panel: programado = publicado con fecha futura (ver estado.ts).
+          estado: estadoEfectivo(a.estado, a.publicadoEn, ahora),
           publicadoEn: a.publicadoEn,
           version: iso(versionVigente(a)),
           // Hay cambios sin publicar: los datos que se devuelven son los del borrador de cambios, no los publicados.
@@ -244,7 +289,7 @@ export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
       }
 
       const anteriores = [a.cuerpo as unknown as JSONNode, ...(a.borrador ? [(a.borrador.datos as DatosArticulo).cuerpo] : [])];
-      const problemas = [...(await problemasDeReferencias(datos, a.seccionId)), ...erroresDelCuerpo(datos.cuerpo, anteriores)];
+      const problemas = [...(await problemasDeReferencias(prisma, datos, a.seccionId)), ...erroresDelCuerpo(datos.cuerpo, anteriores)];
       if (problemas.length) {
         sinProblemas(res, problemas);
         return;
@@ -258,32 +303,19 @@ export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
       if (esBorrador) {
         const galeriaPendientes = await prisma.galeriaItem.count({ where: { articuloId: a.id, OR: [{ alt: null }, { alt: "" }] } });
         nuevaVersion = await prisma.$transaction(async (tx) => {
-          const r = await tx.articulo.updateMany({
-            where: { id: a.id, actualizadoEn: a.actualizadoEn },
-            data: {
-              titulo: datos.titulo,
-              bajada: datos.bajada,
-              cuerpo: datos.cuerpo as unknown as Prisma.InputJsonValue,
-              textoPlano: textoPlanoDe(datos.cuerpo as never),
-              seccionId: datos.seccionId,
-              categoriaPrincipalId: datos.categoriaPrincipalId,
-              imagenEncabezadoId: datos.imagenEncabezadoId,
-              encabezadoAlt: datos.encabezadoAlt,
-              encabezadoCredito: datos.encabezadoCredito,
-              encabezadoPuntoFocalX: datos.encabezadoPuntoFocalX,
-              encabezadoPuntoFocalY: datos.encabezadoPuntoFocalY,
-              conCapital: datos.conCapital,
-              novedadHasta: datos.novedadHasta ? new Date(datos.novedadHasta) : null,
-              altPendientes: contarAltPendientes(datos, galeriaPendientes),
-              ...(datos.slug !== undefined ? { slug: datos.slug } : {}),
-            },
-          });
-          if (r.count !== 1) throw new Conflicto();
-          await tx.articuloCategoria.deleteMany({ where: { articuloId: a.id } });
-          if (datos.categoriaIds.length) await tx.articuloCategoria.createMany({ data: datos.categoriaIds.map((categoriaId) => ({ articuloId: a.id, categoriaId })) });
-          await tx.articuloAutor.deleteMany({ where: { articuloId: a.id } });
-          if (datos.autorIds.length) await tx.articuloAutor.createMany({ data: datos.autorIds.map((autorId, orden) => ({ articuloId: a.id, autorId, orden })) });
-          return (await tx.articulo.findUniqueOrThrow({ where: { id: a.id }, select: { actualizadoEn: true } })).actualizadoEn;
+          const version = await escribirDatos(tx, a.id, a.actualizadoEn, datos, galeriaPendientes);
+          // Un borrador que ya estuvo publicado (se despublicó) y cambia de dirección: la URL que tenía pasa a redirigir a la nueva.
+          // Se anota ahora porque después, al volver a publicarlo, la fila ya no recuerda cuál fue la pública. Mientras el artículo sea
+          // un borrador la redirección no se aplica (el sitio solo redirige a lo que se ve).
+          if (datos.slug !== undefined && datos.slug !== a.slug && a.publicadoEn && !a.slug.startsWith("borrador-")) {
+            const origen = rutaArticulo({ slug: a.slug, publicadoEn: a.publicadoEn });
+            await tx.redireccion.upsert({
+              where: { origen },
+              create: { origen, tipo: "SLUG_ANTERIOR", codigo: 301, articuloId: a.id },
+              update: { tipo: "SLUG_ANTERIOR", codigo: 301, articuloId: a.id, autorId: null, destino: null },
+            });
+          }
+          return version;
         });
       } else if (a.borrador) {
         const r = await prisma.articuloBorrador.updateMany({

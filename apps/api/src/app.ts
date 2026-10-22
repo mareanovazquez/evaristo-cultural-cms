@@ -9,6 +9,7 @@ import { repositorioPrisma } from "./auth/repositorio.js";
 import { crearRutasAdminArticulos } from "./admin/articulos.js";
 import { crearRutasAdminEdicion } from "./admin/edicion.js";
 import { crearRutasAdminImagenes } from "./admin/imagenes.js";
+import { crearRutasAdminPublicacion } from "./admin/publicacion.js";
 import { crearManejadorMedia } from "./media.js";
 import { crearManejadorRedirecciones } from "./redirecciones.js";
 
@@ -58,7 +59,7 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
   const auth = crearAuth({ repo: repositorioPrisma(prisma), seguro: process.env["NODE_ENV"] === "production", ...opciones.auth });
   app.use("/api/auth", auth.router);
   // Rutas del panel: hace falta una sesión (editor o administrador) y que el pedido venga del propio sitio.
-  app.use("/api/admin", auth.protegerOrigen, auth.cargarSesion, auth.exigirSesion, crearRutasAdminArticulos(prisma), crearRutasAdminEdicion(prisma), crearRutasAdminImagenes(prisma, { dirSubidas }));
+  app.use("/api/admin", auth.protegerOrigen, auth.cargarSesion, auth.exigirSesion, crearRutasAdminArticulos(prisma), crearRutasAdminEdicion(prisma), crearRutasAdminPublicacion(prisma), crearRutasAdminImagenes(prisma, { dirSubidas }));
 
   app.get("/api/salud", async (_req, res) => {
     try {

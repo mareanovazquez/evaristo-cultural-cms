@@ -28,11 +28,12 @@ const cuerpoOriginal = {
   ],
 }
 let cuerpoServido: unknown = cuerpoOriginal
+let publicadoEnServido: string | null = null
 const articulo = (estado: string) => ({
   id: 7,
   wpId: 123,
   estado,
-  publicadoEn: null,
+  publicadoEn: publicadoEnServido,
   version: '2026-10-22T10:00:00.000Z',
   conCambiosSinPublicar,
   ruta: null,
@@ -80,6 +81,12 @@ let estadoArticulo = 'BORRADOR'
 let conCambiosSinPublicar = false
 let redCaida = false
 const descartados: string[] = []
+// Publicación: lo que devuelve la revisión y cada acción, y lo que se pidió (en orden, para ver que se guarda antes de publicar)
+let revisionServida: J = { estado: 'ok', accion: 'publicar', problemas: [], slugPropuesto: 'titulo-de-prueba', publicadoOriginal: null }
+let respuestaPublicar: { estado: number; cuerpo: J } = { estado: 200, cuerpo: {} }
+let respuestaAccion: { estado: number; cuerpo: J } = { estado: 200, cuerpo: { estado: 'ok', version: '2026-10-22T11:00:00.000Z' } }
+const pedidosPublicacion: Array<{ ruta: string; cuerpo: J }> = []
+const ordenPedidos: string[] = []
 const subidas: Array<{ nombre: string; tamano: number }> = []
 const borrados: number[] = []
 const IMAGEN_NUEVA = { id: 9, clave: 'nueva-abc123.jpg', nombreOriginal: 'nueva.jpg', ancho: 300, alto: 200 }
@@ -104,7 +111,23 @@ globalThis.fetch = (async (entrada: string | URL | Request, init?: RequestInit) 
   if (url === '/api/admin/articulos/7' && metodo === 'GET') return responder(200, { estado: 'ok', articulo: articulo(estadoArticulo) })
   if (url === '/api/admin/articulos/7' && metodo === 'PUT') {
     guardados.push(JSON.parse(String(init?.body)) as J)
+    ordenPedidos.push('PUT')
     return responder(respuestaPut.estado, respuestaPut.cuerpo)
+  }
+  if (url === '/api/admin/articulos/7/publicacion' && metodo === 'GET') return responder(200, revisionServida)
+  const accion = /^\/api\/admin\/articulos\/7\/(publicar|publicar-cambios|despublicar)$/.exec(url)
+  if (accion && metodo === 'POST') {
+    const cuerpo = JSON.parse(String(init?.body)) as J
+    pedidosPublicacion.push({ ruta: accion[1]!, cuerpo })
+    ordenPedidos.push(`POST ${accion[1]}`)
+    const r = accion[1] === 'publicar' ? respuestaPublicar : respuestaAccion
+    if (r.estado === 200) {
+      // El servidor cambió de estado: la próxima lectura lo refleja
+      if (accion[1] === 'publicar') { estadoArticulo = String(r.cuerpo['articuloEstado']); publicadoEnServido = String(r.cuerpo['publicadoEn']) }
+      if (accion[1] === 'publicar-cambios') conCambiosSinPublicar = false
+      if (accion[1] === 'despublicar') estadoArticulo = 'BORRADOR'
+    }
+    return responder(r.estado, r.cuerpo)
   }
   if (url === '/api/admin/imagenes' && metodo === 'POST') {
     const archivo = (init?.body as FormData).get('archivo') as File
@@ -320,6 +343,7 @@ await t('un artículo publicado muestra la dirección sin poder editarla', async
 
 const abrirBorrador = async () => {
   estadoArticulo = 'BORRADOR'
+  publicadoEnServido = null
   conCambiosSinPublicar = false
   respuestaPut = { estado: 200, cuerpo: { estado: 'ok', version: '2026-10-22T10:05:00.000Z', conCambiosSinPublicar: false } }
   await irA('/articulos/7')
@@ -598,6 +622,8 @@ await t('cita: se puede escribir el autor y la fuente sin que el foco vuelva al 
   assert.equal(boton('Cita destacada, sin autor'), undefined, 'ya no hay una segunda cita')
   await clic(boton('Cita, con autor y fuente opcionales')!)
   await hasta(() => !!document.getElementById('cita-autor'), 'la barra de la cita')
+  // El comando focus() de TipTap devuelve el foco al editor un instante después (requestAnimationFrame): se deja asentar antes de pasar al campo
+  await esperar(150)
   const autor = document.getElementById('cita-autor') as HTMLInputElement
   autor.focus()
   let escrito = ''
@@ -768,6 +794,193 @@ await t('punto focal: un clic sobre la imagen lo mueve, la marca y el recuadro d
   const datos = (guardados[0] as { datos: J }).datos
   assert.equal(datos['encabezadoPuntoFocalX'], 0.75)
   assert.equal(datos['encabezadoPuntoFocalY'], 0.5)
+})
+
+// ---- Paso 6: publicar, programar, publicar cambios y despublicar ----
+
+/** Abre el artículo en el estado indicado (el que ve el panel: BORRADOR, PUBLICADO o PROGRAMADO). */
+const abrirComo = async (estado: string, opciones: { conCambios?: boolean; publicadoEn?: string | null } = {}) => {
+  await abrirBorrador()
+  estadoArticulo = estado
+  conCambiosSinPublicar = opciones.conCambios ?? false
+  publicadoEnServido = opciones.publicadoEn ?? (estado === 'BORRADOR' ? null : '2026-10-20T12:00:00.000Z')
+  await irA('/articulos/7')
+  await hasta(() => !!document.getElementById('titulo') && !!document.querySelector('.ProseMirror'), 'la pantalla de edición')
+  guardados.length = 0
+  pedidosPublicacion.length = 0
+  ordenPedidos.length = 0
+}
+const botonDelDialogo = (texto: string) => Array.from(document.querySelectorAll('.modal-overlay button')).find((b) => b.textContent?.trim() === texto) as HTMLButtonElement | undefined
+const publicable = () => { revisionServida = { estado: 'ok', accion: 'publicar', problemas: [], slugPropuesto: 'titulo-de-prueba', publicadoOriginal: null } }
+const abrirDialogoDePublicar = async () => {
+  await clic(boton('Publicar…')!)
+  await hasta(() => !!document.getElementById('publicar-titulo'), 'la ventana de publicar')
+  await hasta(() => !document.body.textContent?.includes('Revisando el artículo'), 'la revisión')
+}
+
+await t('publicar: un borrador ofrece "Publicar…", guarda lo pendiente antes y muestra lo que falta', async () => {
+  await abrirComo('BORRADOR')
+  revisionServida = { estado: 'ok', accion: 'publicar', problemas: ['Falta la imagen de encabezado.', 'El artículo todavía no tiene texto.'], slugPropuesto: 'titulo-de-prueba', publicadoOriginal: null }
+  assert.ok(boton('Publicar…'), 'un borrador se publica')
+  assert.equal(boton('Despublicar'), undefined)
+  assert.equal(boton('Publicar cambios'), undefined)
+  await escribir(document.getElementById('titulo') as HTMLInputElement, 'Cambiado antes de publicar')
+  await abrirDialogoDePublicar()
+  assert.deepEqual(ordenPedidos, ['PUT'], 'lo que estaba sin guardar se guardó antes de abrir la ventana')
+  const texto = document.querySelector('.modal-overlay')!.textContent!
+  assert.ok(texto.includes('Todavía no se puede publicar') && texto.includes('Falta la imagen de encabezado.') && texto.includes('todavía no tiene texto'))
+  assert.equal(botonDelDialogo('Publicar'), undefined, 'con problemas no hay botón para publicar')
+  assert.equal(document.getElementById('publicar-slug'), null)
+  await clic(botonDelDialogo('Cancelar')!)
+  assert.equal(document.getElementById('publicar-titulo'), null, 'se cierra')
+  assert.equal(pedidosPublicacion.length, 0, 'no se publicó nada')
+})
+
+await t('publicar ahora: propone la dirección, avisa dónde va a quedar y, al publicar, vuelve a leer el artículo', async () => {
+  await abrirComo('BORRADOR')
+  publicable()
+  respuestaPublicar = { estado: 200, cuerpo: { estado: 'ok', version: '2026-10-22T11:00:00.000Z', articuloEstado: 'PUBLICADO', publicadoEn: new Date().toISOString(), slug: 'titulo-de-prueba', ruta: '/2026/10/22/titulo-de-prueba/' } }
+  await abrirDialogoDePublicar()
+  assert.deepEqual(ordenPedidos, [], 'sin cambios pendientes no se guarda de más')
+  assert.equal((document.getElementById('publicar-slug') as HTMLInputElement).value, 'titulo-de-prueba')
+  assert.ok(document.querySelector('.modal-overlay')!.textContent!.includes(`/${new Date().getUTCFullYear()}/`), 'muestra la dirección completa')
+  assert.equal(document.querySelector<HTMLInputElement>('input[name=cuando]:checked')?.closest('label')?.textContent?.trim(), 'Ahora')
+  assert.equal(document.getElementById('publicar-fecha'), null, 'la fecha solo aparece al programar')
+  await escribir(document.getElementById('publicar-slug') as HTMLInputElement, 'mi-direccion')
+  await clic(botonDelDialogo('Publicar')!)
+  await hasta(() => !!boton('Despublicar'), 'el artículo ya publicado')
+  assert.equal(pedidosPublicacion.length, 1)
+  assert.equal(pedidosPublicacion[0]!.ruta, 'publicar')
+  assert.deepEqual(pedidosPublicacion[0]!.cuerpo, { version: '2026-10-22T10:00:00.000Z', slug: 'mi-direccion', publicadoEn: null }, 'publicar ahora manda la versión, la dirección y fecha null')
+  assert.equal(document.getElementById('publicar-titulo'), null, 'la ventana se cerró')
+  const banner = document.querySelector('.aviso-ok')!
+  assert.ok(banner.textContent!.includes('Se publicó el artículo.'))
+  assert.equal(banner.querySelector('a')?.getAttribute('href'), '/2026/10/22/titulo-de-prueba/', 'con el enlace al sitio')
+  assert.equal(boton('Publicar…'), undefined, 'ya no es un borrador')
+  assert.ok(document.querySelector('.estado-publicado'), 'el estado cambió a Publicado')
+})
+
+await t('programar: se elige una fecha futura, se manda como fecha y el panel lo muestra como programado', async () => {
+  await abrirComo('BORRADOR')
+  publicable()
+  await abrirDialogoDePublicar()
+  const radio = Array.from(document.querySelectorAll<HTMLInputElement>('input[name=cuando]')).find((r) => r.closest('label')?.textContent?.includes('Programarlo'))!
+  await clic(radio)
+  assert.ok(document.getElementById('publicar-fecha'), 'aparece el campo de fecha y hora')
+  assert.ok(botonDelDialogo('Programar'), 'el botón dice Programar')
+  // Una fecha que ya pasó no deja programar
+  await escribir(document.getElementById('publicar-fecha') as HTMLInputElement, '2020-01-02T10:30')
+  assert.ok(document.body.textContent?.includes('Elegí una fecha y hora que todavía no pasaron'))
+  assert.equal(botonDelDialogo('Programar')!.disabled, true)
+  await escribir(document.getElementById('publicar-fecha') as HTMLInputElement, '2099-01-02T10:30')
+  assert.equal(botonDelDialogo('Programar')!.disabled, false)
+  assert.ok(document.querySelector('.modal-overlay')!.textContent!.includes('/2099/01/02/titulo-de-prueba/'), 'la dirección lleva la fecha elegida')
+  const esperada = new Date('2099-01-02T10:30').toISOString()
+  respuestaPublicar = { estado: 200, cuerpo: { estado: 'ok', version: '2026-10-22T11:00:00.000Z', articuloEstado: 'PROGRAMADO', publicadoEn: esperada, slug: 'titulo-de-prueba', ruta: '/2099/01/02/titulo-de-prueba/' } }
+  await clic(botonDelDialogo('Programar')!)
+  await hasta(() => !!boton('Cancelar programación'), 'el artículo programado')
+  assert.equal(pedidosPublicacion[0]!.cuerpo['publicadoEn'], esperada)
+  const banner = document.querySelector('.aviso-ok')!
+  assert.ok(banner.textContent!.includes('Quedó programado'))
+  assert.equal(banner.querySelector('a'), null, 'todavía no hay enlace al sitio')
+  assert.ok(document.querySelector('.programado-fecha')?.textContent?.includes('Sale en el sitio el'), 'la fecha se ve junto al estado')
+  assert.ok(document.querySelector('.estado-programado'))
+})
+
+await t('volver a publicar un artículo que ya estuvo publicado: propone su fecha original y no la manda', async () => {
+  await abrirComo('BORRADOR')
+  revisionServida = { estado: 'ok', accion: 'publicar', problemas: [], slugPropuesto: 'ya-publicado', publicadoOriginal: '2020-05-06T12:00:00.000Z' }
+  respuestaPublicar = { estado: 200, cuerpo: { estado: 'ok', version: 'v', articuloEstado: 'PUBLICADO', publicadoEn: '2020-05-06T12:00:00.000Z', slug: 'ya-publicado', ruta: '/2020/05/06/ya-publicado/' } }
+  await abrirDialogoDePublicar()
+  const marcado = document.querySelector<HTMLInputElement>('input[name=cuando]:checked')!.closest('label')!.textContent!
+  assert.ok(marcado.includes('fecha original') && marcado.includes('6 de mayo de 2020'), 'viene marcada la fecha original')
+  await clic(botonDelDialogo('Publicar')!)
+  await hasta(() => pedidosPublicacion.length === 1, 'el pedido')
+  assert.equal('publicadoEn' in pedidosPublicacion[0]!.cuerpo, false, 'sin fecha: el servidor mantiene la original')
+})
+
+await t('publicar: un rechazo del servidor se muestra en la ventana y un conflicto ofrece cargar la versión nueva', async () => {
+  await abrirComo('BORRADOR')
+  publicable()
+  respuestaPublicar = { estado: 422, cuerpo: { estado: 'error', mensaje: 'Revisá el artículo antes de guardar.', problemas: ['Ya hay un artículo con esa dirección. Elegí otra.'] } }
+  await abrirDialogoDePublicar()
+  await clic(botonDelDialogo('Publicar')!)
+  await hasta(() => document.querySelector('.modal-overlay .aviso-error li')?.textContent === 'Ya hay un artículo con esa dirección. Elegí otra.', 'el motivo')
+  assert.ok(document.getElementById('publicar-titulo'), 'la ventana sigue abierta para corregir')
+  assert.ok(botonDelDialogo('Publicar'), 'y se puede volver a intentar')
+  respuestaPublicar = { estado: 409, cuerpo: { estado: 'conflicto', mensaje: 'Este artículo cambió mientras lo editabas.' } }
+  await clic(botonDelDialogo('Publicar')!)
+  await hasta(() => !!botonDelDialogo('Cargar la versión nueva'), 'el aviso de conflicto')
+  assert.ok(document.querySelector('.modal-overlay')!.textContent!.includes('No se publicó nada'))
+  assert.equal(botonDelDialogo('Publicar'), undefined, 'no se puede publicar encima de lo que guardó otra persona')
+})
+
+await t('publicar cambios: un publicado con cambios ofrece "Publicar cambios" y "Despublicar", y pide confirmación', async () => {
+  await abrirComo('PUBLICADO', { conCambios: true })
+  assert.ok(boton('Publicar cambios') && boton('Despublicar'))
+  assert.equal(boton('Publicar…'), undefined, 'un publicado no se publica de nuevo entero')
+  respuestaConfirm = false
+  await clic(boton('Publicar cambios')!)
+  assert.equal(pedidosPublicacion.length, 0, 'si no se confirma, no se publica')
+  assert.ok(preguntas.at(-1)!.includes('se van a ver en el sitio ahora'))
+  respuestaConfirm = true
+  await clic(boton('Publicar cambios')!)
+  await hasta(() => !boton('Publicar cambios'), 'los cambios publicados')
+  assert.deepEqual(pedidosPublicacion, [{ ruta: 'publicar-cambios', cuerpo: { version: '2026-10-22T10:00:00.000Z' } }])
+  assert.ok(document.querySelector('.aviso-ok')?.textContent?.includes('Se publicaron los cambios.'))
+  assert.equal(document.querySelector('.aviso-alerta'), null, 'ya no dice que hay cambios sin publicar')
+})
+
+await t('publicar cambios: lo que está sin guardar se guarda antes, y un rechazo muestra qué falta sin recargar', async () => {
+  await abrirComo('PUBLICADO', { conCambios: true })
+  // Guardar un publicado lo deja como borrador de cambios (como hace el servidor)
+  respuestaPut = { estado: 200, cuerpo: { estado: 'ok', version: '2026-10-22T10:30:00.000Z', conCambiosSinPublicar: true } }
+  await escribir(document.getElementById('titulo') as HTMLInputElement, 'Otro cambio todavía sin guardar')
+  respuestaAccion = { estado: 422, cuerpo: { estado: 'error', mensaje: 'Revisá el artículo antes de guardar.', problemas: ['Falta la imagen de encabezado.'] } }
+  await clic(boton('Publicar cambios')!)
+  await hasta(() => document.querySelector('.aviso-error li')?.textContent === 'Falta la imagen de encabezado.', 'el motivo')
+  assert.deepEqual(ordenPedidos, ['PUT', 'POST publicar-cambios'], 'primero se guarda y después se publica')
+  assert.ok(boton('Publicar cambios'), 'sigue en el mismo artículo, sin recargar')
+  respuestaAccion = { estado: 200, cuerpo: { estado: 'ok', version: '2026-10-22T11:00:00.000Z' } }
+})
+
+await t('un publicado sin cambios solo ofrece despublicar, y despublicar pide confirmación y lo deja como borrador', async () => {
+  await abrirComo('PUBLICADO')
+  assert.equal(boton('Publicar cambios'), undefined)
+  assert.equal(boton('Publicar…'), undefined)
+  respuestaConfirm = false
+  await clic(boton('Despublicar')!)
+  assert.equal(pedidosPublicacion.length, 0)
+  assert.ok(preguntas.at(-1)!.includes('deja de verse en el sitio'))
+  respuestaConfirm = true
+  await clic(boton('Despublicar')!)
+  await hasta(() => !!boton('Publicar…'), 'el borrador')
+  assert.equal(pedidosPublicacion[0]!.ruta, 'despublicar')
+  assert.ok(document.querySelector('.aviso-ok')?.textContent?.includes('dejó de verse en el sitio'))
+  assert.ok(document.querySelector('.estado-borrador'))
+})
+
+await t('despublicar con cambios sin publicar: el servidor lo rechaza y el panel explica qué hacer', async () => {
+  await abrirComo('PUBLICADO', { conCambios: true })
+  respuestaAccion = { estado: 422, cuerpo: { estado: 'error', mensaje: 'Revisá el artículo antes de guardar.', problemas: ['Este artículo tiene cambios sin publicar. Publicalos o descartalos antes de despublicarlo.'] } }
+  await clic(boton('Despublicar')!)
+  await hasta(() => document.querySelector('.aviso-error li')?.textContent?.includes('Publicalos o descartalos') === true, 'la explicación')
+  assert.ok(boton('Despublicar'), 'sigue publicado')
+  respuestaAccion = { estado: 200, cuerpo: { estado: 'ok', version: '2026-10-22T11:00:00.000Z' } }
+})
+
+await t('programado: se ve cuándo sale y se puede cancelar la programación', async () => {
+  await abrirComo('PROGRAMADO', { publicadoEn: '2099-06-07T15:00:00.000Z' })
+  assert.ok(document.querySelector('.estado-programado'))
+  assert.ok(document.querySelector('.programado-fecha')?.textContent?.includes('2099'), 'dice cuándo sale')
+  assert.equal(boton('Despublicar'), undefined)
+  assert.ok(boton('Cancelar programación'))
+  assert.equal(document.querySelector('.ver-en-sitio'), null, 'todavía no tiene dirección pública')
+  respuestaConfirm = true
+  await clic(boton('Cancelar programación')!)
+  await hasta(() => !!boton('Publicar…'), 'el borrador')
+  assert.ok(preguntas.at(-1)!.includes('Se cancela la programación'))
+  assert.ok(document.querySelector('.aviso-ok')?.textContent?.includes('Se canceló la programación'))
 })
 
 console.log(`\n${ok} pruebas de la pantalla ok`)

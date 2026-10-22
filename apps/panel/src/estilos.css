@@ -139,6 +139,8 @@ a.titulo-articulo:hover { color: var(--acento); text-decoration: underline; }
 .par-campos { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
 .imagen-miniatura { display: block; max-width: 100%; max-height: 12rem; margin-bottom: 0.75rem; border: 1px solid var(--borde); border-radius: var(--radio); }
 .barra-guardar { position: sticky; bottom: 0; display: flex; align-items: center; gap: 1rem; margin-top: 1.5rem; padding: 0.75rem 0; background: var(--fondo); border-top: 1px solid var(--borde); z-index: 5; }
+.barra-publicacion { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-left: auto; }
+.programado-fecha { font-size: 0.9rem; color: var(--alerta); font-weight: 600; }
 .estado-guardado { color: var(--texto-suave); font-size: 0.9rem; }
 
 /* Celular y pantallas táctiles: botones más grandes y barra de herramientas que no se queda fija ocupando media pantalla */
