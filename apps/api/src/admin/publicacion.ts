@@ -67,11 +67,11 @@ async function problemasParaPublicar(prisma: PrismaClient, a: FilaArticulo, dato
   if (!seccion || seccion.interna) problemas.push("Elegí una sección del artículo antes de publicarlo.");
 
   if (datos.imagenEncabezadoId === null) {
-    problemas.push("Falta la imagen de encabezado.");
+    problemas.push("Falta la imagen principal del artículo (la foto grande que va arriba, debajo del título).");
   } else if (!datos.encabezadoAlt?.trim()) {
     // En uno ya publicado, el texto alternativo puede seguir vacío solo si la imagen es la misma y ya lo estaba (viene de la migración).
     const igualYVacio = !esNuevo && datos.imagenEncabezadoId === a.imagenEncabezadoId && !a.encabezadoAlt?.trim();
-    if (!igualYVacio) problemas.push("Falta el texto alternativo de la imagen de encabezado.");
+    if (!igualYVacio) problemas.push("Falta el texto alternativo de la imagen principal (describe la foto para quien no puede verla).");
   }
   if (!cuerpoConContenido(datos.cuerpo)) problemas.push("El artículo todavía no tiene texto.");
 

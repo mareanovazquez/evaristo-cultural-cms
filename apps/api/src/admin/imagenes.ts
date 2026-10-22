@@ -62,7 +62,7 @@ export async function usosDeLaImagen(prisma: PrismaClient, id: number): Promise<
 const DONDE: Record<UsoDeImagen["tipo"], string> = {
   cuerpo: "el texto del artículo",
   borrador: "los cambios sin publicar del artículo",
-  encabezado: "el encabezado del artículo",
+  encabezado: "la imagen principal del artículo",
   redes: "la imagen para redes del artículo",
   galeria: "la galería del artículo",
   autor: "la foto del autor",

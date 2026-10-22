@@ -192,6 +192,11 @@ await t('abre un borrador con todos sus campos', async () => {
   assert.equal((document.getElementById('seccion') as HTMLSelectElement).value, '1')
   assert.equal((document.getElementById('slug') as HTMLInputElement).readOnly, false, 'la dirección de un borrador se edita')
   assert.equal((document.getElementById('encabezado-alt') as HTMLInputElement).value, 'Alt del encabezado')
+  // La imagen principal se llama así en pantalla (no "encabezado", que no entiende quien no es técnico) y se explica qué es
+  const lateral = document.querySelector('.edicion-lateral')!
+  assert.ok(Array.from(lateral.querySelectorAll('legend')).some((l) => l.textContent === 'Imagen principal'))
+  assert.ok(lateral.textContent!.includes('La foto grande que va arriba del artículo, debajo del título'))
+  assert.ok(!/encabezado/i.test(lateral.textContent!), 'la columna de datos no usa la palabra "encabezado"')
   assert.equal((document.getElementById('foco-y') as HTMLInputElement).value, '25')
   const editor = document.querySelector('.ProseMirror')!
   assert.ok(editor.textContent?.includes('Un subtítulo') && editor.textContent.includes('Primer párrafo con una nota'))
@@ -256,7 +261,7 @@ await t('el selector de imágenes del encabezado elige de la biblioteca y limpia
   await clic(boton('Cambiar imagen')!)
   await hasta(() => !!document.querySelector('.imagen-opcion'), 'la biblioteca')
   await clic(document.querySelector('.imagen-opcion')!)
-  assert.equal(document.querySelector('.galeria-imagenes'), null, 'el selector se cierra')
+  assert.ok(document.querySelector('.galeria-imagenes') === null, 'el selector se cierra')
   assert.equal((document.getElementById('encabezado-alt') as HTMLInputElement).value, '', 'con otra imagen hay que escribir el texto alternativo de nuevo')
   guardados.length = 0
   await clic(boton('Guardar')!)
@@ -469,6 +474,8 @@ await t('descartar cambios sin publicar: avisa, pide confirmación y vuelve a la
   await irA('/articulos/7')
   await hasta(() => !!boton('Descartar los cambios'), 'el aviso de cambios sin publicar')
   assert.ok(document.body.textContent?.includes('Este artículo tiene cambios sin publicar.'))
+  assert.ok(document.querySelector('.aviso-alerta')!.textContent!.includes('El sitio sigue mostrando la versión anterior, que no tiene estos cambios'), 'dice qué muestra el sitio')
+  assert.ok(document.querySelector('.aviso-alerta')!.textContent!.includes('Publicar cambios'), 'y qué hacer')
   respuestaConfirm = false
   descartados.length = 0
   await clic(boton('Descartar los cambios')!)
@@ -646,7 +653,7 @@ await t('cita: se puede escribir el autor y la fuente sin que el foco vuelva al 
   assert.equal(cita.attrs!['autor'], 'Jorge Luis Borges')
   assert.equal(cita.attrs!['fuente'], 'Ficciones')
   // Una sola cita: no hay selector de tipo, y el autor y la fuente son opcionales
-  assert.equal(document.getElementById('cita-variante'), null, 'ya no hay selector de tipo de cita')
+  assert.ok(document.getElementById('cita-variante') === null, 'ya no hay selector de tipo de cita')
   assert.ok(document.body.textContent?.includes('Autor (opcional)'))
   // La vista previa la muestra con el diseño de la maqueta: blockquote.cita con cite
   await clic(boton('Vista previa')!)
@@ -714,7 +721,7 @@ await t('subir una imagen: se manda el archivo, se muestra lista y se usa como e
   assert.ok(document.querySelector('.subida-lista')?.textContent?.includes('Imagen subida.'))
   assert.ok(document.querySelector('.subida-lista img[src="/media/nueva-abc123.jpg"]'), 'se ve la miniatura subida')
   await clic(boton('Usar esta imagen')!)
-  assert.equal(document.querySelector('.galeria-imagenes'), null, 'el selector se cierra')
+  assert.ok(document.querySelector('.galeria-imagenes') === null, 'el selector se cierra')
   guardados.length = 0
   await clic(boton('Guardar')!)
   await hasta(() => guardados.length === 1, 'el guardado')
@@ -729,7 +736,7 @@ await t('subir una imagen que ya estaba en la biblioteca: lo avisa y usa la exis
   const texto = document.querySelector('.subida-lista')!.textContent!
   assert.ok(texto.includes('Esta imagen ya estaba en la biblioteca.') && texto.includes('no se guardó otra copia'))
   await clic(boton('Subir otra')!)
-  assert.equal(document.querySelector('.subida-lista'), null, '"Subir otra" limpia el resultado')
+  assert.ok(document.querySelector('.subida-lista') === null, '"Subir otra" limpia el resultado')
 })
 
 await t('subir: una imagen de más de 10 MB se rechaza sin mandarla, y los errores del servidor se muestran en lenguaje común', async () => {
@@ -742,7 +749,7 @@ await t('subir: una imagen de más de 10 MB se rechaza sin mandarla, y los error
   await elegirArchivo(new File([new Uint8Array(10)], 'dibujo.svg', { type: 'image/svg+xml' }))
   await hasta(() => document.querySelector('.aviso-error')?.textContent?.includes('JPEG, PNG, WebP o GIF') === true, 'el aviso del servidor')
   assert.equal(subidas.length, 1)
-  assert.equal(document.querySelector('.subida-lista'), null)
+  assert.ok(document.querySelector('.subida-lista') === null)
   respuestaSubida = respuestaOk(false)
 })
 
@@ -820,7 +827,7 @@ const abrirDialogoDePublicar = async () => {
 
 await t('publicar: un borrador ofrece "Publicar…", guarda lo pendiente antes y muestra lo que falta', async () => {
   await abrirComo('BORRADOR')
-  revisionServida = { estado: 'ok', accion: 'publicar', problemas: ['Falta la imagen de encabezado.', 'El artículo todavía no tiene texto.'], slugPropuesto: 'titulo-de-prueba', publicadoOriginal: null }
+  revisionServida = { estado: 'ok', accion: 'publicar', problemas: ['Falta la imagen principal del artículo (la foto grande que va arriba, debajo del título).', 'El artículo todavía no tiene texto.'], slugPropuesto: 'titulo-de-prueba', publicadoOriginal: null }
   assert.ok(boton('Publicar…'), 'un borrador se publica')
   assert.equal(boton('Despublicar'), undefined)
   assert.equal(boton('Publicar cambios'), undefined)
@@ -828,11 +835,11 @@ await t('publicar: un borrador ofrece "Publicar…", guarda lo pendiente antes y
   await abrirDialogoDePublicar()
   assert.deepEqual(ordenPedidos, ['PUT'], 'lo que estaba sin guardar se guardó antes de abrir la ventana')
   const texto = document.querySelector('.modal-overlay')!.textContent!
-  assert.ok(texto.includes('Todavía no se puede publicar') && texto.includes('Falta la imagen de encabezado.') && texto.includes('todavía no tiene texto'))
+  assert.ok(texto.includes('Todavía no se puede publicar') && texto.includes('Falta la imagen principal del artículo (la foto grande que va arriba, debajo del título).') && texto.includes('todavía no tiene texto'))
   assert.equal(botonDelDialogo('Publicar'), undefined, 'con problemas no hay botón para publicar')
-  assert.equal(document.getElementById('publicar-slug'), null)
+  assert.ok(document.getElementById('publicar-slug') === null)
   await clic(botonDelDialogo('Cancelar')!)
-  assert.equal(document.getElementById('publicar-titulo'), null, 'se cierra')
+  assert.ok(document.getElementById('publicar-titulo') === null, 'se cierra')
   assert.equal(pedidosPublicacion.length, 0, 'no se publicó nada')
 })
 
@@ -845,14 +852,14 @@ await t('publicar ahora: propone la dirección, avisa dónde va a quedar y, al p
   assert.equal((document.getElementById('publicar-slug') as HTMLInputElement).value, 'titulo-de-prueba')
   assert.ok(document.querySelector('.modal-overlay')!.textContent!.includes(`/${new Date().getUTCFullYear()}/`), 'muestra la dirección completa')
   assert.equal(document.querySelector<HTMLInputElement>('input[name=cuando]:checked')?.closest('label')?.textContent?.trim(), 'Ahora')
-  assert.equal(document.getElementById('publicar-fecha'), null, 'la fecha solo aparece al programar')
+  assert.ok(document.getElementById('publicar-fecha') === null, 'la fecha solo aparece al programar')
   await escribir(document.getElementById('publicar-slug') as HTMLInputElement, 'mi-direccion')
   await clic(botonDelDialogo('Publicar')!)
   await hasta(() => !!boton('Despublicar'), 'el artículo ya publicado')
   assert.equal(pedidosPublicacion.length, 1)
   assert.equal(pedidosPublicacion[0]!.ruta, 'publicar')
   assert.deepEqual(pedidosPublicacion[0]!.cuerpo, { version: '2026-10-22T10:00:00.000Z', slug: 'mi-direccion', publicadoEn: null }, 'publicar ahora manda la versión, la dirección y fecha null')
-  assert.equal(document.getElementById('publicar-titulo'), null, 'la ventana se cerró')
+  assert.ok(document.getElementById('publicar-titulo') === null, 'la ventana se cerró')
   const banner = document.querySelector('.aviso-ok')!
   assert.ok(banner.textContent!.includes('Se publicó el artículo.'))
   assert.equal(banner.querySelector('a')?.getAttribute('href'), '/2026/10/22/titulo-de-prueba/', 'con el enlace al sitio')
@@ -928,7 +935,14 @@ await t('publicar cambios: un publicado con cambios ofrece "Publicar cambios" y 
   await hasta(() => !boton('Publicar cambios'), 'los cambios publicados')
   assert.deepEqual(pedidosPublicacion, [{ ruta: 'publicar-cambios', cuerpo: { version: '2026-10-22T10:00:00.000Z' } }])
   assert.ok(document.querySelector('.aviso-ok')?.textContent?.includes('Se publicaron los cambios.'))
-  assert.equal(document.querySelector('.aviso-alerta'), null, 'ya no dice que hay cambios sin publicar')
+  assert.ok(document.querySelector('.aviso-alerta') === null, 'ya no dice que hay cambios sin publicar')
+  // Seguir editando: el "Se publicaron los cambios" deja de valer en cuanto hay un cambio nuevo, y no convive con el aviso de cambios sin publicar
+  respuestaPut = { estado: 200, cuerpo: { estado: 'ok', version: '2026-10-22T12:00:00.000Z', conCambiosSinPublicar: true } }
+  await escribir(document.getElementById('titulo') as HTMLInputElement, 'Sigo editando después de publicar')
+  assert.ok(document.querySelector('.aviso-ok') === null, 'el aviso de "se publicaron" desaparece al editar')
+  await clic(boton('Guardar')!)
+  await hasta(() => !!document.querySelector('.aviso-alerta'), 'el aviso de cambios sin publicar')
+  assert.ok(document.querySelector('.aviso-ok') === null, 'y nunca se ven los dos a la vez')
 })
 
 await t('publicar cambios: lo que está sin guardar se guarda antes, y un rechazo muestra qué falta sin recargar', async () => {
@@ -936,9 +950,9 @@ await t('publicar cambios: lo que está sin guardar se guarda antes, y un rechaz
   // Guardar un publicado lo deja como borrador de cambios (como hace el servidor)
   respuestaPut = { estado: 200, cuerpo: { estado: 'ok', version: '2026-10-22T10:30:00.000Z', conCambiosSinPublicar: true } }
   await escribir(document.getElementById('titulo') as HTMLInputElement, 'Otro cambio todavía sin guardar')
-  respuestaAccion = { estado: 422, cuerpo: { estado: 'error', mensaje: 'Revisá el artículo antes de guardar.', problemas: ['Falta la imagen de encabezado.'] } }
+  respuestaAccion = { estado: 422, cuerpo: { estado: 'error', mensaje: 'Revisá el artículo antes de guardar.', problemas: ['Falta la imagen principal del artículo (la foto grande que va arriba, debajo del título).'] } }
   await clic(boton('Publicar cambios')!)
-  await hasta(() => document.querySelector('.aviso-error li')?.textContent === 'Falta la imagen de encabezado.', 'el motivo')
+  await hasta(() => document.querySelector('.aviso-error li')?.textContent === 'Falta la imagen principal del artículo (la foto grande que va arriba, debajo del título).', 'el motivo')
   assert.deepEqual(ordenPedidos, ['PUT', 'POST publicar-cambios'], 'primero se guarda y después se publica')
   assert.ok(boton('Publicar cambios'), 'sigue en el mismo artículo, sin recargar')
   respuestaAccion = { estado: 200, cuerpo: { estado: 'ok', version: '2026-10-22T11:00:00.000Z' } }
@@ -975,7 +989,7 @@ await t('programado: se ve cuándo sale y se puede cancelar la programación', a
   assert.ok(document.querySelector('.programado-fecha')?.textContent?.includes('2099'), 'dice cuándo sale')
   assert.equal(boton('Despublicar'), undefined)
   assert.ok(boton('Cancelar programación'))
-  assert.equal(document.querySelector('.ver-en-sitio'), null, 'todavía no tiene dirección pública')
+  assert.ok(document.querySelector('.ver-en-sitio') === null, 'todavía no tiene dirección pública')
   respuestaConfirm = true
   await clic(boton('Cancelar programación')!)
   await hasta(() => !!boton('Publicar…'), 'el borrador')

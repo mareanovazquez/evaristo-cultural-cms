@@ -141,20 +141,20 @@ try {
   const rev0 = await api("GET", `/articulos/${a1.id}/publicacion`);
   assert.equal(rev0.estado, 200);
   assert.equal(rev0.json["accion"], "publicar");
-  assert.match(problemasDe(rev0), /imagen de encabezado/);
+  assert.match(problemasDe(rev0), /imagen principal/);
   assert.match(problemasDe(rev0), /todavía no tiene texto/);
   assert.equal(rev0.json["slugPropuesto"], slugDesdeTitulo(titulo1), "propone la dirección desde el título");
   assert.equal(rev0.json["publicadoOriginal"], null);
   const noSale = await publicar(a1.id, a1.version);
   assert.equal(noSale.estado, 422);
-  assert.match(problemasDe(noSale), /imagen de encabezado/);
+  assert.match(problemasDe(noSale), /imagen principal/);
   assert.equal((await prisma.articulo.findUniqueOrThrow({ where: { id: a1.id } })).estado, "BORRADOR", "no se publicó");
 
-  // Sin texto alternativo en el encabezado
+  // Sin texto alternativo en la imagen principal
   let v1 = await guardar(a1.id, a1.version, datosCompletos(titulo1, { encabezadoAlt: null }));
   const sinAlt = await publicar(a1.id, v1);
   assert.equal(sinAlt.estado, 422);
-  assert.match(problemasDe(sinAlt), /texto alternativo de la imagen de encabezado/);
+  assert.match(problemasDe(sinAlt), /texto alternativo de la imagen principal/);
   // En una sección interna
   v1 = await guardar(a1.id, v1, datosCompletos(titulo1, { seccionId: secciones[0]!.id }));
   await prisma.articulo.update({ where: { id: a1.id }, data: { seccionId: interna.id } });
@@ -244,16 +244,16 @@ try {
   assert.equal(revC.json["accion"], "cambios");
   assert.deepEqual(revC.json["problemas"], []);
 
-  // Un cambio que no se puede publicar (le saca el encabezado) no cambia nada
+  // Un cambio que no se puede publicar (le saca la imagen principal) no cambia nada
   const vMalo = await guardar(a1.id, v1b, datosCompletos(tituloNuevo, { imagenEncabezadoId: null, encabezadoAlt: null }));
   const malos = await api("POST", `/articulos/${a1.id}/publicar-cambios`, { version: vMalo });
   assert.equal(malos.estado, 422);
-  assert.match(problemasDe(malos), /imagen de encabezado/);
+  assert.match(problemasDe(malos), /imagen principal/);
   assert.equal((await prisma.articulo.findUniqueOrThrow({ where: { id: a1.id } })).titulo, titulo1, "no se aplicó nada");
   assert.equal(await prisma.articuloBorrador.count({ where: { articuloId: a1.id } }), 1, "el borrador de cambios sigue ahí");
-  // Cambiar la imagen del encabezado exige su texto alternativo
+  // Cambiar la imagen principal exige su texto alternativo
   const vImg = await guardar(a1.id, vMalo, datosCompletos(tituloNuevo, { imagenEncabezadoId: imagenes[1]!.id, encabezadoAlt: null }));
-  assert.match(problemasDe(await api("POST", `/articulos/${a1.id}/publicar-cambios`, { version: vImg })), /texto alternativo de la imagen de encabezado/);
+  assert.match(problemasDe(await api("POST", `/articulos/${a1.id}/publicar-cambios`, { version: vImg })), /texto alternativo de la imagen principal/);
   // Con todo en orden
   const vOk = await guardar(a1.id, vImg, datosCompletos(tituloNuevo, { cuerpo: doc(P(T("Texto cambiado de la prueba."))), categoriaIds: [categorias[1]!.id], categoriaPrincipalId: categorias[1]!.id, autorIds: [autores[1]!.id, autores[0]!.id] }));
   assert.equal((await api("POST", `/articulos/${a1.id}/publicar-cambios`, { version: "2000-01-01T00:00:00.000Z" })).estado, 409, "versión vieja");

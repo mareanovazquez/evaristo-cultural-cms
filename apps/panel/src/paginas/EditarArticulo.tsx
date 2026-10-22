@@ -107,12 +107,14 @@ export function EditarArticulo() {
 
 type Falla = "red" | "invalido" | null;
 
-function Formulario({ articulo, catalogos, recargar, exito }: { articulo: ArticuloEditable; catalogos: Catalogos; recargar: (exito?: Exito) => void; exito: Exito | null }) {
+function Formulario({ articulo, catalogos, recargar, exito: exitoInicial }: { articulo: ArticuloEditable; catalogos: Catalogos; recargar: (exito?: Exito) => void; exito: Exito | null }) {
   useTitulo(`Editando: ${articulo.datos.titulo}`);
   const { sesionVencida } = useSesion();
   const [campos, setCampos] = useState<DatosArticulo>(articulo.datos);
   const [imagenEncabezado, setImagenEncabezado] = useState(articulo.imagenEncabezado);
   const [conCambiosSinPublicar, setConCambiosSinPublicar] = useState(articulo.conCambiosSinPublicar);
+  // El aviso de lo recién publicado vale solo en ese momento: desaparece con el primer cambio nuevo o al empezar otra acción.
+  const [exito, setExito] = useState<Exito | null>(exitoInicial);
   const [sucio, setSucio] = useState(false);
   const [cambiosN, setCambiosN] = useState(0);
   const [guardando, setGuardando] = useState(false);
@@ -148,6 +150,7 @@ function Formulario({ articulo, catalogos, recargar, exito }: { articulo: Articu
   const guardadoEn = useRef(0);
 
   const marcarCambio = useCallback(() => {
+    setExito(null);
     cambios.current += 1;
     setCambiosN(cambios.current);
     setSucio(true);
@@ -290,6 +293,7 @@ function Formulario({ articulo, catalogos, recargar, exito }: { articulo: Articu
   /** Una acción de publicación sobre un artículo ya guardado: pide confirmación, la manda con la versión y muestra lo que falte. */
   const accion = async (ruta: "publicar-cambios" | "despublicar", pregunta: string, exitoAlTerminar: () => Exito) => {
     if (accionando || !window.confirm(pregunta)) return;
+    setExito(null);
     setAviso(null);
     setProblemas([]);
     setAccionando(true);
@@ -414,7 +418,9 @@ function Formulario({ articulo, catalogos, recargar, exito }: { articulo: Articu
 
       {conCambiosSinPublicar && (
         <div className="aviso aviso-alerta" role="status">
-          <p>Este artículo tiene cambios sin publicar. El sitio sigue mostrando la versión publicada.</p>
+          <p>
+            Este artículo tiene cambios sin publicar. El sitio sigue mostrando la versión anterior, que no tiene estos cambios. Para que se vean, usá «Publicar cambios».
+          </p>
           <button type="button" className="boton boton-suave" disabled={descartando} onClick={() => void descartarCambios()}>
             {descartando ? "Descartando…" : "Descartar los cambios"}
           </button>
@@ -565,11 +571,12 @@ function Formulario({ articulo, catalogos, recargar, exito }: { articulo: Articu
           </fieldset>
 
           <fieldset className="grupo">
-            <legend>Imagen de encabezado</legend>
+            <legend>Imagen principal</legend>
+            <p className="ayuda">La foto grande que va arriba del artículo, debajo del título. Es obligatoria para publicar.</p>
             {imagenEncabezado ? (
               <img className="imagen-miniatura" src={urlImagen(imagenEncabezado.clave)} alt="" />
             ) : (
-              <p className="ayuda">Este artículo no tiene imagen de encabezado.</p>
+              <p className="ayuda">Este artículo todavía no tiene imagen principal.</p>
             )}
             <div className="acciones-fila">
               <button type="button" className="boton boton-suave" onClick={() => setEligiendoEncabezado(true)}>

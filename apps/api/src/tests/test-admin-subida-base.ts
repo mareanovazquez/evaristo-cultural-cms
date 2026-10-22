@@ -279,7 +279,7 @@ try {
   await prisma.articulo.update({ where: { id: articulo.id }, data: { cuerpo: { type: "doc", content: [{ type: "paragraph", content: [{ type: "text", text: "Hola" }] }] } as never, imagenEncabezadoId: img.id } });
   const enEncabezado = await pedir("DELETE", `/api/admin/imagenes/${img.id}`, { cookie });
   assert.equal(enEncabezado.estado, 409, "en uso como encabezado");
-  assert.match(enEncabezado.json["mensaje"], /el encabezado/);
+  assert.match(enEncabezado.json["mensaje"], /la imagen principal/);
   await prisma.articulo.update({ where: { id: articulo.id }, data: { imagenEncabezadoId: null } });
 
   // Solo en el borrador de cambios de un artículo publicado (el sitio todavía no la muestra, pero se perdería al publicar)
