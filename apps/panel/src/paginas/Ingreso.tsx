@@ -2,8 +2,10 @@ import { useState, type FormEvent } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router";
 import { ErrorApi } from "../api";
 import { useSesion } from "../sesion";
+import { useTitulo } from "../titulo";
 
 export function Ingreso() {
+  useTitulo("Ingresar");
   const { usuario, ingresar } = useSesion();
   const navegar = useNavigate();
   const ubicacion = useLocation();

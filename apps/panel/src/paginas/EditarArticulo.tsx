@@ -8,6 +8,7 @@ import { EditorCuerpo, textoDelEditor } from "../editor/EditorCuerpo";
 import { SelectorImagen } from "../editor/SelectorImagen";
 import { useAvisarAlSalir } from "../salida";
 import { useSesion } from "../sesion";
+import { useTitulo } from "../titulo";
 import type { DatosVistaPrevia } from "../vista-previa";
 import { posicionFocal } from "../vista-previa";
 import { VistaPrevia } from "../VistaPrevia";
@@ -96,6 +97,7 @@ export function EditarArticulo() {
 type Falla = "red" | "invalido" | null;
 
 function Formulario({ articulo, catalogos, recargar }: { articulo: ArticuloEditable; catalogos: Catalogos; recargar: () => void }) {
+  useTitulo(`Editando: ${articulo.datos.titulo}`);
   const { sesionVencida } = useSesion();
   const [campos, setCampos] = useState<DatosArticulo>(articulo.datos);
   const [imagenEncabezado, setImagenEncabezado] = useState(articulo.imagenEncabezado);

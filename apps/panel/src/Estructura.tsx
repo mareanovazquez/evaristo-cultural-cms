@@ -10,6 +10,9 @@ export function Estructura() {
 
   return (
     <>
+      <a className="salto-contenido" href="#contenido-panel">
+        Saltar al contenido
+      </a>
       <header className="barra">
         <Link to="/" className="barra-titulo">
           Panel de Evaristo Cultural
@@ -33,7 +36,7 @@ export function Estructura() {
           </button>
         </div>
       </header>
-      <main className="contenido">
+      <main className="contenido" id="contenido-panel" tabIndex={-1}>
         <Outlet />
       </main>
     </>

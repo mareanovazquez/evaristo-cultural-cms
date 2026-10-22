@@ -10,6 +10,7 @@ import { App } from '../App'
 import { ProveedorSesion } from '../sesion'
 import { canonico } from './comparar-cuerpos'
 import { tiempos } from '../autoguardado'
+import { lenguajeComun, problemasEnLenguajeComun } from '../mensajes'
 import { fuente } from '../VistaPrevia'
 import { htmlVistaPrevia } from '../vista-previa'
 
@@ -487,6 +488,91 @@ await t('vista previa: la letra capital se marca solo si está activada y el cue
   const base = { titulo: 'T', bajada: null, autores: [], fecha: '', cuerpo: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Había una vez' }] }] } }
   assert.ok(htmlVistaPrevia({ ...base, conCapital: true }, '').includes('con-capital'))
   assert.ok(!htmlVistaPrevia({ ...base, conCapital: false }, '').includes('con-capital'))
+})
+
+// ---- Etapa 4d: lenguaje común y accesibilidad ----
+
+await t('mensajes: los avisos técnicos del validador y los de zod pasan a lenguaje común', async () => {
+  const caso = (tecnico: string, patron: RegExp) => {
+    const texto = lenguajeComun(tecnico)
+    assert.match(texto, patron, tecnico)
+    assert.ok(!/content\[|doc\.|<|\$\./.test(texto), `sin rutas técnicas: ${texto}`)
+  }
+  caso('Imagen sin texto alternativo en doc.content[3]: completá el texto alternativo o marcala como decorativa.', /imagen sin texto alternativo/i)
+  caso('Una imagen nueva no puede quedar con el texto alternativo pendiente: completá el texto alternativo o marcala como decorativa.', /imagen nueva sin texto alternativo/i)
+  caso('Enlace con protocolo no permitido o inseguro: "javascript:x" en doc.content[0]', /enlace que no es válido/i)
+  caso('Video con proveedor no permitido: "otro" en doc.content[2]. Solo se admiten YouTube y Vimeo.', /YouTube ni de Vimeo/)
+  caso('Nota al pie vacía o sin estructura en doc.content[1].content[0]', /nota al pie vacía/i)
+  caso('<bulletList> vacío en doc.content[4]', /bloque vacío/i)
+  caso('Nodo no permitido: <rarito> en doc.content[1]', /formato esperado/i)
+  caso('Celda de tabla combinada no permitida (colspan/rowspan) en doc.content[2]', /tabla/i)
+  caso('Too small: expected string to have >=1 characters', /valor que no se acepta/i)
+  caso('Invalid input: expected number, received string', /valor que no se acepta/i)
+  // Lo que la API ya dice en lenguaje común pasa sin tocar
+  assert.equal(lenguajeComun('Escribí el título del artículo.'), 'Escribí el título del artículo.')
+  assert.equal(lenguajeComun('Ya hay un artículo con esa dirección. Elegí otra.'), 'Ya hay un artículo con esa dirección. Elegí otra.')
+  assert.deepEqual(problemasEnLenguajeComun(['Nodo no permitido: <a> en doc.content[0]', 'Nodo no permitido: <b> en doc.content[1]']).length, 1, 'sin repetidos')
+})
+
+await t('un 422 con avisos técnicos llega a la pantalla en lenguaje común', async () => {
+  await abrirBorrador()
+  respuestaPut = { estado: 422, cuerpo: { estado: 'error', mensaje: 'Revisá el artículo antes de guardar.', problemas: ['Imagen sin texto alternativo en doc.content[2]: completá el texto alternativo o marcala como decorativa.', 'Too small: expected string to have >=1 characters'] } }
+  await clic(boton('Guardar')!)
+  await hasta(() => document.querySelectorAll('.aviso-error li').length === 2, 'los avisos')
+  const texto = document.querySelector('.aviso-error')!.textContent!
+  assert.ok(texto.includes('Hay una imagen sin texto alternativo.'))
+  assert.ok(!/content\[|Too small/.test(texto), 'sin texto técnico ni en inglés')
+})
+
+await t('accesibilidad: título de la pestaña por pantalla y enlace para saltar al contenido', async () => {
+  await abrirBorrador()
+  assert.equal(document.title, 'Editando: Título de prueba · Panel de Evaristo Cultural')
+  const salto = document.querySelector('a.salto-contenido') as HTMLAnchorElement
+  assert.ok(salto && salto.getAttribute('href') === '#contenido-panel')
+  assert.ok(document.getElementById('contenido-panel'), 'el destino del enlace existe')
+  await irA('/articulos/nuevo')
+  await hasta(() => document.title.startsWith('Nuevo artículo'), 'el título de la pantalla de alta')
+})
+
+await t('accesibilidad: el nombre accesible de cada botón de la barra contiene el texto que se ve', async () => {
+  await abrirBorrador()
+  const botones = Array.from(document.querySelectorAll<HTMLButtonElement>('[role=toolbar] button.btn-tool'))
+  assert.ok(botones.length >= 20, 'hay botones en la barra')
+  for (const b of botones) {
+    const visible = (b.textContent ?? '').trim().toLowerCase()
+    const nombre = (b.getAttribute('aria-label') ?? '').toLowerCase()
+    assert.ok(nombre.length > 0, 'todo botón tiene nombre')
+    assert.ok(nombre.includes(visible), `"${b.getAttribute('aria-label')}" no contiene el texto visible "${visible}"`)
+  }
+  const conEstado = document.querySelectorAll('[role=toolbar] button[aria-pressed]')
+  assert.ok(conEstado.length >= 10, 'los botones de formato dicen si están activos')
+})
+
+await t('accesibilidad: el foco entra a las ventanas, no se escapa con Tab y vuelve al texto al cerrarlas', async () => {
+  await abrirBorrador()
+  const abridor = boton('Insertar una imagen de la biblioteca')!
+  abridor.focus()
+  await clic(abridor)
+  await hasta(() => !!boton('Elegir imagen'), 'la ventana de imagen')
+  const ventana = () => Array.from(document.querySelectorAll('.modal-overlay')).pop() as HTMLElement
+  await hasta(() => ventana().contains(document.activeElement), 'el foco dentro de la ventana')
+  assert.notEqual(document.activeElement?.className, 'btn-close', 'el foco inicial no es el botón de cerrar')
+  // Tab desde el último elemento vuelve al primero; Mayús+Tab desde el primero va al último
+  const lista = Array.from(ventana().querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled])'))
+  lista[lista.length - 1]!.focus()
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }))
+  assert.ok(document.activeElement === lista[0], 'Tab da la vuelta: el foco quedó en ' + document.activeElement?.outerHTML.slice(0, 80))
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true }))
+  assert.ok(document.activeElement === lista[lista.length - 1], 'Mayús+Tab da la vuelta hacia atrás: el foco quedó en ' + document.activeElement?.outerHTML.slice(0, 80))
+  // Si el foco quedó afuera, vuelve adentro
+  ;(document.querySelector('#titulo') as HTMLElement).focus()
+  document.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }))
+  assert.ok(ventana().contains(document.activeElement), 'no se puede salir de la ventana con Tab')
+  // Esc cierra y el foco vuelve a lo que lo tenía
+  window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }))
+  await hasta(() => !boton('Elegir imagen'), 'que se cierre la ventana')
+  // Insertar una imagen devuelve el foco al texto, y ahí es donde sigue escribiendo la persona.
+  assert.ok(document.activeElement === document.querySelector('.ProseMirror'), 'el foco vuelve al texto del artículo: quedó en ' + document.activeElement?.outerHTML.slice(0, 80))
 })
 
 console.log(`\n${ok} pruebas de la pantalla ok`)

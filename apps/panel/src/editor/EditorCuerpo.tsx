@@ -8,6 +8,7 @@ import { ImagenDialog } from './ImagenDialog'
 import { VideoDialog } from './VideoDialog'
 import type { ImagenAttributes } from './imagen'
 import { guardarAtributosImagen, sinAltPendienteFalso } from './imagen-alt'
+import { useAtraparFoco } from './useAtraparFoco'
 
 interface EditorCuerpoProps {
   /** Texto con el que se abre el editor. Después el editor es el dueño del contenido (no se vuelve a cargar). */
@@ -83,6 +84,7 @@ export function EditorCuerpo({ contenido, onCambio, onEditor, onVentanaAbierta }
   }, [editor, onEditor])
 
   const hayVentana = nota.abierta || imagen.abierta || videoAbierto
+  useAtraparFoco(hayVentana)
   useEffect(() => {
     onVentanaAbierta?.(hayVentana)
   }, [hayVentana, onVentanaAbierta])
@@ -213,9 +215,9 @@ export function EditorCuerpo({ contenido, onCambio, onEditor, onVentanaAbierta }
       <div className="toolbar-container" role="toolbar" aria-label="Herramientas del editor">
         <div className="toolbar-group">
           <Herramienta activo={estado.parrafo} titulo="Párrafo normal" onClick={() => cadena().setParagraph().run()}>Párrafo</Herramienta>
-          <Herramienta activo={estado.h2} titulo="Título grande (nivel 2)" onClick={() => cadena().toggleHeading({ level: 2 }).run()}>Título 2</Herramienta>
-          <Herramienta activo={estado.h3} titulo="Título mediano (nivel 3)" onClick={() => cadena().toggleHeading({ level: 3 }).run()}>Título 3</Herramienta>
-          <Herramienta activo={estado.h4} titulo="Título chico (nivel 4)" onClick={() => cadena().toggleHeading({ level: 4 }).run()}>Título 4</Herramienta>
+          <Herramienta activo={estado.h2} titulo="Título 2 (grande)" onClick={() => cadena().toggleHeading({ level: 2 }).run()}>Título 2</Herramienta>
+          <Herramienta activo={estado.h3} titulo="Título 3 (mediano)" onClick={() => cadena().toggleHeading({ level: 3 }).run()}>Título 3</Herramienta>
+          <Herramienta activo={estado.h4} titulo="Título 4 (chico)" onClick={() => cadena().toggleHeading({ level: 4 }).run()}>Título 4</Herramienta>
         </div>
         <div className="toolbar-group">
           <Herramienta activo={estado.negrita} titulo="Negrita (Ctrl+B)" onClick={() => cadena().toggleBold().run()}><strong>N</strong></Herramienta>
@@ -229,8 +231,8 @@ export function EditorCuerpo({ contenido, onCambio, onEditor, onVentanaAbierta }
         </div>
         <div className="toolbar-group">
           <Herramienta activo={estado.izquierda} titulo="Alinear a la izquierda" onClick={() => cadena().setTextAlign('left').run()}>Izquierda</Herramienta>
-          <Herramienta activo={estado.centro} titulo="Centrar" onClick={() => cadena().setTextAlign('center').run()}>Centro</Herramienta>
-          <Herramienta activo={estado.justificado} titulo="Justificar" onClick={() => cadena().setTextAlign('justify').run()}>Justificado</Herramienta>
+          <Herramienta activo={estado.centro} titulo="Alinear al centro" onClick={() => cadena().setTextAlign('center').run()}>Centro</Herramienta>
+          <Herramienta activo={estado.justificado} titulo="Texto justificado" onClick={() => cadena().setTextAlign('justify').run()}>Justificado</Herramienta>
         </div>
         <div className="toolbar-group">
           <Herramienta activo={estado.citaTextual} titulo="Cita textual, con autor y fuente" onClick={() => cadena().toggleCita({ variante: 'textual' }).run()}>Cita</Herramienta>

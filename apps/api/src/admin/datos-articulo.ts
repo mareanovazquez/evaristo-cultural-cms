@@ -29,19 +29,19 @@ export const DatosSchema = z
     bajada: z.string().trim().max(2000, "La bajada es demasiado larga (máximo 2.000 caracteres).").nullable(),
     cuerpo: CuerpoSchema,
     seccionId: Id,
-    categoriaIds: z.array(Id).max(30),
+    categoriaIds: z.array(Id).max(30, "Hay demasiadas categorías (el máximo es 30)."),
     categoriaPrincipalId: Id.nullable(),
-    autorIds: z.array(Id).max(20),
+    autorIds: z.array(Id).max(20, "Hay demasiados autores (el máximo es 20)."),
     imagenEncabezadoId: Id.nullable(),
-    encabezadoAlt: z.string().trim().max(2000).nullable(),
-    encabezadoCredito: z.string().trim().max(255).nullable(),
-    encabezadoPuntoFocalX: z.number().min(0).max(1),
-    encabezadoPuntoFocalY: z.number().min(0).max(1),
+    encabezadoAlt: z.string().trim().max(2000, "El texto alternativo del encabezado es demasiado largo (máximo 2.000 caracteres).").nullable(),
+    encabezadoCredito: z.string().trim().max(255, "El crédito del encabezado es demasiado largo (máximo 255 caracteres).").nullable(),
+    encabezadoPuntoFocalX: z.number().min(0, "El punto focal tiene que estar entre 0 y 100.").max(1, "El punto focal tiene que estar entre 0 y 100."),
+    encabezadoPuntoFocalY: z.number().min(0, "El punto focal tiene que estar entre 0 y 100.").max(1, "El punto focal tiene que estar entre 0 y 100."),
     conCapital: z.boolean(),
     novedadHasta: z.string().datetime().nullable(),
     // Solo se puede cambiar mientras el artículo es BORRADOR: el de uno publicado es su dirección pública.
     // El formato estricto (SlugSchema) se exige solo cuando cambia; los migrados pueden traer uno que no lo cumpla y tienen que poder guardarse.
-    slug: z.string().min(1).max(255).optional(),
+    slug: z.string().min(1, "La dirección del artículo no puede quedar vacía.").max(255, "La dirección del artículo es demasiado larga.").optional(),
   })
   .strict();
 

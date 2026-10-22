@@ -2,9 +2,11 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router";
 import { ErrorApi, pedirApi, type Catalogos } from "../api";
 import { useSesion } from "../sesion";
+import { useTitulo } from "../titulo";
 
 // Alta de un artículo: solo título y sección. Se crea como borrador y se sigue en la pantalla de edición.
 export function NuevoArticulo() {
+  useTitulo("Nuevo artículo");
   const { sesionVencida } = useSesion();
   const navegar = useNavigate();
   const [secciones, setSecciones] = useState<Catalogos["secciones"] | null>(null);

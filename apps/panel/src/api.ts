@@ -1,5 +1,6 @@
 // Llamadas a la API del panel. Los errores salen con un mensaje en lenguaje común, listo para mostrar.
 import type { JSONNode } from "@evaristo/compartido/schema";
+import { problemasEnLenguajeComun } from "./mensajes";
 
 export class ErrorApi extends Error {
   constructor(
@@ -38,7 +39,7 @@ export async function pedirApi<T>(ruta: string, opciones: { metodo?: string; cue
   }
   const datos = (await respuesta.json().catch(() => null)) as { mensaje?: string; problemas?: unknown } | null;
   if (!respuesta.ok) {
-    const problemas = Array.isArray(datos?.problemas) ? datos.problemas.filter((p): p is string => typeof p === "string") : [];
+    const problemas = Array.isArray(datos?.problemas) ? problemasEnLenguajeComun(datos.problemas.filter((p): p is string => typeof p === "string")) : [];
     throw new ErrorApi(respuesta.status, datos?.mensaje ?? mensajePorEstado(respuesta.status), problemas);
   }
   return datos as T;

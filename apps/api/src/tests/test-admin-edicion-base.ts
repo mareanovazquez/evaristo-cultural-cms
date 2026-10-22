@@ -198,8 +198,13 @@ try {
   await guardarMal({ autorIds: [999999] }, 422, /autor/);
   await guardarMal({ imagenEncabezadoId: 999999 }, 422, /imagen/i);
   await guardarMal({ cuerpo: doc({ type: "imagen", attrs: { src: "/media/x.jpg", alt: "Algo", imagenId: 999999 } }) }, 422, /biblioteca/);
-  await guardarMal({ encabezadoPuntoFocalX: 1.5 });
-  await guardarMal({ encabezadoPuntoFocalY: -0.1 });
+  // Los avisos de la forma están en lenguaje común (nunca el texto por defecto de zod, en inglés)
+  await guardarMal({ encabezadoPuntoFocalX: 1.5 }, 422, /entre 0 y 100/);
+  await guardarMal({ encabezadoPuntoFocalY: -0.1 }, 422, /entre 0 y 100/);
+  await guardarMal({ categoriaIds: Array.from({ length: 31 }, (_, i) => i + 1), categoriaPrincipalId: null }, 422, /demasiadas categorías/);
+  await guardarMal({ autorIds: Array.from({ length: 21 }, (_, i) => i + 1) }, 422, /demasiados autores/);
+  await guardarMal({ slug: "" }, 422, /no puede quedar vacía/);
+  await guardarMal({ encabezadoCredito: "x".repeat(256) }, 422, /crédito/);
   await guardarMal({ novedadHasta: "mañana" });
   await guardarMal({ campoDeMas: 1 });
   await guardarMal({ conCapital: "si" });

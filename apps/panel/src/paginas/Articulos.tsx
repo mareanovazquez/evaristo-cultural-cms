@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router";
 import { ErrorApi, pedirApi, type EstadoArticulo, type RespuestaLista } from "../api";
 import { useSesion } from "../sesion";
+import { useTitulo } from "../titulo";
 
 const NOMBRES: Record<EstadoArticulo, string> = { PUBLICADO: "Publicado", BORRADOR: "Borrador", PROGRAMADO: "Programado" };
 const SOLAPAS: Array<{ estado: EstadoArticulo | null; titulo: string }> = [
@@ -19,6 +20,7 @@ function estadoValido(v: string | null): EstadoArticulo | null {
 }
 
 export function Articulos() {
+  useTitulo("Artículos");
   const { sesionVencida } = useSesion();
   const [params, setParams] = useSearchParams();
   const estado = estadoValido(params.get("estado"));

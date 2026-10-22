@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { ErrorApi, pedirApi, urlImagen, type ImagenDeLista, type RespuestaImagenes } from '../api'
+import { useAtraparFoco } from './useAtraparFoco'
 
 interface SelectorImagenProps {
   onElegir: (imagen: ImagenDeLista) => void
@@ -34,6 +35,8 @@ export function SelectorImagen({ onElegir, onCancelar }: SelectorImagenProps) {
       })
     return () => control.abort()
   }, [q, pagina])
+
+  useAtraparFoco(true)
 
   useEffect(() => {
     const alApretar = (e: KeyboardEvent) => {
