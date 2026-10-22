@@ -492,8 +492,10 @@
 }
 .visor::backdrop {
   background: rgba(20, 18, 18, 0.93);
+  animation: visor-fondo 0.25s ease-out;
 }
 .visor[open] {
+  animation: visor-aparece 0.25s ease-out;
   display: grid;
   grid-template-rows: auto 1fr;
   justify-items: center;
@@ -516,6 +518,9 @@
   max-width: 92vw;
   text-align: center;
 }
+.visor[open] .visor-figura {
+  animation: visor-figura 0.28s ease-out;
+}
 .visor-imagen {
   display: block;
   max-width: 92vw;
@@ -530,30 +535,50 @@
   line-height: 1.4;
   color: #eee;
 }
+/* Botones chicos y discretos: casi transparentes hasta que se les pasa el mouse o se les da el foco */
 .visor-cerrar,
 .visor-anterior,
 .visor-siguiente {
+  display: grid;
+  place-items: center;
   font: inherit;
-  color: #fff;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 50%;
-  width: 48px;
-  height: 48px;
-  font-size: 28px;
+  font-size: 20px;
   line-height: 1;
+  padding: 0 0 2px;
+  width: 34px;
+  height: 34px;
+  color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
   cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 .visor-cerrar:hover,
 .visor-anterior:hover,
 .visor-siguiente:hover {
-  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.45);
 }
 .visor-cerrar:focus-visible,
 .visor-anterior:focus-visible,
 .visor-siguiente:focus-visible {
-  outline: 3px solid #fff;
+  color: #fff;
+  outline: 2px solid #fff;
   outline-offset: 2px;
+}
+/* En pantallas táctiles un poco más grandes, para poder tocarlos bien */
+@media (pointer: coarse) {
+  .visor-cerrar,
+  .visor-anterior,
+  .visor-siguiente {
+    width: 40px;
+    height: 40px;
+  }
 }
 .visor-anterior,
 .visor-siguiente {
@@ -577,5 +602,46 @@
     top: auto;
     bottom: var(--space-4);
     transform: none;
+  }
+}
+
+/* Entrada suave del visor: el fondo y el contenido aparecen, y la imagen se acomoda con un leve zoom */
+@keyframes visor-fondo {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes visor-aparece {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes visor-figura {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .visor[open],
+  .visor::backdrop,
+  .visor[open] .visor-figura {
+    animation: none;
+  }
+  .galeria-abrir img,
+  .visor-cerrar,
+  .visor-anterior,
+  .visor-siguiente {
+    transition: none;
   }
 }
