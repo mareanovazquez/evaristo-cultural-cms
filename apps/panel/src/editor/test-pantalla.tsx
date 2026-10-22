@@ -13,6 +13,7 @@ import { tiempos } from '../autoguardado'
 import { lenguajeComun, problemasEnLenguajeComun } from '../mensajes'
 import { fuente } from '../VistaPrevia'
 import { htmlVistaPrevia } from '../vista-previa'
+import { renderArticleBody } from '@evaristo/compartido/render'
 
 ;(globalThis as Record<string, unknown>).IS_REACT_ACT_ENVIRONMENT = true
 
@@ -630,6 +631,20 @@ await t('cita: las citas guardadas con la variante anterior (textual o destacada
   const ctx = (guardados[0] as { datos: { cuerpo: { content: Array<{ attrs: J }> } } }).datos.cuerpo.content
   assert.deepEqual([ctx[0]!.attrs['variante'], ctx[1]!.attrs['variante']], ['textual', 'destacada'], 'la variante heredada se conserva en los datos')
   cuerpoServido = cuerpoOriginal
+})
+
+await t('vista previa: los videos no usan iframe (el sandbox sin scripts bloquea el reproductor): recuadro con miniatura y enlace', async () => {
+  const cuerpo = { type: 'doc', content: [{ type: 'video', attrs: { provider: 'youtube', id: 'dQw4w9WgXcQ' } }, { type: 'video', attrs: { provider: 'vimeo', id: '76979871' } }] }
+  const doc = htmlVistaPrevia({ titulo: 'T', bajada: null, autores: [], fecha: '', cuerpo, conCapital: false }, '')
+  assert.ok(!doc.includes('<iframe'), 'ningún reproductor embebido')
+  assert.equal((doc.match(/class="video-previa"/g) ?? []).length, 2, 'los dos videos tienen su recuadro')
+  assert.ok(doc.includes('href="https://www.youtube.com/watch?v=dQw4w9WgXcQ"') && doc.includes('https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg'), 'YouTube: enlace y miniatura')
+  assert.ok(doc.includes('href="https://vimeo.com/76979871"') && doc.includes('Video de Vimeo'), 'Vimeo: enlace')
+  assert.ok(doc.includes('target="_blank"'), 'abre en otra pestaña')
+  // El renderizador del sitio sí sigue emitiendo el reproductor
+  assert.ok(renderArticleBody(cuerpo as never).html.includes('<iframe src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"'))
+  // Un video inválido no deja nada (lo decide el renderizador)
+  assert.ok(!htmlVistaPrevia({ titulo: 'T', bajada: null, autores: [], fecha: '', cuerpo: { type: 'doc', content: [{ type: 'video', attrs: { provider: 'otro', id: 'x' } }] }, conCapital: false }, '').includes('video-previa'))
 })
 
 console.log(`\n${ok} pruebas de la pantalla ok`)

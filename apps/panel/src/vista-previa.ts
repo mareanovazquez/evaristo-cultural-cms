@@ -31,8 +31,32 @@ const FUENTES =
 /** Los enlaces del texto se abren en otra pestaña (la vista previa no tiene a dónde navegar); los internos (#nota) quedan. */
 const enlacesAfuera = (html: string): string => html.replace(/<a href="(?!#)/g, '<a target="_blank" rel="noopener noreferrer" href="');
 
+/**
+ * La vista previa no ejecuta scripts (iframe con sandbox y sin allow-scripts), y el reproductor de YouTube o Vimeo los necesita:
+ * un iframe adentro de otro con sandbox hereda sus restricciones. En su lugar se muestra un recuadro 16:9 con la miniatura (YouTube)
+ * y un enlace para abrir el video. El reproductor real se ve en el sitio.
+ */
+const VIDEO_EMBEBIDO = /<figure class="video"><iframe src="(https:\/\/(?:www\.youtube-nocookie\.com\/embed\/([A-Za-z0-9_-]+)|player\.vimeo\.com\/video\/(\d+)))"[^>]*><\/iframe><\/figure>/g;
+
+export function videosSinScripts(html: string): string {
+  return html.replace(VIDEO_EMBEBIDO, (_todo, _src: string, idYoutube: string | undefined, idVimeo: string | undefined) => {
+    const youtube = idYoutube !== undefined;
+    const id = (youtube ? idYoutube : idVimeo)!;
+    const proveedor = youtube ? "YouTube" : "Vimeo";
+    const enlace = youtube ? `https://www.youtube.com/watch?v=${id}` : `https://vimeo.com/${id}`;
+    const miniatura = youtube ? `url(https://i.ytimg.com/vi/${id}/hqdefault.jpg)` : "none";
+    return (
+      `<figure class="video"><a class="video-previa" href="${escapeHtml(enlace)}" target="_blank" rel="noopener noreferrer" ` +
+      `style="display:flex;align-items:center;justify-content:center;width:100%;aspect-ratio:16/9;background:#111 ${miniatura} center/cover no-repeat;color:#fff;text-decoration:none;text-align:center;font:600 16px/1.4 system-ui,sans-serif">` +
+      `<span style="background:rgba(0,0,0,.7);padding:.6rem 1rem;border-radius:4px">▶ Video de ${proveedor}<br>` +
+      `<small style="font-weight:400">En la vista previa no se reproduce; en el sitio sí. Hacé clic para abrirlo.</small></span></a></figure>`
+    );
+  });
+}
+
 export function htmlVistaPrevia(d: DatosVistaPrevia, hojas: string): string {
-  const { html, notesHtml } = renderArticleBody(d.cuerpo, { conCapital: d.conCapital });
+  const { html: cuerpoHtml, notesHtml } = renderArticleBody(d.cuerpo, { conCapital: d.conCapital });
+  const html = videosSinScripts(cuerpoHtml);
   const autores = d.autores.length > 0 ? `Por ${escapeHtml(d.autores.length > 1 ? `${d.autores.slice(0, -1).join(", ")} y ${d.autores[d.autores.length - 1]}` : d.autores[0]!)}` : "";
   const meta = [autores, d.fecha ? `<time>${escapeHtml(d.fecha)}</time>` : ""].filter(Boolean).join(" · ");
   const encabezado = d.encabezado
