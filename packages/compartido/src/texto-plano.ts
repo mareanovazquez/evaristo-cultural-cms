@@ -38,5 +38,6 @@ export function textoPlanoDe(doc: DocNode): string {
   };
   bloque(doc);
   cerrar();
-  return lineas.join("\n");
+  // Sin el guion blando (U+00AD) ni otros caracteres invisibles: parten las palabras en el índice del buscador («bi­blioteca» no se encontraría).
+  return lineas.join("\n").replace(/[­​-‏‪-‮⁠﻿]/g, "");
 }

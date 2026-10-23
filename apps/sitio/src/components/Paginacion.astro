@@ -5,9 +5,11 @@ interface Props {
   base: string;
   pagina: number;
   paginas: number;
+  /** Parámetros que hay que conservar en cada enlace, ya codificados (por ejemplo `q=borges`, en el buscador). */
+  parametros?: string;
 }
-const { base, pagina, paginas } = Astro.props;
-const enlace = (n: number) => (n === 1 ? base : `${base}?pagina=${n}`);
+const { base, pagina, paginas, parametros } = Astro.props;
+const enlace = (n: number) => (n === 1 ? (parametros ? `${base}?${parametros}` : base) : `${base}?${parametros ? `${parametros}&` : ""}pagina=${n}`);
 ---
 
 {

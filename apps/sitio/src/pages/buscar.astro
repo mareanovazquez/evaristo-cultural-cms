@@ -1,0 +1,88 @@
+---
+import Base from "../layouts/Base.astro";
+import Paginacion from "../components/Paginacion.astro";
+import Tarjeta from "../components/Tarjeta.astro";
+import { esNovedad, fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../lib/articulos";
+import { buscar, extractoConResaltado, faltaElIndice, interpretarConsulta, LARGO_MINIMO, type Resultado } from "../lib/busqueda";
+import { cantidadDePaginas, paginaPedida } from "../lib/paginacion";
+
+// Buscador: /buscar/?q=… Solo notas publicadas; todas las palabras tienen que estar; entre comillas, una frase. Los resultados no se indexan.
+const q = Astro.url.searchParams.get("q");
+const pagina = paginaPedida(Astro.url.searchParams.get("pagina"));
+const consulta = interpretarConsulta(q);
+let total = 0;
+let resultados: Resultado[] = [];
+let disponible = true;
+if (consulta) {
+  try {
+    ({ total, resultados } = await buscar(consulta, pagina));
+  } catch (error) {
+    // Una base sin el índice de texto completo (todavía no se aplicó la migración de la fase 6): se avisa, sin romper la página.
+    if (!faltaElIndice(error)) throw error;
+    disponible = false;
+    Astro.response.status = 503;
+  }
+}
+const paginas = cantidadDePaginas(total);
+if (consulta && disponible && total > 0 && pagina > paginas) return Astro.rewrite("/404");
+const hayTexto = !!(q && q.trim());
+---
+
+<Base titulo={consulta ? `Buscar: ${consulta.texto}` : "Buscar"} descripcion="Buscador de Evaristo Cultural." noindex>
+  <section class="section">
+    <h1 class="titulo-pagina">Buscar</h1>
+    <form class="buscador" role="search" action="/buscar/" method="get">
+      <label class="sr-only" for="buscar-q">Buscar en la revista</label>
+      <input id="buscar-q" type="search" name="q" value={consulta?.texto ?? q?.slice(0, 120) ?? ""} maxlength="120" placeholder="Autor, título o tema" autocomplete="off" />
+      <button type="submit" class="btn btn--primary">Buscar</button>
+    </form>
+
+    {
+      !hayTexto && <p class="ayuda-busqueda">Escribí el nombre de un autor, el título de una nota o un tema. Entre comillas, la búsqueda es de una frase exacta: «"cien años de soledad"».</p>
+    }
+    {
+      hayTexto && !consulta && (
+        <p class="aviso-busqueda" role="status">
+          Escribí al menos una palabra de {LARGO_MINIMO} letras o más.
+        </p>
+      )
+    }
+    {
+      consulta && !disponible && (
+        <p class="aviso-busqueda" role="status">
+          El buscador no está disponible por el momento. Probá de nuevo en un rato.
+        </p>
+      )
+    }
+    {
+      consulta && disponible && total === 0 && (
+        <p class="aviso-busqueda" role="status">
+          No encontramos notas para «{consulta.texto}». Probá con menos palabras, o revisá cómo está escrito el nombre.
+        </p>
+      )
+    }
+    {
+      consulta && disponible && total > 0 && (
+        <>
+          <p class="cuenta-listado" role="status">
+            {total === 1 ? "1 resultado" : `${total} resultados`} para «{consulta.texto}»
+          </p>
+          <div class="grilla">
+            {resultados.map(({ nota, extracto, alInicio }) => (
+              <Tarjeta
+                href={rutaArticulo({ slug: nota.slug, publicadoEn: nota.publicadoEn! })}
+                titulo={nota.titulo}
+                seccion={nota.seccion.interna ? undefined : nota.seccion.nombre}
+                novedad={esNovedad(nota.novedadHasta)}
+                imagen={nota.imagenEncabezado ? { src: urlMedia(nota.imagenEncabezado.clave), posicion: posicionFocal(nota.encabezadoPuntoFocalX, nota.encabezadoPuntoFocalY) } : undefined}
+                extracto={extracto ? extractoConResaltado(extracto, consulta, alInicio) : undefined}
+                meta={`${nota.autores.length ? `Por ${nota.autores.map((x) => x.autor.nombre).join(", ")} · ` : ""}${fechaLarga(nota.publicadoEn!)}`}
+              />
+            ))}
+          </div>
+          <Paginacion base="/buscar/" parametros={`q=${encodeURIComponent(consulta.texto)}`} pagina={pagina} paginas={paginas} />
+        </>
+      )
+    }
+  </section>
+</Base>

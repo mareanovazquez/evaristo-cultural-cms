@@ -158,6 +158,9 @@ model Articulo {
   @@index([estado, publicadoEn])
   @@index([seccionId, publicadoEn])
   @@index([altPendientes])
+  // Buscador del sitio (fase 6): texto completo sobre título, bajada y texto plano; y uno solo sobre el título para darle más peso.
+  @@fulltext([titulo, bajada, textoPlano], map: "articulos_busqueda")
+  @@fulltext([titulo], map: "articulos_busqueda_titulo")
   @@map("articulos")
 }
 

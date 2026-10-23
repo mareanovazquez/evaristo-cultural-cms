@@ -23,6 +23,7 @@
     "test:seguridad": "tsx --env-file=../../.env src/tests/test-seguridad-base.ts",
     "test:portada": "tsx --env-file=../../.env src/tests/test-portada-base.ts",
     "test:carrusel": "tsx --env-file=../../.env src/tests/test-carrusel-base.ts",
+    "test:busqueda": "tsx --env-file=../../.env src/tests/test-busqueda-base.ts",
     "test:admin-usuarios": "tsx --env-file=../../.env src/tests/test-admin-usuarios-base.ts",
     "test:admin-galeria-ficha": "tsx --env-file=../../.env src/tests/test-admin-galeria-ficha-base.ts",
     "test:categorias": "tsx --env-file=../../.env src/tests/test-categorias.ts",

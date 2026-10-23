@@ -648,3 +648,138 @@
 .logo-titulo {
   display: contents;
 }
+
+/* ---------- Botón (la maqueta: .btn--primary, ver docs/decisiones-de-diseno.md) ---------- */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 44px;
+  padding: 0 20px;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  color: var(--text);
+  white-space: nowrap;
+  border: 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.btn:hover {
+  color: var(--text);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--accent-700);
+  outline-offset: 2px;
+}
+.btn--primary {
+  background: var(--accent-500);
+}
+.btn--primary:hover {
+  background: var(--accent-600);
+}
+
+
+/* ---------- Botón de búsqueda del encabezado ---------- */
+.buscar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--text);
+  border-radius: var(--radius);
+}
+.buscar:hover,
+.buscar[aria-current="page"] {
+  background: var(--surface);
+}
+.buscar:focus-visible {
+  outline: 2px solid var(--accent-700);
+  outline-offset: 2px;
+}
+.buscar .icon {
+  width: 22px;
+  height: 22px;
+}
+@media (max-width: 859px) {
+  .buscar {
+    margin-left: auto;
+    margin-right: calc(var(--space-4) * -1);
+  }
+  .menu-movil {
+    margin-left: 0;
+  }
+}
+
+/* ---------- Etiquetas de una tarjeta (sección y novedad) y extracto de una búsqueda ---------- */
+.tarjeta .etiquetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.etiqueta-novedad {
+  color: #fefefc;
+  background: var(--accent-900);
+}
+.tarjeta .extracto {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+.extracto mark {
+  padding: 0 1px;
+  color: inherit;
+  background: var(--accent-200);
+  border-radius: 2px;
+}
+
+/* ---------- Buscador ---------- */
+.buscador {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  max-width: 680px;
+  margin: 0 0 var(--space-6);
+}
+.buscador input[type="search"] {
+  flex: 1 1 16rem;
+  min-width: 0;
+  height: 52px;
+  padding: 0 var(--space-4);
+  font-family: var(--font-sans);
+  font-size: 18px;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius);
+}
+.buscador input[type="search"]:focus-visible {
+  outline: 2px solid var(--accent-700);
+  outline-offset: 2px;
+}
+.buscador .btn {
+  height: 52px;
+  padding: 0 24px;
+  font-size: 16px;
+}
+.ayuda-busqueda {
+  max-width: 680px;
+  margin: 0 0 var(--space-6);
+  color: var(--text-muted);
+  font-size: 15px;
+}
+.aviso-busqueda {
+  max-width: 680px;
+  margin: 0 0 var(--space-6);
+  padding: var(--space-4);
+  background: var(--surface);
+  border-radius: var(--radius);
+}

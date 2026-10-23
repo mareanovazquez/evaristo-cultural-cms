@@ -6,15 +6,20 @@ interface Props {
   seccion?: string | undefined;
   imagen?: { src: string; posicion: string } | undefined;
   meta?: string | undefined;
+  /** La nota cuenta como novedad: se marca con una etiqueta. */
+  novedad?: boolean | undefined;
+  /** Un pedazo del texto (HTML ya escapado, con lo buscado entre <mark>), en los resultados de una búsqueda. */
+  extracto?: string | undefined;
 }
-const { href, titulo, seccion, imagen, meta } = Astro.props;
+const { href, titulo, seccion, imagen, meta, novedad = false, extracto } = Astro.props;
 ---
 
 <article class="tarjeta">
   {imagen ? <img class="img" src={imagen.src} alt="" style={`object-position: ${imagen.posicion}`} loading="lazy" /> : <div class="img"></div>}
   <div class="tarjeta-texto">
-    {seccion && <span class="etiqueta">{seccion}</span>}
+    {(seccion || novedad) && <div class="etiquetas">{seccion && <span class="etiqueta">{seccion}</span>}{novedad && <span class="etiqueta etiqueta-novedad">Novedad</span>}</div>}
     <h3><a href={href}>{titulo}</a></h3>
+    {extracto && <p class="extracto" set:html={extracto} />}
     {meta && <p class="meta">{meta}</p>}
   </div>
 </article>

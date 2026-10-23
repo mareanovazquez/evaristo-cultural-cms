@@ -12,6 +12,9 @@ export const posicionFocal = (x: number, y: number): string => {
   return `${Math.round(limitar(x) * 100)}% ${Math.round(limitar(y) * 100)}%`;
 };
 
+/** ¿La nota cuenta como novedad? Su fecha `novedadHasta` todavía no pasó (los migrados no tienen fecha). */
+export const esNovedad = (novedadHasta: Date | null | undefined, ahora: Date = new Date()): boolean => !!novedadHasta && novedadHasta > ahora;
+
 // Un artículo se ve solo si está PUBLICADO y su fecha ya llegó.
 const visibles = () => ({ estado: "PUBLICADO" as const, publicadoEn: { lte: new Date() } });
 
@@ -65,10 +68,13 @@ export async function medidasDeImagenes(ids: number[]): Promise<Map<number, { an
   return new Map(filas.map((f) => [f.id, { ancho: f.ancho, alto: f.alto }]));
 }
 
-const seleccionTarjeta = {
+/** Lo que necesita una tarjeta de nota (listados, buscador, relacionados). */
+export const seleccionTarjeta = {
+  id: true,
   slug: true,
   titulo: true,
   publicadoEn: true,
+  novedadHasta: true,
   seccion: { select: { nombre: true, interna: true } },
   imagenEncabezado: { select: { clave: true } },
   encabezadoPuntoFocalX: true,
