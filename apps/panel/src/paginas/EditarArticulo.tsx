@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/core";
 import { renderArticleBody } from "@evaristo/compartido/render";
-import { Link, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import { tienePermiso } from "@evaristo/compartido/permisos";
 import { ErrorApi, pedirApi, urlImagen, type ArticuloEditable, type Catalogos, type DatosArticulo, type ImagenDeLista, type RespuestaPublicar } from "../api";
 import { EditorFicha, EditorGaleria, fichaParaEnviar, type Miniatura } from "../GaleriaYFicha";
 import { PublicarDialog } from "../PublicarDialog";
+import { eliminarArticulo } from "../eliminar-articulo";
 import { tiempos } from "../autoguardado";
 import { EditorCuerpo, textoDelEditor } from "../editor/EditorCuerpo";
 import { SelectorImagen } from "../editor/SelectorImagen";
@@ -394,6 +395,7 @@ function Formulario({ articulo, catalogos: catalogosBase, recargar, exito: exito
   const autoresDisponibles = catalogos.autores.filter((a) => !campos.autorIds.includes(a.id) && sinTildes(a.nombre).includes(sinTildes(filtroAutor.trim())));
   const hayAutoresParaElegir = catalogos.autores.some((a) => !campos.autorIds.includes(a.id));
   const puedeCrearAutor = !!usuario && tienePermiso(usuario.rol, "autores.crear");
+  const puedeEliminarArticulo = !!usuario && tienePermiso(usuario.rol, "articulos.eliminar");
   const crearAutor = async () => {
     setErrorAutorNuevo(null);
     if (!nombreAutorNuevo.trim()) {
@@ -732,6 +734,7 @@ function Formulario({ articulo, catalogos: catalogosBase, recargar, exito: exito
             </div>
           </fieldset>
 
+          {puedeEliminarArticulo && <EliminarArticulo articuloId={articulo.id} titulo={articulo.datos.titulo} esBorrador={esBorrador} />}
           {catalogos.usuarios.length > 0 && <PasarArticulo articuloId={articulo.id} creadoPor={articulo.creadoPor} usuarios={catalogos.usuarios} />}
         </aside>
       </div>
@@ -829,6 +832,48 @@ function PasarArticulo({ articuloId, creadoPor, usuarios }: { articuloId: number
       {mensaje && (
         <p className={mensaje.tipo === "ok" ? "form-aviso" : "form-error"} role={mensaje.tipo === "ok" ? "status" : "alert"}>
           {mensaje.texto}
+        </p>
+      )}
+    </fieldset>
+  );
+}
+
+/** Eliminar el artículo: solo el administrador. Un borrador se elimina desde acá; uno publicado hay que despublicarlo antes. */
+function EliminarArticulo({ articuloId, titulo, esBorrador }: { articuloId: number; titulo: string; esBorrador: boolean }) {
+  const { sesionVencida } = useSesion();
+  const navegar = useNavigate();
+  const [enviando, setEnviando] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function eliminar() {
+    setError(null);
+    setEnviando(true);
+    try {
+      if (await eliminarArticulo(articuloId, titulo)) void navegar("/");
+    } catch (e) {
+      if (e instanceof ErrorApi && e.estado === 401) sesionVencida();
+      setError(e instanceof ErrorApi ? e.message : "No se pudo eliminar el artículo. Probá de nuevo.");
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <fieldset className="grupo">
+      <legend>Eliminar</legend>
+      {esBorrador ? (
+        <>
+          <p className="ayuda">Borra este borrador para siempre. Las imágenes quedan en la biblioteca.</p>
+          <button type="button" className="boton boton-peligro" disabled={enviando} onClick={() => void eliminar()}>
+            {enviando ? "Eliminando…" : "Eliminar este borrador"}
+          </button>
+        </>
+      ) : (
+        <p className="ayuda">Para eliminar un artículo publicado, primero hay que despublicarlo (queda como borrador) y después se elimina desde acá.</p>
+      )}
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
         </p>
       )}
     </fieldset>

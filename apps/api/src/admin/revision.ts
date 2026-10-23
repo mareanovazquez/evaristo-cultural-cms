@@ -232,9 +232,21 @@ export function crearRutasAdminRevision(prisma: PrismaClient): express.Router {
     try {
       if (!tienePermiso(req.usuario!.rol, "articulos.eliminar")) return void res.status(403).json({ estado: "error", mensaje: "No tenés permiso para hacer esto." });
       const id = Id.safeParse(req.params["id"]);
-      const a = id.success ? await prisma.articulo.findUnique({ where: { id: id.data }, select: { id: true, titulo: true, estado: true } }) : null;
+      const a = id.success ? await prisma.articulo.findUnique({ where: { id: id.data }, select: { id: true, titulo: true, estado: true, slug: true, publicadoEn: true } }) : null;
       if (!a) return void noEncontrado(res);
       if (a.estado !== "BORRADOR") return void res.status(409).json({ estado: "error", mensaje: "Solo se pueden eliminar borradores. Un artículo publicado se despublica primero." });
+      // Un borrador que ya estuvo publicado (se despublicó) tiene una dirección que pudo ser enlazada: al eliminarlo esa dirección y las redirecciones
+      // que llevaban a él dejan de funcionar para siempre. Hay que confirmarlo de forma explícita (`?perderDireccion=1`).
+      if (a.publicadoEn && !a.slug.startsWith("borrador-") && req.query["perderDireccion"] !== "1") {
+        const redirecciones = await prisma.redireccion.count({ where: { articuloId: a.id } });
+        return void res.status(409).json({
+          estado: "error",
+          codigo: "estuvo_publicado",
+          mensaje: "Este artículo ya estuvo publicado: si lo eliminás, su dirección en el sitio deja de funcionar para siempre.",
+          direccion: rutaArticulo({ slug: a.slug, publicadoEn: a.publicadoEn }),
+          redirecciones,
+        });
+      }
       // Las imágenes quedan en la biblioteca; la galería, la ficha, los cambios sin publicar y las redirecciones del artículo se borran con él.
       await prisma.articulo.delete({ where: { id: a.id } });
       res.json({ estado: "ok" });

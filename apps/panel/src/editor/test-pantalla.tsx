@@ -108,6 +108,9 @@ let usuarioServido: J = { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINIS
 const cambiosDeClave: J[] = []
 const pedidosUsuarios: Array<{ ruta: string; metodo: string; cuerpo: J }> = []
 const pasados: number[] = []
+// Eliminar el artículo que se edita (el 7)
+const eliminados7: string[] = []
+let respuestaEliminar7: { estado: number; cuerpo: J } = { estado: 200, cuerpo: { estado: 'ok' } }
 // Revisión de la migración
 const pedidosRevision: Array<{ ruta: string; metodo: string; cuerpo: J }> = []
 let articulosRevision: J[] = [
@@ -244,6 +247,14 @@ globalThis.fetch = (async (entrada: string | URL | Request, init?: RequestInit) 
   if (borrar && metodo === 'DELETE') {
     borrados.push(Number(borrar[1]))
     return responder(respuestaBorrado.estado, respuestaBorrado.cuerpo)
+  }
+  if (url === '/api/admin/articulos/7' && metodo === 'DELETE') {
+    eliminados7.push(url)
+    return responder(respuestaEliminar7.estado, respuestaEliminar7.cuerpo)
+  }
+  if (url === '/api/admin/articulos/7?perderDireccion=1' && metodo === 'DELETE') {
+    eliminados7.push(url)
+    return responder(200, { estado: 'ok' })
   }
   // Revisión de la migración
   if (url === '/api/admin/revision/resumen') {
@@ -1916,6 +1927,42 @@ await t('Revisión: un redactor no ve el menú ni entra por la dirección', asyn
   await hasta(() => document.querySelector('h1')?.textContent === 'Artículos', 'vuelve al listado de artículos')
   assert.ok(!enlaces().includes('Revisión'))
   await act(async () => r.unmount())
+  usuarioServido = { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINISTRADOR', debeCambiarClave: false, permisos: ['articulos.crear', 'usuarios.gestionar'] }
+})
+
+await t('Eliminar desde el artículo: el administrador elimina un borrador; si ya estuvo publicado se pide una segunda confirmación; un publicado explica el camino', async () => {
+  catalogos.usuarios = []
+  estadoArticulo = 'BORRADOR'
+  const r = await montar('/articulos/7')
+  await hasta(() => !!boton('Eliminar este borrador'), 'el botón de eliminar')
+  respuestaConfirm = false
+  await clic(boton('Eliminar este borrador')!)
+  assert.equal(eliminados7.length, 0, 'sin confirmar no se elimina')
+  // Un borrador que ya estuvo publicado: la API pide confirmar que la dirección se pierde
+  respuestaEliminar7 = { estado: 409, cuerpo: { estado: 'error', codigo: 'estuvo_publicado', mensaje: 'Este artículo ya estuvo publicado.', direccion: '/2019/03/04/una-nota/', redirecciones: 2 } }
+  respuestaConfirm = true
+  preguntas.length = 0
+  await clic(boton('Eliminar este borrador')!)
+  await hasta(() => eliminados7.includes('/api/admin/articulos/7?perderDireccion=1'), 'la segunda confirmación')
+  assert.equal(preguntas.length, 2, 'se preguntó dos veces')
+  assert.ok(preguntas[1]!.includes('/2019/03/04/una-nota/') && preguntas[1]!.includes('deja de funcionar para siempre') && preguntas[1]!.includes('2 redirecciones'), 'y explica qué se pierde')
+  await hasta(() => document.querySelector('h1')?.textContent === 'Artículos', 'vuelve al listado')
+  await act(async () => r.unmount())
+  // Un publicado no tiene botón: se explica qué hacer
+  respuestaEliminar7 = { estado: 200, cuerpo: { estado: 'ok' } }
+  estadoArticulo = 'PUBLICADO'
+  const r2 = await montar('/articulos/7')
+  await hasta(() => !!document.getElementById('titulo'), 'el artículo publicado')
+  assert.ok(!boton('Eliminar este borrador'))
+  assert.ok(texto().includes('primero hay que despublicarlo'))
+  await act(async () => r2.unmount())
+  // Un editor no ve nada de esto
+  estadoArticulo = 'BORRADOR'
+  usuarioServido = { id: 2, email: 'e@b.c', nombre: 'Editor', rol: 'EDITOR', debeCambiarClave: false, permisos: ['articulos.crear'] }
+  const r3 = await montar('/articulos/7')
+  await hasta(() => !!document.getElementById('titulo'), 'el artículo del editor')
+  assert.ok(!boton('Eliminar este borrador') && !texto().includes('primero hay que despublicarlo'))
+  await act(async () => r3.unmount())
   usuarioServido = { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINISTRADOR', debeCambiarClave: false, permisos: ['articulos.crear', 'usuarios.gestionar'] }
 })
 

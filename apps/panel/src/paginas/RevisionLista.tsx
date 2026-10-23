@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router";
 import { tienePermiso } from "@evaristo/compartido/permisos";
 import { ErrorApi, pedirApi, type ArticuloDeRevision, type Catalogos, type EstadoArticulo, type RespuestaRevision } from "../api";
+import { eliminarArticulo } from "../eliminar-articulo";
 import { useSesion } from "../sesion";
 import { useTitulo } from "../titulo";
 
@@ -118,11 +119,10 @@ export function RevisionLista() {
   }
 
   async function eliminar(a: ArticuloDeRevision) {
-    if (!window.confirm(`¿Eliminar el borrador «${a.titulo}»? No se puede deshacer. Las imágenes quedan en la biblioteca.`)) return;
     setError(null);
     setAviso(null);
     try {
-      await pedirApi(`/api/admin/articulos/${a.id}`, { metodo: "DELETE" });
+      if (!(await eliminarArticulo(a.id, a.titulo))) return;
       setAviso(`Eliminamos el borrador «${a.titulo}».`);
       setRecarga((n) => n + 1);
     } catch (e) {

@@ -176,6 +176,20 @@ try {
   assert.equal((await edi("POST", "/articulos/999999999/seccion", { seccionId: real.id })).estado, 404);
 
   // ---------- F. Eliminar un borrador ----------
+  // Un borrador que ya estuvo publicado: hay que confirmar que su dirección se pierde
+  const yaPublicado = await prisma.articulo.create({ data: { slug: `revtest-${sufijo}-fue-publicado`, titulo: `${prefijo} fue-publicado`, cuerpo: { type: "doc", content: [] }, textoPlano: "", estado: "BORRADOR", publicadoEn: new Date("2019-03-04T12:00:00Z"), seccionId: interna.id }, select: { id: true } });
+  await prisma.redireccion.create({ data: { origen: `/2019/03/04/revtest-${sufijo}-viejo/`, tipo: "SLUG_ANTERIOR", codigo: 301, articuloId: yaPublicado.id } });
+  const aviso = await ana("DELETE", `/articulos/${yaPublicado.id}`);
+  assert.equal(aviso.estado, 409);
+  assert.equal(aviso.json["codigo"], "estuvo_publicado");
+  assert.equal(aviso.json["direccion"], `/2019/03/04/revtest-${sufijo}-fue-publicado/`);
+  assert.equal(aviso.json["redirecciones"], 1);
+  assert.equal(await prisma.articulo.count({ where: { id: yaPublicado.id } }), 1, "sin la confirmación no se borra");
+  assert.equal((await edi("DELETE", `/articulos/${yaPublicado.id}?perderDireccion=1`)).estado, 403, "un editor no elimina ni con la confirmación");
+  assert.equal((await ana("DELETE", `/articulos/${yaPublicado.id}?perderDireccion=1`)).estado, 200);
+  assert.equal(await prisma.articulo.count({ where: { id: yaPublicado.id } }), 0);
+  assert.equal(await prisma.redireccion.count({ where: { origen: `/2019/03/04/revtest-${sufijo}-viejo/` } }), 0, "y las redirecciones que llevaban a él se van con él");
+
   const bo = await nuevo("borrador-a-borrar");
   await prisma.articuloBorrador.deleteMany({ where: { articuloId: bo.id } });
   assert.equal((await edi("DELETE", `/articulos/${bo.id}`)).estado, 403);

@@ -9,6 +9,10 @@ export class ErrorApi extends Error {
     mensaje: string,
     /** Lo que hay que corregir, en lenguaje común (respuestas 422). */
     readonly problemas: string[] = [],
+    /** Código de la API para casos que la pantalla trata aparte (por ejemplo «estuvo_publicado»). */
+    readonly codigo?: string,
+    /** Datos extra de la respuesta (por ejemplo, la dirección que se perdería). */
+    readonly extra: Record<string, unknown> = {},
   ) {
     super(mensaje);
   }
@@ -50,10 +54,10 @@ async function enviar<T>(ruta: string, init: RequestInit): Promise<T> {
     if (error instanceof DOMException && error.name === "AbortError") throw error;
     throw new ErrorApi(0, "No hay conexión con el servidor. Revisá tu conexión y probá de nuevo.");
   }
-  const datos = (await respuesta.json().catch(() => null)) as { mensaje?: string; problemas?: unknown } | null;
+  const datos = (await respuesta.json().catch(() => null)) as { mensaje?: string; problemas?: unknown; codigo?: string } | null;
   if (!respuesta.ok) {
     const problemas = Array.isArray(datos?.problemas) ? problemasEnLenguajeComun(datos.problemas.filter((p): p is string => typeof p === "string")) : [];
-    throw new ErrorApi(respuesta.status, datos?.mensaje ?? mensajePorEstado(respuesta.status), problemas);
+    throw new ErrorApi(respuesta.status, datos?.mensaje ?? mensajePorEstado(respuesta.status), problemas, datos?.codigo, (datos ?? {}) as Record<string, unknown>);
   }
   return datos as T;
 }
