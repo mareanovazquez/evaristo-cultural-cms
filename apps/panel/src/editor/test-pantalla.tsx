@@ -10,6 +10,7 @@ import { App } from '../App'
 import { ProveedorSesion } from '../sesion'
 import { canonico } from './comparar-cuerpos'
 import { tiempos } from '../autoguardado'
+import { tiemposTooltip } from '../Tooltip'
 import { lenguajeComun, problemasEnLenguajeComun } from '../mensajes'
 import { fuente } from '../VistaPrevia'
 import { htmlVistaPrevia } from '../vista-previa'
@@ -2100,6 +2101,60 @@ await t('Menú lateral: el usuario del footer abre un popover con Mi cuenta y Sa
   await clic(boton('Desplegar el menú')!)
   assert.ok(!document.querySelector('[role="menu"]'), 'y se cierra al plegar o desplegar')
   await act(async () => r2.unmount())
+})
+
+await t('Secciones y categorías: las acciones son botones de solo ícono con su tooltip (mouse, teclado, Esc y botones deshabilitados)', async () => {
+  tiemposTooltip.demora = 5
+  seccionesServidas = [
+    { id: 1, slug: 'cine', nombre: 'Cine', articulos: 12, interna: false, orden: 1 },
+    { id: 2, slug: 'arte', nombre: 'Arte', articulos: 0, interna: false, orden: 2 },
+    { id: 9, slug: 'sin-asignar', nombre: 'Sin asignar', articulos: 103, interna: true, orden: 9 },
+  ]
+  const r = await montar('/clasificacion')
+  await hasta(() => !!document.querySelector('table'), 'la lista')
+  const fila = filaDe('Cine')
+  const botones = [...fila.querySelectorAll('button')]
+  assert.deepEqual(botones.map((b) => b.getAttribute('aria-label')), ['Subir Cine en el menú', 'Bajar Cine en el menú', 'Editar Cine', 'Unir Cine con otra', 'Eliminar Cine'], 'cada botón tiene su nombre accesible')
+  assert.ok(botones.every((b) => b.textContent === '' && b.querySelector('svg[aria-hidden="true"]')), 'y no tiene texto: solo ícono')
+  assert.ok(!document.querySelector('[role="tooltip"]'), 'sin tooltip hasta que se pide')
+  // Con el teclado el tooltip aparece enseguida y el botón queda descripto por él
+  const editar = botones[2]!
+  await act(async () => { editar.focus() })
+  const tip = () => document.querySelector<HTMLElement>('[role="tooltip"]')
+  assert.equal(tip()!.textContent, 'Editar nombre y dirección')
+  assert.equal(editar.getAttribute('aria-describedby'), tip()!.id)
+  // Esc lo cierra
+  await act(async () => { window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })) })
+  assert.ok(!tip() && !editar.hasAttribute('aria-describedby'))
+  await act(async () => { editar.blur() })
+  // Con el mouse aparece con una pequeña demora y se va al salir
+  const envoltorio = botones[3]!.parentElement!
+  await act(async () => { envoltorio.dispatchEvent(new window.MouseEvent('mouseover', { bubbles: true })) })
+  await hasta(() => !!tip(), 'el tooltip con el mouse')
+  assert.equal(tip()!.textContent, 'Unir con la sección…')
+  await act(async () => { envoltorio.dispatchEvent(new window.MouseEvent('mouseout', { bubbles: true })) })
+  assert.ok(!tip(), 'se va al sacar el mouse')
+  // Un botón deshabilitado explica por qué (el mouse lo recibe el envoltorio)
+  const eliminar = botones[4]!
+  assert.equal((eliminar as HTMLButtonElement).disabled, true)
+  await act(async () => { eliminar.parentElement!.dispatchEvent(new window.MouseEvent('mouseover', { bubbles: true })) })
+  await hasta(() => !!tip(), 'el tooltip del botón deshabilitado')
+  assert.equal(tip()!.textContent, 'Tiene 12 artículos: pasalos a otra antes (Unir)')
+  await act(async () => { eliminar.parentElement!.dispatchEvent(new window.MouseEvent('mouseout', { bubbles: true })) })
+  // La primera no sube; la vacía sí se puede eliminar
+  const subir = botones[0] as HTMLButtonElement
+  assert.equal(subir.disabled, true)
+  await act(async () => { subir.parentElement!.dispatchEvent(new window.MouseEvent('mouseover', { bubbles: true })) })
+  await hasta(() => !!tip(), 'el motivo de «Subir»')
+  assert.equal(tip()!.textContent, 'Ya es la primera')
+  await act(async () => { subir.parentElement!.dispatchEvent(new window.MouseEvent('mouseout', { bubbles: true })) })
+  assert.equal((filaDe('Arte').querySelector('button[aria-label="Eliminar Arte"]') as HTMLButtonElement).disabled, false)
+  // Los íconos siguen haciendo lo suyo: editar abre el formulario
+  await clic(editar)
+  assert.equal(editar.getAttribute('aria-expanded'), 'true')
+  assert.ok(document.getElementById('nombre-secciones-1'))
+  tiemposTooltip.demora = 300
+  await act(async () => r.unmount())
 })
 
 console.log(`\n${ok} pruebas de la pantalla ok`)

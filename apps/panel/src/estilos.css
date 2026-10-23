@@ -370,3 +370,16 @@ form.grupo { margin-bottom: 1.25rem; background: var(--superficie); }
 @media (prefers-reduced-motion: reduce) {
   .menu-lateral, .estructura.menu-abierto .menu-lateral, .icono-plegar { transition: none; }
 }
+
+
+/* Botones de solo ícono y tooltip */
+.boton-icono { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; color: var(--texto); background: var(--superficie); border: 1px solid var(--borde-fuerte); border-radius: var(--radio); cursor: pointer; }
+.boton-icono:hover:not(:disabled) { background: var(--fondo); border-color: var(--texto); }
+.boton-icono[aria-expanded="true"] { background: #e3ecf5; border-color: var(--acento); color: var(--acento-oscuro); }
+.boton-icono-peligro { color: var(--peligro); background: var(--peligro-fondo); border-color: var(--peligro); }
+.boton-icono-peligro:hover:not(:disabled) { background: #f8dcda; border-color: var(--peligro); }
+.boton-icono:disabled { opacity: 0.45; cursor: default; pointer-events: none; }
+.icono-boton { width: 18px; height: 18px; }
+.tooltip-envoltorio { display: inline-flex; }
+.tooltip { position: fixed; z-index: 300; max-width: min(18rem, calc(100vw - 16px)); padding: 0.35rem 0.6rem; font-size: 0.82rem; font-weight: 500; line-height: 1.35; color: #fff; background: #26262a; border-radius: var(--radio); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); pointer-events: none; }
+@media (pointer: coarse) { .boton-icono { width: 44px; height: 44px; } }

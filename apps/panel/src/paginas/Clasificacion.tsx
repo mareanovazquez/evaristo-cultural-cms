@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useSearchParams } from "react-router";
 import { ErrorApi, pedirApi } from "../api";
+import { BotonIcono } from "../BotonIcono";
 import { useSesion } from "../sesion";
 import { useTitulo } from "../titulo";
 
@@ -302,23 +303,21 @@ function FilaItem({
             <span className="acciones-fila">
               {posicion !== null && (
                 <>
-                  <button type="button" className="boton boton-suave" disabled={ocupado || posicion === 0} aria-label={`Subir ${item.nombre} en el menú`} onClick={() => alMover(posicion, -1)}>
-                    ↑
-                  </button>
-                  <button type="button" className="boton boton-suave" disabled={ocupado || posicion === total - 1} aria-label={`Bajar ${item.nombre} en el menú`} onClick={() => alMover(posicion, 1)}>
-                    ↓
-                  </button>
+                  <BotonIcono icono="subir" etiqueta={`Subir ${item.nombre} en el menú`} texto="Subir en el menú" disabled={ocupado || posicion === 0} motivo="Ya es la primera" onClick={() => alMover(posicion, -1)} />
+                  <BotonIcono icono="bajar" etiqueta={`Bajar ${item.nombre} en el menú`} texto="Bajar en el menú" disabled={ocupado || posicion === total - 1} motivo="Ya es la última" onClick={() => alMover(posicion, 1)} />
                 </>
               )}
-              <button type="button" className="boton boton-suave" aria-expanded={editando} onClick={alEditar}>
-                Editar<span className="solo-lectores"> {item.nombre}</span>
-              </button>
-              <button type="button" className="boton boton-suave" aria-expanded={uniendo} onClick={alUnir}>
-                Unir<span className="solo-lectores"> {item.nombre} con otra</span>
-              </button>
-              <button type="button" className="boton boton-peligro" disabled={ocupado || item.articulos > 0} title={item.articulos > 0 ? `Tiene ${item.articulos} artículos: pasalos a otra antes (Unir)` : undefined} onClick={() => void alEliminar()}>
-                Eliminar<span className="solo-lectores"> {item.nombre}</span>
-              </button>
+              <BotonIcono icono="editar" etiqueta={`Editar ${item.nombre}`} texto="Editar nombre y dirección" expandido={editando} onClick={alEditar} />
+              <BotonIcono icono="unir" etiqueta={`Unir ${item.nombre} con otra`} texto={`Unir con ${c.articulo} ${c.singular}…`} expandido={uniendo} onClick={alUnir} />
+              <BotonIcono
+                icono="eliminar"
+                etiqueta={`Eliminar ${item.nombre}`}
+                texto={`Eliminar ${c.articulo} ${c.singular}`}
+                peligro
+                disabled={ocupado || item.articulos > 0}
+                motivo={item.articulos > 0 ? `Tiene ${item.articulos} ${item.articulos === 1 ? "artículo" : "artículos"}: pasalos a otra antes (Unir)` : undefined}
+                onClick={() => void alEliminar()}
+              />
             </span>
           )}
         </td>
