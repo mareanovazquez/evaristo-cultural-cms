@@ -18,7 +18,7 @@ CMS propio para reemplazar WordPress en la revista cultural Evaristo Cultural (e
 - Windows/PowerShell: usar opciones largas en `mariadb-admin` (`--host=...`). El `tar` de Windows altera nombres con tildes.
 - No devolver `visitasWp` hacia el sitio ni el panel (`select` explícito).
 - El panel y la API se desarrollan contra `evaristo_cms_dev` (flag `--base-dev`, variable `DATABASE_URL_DEV`); nunca contra `evaristo_cms` (la muestra verificada) ni `evaristo_cms_test` (la vacían los tests de la migración). Las migraciones de la fase 4 no se aplican a la base real hasta la fase 7.
-- Dependencias nuevas: preguntar antes, con versión exacta y revisando la fecha de publicación (no usar versiones de menos de dos semanas). Instaladas con su versión aprobada: TipTap 3.31.4 y `jsdom` 30.1.2 en `apps/panel`; `multer` 2.4.0, `@types/multer` 2.3.0 y `sharp` 0.35.5 en `apps/api`. Hoy no hay ninguna aprobada sin instalar. Enrutado del panel: `react-router`.
+- Dependencias nuevas: preguntar antes, con versión exacta y revisando la fecha de publicación (no usar versiones de menos de dos semanas). Instaladas con su versión aprobada: TipTap 3.31.4, `jsdom` 30.1.2 y `@dnd-kit/core` 6.3.1, `@dnd-kit/sortable` 10.0.0 y `@dnd-kit/utilities` 3.2.2 (ordenar secciones arrastrando; aprobadas por Mariano el 23/10/2026, publicadas en 2023-2024) en `apps/panel`; `multer` 2.4.0, `@types/multer` 2.3.0 y `sharp` 0.35.5 en `apps/api`. Hoy no hay ninguna aprobada sin instalar. Enrutado del panel: `react-router`.
 - Al tomar una decisión o cambiar el estado, actualizar el `.md` correspondiente en `docs/` en el mismo trabajo (estado, pendientes, decisiones de diseño o decisión numerada del plan).
 
 ## Índice de documentación

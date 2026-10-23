@@ -18,8 +18,7 @@ const TRAZOS = {
   editar: <><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="m13.5 6.5 4 4" /></>,
   unir: <><circle cx="6" cy="6" r="2" /><circle cx="6" cy="18" r="2" /><circle cx="18" cy="15" r="2" /><path d="M6 8v8M8 6c6 0 10 3 10 7" /></>,
   eliminar: <><path d="M4 7h16" /><path d="M10 11v6M14 11v6" /><path d="M6 7l1 13h10l1-13" /><path d="M9 7V4h6v3" /></>,
-  subir: <path d="M12 19V5M6 11l6-6 6 6" />,
-  bajar: <path d="M12 5v14M6 13l6 6 6-6" />,
+  arrastrar: <path d="M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01" strokeWidth="3.2" />,
 } satisfies Record<string, ReactNode>;
 
 export type NombreIcono = keyof typeof TRAZOS;

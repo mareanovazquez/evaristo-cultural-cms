@@ -383,3 +383,10 @@ form.grupo { margin-bottom: 1.25rem; background: var(--superficie); }
 .tooltip-envoltorio { display: inline-flex; }
 .tooltip { position: fixed; z-index: 300; max-width: min(18rem, calc(100vw - 16px)); padding: 0.35rem 0.6rem; font-size: 0.82rem; font-weight: 500; line-height: 1.35; color: #fff; background: #26262a; border-radius: var(--radio); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); pointer-events: none; }
 @media (pointer: coarse) { .boton-icono { width: 44px; height: 44px; } }
+
+/* Ordenar secciones arrastrando */
+.celda-arrastre { width: 3.25rem; padding-right: 0; }
+.boton-arrastre { cursor: grab; touch-action: none; }
+.boton-arrastre:active { cursor: grabbing; }
+.fila-arrastrando { background: var(--superficie); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18); outline: 2px solid var(--acento); outline-offset: -2px; }
+.fila-arrastrando .boton-arrastre { cursor: grabbing; }

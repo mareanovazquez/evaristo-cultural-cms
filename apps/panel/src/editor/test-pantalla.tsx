@@ -1757,20 +1757,74 @@ await t('Ficha de autor: el administrador une con otro viendo antes qué cambia,
 const filaDe = (nombre: string) => [...document.querySelectorAll('tbody tr')].find((f) => f.querySelector('.titulo-articulo')?.textContent === nombre)!
 const botonEn = (fila: Element, texto: string) => [...fila.querySelectorAll('button')].find((b) => b.textContent?.trim().startsWith(texto) || b.getAttribute('aria-label')?.startsWith(texto))!
 
-await t('Secciones: lista en el orden del menú, «Sin asignar» sin acciones, y subir y bajar guardan el orden', async () => {
+/** Mientras dura `fn`, las filas del cuerpo de la tabla miden 40 px de alto y se apilan (jsdom no calcula posiciones y el arrastre las necesita). */
+const conFilasMedidas = async (fn: () => Promise<void>) => {
+  const original = Element.prototype.getBoundingClientRect
+  Element.prototype.getBoundingClientRect = function (this: Element) {
+    if (this.tagName === 'TR' && this.parentElement?.tagName === 'TBODY') {
+      const top = [...this.parentElement.children].indexOf(this) * 40
+      return { x: 0, y: top, top, bottom: top + 40, left: 0, right: 600, width: 600, height: 40, toJSON: () => ({}) } as DOMRect
+    }
+    return original.call(this)
+  }
+  try {
+    await fn()
+  } finally {
+    Element.prototype.getBoundingClientRect = original
+  }
+}
+const teclaEn = async (el: Element, code: string) => act(async () => { el.dispatchEvent(new window.KeyboardEvent('keydown', { code, key: code === 'Space' ? ' ' : code, bubbles: true, cancelable: true })) })
+const anuncios = () => [...document.querySelectorAll('[aria-live]')].map((n) => n.textContent).join(' ')
+
+await t('Secciones: lista en el orden del menú, «Sin asignar» sin acciones, y se reordenan arrastrando (con el teclado también)', async () => {
   const r = await montar('/clasificacion')
   await hasta(() => !!document.querySelector('table'), 'la lista de secciones')
   const nombres = [...document.querySelectorAll('tbody .titulo-articulo')].map((n) => n.textContent)
   assert.deepEqual(nombres, ['Cine', 'Arte', 'Teatro', 'Sin asignar'])
-  assert.equal(filaDe('Sin asignar').querySelectorAll('button').length, 0, 'la interna no se toca')
+  assert.equal(filaDe('Sin asignar').querySelectorAll('button').length, 0, 'la interna no se toca ni se arrastra')
   assert.ok(filaDe('Sin asignar').textContent!.includes('Es interna'))
-  assert.equal((botonEn(filaDe('Cine'), 'Subir') as HTMLButtonElement).disabled, true, 'la primera no sube')
-  assert.equal((botonEn(filaDe('Teatro'), 'Bajar') as HTMLButtonElement).disabled, true, 'la última no baja')
-  await clic(botonEn(filaDe('Cine'), 'Bajar'))
-  await hasta(() => texto().includes('Guardamos el orden del menú.'), 'el aviso')
+  assert.ok(!document.querySelector('button[aria-label^="Subir"]') && !document.querySelector('button[aria-label^="Bajar"]'), 'ya no hay botones de subir y bajar')
+  const manijas = [...document.querySelectorAll<HTMLButtonElement>('.boton-arrastre')]
+  assert.deepEqual(manijas.map((m) => m.getAttribute('aria-label')), ['Cambiar de lugar Cine en el menú', 'Cambiar de lugar Arte en el menú', 'Cambiar de lugar Teatro en el menú'])
+  assert.equal(manijas[0]!.getAttribute('aria-roledescription'), 'sortable', 'es una manija de arrastre para lectores de pantalla')
+  assert.ok(document.getElementById(manijas[0]!.getAttribute('aria-describedby')!)!.textContent!.includes('barra espaciadora'), 'con instrucciones en español')
+
+  await conFilasMedidas(async () => {
+    // Levantar «Cine», bajarla un lugar y soltarla
+    await act(async () => { manijas[0]!.focus() })
+    await teclaEn(manijas[0]!, 'Space')
+    await hasta(() => anuncios().includes('Levantaste «Cine», que está en el lugar 1 de 3.'), 'el aviso al levantar')
+    await teclaEn(document.body, 'ArrowDown')
+    await hasta(() => anuncios().includes('«Cine» pasó sobre el lugar 2 de 3.'), 'el aviso al pasar')
+    await teclaEn(document.body, 'Space')
+    await hasta(() => texto().includes('Guardamos el orden del menú: «Cine» quedó en el lugar 2.'), 'el aviso de guardado')
+  })
   const pedido = pedidosClasificacion.filter((p) => p.ruta === '/api/admin/secciones/orden').at(-1)!
   assert.deepEqual(pedido.cuerpo, { ids: [2, 1, 3] }, 'manda el orden completo, sin la interna')
-  assert.deepEqual([...document.querySelectorAll('tbody .titulo-articulo')].map((n) => n.textContent), ['Arte', 'Cine', 'Teatro', 'Sin asignar'], 'y la lista se recarga con el orden nuevo')
+  assert.deepEqual([...document.querySelectorAll('tbody .titulo-articulo')].map((n) => n.textContent), ['Arte', 'Cine', 'Teatro', 'Sin asignar'], 'y la lista queda con el orden nuevo')
+
+  // Esc cancela el movimiento y no se guarda nada
+  const antes = pedidosClasificacion.filter((p) => p.ruta.endsWith('/orden')).length
+  await conFilasMedidas(async () => {
+    const manija = document.querySelector<HTMLButtonElement>('.boton-arrastre')!
+    await act(async () => { manija.focus() })
+    await teclaEn(manija, 'Space')
+    await teclaEn(document.body, 'ArrowDown')
+    await teclaEn(document.body, 'Escape')
+    await hasta(() => anuncios().includes('Cancelaste el movimiento'), 'el aviso de cancelar')
+  })
+  assert.equal(pedidosClasificacion.filter((p) => p.ruta.endsWith('/orden')).length, antes, 'cancelar no guarda')
+  // Si la API falla, se muestra el error y se vuelve a cargar el orden de la base
+  respuestaClasificacion = { estado: 500, cuerpo: { estado: 'error' } }
+  await conFilasMedidas(async () => {
+    const manija = document.querySelector<HTMLButtonElement>('.boton-arrastre')!
+    await act(async () => { manija.focus() })
+    await teclaEn(manija, 'Space')
+    await teclaEn(document.body, 'ArrowDown')
+    await teclaEn(document.body, 'Space')
+    await hasta(() => !!document.querySelector('.aviso-error'), 'el error')
+  })
+  respuestaClasificacion = { estado: 200, cuerpo: {} }
   await act(async () => r.unmount())
 })
 
@@ -2114,11 +2168,11 @@ await t('Secciones y categorías: las acciones son botones de solo ícono con su
   await hasta(() => !!document.querySelector('table'), 'la lista')
   const fila = filaDe('Cine')
   const botones = [...fila.querySelectorAll('button')]
-  assert.deepEqual(botones.map((b) => b.getAttribute('aria-label')), ['Subir Cine en el menú', 'Bajar Cine en el menú', 'Editar Cine', 'Unir Cine con otra', 'Eliminar Cine'], 'cada botón tiene su nombre accesible')
+  assert.deepEqual(botones.map((b) => b.getAttribute('aria-label')), ['Cambiar de lugar Cine en el menú', 'Editar Cine', 'Unir Cine con otra', 'Eliminar Cine'], 'cada botón tiene su nombre accesible')
   assert.ok(botones.every((b) => b.textContent === '' && b.querySelector('svg[aria-hidden="true"]')), 'y no tiene texto: solo ícono')
   assert.ok(!document.querySelector('[role="tooltip"]'), 'sin tooltip hasta que se pide')
   // Con el teclado el tooltip aparece enseguida y el botón queda descripto por él
-  const editar = botones[2]!
+  const editar = botones[1]!
   await act(async () => { editar.focus() })
   const tip = () => document.querySelector<HTMLElement>('[role="tooltip"]')
   assert.equal(tip()!.textContent, 'Editar nombre y dirección')
@@ -2128,26 +2182,27 @@ await t('Secciones y categorías: las acciones son botones de solo ícono con su
   assert.ok(!tip() && !editar.hasAttribute('aria-describedby'))
   await act(async () => { editar.blur() })
   // Con el mouse aparece con una pequeña demora y se va al salir
-  const envoltorio = botones[3]!.parentElement!
+  const envoltorio = botones[2]!.parentElement!
   await act(async () => { envoltorio.dispatchEvent(new window.MouseEvent('mouseover', { bubbles: true })) })
   await hasta(() => !!tip(), 'el tooltip con el mouse')
   assert.equal(tip()!.textContent, 'Unir con la sección…')
   await act(async () => { envoltorio.dispatchEvent(new window.MouseEvent('mouseout', { bubbles: true })) })
   assert.ok(!tip(), 'se va al sacar el mouse')
   // Un botón deshabilitado explica por qué (el mouse lo recibe el envoltorio)
-  const eliminar = botones[4]!
+  const eliminar = botones[3]!
   assert.equal((eliminar as HTMLButtonElement).disabled, true)
   await act(async () => { eliminar.parentElement!.dispatchEvent(new window.MouseEvent('mouseover', { bubbles: true })) })
   await hasta(() => !!tip(), 'el tooltip del botón deshabilitado')
   assert.equal(tip()!.textContent, 'Tiene 12 artículos: pasalos a otra antes (Unir)')
   await act(async () => { eliminar.parentElement!.dispatchEvent(new window.MouseEvent('mouseout', { bubbles: true })) })
-  // La primera no sube; la vacía sí se puede eliminar
-  const subir = botones[0] as HTMLButtonElement
-  assert.equal(subir.disabled, true)
-  await act(async () => { subir.parentElement!.dispatchEvent(new window.MouseEvent('mouseover', { bubbles: true })) })
-  await hasta(() => !!tip(), 'el motivo de «Subir»')
-  assert.equal(tip()!.textContent, 'Ya es la primera')
-  await act(async () => { subir.parentElement!.dispatchEvent(new window.MouseEvent('mouseout', { bubbles: true })) })
+  // La manija de arrastre también explica qué hace
+  const manija = botones[0]!
+  await act(async () => { manija.parentElement!.dispatchEvent(new window.MouseEvent('mouseover', { bubbles: true })) })
+  await hasta(() => !!tip(), 'el tooltip de la manija')
+  assert.equal(tip()!.textContent, 'Arrastrá para cambiar el orden en el menú')
+  assert.ok(manija.getAttribute('aria-describedby')!.split(' ').length === 2, 'conserva las instrucciones de arrastre y suma el tooltip')
+  await act(async () => { manija.parentElement!.dispatchEvent(new window.MouseEvent('mouseout', { bubbles: true })) })
+  // La vacía sí se puede eliminar
   assert.equal((filaDe('Arte').querySelector('button[aria-label="Eliminar Arte"]') as HTMLButtonElement).disabled, false)
   // Los íconos siguen haciendo lo suyo: editar abre el formulario
   await clic(editar)

@@ -63,7 +63,7 @@ export function Tooltip({ texto, children }: { texto: string; children: ReactEle
 
   return (
     <span ref={envoltorio} className="tooltip-envoltorio" onMouseEnter={() => mostrar(true)} onMouseLeave={ocultar} onFocus={() => mostrar(false)} onBlur={ocultar}>
-      {cloneElement(children, visible ? { "aria-describedby": id } : {})}
+      {cloneElement(children, visible ? { "aria-describedby": [children.props["aria-describedby"], id].filter(Boolean).join(" ") } : {})}
       {visible && (
         <span ref={burbuja} id={id} role="tooltip" className="tooltip" style={estilo}>
           {texto}

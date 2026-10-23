@@ -1,7 +1,12 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type CSSProperties, type FormEvent } from "react";
+import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors, type Announcements, type DragEndEvent, type DragStartEvent, type ScreenReaderInstructions } from "@dnd-kit/core";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useSearchParams } from "react-router";
 import { ErrorApi, pedirApi } from "../api";
 import { BotonIcono } from "../BotonIcono";
+import { Icono } from "../iconos";
+import { Tooltip } from "../Tooltip";
 import { useSesion } from "../sesion";
 import { useTitulo } from "../titulo";
 
@@ -117,12 +122,31 @@ function Lista({ tipo }: { tipo: Tipo }) {
   }
 
   const editables = (items ?? []).filter((i) => !i.interna);
-  const mover = (indice: number, salto: -1 | 1) => {
+
+  // Ordenar arrastrando (con el mouse, el dedo o el teclado). Se ve el orden nuevo enseguida y se guarda; si falla, se vuelve a cargar el de la base.
+  const sensores = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
+  const nombreDe = (id: unknown) => items?.find((i) => i.id === id)?.nombre ?? "la sección";
+  const lugarDe = (id: unknown) => editables.findIndex((i) => i.id === id) + 1;
+  const anuncios: Announcements = {
+    onDragStart: ({ active }) => `Levantaste «${nombreDe(active.id)}», que está en el lugar ${lugarDe(active.id)} de ${editables.length}.`,
+    onDragOver: ({ active, over }) => (over && over.id !== active.id ? `«${nombreDe(active.id)}» pasó sobre el lugar ${lugarDe(over.id)} de ${editables.length}.` : undefined),
+    onDragEnd: ({ active, over }) => (over ? `Soltaste «${nombreDe(active.id)}» en el lugar ${lugarDe(over.id)} de ${editables.length}.` : `Soltaste «${nombreDe(active.id)}» en su lugar de siempre.`),
+    onDragCancel: ({ active }) => `Cancelaste el movimiento de «${nombreDe(active.id)}»: queda en su lugar.`,
+  };
+  const instrucciones: ScreenReaderInstructions = {
+    draggable: "Para cambiar de lugar una sección del menú: apretá la barra espaciadora para levantarla, movela con las flechas arriba y abajo y volvé a apretar la barra espaciadora para soltarla. Con Esc cancelás.",
+  };
+  const alEmpezarAArrastrar = (_e: DragStartEvent) => {
+    // Los paneles abiertos (editar, unir) se cierran: no se mueven junto con la fila.
+    setEditando(null);
+    setUniendo(null);
+  };
+  const alSoltar = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
     const ids = editables.map((i) => i.id);
-    const destino = indice + salto;
-    if (destino < 0 || destino >= ids.length) return;
-    [ids[indice], ids[destino]] = [ids[destino]!, ids[indice]!];
-    void hacer(`${c.ruta}/orden`, "POST", { ids }, "Guardamos el orden del menú.");
+    const nuevoOrden = arrayMove(ids, ids.indexOf(Number(active.id)), ids.indexOf(Number(over.id)));
+    setItems((actuales) => (actuales ? [...nuevoOrden.map((id) => actuales.find((x) => x.id === id)!), ...actuales.filter((x) => x.interna)] : actuales));
+    void hacer(`${c.ruta}/orden`, "POST", { ids: nuevoOrden }, `Guardamos el orden del menú: «${nombreDe(active.id)}» quedó en el lugar ${nuevoOrden.indexOf(Number(active.id)) + 1}.`);
   };
 
   const visibles = items?.filter((i) => !filtro.trim() || i.nombre.toLowerCase().includes(filtro.trim().toLowerCase()) || i.slug.includes(filtro.trim().toLowerCase())) ?? [];
@@ -171,10 +195,16 @@ function Lista({ tipo }: { tipo: Tipo }) {
       )}
       {items && (
         <div className="tabla-envoltorio">
+          <DndContext sensors={sensores} collisionDetection={closestCenter} accessibility={{ announcements: anuncios, screenReaderInstructions: instrucciones }} onDragStart={alEmpezarAArrastrar} onDragEnd={alSoltar}>
           <table className="tabla">
             <caption className="solo-lectores">{c.plural}</caption>
             <thead>
               <tr>
+                {c.ordena && (
+                  <th scope="col" className="celda-arrastre">
+                    <span className="solo-lectores">Orden en el menú</span>
+                  </th>
+                )}
                 <th scope="col">Nombre</th>
                 <th scope="col">Dirección</th>
                 <th scope="col">Artículos</th>
@@ -184,21 +214,19 @@ function Lista({ tipo }: { tipo: Tipo }) {
               </tr>
             </thead>
             <tbody>
+              <SortableContext items={editables.map((i) => i.id)} strategy={verticalListSortingStrategy} disabled={!c.ordena}>
               {visibles.map((i) => {
-                const indice = editables.findIndex((x) => x.id === i.id);
+                const Fila = c.ordena && !i.interna ? FilaOrdenable : FilaItem;
                 return (
-                  <FilaItem
+                  <Fila
                     key={i.id}
                     tipo={tipo}
                     item={i}
-                    posicion={c.ordena && !i.interna ? indice : null}
-                    total={editables.length}
                     ocupado={ocupado}
                     editando={editando === i.id}
                     uniendo={uniendo === i.id}
                     otros={editables.filter((x) => x.id !== i.id)}
                     falla={falla}
-                    alMover={mover}
                     alEditar={() => {
                       setEditando(editando === i.id ? null : i.id);
                       setUniendo(null);
@@ -221,8 +249,10 @@ function Lista({ tipo }: { tipo: Tipo }) {
                   />
                 );
               })}
+              </SortableContext>
             </tbody>
           </table>
+          </DndContext>
           {visibles.length === 0 && <p className="vacio">No hay {c.plural} que coincidan.</p>}
         </div>
       )}
@@ -230,39 +260,44 @@ function Lista({ tipo }: { tipo: Tipo }) {
   );
 }
 
-function FilaItem({
-  tipo,
-  item,
-  posicion,
-  total,
-  ocupado,
-  editando,
-  uniendo,
-  otros,
-  falla,
-  alMover,
-  alEditar,
-  alUnir,
-  alGuardar,
-  alUnirConfirmado,
-  alEliminar,
-}: {
+type Arrastre = ReturnType<typeof useSortable>;
+
+interface PropsFila {
   tipo: Tipo;
   item: Item;
-  posicion: number | null;
-  total: number;
   ocupado: boolean;
   editando: boolean;
   uniendo: boolean;
   otros: Item[];
   falla: (e: unknown, porDefecto: string) => string;
-  alMover: (indice: number, salto: -1 | 1) => void;
   alEditar: () => void;
   alUnir: () => void;
   alGuardar: (nombre: string, slug: string) => Promise<void>;
   alUnirConfirmado: (destinoId: number) => Promise<void>;
   alEliminar: () => Promise<void>;
-}) {
+}
+
+/** Una fila que se puede arrastrar para cambiarla de lugar. */
+function FilaOrdenable(props: PropsFila) {
+  const arrastre = useSortable({ id: props.item.id, disabled: props.ocupado });
+  return <FilaItem {...props} arrastre={arrastre} />;
+}
+
+function FilaItem({
+  tipo,
+  item,
+  ocupado,
+  editando,
+  uniendo,
+  otros,
+  falla,
+  alEditar,
+  alUnir,
+  alGuardar,
+  alUnirConfirmado,
+  alEliminar,
+  arrastre,
+}: PropsFila & { arrastre?: Arrastre }) {
   const c = CONFIG[tipo];
   const [nombre, setNombre] = useState(item.nombre);
   const [slug, setSlug] = useState(item.slug);
@@ -284,9 +319,32 @@ function FilaItem({
   }, [destino, c.ruta, item.id, falla]);
 
   const cambios = nombre.trim() !== item.nombre || slug !== item.slug;
+  const estiloFila: CSSProperties | undefined = arrastre
+    ? { transform: CSS.Transform.toString(arrastre.transform ? { ...arrastre.transform, x: 0, scaleX: 1, scaleY: 1 } : null) ?? undefined, transition: arrastre.transition, ...(arrastre.isDragging ? { position: "relative", zIndex: 5 } : {}) }
+    : undefined;
+  const columnas = arrastre || c.ordena ? 5 : 4;
   return (
     <>
-      <tr>
+      <tr ref={arrastre?.setNodeRef} style={estiloFila} className={arrastre?.isDragging ? "fila-arrastrando" : undefined}>
+        {c.ordena && (
+          <td className="celda-arrastre">
+            {arrastre && (
+              <Tooltip texto="Arrastrá para cambiar el orden en el menú">
+                <button
+                  type="button"
+                  ref={arrastre.setActivatorNodeRef}
+                  className="boton-icono boton-arrastre"
+                  aria-label={`Cambiar de lugar ${item.nombre} en el menú`}
+                  disabled={ocupado}
+                  {...arrastre.attributes}
+                  {...arrastre.listeners}
+                >
+                  <Icono nombre="arrastrar" clase="icono icono-boton" />
+                </button>
+              </Tooltip>
+            )}
+          </td>
+        )}
         <td className="celda-titulo">
           <span className="titulo-articulo">{item.nombre}</span>
           {item.interna && <span className="ayuda">Es interna: reúne los artículos que todavía no tienen sección. No se cambia.</span>}
@@ -301,12 +359,6 @@ function FilaItem({
         <td>
           {!item.interna && (
             <span className="acciones-fila">
-              {posicion !== null && (
-                <>
-                  <BotonIcono icono="subir" etiqueta={`Subir ${item.nombre} en el menú`} texto="Subir en el menú" disabled={ocupado || posicion === 0} motivo="Ya es la primera" onClick={() => alMover(posicion, -1)} />
-                  <BotonIcono icono="bajar" etiqueta={`Bajar ${item.nombre} en el menú`} texto="Bajar en el menú" disabled={ocupado || posicion === total - 1} motivo="Ya es la última" onClick={() => alMover(posicion, 1)} />
-                </>
-              )}
               <BotonIcono icono="editar" etiqueta={`Editar ${item.nombre}`} texto="Editar nombre y dirección" expandido={editando} onClick={alEditar} />
               <BotonIcono icono="unir" etiqueta={`Unir ${item.nombre} con otra`} texto={`Unir con ${c.articulo} ${c.singular}…`} expandido={uniendo} onClick={alUnir} />
               <BotonIcono
@@ -324,7 +376,7 @@ function FilaItem({
       </tr>
       {editando && (
         <tr>
-          <td colSpan={4}>
+          <td colSpan={columnas}>
             <form
               className="grupo"
               aria-label={`Editar ${item.nombre}`}
@@ -355,7 +407,7 @@ function FilaItem({
       )}
       {uniendo && (
         <tr>
-          <td colSpan={4}>
+          <td colSpan={columnas}>
             <div className="grupo" role="group" aria-label={`Unir ${item.nombre} con otra`}>
               <div className="campo">
                 <label htmlFor={`unir-${tipo}-${item.id}`}>
