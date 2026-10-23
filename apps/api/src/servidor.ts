@@ -1,5 +1,6 @@
 import { obtenerClientePrisma } from "@evaristo/compartido/db";
 import { crearApp } from "./app.js";
+import { repositorioPrisma } from "./auth/repositorio.js";
 import { elegirBase } from "./entorno.js";
 
 const puerto = Number(process.env["PORT"] ?? 3000);
@@ -11,6 +12,16 @@ const app = crearApp(prisma);
 const servidor = app.listen(puerto, "127.0.0.1", () => {
   console.log(`Servidor escuchando en http://127.0.0.1:${puerto}`);
 });
+
+// Las sesiones vencidas se borran al arrancar y cada hora (una sesión vencida ya no sirve; esto solo evita que la tabla crezca).
+const limpiarSesiones = (): void => {
+  repositorioPrisma(prisma)
+    .borrarSesionesVencidas(new Date())
+    .catch(() => console.error("No se pudieron limpiar las sesiones vencidas"));
+};
+limpiarSesiones();
+const temporizadorSesiones = setInterval(limpiarSesiones, 60 * 60 * 1000);
+temporizadorSesiones.unref();
 
 let cerrando = false;
 function apagar(senal: string): void {

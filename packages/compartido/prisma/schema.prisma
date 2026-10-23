@@ -70,6 +70,9 @@ model Autor {
   fotoPuntoFocalX Float         @default(0.5)
   fotoPuntoFocalY Float         @default(0.5)
   redirecciones   Redireccion[]
+  // Usuario del panel dueño de esta ficha (opcional y único: un usuario tiene como mucho una ficha y un autor no necesita usuario).
+  usuarioId       Int?          @unique
+  usuario         Usuario?      @relation(fields: [usuarioId], references: [id], onDelete: SetNull)
 
   @@map("autores")
 }
@@ -138,6 +141,9 @@ model Articulo {
   galeria               GaleriaItem[]
   // Una por artículo.
   fichaTecnica          FichaTecnica?
+  // Quién lo creó en el panel (los migrados no tienen). Un Redactor solo toca los que creó.
+  creadoPorId           Int?
+  creadoPor             Usuario?      @relation("ArticulosCreados", fields: [creadoPorId], references: [id], onDelete: SetNull)
   redirecciones         Redireccion[]
 
   @@index([estado, publicadoEn])
@@ -170,6 +176,7 @@ model ArticuloAutor {
 }
 
 enum RolUsuario {
+  REDACTOR
   EDITOR
   ADMINISTRADOR
 }
@@ -257,11 +264,17 @@ model Usuario {
   passwordHash   String     @db.VarChar(255)
   rol            RolUsuario @default(EDITOR)
   activo         Boolean    @default(true)
+  // El administrador escribió la contraseña: la persona tiene que cambiarla en su primer ingreso (y tras un restablecimiento).
+  debeCambiarClave Boolean  @default(false)
   ultimoAccesoEn DateTime?
   creadoEn       DateTime   @default(now())
   actualizadoEn  DateTime   @updatedAt
   sesiones       Sesion[]
   borradores     ArticuloBorrador[]
+  // Artículos que creó (un Redactor solo ve y edita los suyos).
+  articulosCreados Articulo[] @relation("ArticulosCreados")
+  // Su ficha de autor, si la tiene (un Redactor firma solo con ella).
+  autor          Autor?
 
   @@map("usuarios")
 }

@@ -10,6 +10,7 @@
     "./schema": "./src/schema/validate.ts",
     "./render": "./src/render/render.ts",
     "./urls": "./src/urls.ts",
+    "./permisos": "./src/permisos.ts",
     "./texto-plano": "./src/texto-plano.ts"
   },
   "scripts": {

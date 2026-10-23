@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, Outlet } from "react-router";
+import { NavLink, Link, Outlet } from "react-router";
+import { NOMBRE_DE_ROL, tienePermiso } from "@evaristo/compartido/permisos";
 import { confirmarSalida } from "./salida";
 import { useSesion } from "./sesion";
 
@@ -14,13 +15,22 @@ export function Estructura() {
         Saltar al contenido
       </a>
       <header className="barra">
-        <Link to="/" className="barra-titulo">
-          Panel de Evaristo Cultural
-        </Link>
+        <div className="barra-izquierda">
+          <Link to="/" className="barra-titulo">
+            Panel de Evaristo Cultural
+          </Link>
+          <nav className="barra-menu" aria-label="Secciones del panel">
+            <NavLink to="/" end>
+              Artículos
+            </NavLink>
+            {usuario && tienePermiso(usuario.rol, "usuarios.gestionar") && <NavLink to="/usuarios">Usuarios</NavLink>}
+            <NavLink to="/cuenta">Mi cuenta</NavLink>
+          </nav>
+        </div>
         <div className="barra-usuario">
           <span>
             {usuario?.nombre}
-            {usuario?.rol === "ADMINISTRADOR" ? " (administración)" : ""}
+            {usuario ? ` (${NOMBRE_DE_ROL[usuario.rol].toLowerCase()})` : ""}
           </span>
           <button
             type="button"

@@ -279,3 +279,19 @@ a.titulo-articulo:hover { color: var(--acento); text-decoration: underline; }
 .galeria-item .campo { margin-bottom: 0.5rem; }
 .ficha-editor summary { cursor: pointer; font-weight: 600; color: var(--acento); padding: 0.25rem 0; }
 .ficha-editor details[open] summary { margin-bottom: 0.5rem; }
+
+/* Menú del panel, mi cuenta y usuarios */
+.barra-izquierda { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1.25rem; }
+.barra-menu { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 0.95rem; }
+.barra-menu a { color: var(--texto-suave); text-decoration: none; padding: 0.25rem 0; border-bottom: 2px solid transparent; }
+.barra-menu a:hover { color: var(--texto); }
+.barra-menu a[aria-current="page"] { color: var(--texto); font-weight: 600; border-bottom-color: var(--acento); }
+.aviso-ok { background: var(--ok-fondo); border-color: var(--ok); color: var(--ok); }
+.grupo-titulo { font-size: 1.05rem; margin: 0 0 0.75rem; }
+.pantalla .grupo { display: block; margin-bottom: 1.25rem; }
+.fila-clave { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.fila-clave input { flex: 1 1 12rem; width: auto; }
+.clave-provisoria { display: inline-block; font-size: 1.15rem; padding: 0.3rem 0.6rem; background: var(--superficie); border: 1px solid var(--borde-fuerte); border-radius: var(--radio); user-select: all; }
+.ficha-usuario { margin-top: 1.25rem; background: var(--superficie); }
+.ficha-usuario hr { border: 0; border-top: 1px solid var(--borde); margin: 1rem 0; }
+form.grupo { margin-bottom: 1.25rem; background: var(--superficie); }

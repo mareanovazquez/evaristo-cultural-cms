@@ -668,6 +668,8 @@ function Formulario({ articulo, catalogos, recargar, exito: exitoInicial }: { ar
               )}
             </div>
           </fieldset>
+
+          {catalogos.usuarios.length > 0 && <PasarArticulo articuloId={articulo.id} creadoPor={articulo.creadoPor} usuarios={catalogos.usuarios} />}
         </aside>
       </div>
 
@@ -709,6 +711,64 @@ function Formulario({ articulo, catalogos, recargar, exito: exitoInicial }: { ar
 
       {eligiendoEncabezado && <SelectorImagen onElegir={elegirEncabezado} onCancelar={() => setEligiendoEncabezado(false)} />}
     </section>
+  );
+}
+
+/** Quién creó el artículo y, para editores y administradores, pasárselo a otra persona (un Redactor solo ve y edita lo que creó). */
+function PasarArticulo({ articuloId, creadoPor, usuarios }: { articuloId: number; creadoPor: { id: number; nombre: string } | null; usuarios: Catalogos["usuarios"] }) {
+  const { sesionVencida } = useSesion();
+  const [actual, setActual] = useState(creadoPor);
+  const [elegido, setElegido] = useState("");
+  const [enviando, setEnviando] = useState(false);
+  const [mensaje, setMensaje] = useState<{ tipo: "ok" | "error"; texto: string } | null>(null);
+
+  async function pasar() {
+    const destino = usuarios.find((u) => String(u.id) === elegido);
+    if (!destino || !window.confirm(`¿Pasarle este artículo a ${destino.nombre}? Desde ahora es suyo, y quien lo tenía deja de verlo si es redactor.`)) return;
+    setEnviando(true);
+    setMensaje(null);
+    try {
+      const r = await pedirApi<{ creadoPor: { id: number; nombre: string } }>(`/api/admin/articulos/${articuloId}/pasar`, { metodo: "POST", cuerpo: { usuarioId: destino.id } });
+      setActual(r.creadoPor);
+      setElegido("");
+      setMensaje({ tipo: "ok", texto: `Ahora es de ${r.creadoPor.nombre}.` });
+    } catch (e) {
+      if (e instanceof ErrorApi && e.estado === 401) {
+        sesionVencida();
+        return;
+      }
+      setMensaje({ tipo: "error", texto: e instanceof ErrorApi ? e.message : "No se pudo pasar el artículo. Probá de nuevo." });
+    } finally {
+      setEnviando(false);
+    }
+  }
+
+  return (
+    <fieldset className="grupo">
+      <legend>De quién es</legend>
+      <p className="ayuda">{actual ? `Lo creó ${actual.nombre}.` : "Viene de la migración: no tiene una persona a cargo."}</p>
+      <div className="campo">
+        <label htmlFor="pasar-a">Pasar a otra persona</label>
+        <select id="pasar-a" value={elegido} onChange={(e) => setElegido(e.target.value)}>
+          <option value="">Elegí a quién</option>
+          {usuarios
+            .filter((u) => u.id !== actual?.id)
+            .map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.nombre}
+              </option>
+            ))}
+        </select>
+      </div>
+      <button type="button" className="boton boton-suave" disabled={!elegido || enviando} onClick={() => void pasar()}>
+        {enviando ? "Pasando…" : "Pasar el artículo"}
+      </button>
+      {mensaje && (
+        <p className={mensaje.tipo === "ok" ? "form-aviso" : "form-error"} role={mensaje.tipo === "ok" ? "status" : "alert"}>
+          {mensaje.texto}
+        </p>
+      )}
+    </fieldset>
   );
 }
 

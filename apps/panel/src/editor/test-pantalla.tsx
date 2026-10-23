@@ -38,6 +38,7 @@ const articulo = (estado: string) => ({
   publicadoEn: publicadoEnServido,
   version: '2026-10-22T10:00:00.000Z',
   conCambiosSinPublicar,
+  creadoPor: { id: 4, nombre: 'Rita' },
   ruta: null,
   datos: {
     titulo: 'Título de prueba',
@@ -65,6 +66,7 @@ const catalogos = {
   secciones: [{ id: 1, slug: 'cine', nombre: 'Cine' }, { id: 2, slug: 'arte', nombre: 'Arte' }],
   categorias: [{ id: 10, slug: 'entrevistas', nombre: 'Entrevistas' }, { id: 11, slug: 'ensayos', nombre: 'Ensayos' }, { id: 12, slug: 'reseñas', nombre: 'Reseñas' }],
   autores: [{ id: 2, nombre: 'Ana', soloTexto: false }, { id: 3, nombre: 'Beto', soloTexto: false }, { id: 4, nombre: 'Carla', soloTexto: false }],
+  usuarios: [] as Array<{ id: number; nombre: string; rol: string }>,
 }
 
 // ---- Entorno simulado ----
@@ -100,6 +102,16 @@ let respuestaBorrado: { estado: number; cuerpo: J } = { estado: 200, cuerpo: { e
 let respuestaPut: { estado: number; cuerpo: J } = { estado: 200, cuerpo: { estado: 'ok', version: '2026-10-22T10:05:00.000Z', conCambiosSinPublicar: false } }
 const guardados: J[] = []
 const creados: J[] = []
+// Usuarios y cuenta
+type UsuarioDeLista = { id: number; email: string; nombre: string; rol: string; activo: boolean; debeCambiarClave: boolean; ultimoAccesoEn: string | null; creadoEn: string; autor: { id: number; nombre: string; slug: string } | null; articulos: number }
+let usuarioServido: J = { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINISTRADOR', debeCambiarClave: false, permisos: ['articulos.crear', 'usuarios.gestionar'] }
+const cambiosDeClave: J[] = []
+const pedidosUsuarios: Array<{ ruta: string; metodo: string; cuerpo: J }> = []
+const pasados: number[] = []
+let usuariosServidos: UsuarioDeLista[] = [
+  { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINISTRADOR', activo: true, debeCambiarClave: false, ultimoAccesoEn: '2026-10-23T09:00:00.000Z', creadoEn: '2026-10-01T09:00:00.000Z', autor: null, articulos: 0 },
+  { id: 4, email: 'rita@b.c', nombre: 'Rita', rol: 'REDACTOR', activo: true, debeCambiarClave: false, ultimoAccesoEn: null, creadoEn: '2026-10-02T09:00:00.000Z', autor: { id: 20, nombre: 'Rita', slug: 'rita' }, articulos: 3 },
+]
 globalThis.fetch = (async (entrada: string | URL | Request, init?: RequestInit) => {
   const url = String(entrada)
   const metodo = init?.method ?? 'GET'
@@ -111,7 +123,47 @@ globalThis.fetch = (async (entrada: string | URL | Request, init?: RequestInit) 
     conCambiosSinPublicar = false
     return responder(200, { estado: 'ok' })
   }
-  if (url === '/api/auth/yo') return responder(200, { usuario: { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINISTRADOR' } })
+  if (url === '/api/auth/yo' && metodo === 'GET') return responder(200, { usuario: usuarioServido })
+  if (url === '/api/auth/yo' && metodo === 'PATCH') {
+    const { nombre } = JSON.parse(String(init?.body)) as { nombre: string }
+    usuarioServido = { ...usuarioServido, nombre }
+    return responder(200, { estado: 'ok', usuario: usuarioServido })
+  }
+  if (url === '/api/auth/clave' && metodo === 'POST') {
+    const cuerpo = JSON.parse(String(init?.body)) as J
+    cambiosDeClave.push(cuerpo)
+    if (cuerpo['claveActual'] !== 'provisoria-123') return responder(400, { estado: 'error', mensaje: 'La contraseña actual no es correcta.' })
+    usuarioServido = { ...usuarioServido, debeCambiarClave: false }
+    return responder(200, { estado: 'ok', usuario: usuarioServido })
+  }
+  if (url === '/api/admin/usuarios' && metodo === 'GET') return responder(200, { estado: 'ok', usuarios: usuariosServidos })
+  if (url === '/api/admin/usuarios' && metodo === 'POST') {
+    const cuerpo = JSON.parse(String(init?.body)) as J
+    pedidosUsuarios.push({ ruta: url, metodo, cuerpo })
+    if (cuerpo['email'] === 'repetido@b.c') return responder(409, { estado: 'error', mensaje: 'Ya hay un usuario con ese email.' })
+    const creado: UsuarioDeLista = { id: 9, email: String(cuerpo['email']), nombre: String(cuerpo['nombre']), rol: String(cuerpo['rol']), activo: true, debeCambiarClave: true, ultimoAccesoEn: null, creadoEn: '2026-10-23T10:00:00.000Z', autor: { id: 30, nombre: String(cuerpo['nombre']), slug: 'x' }, articulos: 0 }
+    usuariosServidos = [...usuariosServidos, creado]
+    return responder(201, { estado: 'ok', usuario: creado })
+  }
+  if (url.startsWith('/api/admin/usuarios/autores-disponibles')) return responder(200, { estado: 'ok', autores: [{ id: 31, nombre: 'Ficha libre', slug: 'ficha-libre' }] })
+  const sobreUsuario = /^\/api\/admin\/usuarios\/(\d+)\/?(desactivar|activar|clave|cerrar-sesiones|ficha)?$/.exec(url)
+  if (sobreUsuario && (metodo === 'POST' || metodo === 'PATCH')) {
+    const cuerpo = JSON.parse(String(init?.body)) as J
+    pedidosUsuarios.push({ ruta: url, metodo, cuerpo })
+    const id = Number(sobreUsuario[1])
+    let u = usuariosServidos.find((x) => x.id === id)!
+    if (sobreUsuario[2] === 'desactivar') u = { ...u, activo: false }
+    if (sobreUsuario[2] === 'activar') u = { ...u, activo: true }
+    if (sobreUsuario[2] === 'clave') u = { ...u, debeCambiarClave: true }
+    if (!sobreUsuario[2]) u = { ...u, nombre: String(cuerpo['nombre']), rol: String(cuerpo['rol']) }
+    usuariosServidos = usuariosServidos.map((x) => (x.id === id ? u : x))
+    return responder(200, { estado: 'ok', usuario: u, cerradas: 2 })
+  }
+  if (/^\/api\/admin\/articulos\/7\/pasar$/.test(url) && metodo === 'POST') {
+    const { usuarioId } = JSON.parse(String(init?.body)) as { usuarioId: number }
+    pasados.push(usuarioId)
+    return responder(200, { estado: 'ok', creadoPor: { id: usuarioId, nombre: catalogos.usuarios.find((u) => u.id === usuarioId)!.nombre } })
+  }
   if (url === '/api/admin/catalogos') return responder(200, { estado: 'ok', ...catalogos })
   if (url === '/api/admin/articulos/7' && metodo === 'GET') return responder(200, { estado: 'ok', articulo: articulo(estadoArticulo) })
   if (url === '/api/admin/articulos/7' && metodo === 'PUT') {
@@ -173,16 +225,19 @@ const escribir = async (el: HTMLInputElement | HTMLTextAreaElement, valor: strin
 }
 const clic = async (el: Element) => act(async () => { el.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true })) })
 const boton = (texto: string) => [...document.querySelectorAll('button')].find((b) => b.textContent?.trim() === texto || b.getAttribute('aria-label') === texto)
-const abrir = async () => {
+const abrirEn = async (ruta: string) => {
   await act(async () => {
     raiz.render(
-      <MemoryRouter initialEntries={['/articulos/7']}>
+      <MemoryRouter initialEntries={[ruta]}>
         <ProveedorSesion>
           <App />
         </ProveedorSesion>
       </MemoryRouter>,
     )
   })
+}
+const abrir = async () => {
+  await abrirEn('/articulos/7')
   await hasta(() => !!document.getElementById('titulo') && !!document.querySelector('.ProseMirror'), 'la pantalla de edición')
 }
 
@@ -1201,6 +1256,184 @@ await t('visor de la galería: abre la imagen, pasa a la anterior y la siguiente
   const eventoSin = new window.MouseEvent('click', { bubbles: true, cancelable: true })
   sinDialog.querySelector('a')!.dispatchEvent(eventoSin)
   assert.equal(eventoSin.defaultPrevented, false, 'sin visor, el enlace funciona normal')
+})
+
+// ---------- Usuarios, mi cuenta y pasar un artículo ----------
+const texto = () => document.body.textContent ?? ''
+const enlaces = () => [...document.querySelectorAll('nav a')].map((a) => a.textContent)
+const montar = async (ruta: string) => {
+  // Un contenedor nuevo por pantalla: sin restos de las pruebas anteriores
+  document.body.replaceChildren()
+  const nuevo = document.createElement('div')
+  document.body.appendChild(nuevo)
+  const r = createRoot(nuevo)
+  await act(async () => {
+    r.render(
+      <MemoryRouter initialEntries={[ruta]}>
+        <ProveedorSesion>
+          <App />
+        </ProveedorSesion>
+      </MemoryRouter>,
+    )
+  })
+  return r
+}
+
+await t('el menú muestra Usuarios solo a quien tiene el permiso, y los roles se nombran en lenguaje común', async () => {
+  await act(async () => raiz.unmount())
+  document.body.replaceChildren()
+  const admin = await montar('/')
+  await hasta(() => !!document.querySelector('nav a'), 'el menú')
+  assert.deepEqual(enlaces(), ['Artículos', 'Usuarios', 'Mi cuenta'])
+  assert.ok(texto().includes('(administrador)'))
+  await act(async () => admin.unmount())
+  usuarioServido = { id: 4, email: 'rita@b.c', nombre: 'Rita', rol: 'REDACTOR', debeCambiarClave: false, permisos: ['articulos.crear'] }
+  const redactor = await montar('/usuarios')
+  await hasta(() => texto().includes('(redactor)'), 'el menú del redactor')
+  assert.deepEqual(enlaces(), ['Artículos', 'Mi cuenta'], 'el redactor no ve Usuarios')
+  await hasta(() => document.querySelector('h1')?.textContent === 'Artículos', 'vuelve al listado de artículos')
+  assert.ok(!texto().includes('Nuevo usuario'), 'y si entra por la dirección no ve la pantalla de usuarios')
+  assert.ok(texto().includes('(redactor)'))
+  await act(async () => redactor.unmount())
+  usuarioServido = { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINISTRADOR', debeCambiarClave: false, permisos: ['articulos.crear', 'usuarios.gestionar'] }
+})
+
+await t('con la contraseña provisoria solo se puede estar en Mi cuenta hasta elegir una propia', async () => {
+  usuarioServido = { ...usuarioServido, debeCambiarClave: true }
+  const r = await montar('/')
+  await hasta(() => !!document.getElementById('cuenta-clave-actual'), 'Mi cuenta forzada')
+  assert.ok(texto().includes('contraseña provisoria'))
+  await escribir(document.getElementById('cuenta-clave-actual') as HTMLInputElement, 'provisoria-123')
+  await escribir(document.getElementById('cuenta-clave-nueva') as HTMLInputElement, 'una-clave-nueva-larga')
+  await escribir(document.getElementById('cuenta-clave-repetida') as HTMLInputElement, 'otra-distinta-larga')
+  await clic(boton('Cambiar la contraseña')!)
+  assert.ok(texto().includes('Las dos contraseñas nuevas no coinciden.'))
+  assert.equal(cambiosDeClave.length, 0, 'no se manda si no coinciden')
+  await escribir(document.getElementById('cuenta-clave-actual') as HTMLInputElement, 'equivocada')
+  await escribir(document.getElementById('cuenta-clave-repetida') as HTMLInputElement, 'una-clave-nueva-larga')
+  await clic(boton('Cambiar la contraseña')!)
+  await hasta(() => texto().includes('La contraseña actual no es correcta.'), 'el error de la API')
+  await escribir(document.getElementById('cuenta-clave-actual') as HTMLInputElement, 'provisoria-123')
+  await clic(boton('Cambiar la contraseña')!)
+  await hasta(() => texto().includes('Cambiamos tu contraseña.'), 'el aviso de éxito')
+  assert.deepEqual(cambiosDeClave.at(-1), { claveActual: 'provisoria-123', claveNueva: 'una-clave-nueva-larga' })
+  assert.ok(!texto().includes('Estás usando una contraseña provisoria'), 'se quita el aviso')
+  assert.equal((document.getElementById('cuenta-clave-actual') as HTMLInputElement).value, '', 'se vacían los campos')
+  await act(async () => r.unmount())
+})
+
+await t('Mi cuenta: cambiar el nombre actualiza el de la barra', async () => {
+  const r = await montar('/cuenta')
+  await hasta(() => !!document.getElementById('cuenta-nombre'), 'Mi cuenta')
+  await escribir(document.getElementById('cuenta-nombre') as HTMLInputElement, 'Prueba Gómez')
+  await clic(boton('Guardar el nombre')!)
+  await hasta(() => texto().includes('Guardamos tu nombre.'), 'el aviso')
+  assert.ok(document.querySelector('.barra-usuario')!.textContent!.includes('Prueba Gómez'))
+  await escribir(document.getElementById('cuenta-nombre') as HTMLInputElement, '  ')
+  await clic(boton('Guardar el nombre')!)
+  assert.ok(texto().includes('Escribí tu nombre.'))
+  await act(async () => r.unmount())
+})
+
+await t('Usuarios: lista, alta con contraseña provisoria que se muestra una vez, y errores en lenguaje común', async () => {
+  const r = await montar('/usuarios')
+  await hasta(() => !!document.querySelector('table'), 'la lista de usuarios')
+  const filas = [...document.querySelectorAll('tbody tr')].map((f) => f.textContent!)
+  assert.equal(filas.length, 2)
+  assert.ok(filas[0]!.includes('(vos)') && filas[0]!.includes('Administrador') && filas[0]!.includes('Sin ficha'))
+  assert.ok(filas[1]!.includes('Redactor') && filas[1]!.includes('Con acceso') && filas[1]!.includes('Nunca'))
+  await clic(boton('Nuevo usuario')!)
+  assert.ok(document.getElementById('alta-clave'))
+  await clic(boton('Crear usuario')!)
+  assert.ok(texto().includes('Completá el email, el nombre y la contraseña provisoria.'))
+  // El botón Generar llena la contraseña con algo legible
+  await clic(boton('Generar')!)
+  const generada = (document.getElementById('alta-clave') as HTMLInputElement).value
+  assert.match(generada, /^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/)
+  await escribir(document.getElementById('alta-nombre') as HTMLInputElement, 'Nora Nueva')
+  await escribir(document.getElementById('alta-email') as HTMLInputElement, 'repetido@b.c')
+  assert.equal((document.getElementById('alta-rol') as HTMLSelectElement).value, 'REDACTOR', 'arranca como redactor, con la ficha por crear')
+  await clic(boton('Crear usuario')!)
+  await hasta(() => texto().includes('Ya hay un usuario con ese email.'), 'el error de email repetido')
+  await escribir(document.getElementById('alta-email') as HTMLInputElement, 'nora@b.c')
+  await clic(boton('Crear usuario')!)
+  await hasta(() => texto().includes('Pasale esta contraseña provisoria a'), 'el aviso con la contraseña')
+  assert.equal(document.querySelector('.clave-provisoria')!.textContent, generada)
+  assert.deepEqual(pedidosUsuarios.at(-1)!.cuerpo, { email: 'nora@b.c', nombre: 'Nora Nueva', rol: 'REDACTOR', clave: generada, ficha: { modo: 'crear' } })
+  assert.ok([...document.querySelectorAll('tbody tr')].some((f) => f.textContent!.includes('Nora Nueva') && f.textContent!.includes('Contraseña provisoria')))
+  await clic(boton('Ya se la pasé')!)
+  assert.ok(!document.querySelector('.clave-provisoria'), 'se oculta y no se vuelve a mostrar')
+  await act(async () => r.unmount())
+})
+
+await t('Usuarios: revocar y devolver el acceso, restablecer la contraseña y cambiar el rol', async () => {
+  const r = await montar('/usuarios')
+  await hasta(() => !!document.querySelector('table'), 'la lista')
+  const administrar = (nombre: string) => [...document.querySelectorAll('button')].find((b) => b.textContent === `Administrar a ${nombre}`)!
+  await clic(administrar('Rita'))
+  const ficha = () => document.querySelector('section[aria-label="Administrar a Rita"]')!
+  assert.ok(ficha())
+  // Revocar pide confirmación y explica que no se pierde nada
+  respuestaConfirm = false
+  preguntas.length = 0
+  await clic(boton('Revocar el acceso')!)
+  assert.equal(pedidosUsuarios.filter((p) => p.ruta.endsWith('/desactivar')).length, 0, 'si no confirma, no se manda')
+  assert.ok(preguntas[0]!.includes('quedan como están'))
+  respuestaConfirm = true
+  await clic(boton('Revocar el acceso')!)
+  await hasta(() => !!boton('Volver a dar acceso'), 'el botón para devolver el acceso')
+  assert.ok([...document.querySelectorAll('tbody tr')][1]!.textContent!.includes('Sin acceso'))
+  assert.ok(texto().includes('Revocamos su acceso.'))
+  await clic(boton('Volver a dar acceso')!)
+  await hasta(() => !!boton('Revocar el acceso'), 'de nuevo con acceso')
+  // Restablecer la contraseña: se muestra la nueva para pasarla
+  await escribir(ficha().querySelector<HTMLInputElement>('#adm-clave')!, 'restablecida-por-mi-12')
+  await clic(boton('Restablecer')!)
+  await hasta(() => texto().includes('Pasale esta contraseña provisoria a'), 'la contraseña a entregar')
+  assert.deepEqual(pedidosUsuarios.at(-1), { ruta: '/api/admin/usuarios/4/clave', metodo: 'POST', cuerpo: { clave: 'restablecida-por-mi-12' } })
+  // Cambiar el rol
+  const rol = document.getElementById('adm-rol') as HTMLSelectElement
+  await act(async () => {
+    rol.value = 'EDITOR'
+    rol.dispatchEvent(new window.Event('change', { bubbles: true }))
+  })
+  await clic(boton('Guardar nombre y rol')!)
+  await hasta(() => [...document.querySelectorAll('tbody tr')][1]!.textContent!.includes('Editor'), 'el rol nuevo en la lista')
+  // En la propia ficha no se restablece la contraseña
+  await clic(administrar('Prueba'))
+  assert.ok(texto().includes('Tu propia contraseña se cambia en «Mi cuenta».'))
+  assert.ok(!document.getElementById('adm-clave'))
+  await act(async () => r.unmount())
+})
+
+await t('un editor ve «De quién es» en el artículo y puede pasárselo a otra persona', async () => {
+  catalogos.usuarios = [{ id: 4, nombre: 'Rita', rol: 'REDACTOR' }, { id: 5, nombre: 'Tomás', rol: 'REDACTOR' }]
+  estadoArticulo = 'BORRADOR'
+  const r = await montar('/articulos/7')
+  await hasta(() => !!document.getElementById('pasar-a'), 'el grupo «De quién es»')
+  assert.ok(texto().includes('Lo creó Rita.'))
+  const select = document.getElementById('pasar-a') as HTMLSelectElement
+  assert.ok(![...select.options].some((o) => o.textContent === 'Rita'), 'no se ofrece pasárselo a quien ya lo tiene')
+  assert.equal(boton('Pasar el artículo')!.disabled, true)
+  await act(async () => {
+    select.value = '5'
+    select.dispatchEvent(new window.Event('change', { bubbles: true }))
+  })
+  respuestaConfirm = false
+  await clic(boton('Pasar el artículo')!)
+  assert.deepEqual(pasados, [], 'sin confirmar no se manda')
+  respuestaConfirm = true
+  await clic(boton('Pasar el artículo')!)
+  await hasta(() => texto().includes('Ahora es de Tomás.'), 'el aviso')
+  assert.deepEqual(pasados, [5])
+  assert.ok(texto().includes('Lo creó Tomás.'))
+  await act(async () => r.unmount())
+  // Sin lista de usuarios (un redactor) el grupo no aparece
+  catalogos.usuarios = []
+  const r2 = await montar('/articulos/7')
+  await hasta(() => !!document.getElementById('titulo'), 'el artículo')
+  assert.ok(!document.getElementById('pasar-a'))
+  await act(async () => r2.unmount())
 })
 
 console.log(`\n${ok} pruebas de la pantalla ok`)

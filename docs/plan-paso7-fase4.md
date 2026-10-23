@@ -63,7 +63,7 @@ Los artículos migrados no tienen creador ni firma de un Redactor: solo los toca
 
 **Cambios de esquema que trae esto** (a `evaristo_cms_dev` y `_test` ahora; a la real, con las demás migraciones de la fase 4 en la fase 7): el valor `REDACTOR` en `RolUsuario`, `articulos.creadoPorId` (opcional, `SetNull` si se borrara el usuario; nunca se borran usuarios, se desactivan) y `autores.usuarioId` (opcional y único: un usuario puede tener su ficha de autor y un autor no necesita usuario; así un Redactor se firma solo con su ficha y la ficha sigue cuando se revoca su acceso). De paso queda resuelto el pendiente del paso 8 de saber quién creó cada artículo.
 
-## Etapa 7a: usuarios
+## Etapa 7a: usuarios — HECHA el 23/10/2026 (ver `estado-fase4.md`, «Paso 7, etapa 7a», y la decisión 68)
 
 **Objetivo:** que un administrador gestione a las personas que usan el panel, sin línea de comandos.
 

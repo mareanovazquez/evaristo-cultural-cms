@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { z } from "zod";
 import { Prisma, type PrismaClient } from "@evaristo/compartido/db";
+import { tienePermiso } from "@evaristo/compartido/permisos";
 import type { JSONNode } from "@evaristo/compartido/schema";
 import { textoPlanoDe } from "@evaristo/compartido/texto-plano";
 import { rutaArticulo } from "@evaristo/compartido/urls";
@@ -44,6 +45,7 @@ export const seleccion = {
   galeria: { orderBy: { orden: "asc" as const }, select: { imagenId: true, alt: true, epigrafe: true } },
   fichaTecnica: { select: { titulo: true, autor: true, traductor: true, editorial: true, coleccion: true, anio: true, paginas: true, isbn: true, precio: true } },
   borrador: { select: { datos: true, baseVersion: true, actualizadoEn: true } },
+  creadoPor: { select: { id: true, nombre: true } },
 } as const;
 
 export type FilaArticulo = NonNullable<Awaited<ReturnType<PrismaClient["articulo"]["findFirst"]>>> & {
@@ -52,6 +54,7 @@ export type FilaArticulo = NonNullable<Awaited<ReturnType<PrismaClient["articulo
   galeria: Array<{ imagenId: number; alt: string | null; epigrafe: string | null }>;
   fichaTecnica: DatosArticulo["ficha"];
   borrador: { datos: unknown; baseVersion: Date; actualizadoEn: Date } | null;
+  creadoPor: { id: number; nombre: string } | null;
 };
 
 export const iso = (d: Date): string => d.toISOString();
@@ -169,16 +172,23 @@ export async function escribirDatos(
 export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
   const router = express.Router();
 
+  /** La ficha de autor del usuario (con la que firma un Redactor), o null. */
+  const fichaDe = async (usuarioId: number): Promise<number | null> => (await prisma.autor.findUnique({ where: { usuarioId }, select: { id: true } }))?.id ?? null;
+
   // ---------- Catálogos para los desplegables ----------
-  router.get("/catalogos", async (_req: Request, res: Response, next: NextFunction) => {
+  router.get("/catalogos", async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const [secciones, categorias, autores] = await Promise.all([
+      const rol = req.usuario!.rol;
+      const [secciones, categorias, autores, usuarios] = await Promise.all([
         prisma.seccion.findMany({ where: { interna: false }, orderBy: { id: "asc" }, select: { id: true, slug: true, nombre: true } }),
         prisma.categoria.findMany({ orderBy: { nombre: "asc" }, select: { id: true, slug: true, nombre: true } }),
-        prisma.autor.findMany({ orderBy: { nombre: "asc" }, select: { id: true, nombre: true, soloTexto: true } }),
+        // Un Redactor solo puede firmar con su propia ficha.
+        prisma.autor.findMany({ where: tienePermiso(rol, "autores.elegir.cualquiera") ? {} : { usuarioId: req.usuario!.id }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true, soloTexto: true } }),
+        // Para pasarle un artículo a otra persona.
+        tienePermiso(rol, "articulos.reasignar") ? prisma.usuario.findMany({ where: { activo: true }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true, rol: true } }) : Promise.resolve([]),
       ]);
       res.setHeader("Cache-Control", "no-store");
-      res.json({ estado: "ok", secciones, categorias, autores });
+      res.json({ estado: "ok", secciones, categorias, autores, usuarios });
     } catch (e) {
       next(e);
     }
@@ -218,6 +228,8 @@ export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
           version: iso(versionVigente(a)),
           // Hay cambios sin publicar: los datos que se devuelven son los del borrador de cambios, no los publicados.
           conCambiosSinPublicar: conBorrador,
+          // Quién lo creó en el panel (los migrados no tienen).
+          creadoPor: a.creadoPor,
           ruta: a.estado === "PUBLICADO" && a.publicadoEn && a.publicadoEn <= ahora ? rutaArticulo({ slug: a.slug, publicadoEn: a.publicadoEn }) : null,
           datos,
           imagenEncabezado,
@@ -242,8 +254,17 @@ export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
         sinProblemas(res, ["Elegí una sección de la lista."]);
         return;
       }
+      // Un Redactor solo firma con su ficha: el artículo nuevo sale con ella. Sin ficha no puede crear.
+      const puedeElegirAutores = tienePermiso(req.usuario!.rol, "autores.elegir.cualquiera");
+      const ficha = puedeElegirAutores ? null : await fichaDe(req.usuario!.id);
+      if (!puedeElegirAutores && ficha === null) {
+        res.status(409).json({ estado: "error", mensaje: "Tu usuario todavía no tiene una ficha de autor. Pedile a un administrador que te la asigne." });
+        return;
+      }
       const creado = await prisma.articulo.create({
         data: {
+          creadoPorId: req.usuario!.id,
+          ...(ficha !== null ? { autores: { create: { autorId: ficha, orden: 0 } } } : {}),
           // Dirección provisoria: la editora la define al publicar (no se puede publicar con una que empiece con "borrador-").
           slug: `borrador-${randomBytes(6).toString("hex")}`,
           titulo: nuevo.data.titulo,
@@ -314,6 +335,17 @@ export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
         }
       }
 
+      // Un Redactor firma solo con su ficha: se acepta [su ficha] o, si otra persona ya armó la firma, que no la toque.
+      if (!tienePermiso(req.usuario!.rol, "autores.elegir.cualquiera")) {
+        const suya = await fichaDe(req.usuario!.id);
+        const vigentes = ((esBorrador || !a.borrador ? a.autores.map((x) => x.autorId) : (datosDelBorrador(a)["autorIds"] as number[] | undefined)) ?? []).join(",");
+        const pedidos = datos.autorIds.join(",");
+        if (pedidos !== vigentes && (suya === null || pedidos !== String(suya))) {
+          sinProblemas(res, ["Solo podés firmar con tu propia ficha de autor. Si el artículo lleva otra firma, lo arma un editor."]);
+          return;
+        }
+      }
+
       const anteriores = [a.cuerpo as unknown as JSONNode, ...(a.borrador ? [(a.borrador.datos as DatosArticulo).cuerpo] : [])];
       const problemas = [...(await problemasDeReferencias(prisma, datos, a.seccionId)), ...erroresDelCuerpo(datos.cuerpo, anteriores)];
       if (problemas.length) {
@@ -368,6 +400,40 @@ export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
         sinProblemas(res, ["Ya hay un artículo con esa dirección. Elegí otra."]);
         return;
       }
+      next(e);
+    }
+  });
+
+  // ---------- Pasar el artículo a otra persona (cambiar su creador) ----------
+  router.post("/articulos/:id/pasar", async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!tienePermiso(req.usuario!.rol, "articulos.reasignar")) {
+        res.status(403).json({ estado: "error", mensaje: "No tenés permiso para hacer esto." });
+        return;
+      }
+      const id = IdSchema.safeParse(req.params["id"]);
+      const cuerpo = z.object({ usuarioId: z.number().int().positive() }).strict().safeParse(req.body);
+      if (!id.success) {
+        res.status(404).json({ estado: "error", mensaje: "No encontramos ese artículo." });
+        return;
+      }
+      if (!cuerpo.success) {
+        sinProblemas(res, ["Elegí a quién pasarle el artículo."]);
+        return;
+      }
+      const destino = await prisma.usuario.findFirst({ where: { id: cuerpo.data.usuarioId, activo: true }, select: { id: true, nombre: true } });
+      if (!destino) {
+        sinProblemas(res, ["Esa persona no existe o no tiene acceso."]);
+        return;
+      }
+      // No se toca `actualizadoEn`: quien edita el texto no tiene por qué perder su lugar por un cambio de dueño.
+      const r = await prisma.$executeRaw`UPDATE articulos SET creadoPorId = ${destino.id}, actualizadoEn = actualizadoEn WHERE id = ${id.data}`;
+      if (r !== 1) {
+        res.status(404).json({ estado: "error", mensaje: "No encontramos ese artículo." });
+        return;
+      }
+      res.json({ estado: "ok", creadoPor: destino });
+    } catch (e) {
       next(e);
     }
   });

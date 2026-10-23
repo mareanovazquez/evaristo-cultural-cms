@@ -10,6 +10,8 @@ interface ContextoSesion {
   salir: () => Promise<void>;
   /** Para cuando cualquier pedido recibe un 401. */
   sesionVencida: () => void;
+  /** Reemplaza los datos del usuario (por ejemplo, tras cambiar el nombre o la contraseña en "Mi cuenta"). */
+  actualizarUsuario: (usuario: Usuario) => void;
 }
 
 const Contexto = createContext<ContextoSesion | null>(null);
@@ -45,7 +47,9 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
 
   const sesionVencida = useCallback(() => setUsuario(null), []);
 
-  const valor = useMemo(() => ({ usuario, ingresar, salir, sesionVencida }), [usuario, ingresar, salir, sesionVencida]);
+  const actualizarUsuario = useCallback((nuevo: Usuario) => setUsuario(nuevo), []);
+
+  const valor = useMemo(() => ({ usuario, ingresar, salir, sesionVencida, actualizarUsuario }), [usuario, ingresar, salir, sesionVencida, actualizarUsuario]);
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;
 }
 

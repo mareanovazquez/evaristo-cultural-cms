@@ -20,6 +20,18 @@ const sesiones = new Map<string, { venceEn: Date; usuarioId: number }>();
 const accesos = new Map<number, Date>();
 const repo: Repositorio = {
   usuarioPorEmail: async (email) => usuarios.find((u) => u.email === email) ?? null,
+  usuarioPorId: async (id) => usuarios.find((u) => u.id === id) ?? null,
+  cambiarClave: async (id, hash, debeCambiar) => {
+    const u = usuarios.find((x) => x.id === id)!;
+    u.passwordHash = hash;
+    u.debeCambiarClave = debeCambiar;
+  },
+  cambiarNombre: async (id, nombre) => void (usuarios.find((x) => x.id === id)!.nombre = nombre),
+  borrarSesionesDeUsuario: async (id, excepto) => {
+    let n = 0;
+    for (const [hash, s] of sesiones) if (s.usuarioId === id && hash !== excepto) (sesiones.delete(hash), n++);
+    return n;
+  },
   registrarAcceso: async (id, cuando) => void accesos.set(id, cuando),
   crearSesion: async (tokenHash, usuarioId, venceEn) => void sesiones.set(tokenHash, { venceEn, usuarioId }),
   sesionPorHash: async (tokenHash): Promise<SesionFila | null> => {
@@ -34,9 +46,10 @@ let reloj = new Date("2026-10-21T12:00:00Z");
 
 const CLAVE_ANA = "una-clave-larga-1";
 usuarios.push(
-  { id: 1, email: "ana@ejemplo.org", nombre: "Ana", rol: "ADMINISTRADOR", activo: true, passwordHash: await hashearClave(CLAVE_ANA) },
-  { id: 2, email: "beto@ejemplo.org", nombre: "Beto", rol: "EDITOR", activo: true, passwordHash: await hashearClave("otra-clave-larga-2") },
-  { id: 3, email: "inactivo@ejemplo.org", nombre: "Inactivo", rol: "EDITOR", activo: false, passwordHash: await hashearClave("clave-del-inactivo-3") },
+  { id: 1, email: "ana@ejemplo.org", nombre: "Ana", rol: "ADMINISTRADOR", activo: true, debeCambiarClave: false, passwordHash: await hashearClave(CLAVE_ANA) },
+  { id: 2, email: "beto@ejemplo.org", nombre: "Beto", rol: "EDITOR", activo: true, debeCambiarClave: false, passwordHash: await hashearClave("otra-clave-larga-2") },
+  { id: 4, email: "rita@ejemplo.org", nombre: "Rita", rol: "REDACTOR", activo: true, debeCambiarClave: true, passwordHash: await hashearClave("clave-de-rita-4444") },
+  { id: 3, email: "inactivo@ejemplo.org", nombre: "Inactivo", rol: "EDITOR", activo: false, debeCambiarClave: false, passwordHash: await hashearClave("clave-del-inactivo-3") },
 );
 
 // ---------- Servidores ----------
@@ -57,6 +70,9 @@ const appRoles = express();
 appRoles.use(express.json());
 appRoles.use("/api/auth", authRoles.router);
 appRoles.get("/api/solo-admin", authRoles.cargarSesion, authRoles.exigirRol("ADMINISTRADOR"), (_req, res) => void res.json({ estado: "ok" }));
+appRoles.get("/api/solo-usuarios", authRoles.cargarSesion, authRoles.exigirPermiso("usuarios.gestionar"), (_req, res) => void res.json({ estado: "ok" }));
+appRoles.get("/api/solo-revision", authRoles.cargarSesion, authRoles.exigirPermiso("revision.usar"), (_req, res) => void res.json({ estado: "ok" }));
+appRoles.get("/api/con-clave-al-dia", authRoles.cargarSesion, authRoles.exigirSesion, authRoles.exigirClaveAlDia, (_req, res) => void res.json({ estado: "ok" }));
 appRoles.get("/api/editores", authRoles.cargarSesion, authRoles.exigirRol("EDITOR"), (_req, res) => void res.json({ estado: "ok" }));
 const roles = await levantar(appRoles);
 
@@ -128,7 +144,7 @@ t("problemaDeClave: mínimo de 10 y máximo de 200 caracteres", async () => {
 t("ingreso correcto: cookie httpOnly, SameSite=Strict, solo para /api, 12 horas; sin Secure en desarrollo", async () => {
   const r = await ingresar(principal.puerto, "ana@ejemplo.org", CLAVE_ANA);
   assert.equal(r.estado, 200);
-  assert.deepEqual(r.json["usuario"], { id: 1, email: "ana@ejemplo.org", nombre: "Ana", rol: "ADMINISTRADOR" });
+  assert.deepEqual({ ...(r.json["usuario"] as object), permisos: undefined }, { id: 1, email: "ana@ejemplo.org", nombre: "Ana", rol: "ADMINISTRADOR", debeCambiarClave: false, permisos: undefined });
   assert.ok(!r.cuerpo.includes("passwordHash") && !r.cuerpo.includes("scrypt"));
   const c = r.cookie ?? "";
   assert.match(c, new RegExp(`^${NOMBRE_COOKIE}=[A-Za-z0-9_-]{43};`));
@@ -176,7 +192,7 @@ t("/yo: con sesión devuelve el usuario; sin cookie o con cookie falsa, 401", as
   const r = await ingresar(principal.puerto, "beto@ejemplo.org", "otra-clave-larga-2");
   const yo = await pedir(principal.puerto, "GET", "/api/auth/yo", { cookie: cookieDe(r) });
   assert.equal(yo.estado, 200);
-  assert.deepEqual(yo.json["usuario"], { id: 2, email: "beto@ejemplo.org", nombre: "Beto", rol: "EDITOR" });
+  assert.deepEqual({ ...(yo.json["usuario"] as object), permisos: undefined }, { id: 2, email: "beto@ejemplo.org", nombre: "Beto", rol: "EDITOR", debeCambiarClave: false, permisos: undefined });
   assert.equal((await pedir(principal.puerto, "GET", "/api/auth/yo")).estado, 401);
   assert.equal((await pedir(principal.puerto, "GET", "/api/auth/yo", { cookie: `${NOMBRE_COOKIE}=${"A".repeat(43)}` })).estado, 401);
   assert.equal((await pedir(principal.puerto, "GET", "/api/auth/yo", { cookie: `${NOMBRE_COOKIE}=` })).estado, 401);
@@ -248,6 +264,58 @@ t("roles: sin sesión 401; editor no entra a lo del administrador (403); el admi
   assert.equal((await pedir(roles.puerto, "GET", "/api/solo-admin", { cookie: ana })).estado, 200);
   assert.equal((await pedir(roles.puerto, "GET", "/api/editores", { cookie: beto })).estado, 200);
   assert.equal((await pedir(roles.puerto, "GET", "/api/editores", { cookie: ana })).estado, 200);
+});
+t("permisos con nombre: el redactor no entra a usuarios ni a la revisión, el editor entra a la revisión pero no a usuarios, el administrador a todo", async () => {
+  const ana = cookieDe(await ingresar(roles.puerto, "ana@ejemplo.org", CLAVE_ANA));
+  const beto = cookieDe(await ingresar(roles.puerto, "beto@ejemplo.org", "otra-clave-larga-2"));
+  const rita = cookieDe(await ingresar(roles.puerto, "rita@ejemplo.org", "clave-de-rita-4444"));
+  assert.equal((await pedir(roles.puerto, "GET", "/api/solo-usuarios")).estado, 401);
+  for (const [cookie, usuarios_, revision] of [[rita, 403, 403], [beto, 403, 200], [ana, 200, 200]] as const) {
+    assert.equal((await pedir(roles.puerto, "GET", "/api/solo-usuarios", { cookie })).estado, usuarios_);
+    assert.equal((await pedir(roles.puerto, "GET", "/api/solo-revision", { cookie })).estado, revision);
+  }
+});
+t("/yo devuelve los permisos del rol y nunca la contraseña", async () => {
+  const rita = await pedir(roles.puerto, "GET", "/api/auth/yo", { cookie: cookieDe(await ingresar(roles.puerto, "rita@ejemplo.org", "clave-de-rita-4444")) });
+  const u = rita.json["usuario"] as Record<string, unknown>;
+  assert.deepEqual(u["permisos"], ["articulos.crear"]);
+  assert.equal(u["debeCambiarClave"], true);
+  assert.ok(!rita.cuerpo.includes("scrypt") && !rita.cuerpo.includes("passwordHash"));
+  const ana = await pedir(roles.puerto, "GET", "/api/auth/yo", { cookie: cookieDe(await ingresar(roles.puerto, "ana@ejemplo.org", CLAVE_ANA)) });
+  assert.ok((((ana.json["usuario"] as Record<string, unknown>)["permisos"]) as string[]).includes("usuarios.gestionar"));
+});
+t("con la contraseña puesta por el administrador solo se puede cambiarla: lo demás da 403 cambiar_clave", async () => {
+  const rita = cookieDe(await ingresar(roles.puerto, "rita@ejemplo.org", "clave-de-rita-4444"));
+  const r = await pedir(roles.puerto, "GET", "/api/con-clave-al-dia", { cookie: rita });
+  assert.equal(r.estado, 403);
+  assert.equal(r.json["codigo"], "cambiar_clave");
+  assert.equal((await pedir(roles.puerto, "GET", "/api/con-clave-al-dia", { cookie: cookieDe(await ingresar(roles.puerto, "beto@ejemplo.org", "otra-clave-larga-2")) })).estado, 200);
+});
+t("Mi cuenta: cambiar el nombre; la contraseña pide la actual, valida la nueva, corta las otras sesiones y levanta la marca", async () => {
+  const puerto = principal.puerto;
+  const una = cookieDe(await ingresar(puerto, "rita@ejemplo.org", "clave-de-rita-4444"));
+  const otra = cookieDe(await ingresar(puerto, "rita@ejemplo.org", "clave-de-rita-4444"));
+  assert.equal((await pedir(puerto, "PATCH", "/api/auth/yo", { cuerpo: { nombre: "Rita Gómez" } })).estado, 401);
+  assert.equal((await pedir(puerto, "PATCH", "/api/auth/yo", { cookie: una, cuerpo: { nombre: "  " } })).estado, 400);
+  assert.equal((await pedir(puerto, "PATCH", "/api/auth/yo", { cookie: una, cuerpo: { nombre: "Rita Gómez", rol: "ADMINISTRADOR" } })).estado, 400, "no acepta campos de más (el rol no se cambia solo)");
+  const nombre = await pedir(puerto, "PATCH", "/api/auth/yo", { cookie: una, cuerpo: { nombre: "Rita Gómez" } });
+  assert.equal(nombre.estado, 200);
+  assert.equal((nombre.json["usuario"] as Record<string, unknown>)["nombre"], "Rita Gómez");
+  assert.equal(usuarios.find((u) => u.id === 4)!.rol, "REDACTOR");
+
+  const cambiar = (cuerpo: unknown, cookie = una) => pedir(puerto, "POST", "/api/auth/clave", { cookie, cuerpo });
+  assert.equal((await cambiar({ claveActual: "clave-de-rita-4444", claveNueva: "x" })).estado, 400, "contraseña nueva corta");
+  assert.equal((await cambiar({ claveActual: "equivocada", claveNueva: "clave-nueva-larga-5" })).json["mensaje"], "La contraseña actual no es correcta.");
+  assert.equal((await cambiar({ claveActual: "clave-de-rita-4444", claveNueva: "clave-de-rita-4444" })).estado, 400, "igual a la actual");
+  assert.equal((await pedir(puerto, "POST", "/api/auth/clave", { cuerpo: { claveActual: "a", claveNueva: "clave-nueva-larga-5" } })).estado, 401);
+  const bien = await cambiar({ claveActual: "clave-de-rita-4444", claveNueva: "clave-nueva-larga-5" });
+  assert.equal(bien.estado, 200);
+  assert.equal((bien.json["usuario"] as Record<string, unknown>)["debeCambiarClave"], false);
+  assert.ok(!bien.cuerpo.includes("scrypt"));
+  assert.equal((await pedir(puerto, "GET", "/api/auth/yo", { cookie: una })).estado, 200, "esta sesión sigue");
+  assert.equal((await pedir(puerto, "GET", "/api/auth/yo", { cookie: otra })).estado, 401, "la otra sesión se cortó");
+  assert.equal((await ingresar(puerto, "rita@ejemplo.org", "clave-de-rita-4444")).estado, 401, "la contraseña vieja ya no sirve");
+  assert.equal((await ingresar(puerto, "rita@ejemplo.org", "clave-nueva-larga-5")).estado, 200);
 });
 t("la API manda las cabeceras de seguridad de helmet", async () => {
   const r = await pedir(principal.puerto, "GET", "/api/auth/yo");

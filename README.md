@@ -161,7 +161,7 @@ Hoy el esquema tiene el núcleo del contenido y sus complementos:
 | `imagenes` | Biblioteca de imágenes: clave del archivo original (ruta relativa en el almacenamiento), nombre original, tipo, medidas, tamaño, hash SHA-256 e id del adjunto de WordPress. |
 | `articulos_galeria` | Galería de cada artículo: imagen, orden, texto alternativo y epígrafe. |
 | `fichas_tecnicas` | Ficha técnica del libro reseñado (una por artículo; todos los campos son opcionales). |
-| `usuarios` | Usuarios del panel, con rol `EDITOR` o `ADMINISTRADOR` y la contraseña con `scrypt`. Se crean con `npm run usuario:crear`. |
+| `usuarios` | Usuarios del panel, con rol `REDACTOR`, `EDITOR` o `ADMINISTRADOR` y la contraseña con `scrypt`. Se crean con `npm run usuario:crear`. |
 | `sesiones` | Sesiones del panel: solo el SHA-256 del código de la cookie, el usuario y el vencimiento. |
 | `articulos_borradores` | Cambios sin publicar de un artículo ya publicado (una fila por artículo): el autoguardado del panel va acá y el sitio sigue mostrando lo publicado. |
 | `redirecciones` | Redirecciones desde las URLs viejas de WordPress hacia un artículo, un autor o un destino manual. |
@@ -241,6 +241,7 @@ Después abrir:
 | `npm run test:categorias -- --originales="<carpeta>"` | Recorre las páginas de categoría y comprueba la volanta como enlace (base en solo lectura; requiere `build:sitio`). |
 | `npm run dev:desarrollo --workspace=@evaristo/api` | Arranca la API contra `evaristo_cms_dev` (la base de desarrollo del panel). |
 | `npm run usuario:crear -- --base-dev --email=… --nombre=… --rol=EDITOR|ADMINISTRADOR` | Crea un usuario del panel; pide la contraseña por teclado. |
+| `npm run test:admin-usuarios` | Usuarios, roles y propiedad de los artículos contra `evaristo_cms_dev` (crea y borra usuarios, fichas y artículos temporales). |
 | `npm run test:auth` | Pruebas de la autenticación (sin base). |
 | `npm run test:auth-base` | Ingreso y sesiones contra `evaristo_cms_dev` (crea y borra un usuario temporal). |
 | `npm run test:admin-articulos` | Listado de artículos del panel contra `evaristo_cms_dev` (crea y borra un usuario temporal). |

@@ -1,10 +1,11 @@
 import express, { type NextFunction, type Request, type Response } from "express";
 import { z } from "zod";
 import type { PrismaClient } from "@evaristo/compartido/db";
+import { tienePermiso } from "@evaristo/compartido/permisos";
 import { rutaArticulo } from "@evaristo/compartido/urls";
 import { estadoEfectivo, type EstadoBase } from "./estado.js";
 
-// Listado de artículos del panel (solo lectura). Lo ven los editores y los administradores.
+// Listado de artículos del panel (solo lectura). Los editores y los administradores ven todos; un Redactor, solo los que creó.
 // select explícito: no se devuelve el cuerpo ni visitasWp ni nada que la pantalla no use.
 
 export const ARTICULOS_POR_PAGINA = 25;
@@ -31,7 +32,8 @@ export function crearRutasAdminArticulos(prisma: PrismaClient): express.Router {
       // El estado que se filtra y se cuenta es el efectivo (ver estado.ts): programado = publicado con fecha futura.
       const porEstado = (e: EstadoBase) =>
         e === "BORRADOR" ? { estado: "BORRADOR" as const } : e === "PUBLICADO" ? { estado: "PUBLICADO" as const, publicadoEn: { lte: ahora } } : { OR: [{ estado: "PROGRAMADO" as const }, { estado: "PUBLICADO" as const, publicadoEn: { gt: ahora } }] };
-      const porTitulo = q ? { titulo: { contains: q } } : {};
+      const soloSuyos = tienePermiso(req.usuario!.rol, "articulos.gestionar.ajenos") ? {} : { creadoPorId: req.usuario!.id };
+      const porTitulo = { ...(q ? { titulo: { contains: q } } : {}), ...soloSuyos };
       const donde = { ...(estado ? porEstado(estado) : {}), ...porTitulo };
 
       const [total, filas, nBorrador, nPublicado, nProgramado] = await Promise.all([

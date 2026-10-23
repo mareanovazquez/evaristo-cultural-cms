@@ -4,12 +4,14 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import express, { type NextFunction, type Request, type RequestHandler, type Response } from "express";
 import helmet from "helmet";
 import { obtenerClientePrisma, type PrismaClient } from "@evaristo/compartido/db";
+import { tienePermiso } from "@evaristo/compartido/permisos";
 import { crearAuth, type OpcionesAuth } from "./auth/rutas.js";
 import { repositorioPrisma } from "./auth/repositorio.js";
 import { crearRutasAdminArticulos } from "./admin/articulos.js";
 import { crearRutasAdminEdicion } from "./admin/edicion.js";
 import { crearRutasAdminImagenes } from "./admin/imagenes.js";
 import { crearRutasAdminPublicacion } from "./admin/publicacion.js";
+import { crearRutasAdminUsuarios } from "./admin/usuarios.js";
 import { crearManejadorMedia } from "./media.js";
 import { crearManejadorRedirecciones } from "./redirecciones.js";
 
@@ -58,8 +60,23 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
   app.use("/api", express.json({ limit: "2mb" }));
   const auth = crearAuth({ repo: repositorioPrisma(prisma), seguro: process.env["NODE_ENV"] === "production", ...opciones.auth });
   app.use("/api/auth", auth.router);
-  // Rutas del panel: hace falta una sesión (editor o administrador) y que el pedido venga del propio sitio.
-  app.use("/api/admin", auth.protegerOrigen, auth.cargarSesion, auth.exigirSesion, crearRutasAdminArticulos(prisma), crearRutasAdminEdicion(prisma), crearRutasAdminPublicacion(prisma), crearRutasAdminImagenes(prisma, { dirSubidas }));
+  // Rutas del panel: hace falta una sesión, que el pedido venga del propio sitio y que la persona ya tenga una contraseña propia.
+  app.use("/api/admin", auth.protegerOrigen, auth.cargarSesion, auth.exigirSesion, auth.exigirClaveAlDia);
+  // Un Redactor solo toca los artículos que creó; lo ajeno (y lo migrado, que no tiene creador) responde 404 para no revelar que existe.
+  app.use("/api/admin/articulos/:id", async (req, res, next) => {
+    try {
+      if (tienePermiso(req.usuario!.rol, "articulos.gestionar.ajenos")) return void next();
+      const id = Number(req.params["id"]);
+      const fila = Number.isInteger(id) && id > 0 ? await prisma.articulo.findUnique({ where: { id }, select: { creadoPorId: true } }) : null;
+      if (!fila || fila.creadoPorId !== req.usuario!.id) return void res.status(404).json({ estado: "error", mensaje: "No encontramos ese artículo." });
+      next();
+    } catch (e) {
+      next(e);
+    }
+  });
+  // Borrar imágenes de la biblioteca: editor y administrador.
+  app.delete("/api/admin/imagenes/:id", auth.exigirPermiso("imagenes.borrar"));
+  app.use("/api/admin", crearRutasAdminUsuarios(prisma, auth.exigirPermiso("usuarios.gestionar")), crearRutasAdminArticulos(prisma), crearRutasAdminEdicion(prisma), crearRutasAdminPublicacion(prisma), crearRutasAdminImagenes(prisma, { dirSubidas }));
 
   app.get("/api/salud", async (_req, res) => {
     try {

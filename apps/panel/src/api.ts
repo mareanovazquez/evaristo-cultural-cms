@@ -1,4 +1,5 @@
 // Llamadas a la API del panel. Los errores salen con un mensaje en lenguaje común, listo para mostrar.
+import type { Permiso, Rol } from "@evaristo/compartido/permisos";
 import type { JSONNode } from "@evaristo/compartido/schema";
 import { problemasEnLenguajeComun } from "./mensajes";
 
@@ -61,7 +62,27 @@ export interface Usuario {
   id: number;
   email: string;
   nombre: string;
-  rol: "EDITOR" | "ADMINISTRADOR";
+  rol: Rol;
+  /** El administrador le puso la contraseña: tiene que elegir una propia antes de seguir. */
+  debeCambiarClave: boolean;
+  /** Qué puede hacer según su rol (la API vuelve a comprobarlo en cada pedido). */
+  permisos: Permiso[];
+}
+
+/** Un usuario tal como lo ve el administrador en la pantalla de usuarios. */
+export interface UsuarioAdmin {
+  id: number;
+  email: string;
+  nombre: string;
+  rol: Rol;
+  activo: boolean;
+  debeCambiarClave: boolean;
+  ultimoAccesoEn: string | null;
+  creadoEn: string;
+  /** Su ficha de autor, si tiene. */
+  autor: { id: number; nombre: string; slug: string } | null;
+  /** Cantidad de artículos que creó. */
+  articulos: number;
 }
 
 export type EstadoArticulo = "BORRADOR" | "PUBLICADO" | "PROGRAMADO";
@@ -138,6 +159,8 @@ export interface ArticuloEditable {
   /** Se manda de vuelta al guardar: así la API detecta si otra persona guardó en el medio. */
   version: string;
   conCambiosSinPublicar: boolean;
+  /** Quién lo creó en el panel (los migrados no tienen). */
+  creadoPor: { id: number; nombre: string } | null;
   ruta: string | null;
   datos: DatosArticulo;
   /** La imagen de encabezado de datos, para mostrar su miniatura. */
@@ -150,6 +173,8 @@ export interface Catalogos {
   secciones: Array<{ id: number; slug: string; nombre: string }>;
   categorias: Array<{ id: number; slug: string; nombre: string }>;
   autores: Array<{ id: number; nombre: string; soloTexto: boolean }>;
+  /** Personas con acceso, para pasarles un artículo (viene vacío si no se puede). */
+  usuarios: Array<{ id: number; nombre: string; rol: Rol }>;
 }
 
 export interface ImagenDeLista {
