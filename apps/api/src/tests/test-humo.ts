@@ -82,7 +82,7 @@ try {
   const portada = await pedir("/");
   revisarHtml("/", portada, 200);
   const carruselPortada = /<section class="carrusel"[\s\S]*?<\/section>/.exec(portada.cuerpo)?.[0] ?? "";
-  const hrefsCarrusel = [...carruselPortada.matchAll(/<h2><a href="([^"]+)"/g)].map((m) => m[1]);
+  const hrefsCarrusel = [...carruselPortada.matchAll(/<a class="btn btn--primary" href="([^"]+)"/g)].map((m) => m[1]);
   const esperadosCarrusel = publicados.slice(0, Math.min(3, publicados.length)).map((a) => canonica(a.slug, a.publicadoEn!));
   if (JSON.stringify(hrefsCarrusel) !== JSON.stringify(esperadosCarrusel)) falla("/", "el carrusel no tiene las 3 notas más nuevas, en orden");
   const bandaPortada = /<section class="portada-banda"[\s\S]*?<\/section>/.exec(portada.cuerpo)?.[0] ?? "";

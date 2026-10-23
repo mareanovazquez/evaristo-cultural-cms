@@ -242,6 +242,7 @@ Después abrir:
 | `npm run test:categorias -- --originales="<carpeta>"` | Recorre las páginas de categoría y comprueba la volanta como enlace (base en solo lectura; requiere `build:sitio`). |
 | `npm run dev:desarrollo --workspace=@evaristo/api` | Arranca la API contra `evaristo_cms_dev` (la base de desarrollo del panel). |
 | `npm run usuario:crear -- --base-dev --email=… --nombre=… --rol=EDITOR|ADMINISTRADOR` | Crea un usuario del panel; pide la contraseña por teclado. |
+| `npm run test:carrusel` | Comportamiento del carrusel de la portada sin navegador (jsdom con el script real): teclado, deslizar, avance automático y pausas, «reducir movimiento». Necesita `npm run build:sitio`. |
 | `npm run test:portada` | Portada y «Últimas publicaciones» contra `evaristo_cms_dev` (necesita `npm run build:sitio`): carrusel, banda, bloques de sección, sin repetidos, sin programados ni borradores. |
 | `npm run test:seguridad` | Cabeceras de seguridad del panel y del sitio (política de contenido, hashes de los scripts, HSTS en producción y proxies de confianza); necesita `npm run build`. |
 | `npm run test:admin-revision` | Revisión de la migración contra `evaristo_cms_dev`: tablero, filtros, marcar avisos como revisados, asignar sección y eliminar borradores (crea y borra datos temporales y deja los avisos como estaban). |

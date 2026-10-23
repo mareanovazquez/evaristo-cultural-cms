@@ -1,27 +1,37 @@
 ---
-// Carrusel de la portada: las 3 notas más nuevas, con la imagen de encabezado (16:9, recorte por punto focal), el título sobre un degradé
-// oscuro, flechas, puntos y una pausa. Sin JavaScript sigue funcionando como una tira que se desliza con el dedo o la rueda.
-// Accesibilidad: avanza solo cada 6 segundos, pero se detiene al pasar el mouse, al enfocar algo adentro, al tocar la pausa, con la pestaña
-// oculta y si el sistema pide menos movimiento (en ese caso no arranca). Se mueve con las flechas del teclado.
-interface Diapositiva {
-  href: string;
-  titulo: string;
-  seccion?: string | undefined;
-  imagen?: { src: string; alt: string; posicion: string } | undefined;
-  meta?: string | undefined;
-}
+// Hero de la portada: un carrusel con fundido entre imágenes, título, descripción opcional y un botón «Leer». Sin flechas: la navegación es un
+// control inferior con una barrita por diapositiva (la activa es más larga y clara) y, al lado, la pausa. Las diapositivas son datos
+// (`Diapositiva`, armadas en lib/portada.ts a partir de las notas más nuevas); acá solo se dibujan.
+//
+// Para cambiar las diapositivas: se arman solas con las 3 notas más nuevas (`datosDePortada`); para otras, pasar otra lista de `Diapositiva`.
+// Para cambiar el tiempo o apagar el avance automático: las props `intervalo` (milisegundos) y `autoplay`.
+//
+// Accesibilidad y comportamiento
+//  - Las diapositivas que no se ven no se pueden alcanzar con Tab (`inert` + `aria-hidden`).
+//  - Avanza solo cada `intervalo`, pero se detiene con el mouse encima, con el foco adentro, con la pestaña oculta y con el botón de pausa; con
+//    «reducir movimiento» del sistema no arranca, no hay fundido y no se muestra la pausa. Tocar un indicador o deslizar reinicia el tiempo.
+//  - Cambia con las flechas izquierda y derecha del teclado y deslizando el dedo (sin trabar el desplazamiento vertical de la página).
+//  - No anuncia cada cambio a quien usa un lector de pantalla mientras avanza solo; sí cuando la persona lo cambia.
+//  - La altura es fija (no salta al cambiar de nota) y la primera imagen carga con prioridad.
+import type { Diapositiva } from "../lib/portada";
+
 interface Props {
   diapositivas: Diapositiva[];
+  /** Milisegundos entre una diapositiva y la siguiente. */
+  intervalo?: number;
+  /** Si avanza sola (siempre se detiene con «reducir movimiento»). */
+  autoplay?: boolean;
+  etiqueta?: string;
 }
-const { diapositivas } = Astro.props;
+const { diapositivas, intervalo = 6000, autoplay = true, etiqueta = "Notas destacadas" } = Astro.props;
 ---
 
 {
   diapositivas.length > 0 && (
-    <section class="carrusel" aria-roledescription="carrusel" aria-label="Notas destacadas" data-carrusel>
-      <div class="carrusel-pista" data-pista>
+    <section class="carrusel" aria-roledescription="carrusel" aria-label={etiqueta} data-carrusel data-intervalo={intervalo} data-autoplay={autoplay ? "true" : "false"}>
+      <div class="carrusel-marco" data-marco aria-live="off">
         {diapositivas.map((d, i) => (
-          <article class="diapositiva" role="group" aria-roledescription="diapositiva" aria-label={`${i + 1} de ${diapositivas.length}`} data-diapositiva>
+          <article class={`diapositiva${i === 0 ? " activa" : ""}`} role="group" aria-roledescription="diapositiva" aria-label={`${i + 1} de ${diapositivas.length}`} data-diapositiva id={`diapositiva-${d.id}`}>
             {d.imagen ? (
               <img
                 class="diapositiva-img"
@@ -34,34 +44,26 @@ const { diapositivas } = Astro.props;
             ) : (
               <div class="diapositiva-img diapositiva-sin-imagen" />
             )}
-            <div class="diapositiva-texto">
+            <div class="diapositiva-contenido">
               {d.seccion && <span class="etiqueta">{d.seccion}</span>}
-              <h2>
-                <a href={d.href}>{d.titulo}</a>
-              </h2>
-              {d.meta && <p class="meta">{d.meta}</p>}
+              <h2>{d.titulo}</h2>
+              {d.descripcion && <p class="diapositiva-descripcion">{d.descripcion}</p>}
+              <a class="btn btn--primary" href={d.href}>
+                {d.ctaTexto}
+                <span class="solo-lectores"> la nota «{d.titulo}»</span>
+              </a>
             </div>
           </article>
         ))}
       </div>
       {diapositivas.length > 1 && (
         <div class="carrusel-controles" role="group" aria-label="Controles del carrusel">
-          <button type="button" class="carrusel-boton" data-anterior aria-label="Nota anterior">
-            <svg class="icon" aria-hidden="true">
-              <use href="#i-chevron-left" />
-            </svg>
-          </button>
-          <div class="carrusel-puntos">
+          <div class="carrusel-indicadores">
             {diapositivas.map((_, i) => (
-              <button type="button" class="carrusel-punto" data-punto aria-label={`Ir a la nota ${i + 1}`} aria-current={i === 0 ? "true" : undefined} />
+              <button type="button" class="indicador" data-indicador aria-label={`Ir a la diapositiva ${i + 1}`} aria-current={i === 0 ? "true" : undefined} />
             ))}
           </div>
-          <button type="button" class="carrusel-boton" data-siguiente aria-label="Nota siguiente">
-            <svg class="icon" aria-hidden="true">
-              <use href="#i-chevron-right" />
-            </svg>
-          </button>
-          <button type="button" class="carrusel-boton carrusel-pausa" data-pausa aria-label="Pausar el avance automático" aria-pressed="false" hidden>
+          <button type="button" class="carrusel-pausa" data-pausa aria-label="Pausar la reproducción automática" aria-pressed="false" hidden>
             <svg class="icon icono-pausar" aria-hidden="true">
               <use href="#i-pause" />
             </svg>
@@ -76,90 +78,124 @@ const { diapositivas } = Astro.props;
 }
 
 <script>
-  const INTERVALO_MS = 6000;
-
   function iniciar(carrusel: HTMLElement) {
-    const pista = carrusel.querySelector<HTMLElement>("[data-pista]")!;
+    const marco = carrusel.querySelector<HTMLElement>("[data-marco]")!;
     const diapositivas = [...carrusel.querySelectorAll<HTMLElement>("[data-diapositiva]")];
-    const puntos = [...carrusel.querySelectorAll<HTMLElement>("[data-punto]")];
-    const boton = (selector: string) => carrusel.querySelector<HTMLButtonElement>(selector);
-    const pausa = boton("[data-pausa]");
+    const indicadores = [...carrusel.querySelectorAll<HTMLElement>("[data-indicador]")];
+    const pausa = carrusel.querySelector<HTMLButtonElement>("[data-pausa]");
     if (diapositivas.length < 2) return;
 
+    const intervalo = Number(carrusel.dataset["intervalo"]) || 6000;
+    const conAutoplay = carrusel.dataset["autoplay"] !== "false";
+    const menosMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)");
     let actual = 0;
     let reloj: ReturnType<typeof setInterval> | undefined;
     let pausadoPorPersona = false;
-    let sobreElCarrusel = false;
-    const menosMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let mouseEncima = false;
 
-    const ir = (indice: number, avisar = false) => {
+    const mostrar = (indice: number, avisar: boolean) => {
       actual = (indice + diapositivas.length) % diapositivas.length;
-      pista.scrollTo({ left: diapositivas[actual]!.offsetLeft - pista.offsetLeft, behavior: menosMovimiento.matches ? "auto" : "smooth" });
-      marcar();
-      // Cuando una persona lo mueve, el lector de pantalla anuncia la nota; mientras avanza solo, no interrumpe.
-      pista.setAttribute("aria-live", avisar ? "polite" : "off");
-    };
-    const marcar = () => {
-      puntos.forEach((p, i) => (i === actual ? p.setAttribute("aria-current", "true") : p.removeAttribute("aria-current")));
+      diapositivas.forEach((d, i) => {
+        const activa = i === actual;
+        d.classList.toggle("activa", activa);
+        d.toggleAttribute("inert", !activa);
+        d.setAttribute("aria-hidden", String(!activa));
+      });
+      indicadores.forEach((p, i) => (i === actual ? p.setAttribute("aria-current", "true") : p.removeAttribute("aria-current")));
+      // Si lo cambia una persona, el lector de pantalla lo anuncia; mientras avanza solo, no interrumpe.
+      marco.setAttribute("aria-live", avisar ? "polite" : "off");
     };
 
-    const debeAvanzar = () => !menosMovimiento.matches && !pausadoPorPersona && !sobreElCarrusel && !document.hidden && !carrusel.contains(document.activeElement);
-    const arrancar = () => {
-      detener();
-      if (debeAvanzar()) reloj = setInterval(() => ir(actual + 1), INTERVALO_MS);
-    };
     const detener = () => {
       if (reloj) clearInterval(reloj);
       reloj = undefined;
     };
+    const debeAvanzar = () => conAutoplay && !menosMovimiento.matches && !pausadoPorPersona && !mouseEncima && !document.hidden && !carrusel.contains(document.activeElement);
+    const programar = () => {
+      detener();
+      if (debeAvanzar()) reloj = setInterval(() => mostrar(actual + 1, false), intervalo);
+    };
+    /** Una persona eligió una diapositiva: se muestra y el tiempo vuelve a empezar de cero. */
+    const elegir = (indice: number) => {
+      mostrar(indice, true);
+      programar();
+    };
 
-    boton("[data-anterior]")?.addEventListener("click", () => ir(actual - 1, true));
-    boton("[data-siguiente]")?.addEventListener("click", () => ir(actual + 1, true));
-    puntos.forEach((p, i) => p.addEventListener("click", () => ir(i, true)));
+    indicadores.forEach((p, i) => p.addEventListener("click", () => elegir(i)));
 
-    // Al deslizar con el dedo o la rueda, el punto marcado sigue a la nota que se ve
-    let esperando: ReturnType<typeof setTimeout> | undefined;
-    pista.addEventListener("scroll", () => {
-      clearTimeout(esperando);
-      esperando = setTimeout(() => {
-        const ancho = pista.clientWidth || 1;
-        actual = Math.min(diapositivas.length - 1, Math.max(0, Math.round(pista.scrollLeft / ancho)));
-        marcar();
-      }, 80);
-    });
-
-    // Flechas del teclado cuando el foco está adentro
+    // Teclado: flechas izquierda y derecha mientras el foco está adentro
     carrusel.addEventListener("keydown", (e) => {
       if (e.key === "ArrowLeft") {
         e.preventDefault();
-        ir(actual - 1, true);
+        elegir(actual - 1);
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        ir(actual + 1, true);
+        elegir(actual + 1);
       }
     });
 
-    // Pausas: mouse encima, foco adentro, pestaña oculta, botón de pausa y «reducir movimiento»
-    carrusel.addEventListener("mouseenter", () => ((sobreElCarrusel = true), detener()));
-    carrusel.addEventListener("mouseleave", () => ((sobreElCarrusel = false), arrancar()));
-    carrusel.addEventListener("focusin", detener);
-    carrusel.addEventListener("focusout", () => setTimeout(arrancar, 0));
-    document.addEventListener("visibilitychange", () => (document.hidden ? detener() : arrancar()));
-    menosMovimiento.addEventListener("change", () => {
-      if (pausa) pausa.hidden = menosMovimiento.matches;
-      arrancar();
+    // Deslizar con el dedo (o el lápiz): el desplazamiento vertical de la página sigue andando (touch-action: pan-y)
+    let inicio: { x: number; y: number } | null = null;
+    let deslizo = false;
+    marco.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse") return;
+      inicio = { x: e.clientX, y: e.clientY };
+      detener();
     });
-    if (pausa) {
-      pausa.hidden = menosMovimiento.matches; // si no hay avance automático, no hace falta el botón
-      pausa.addEventListener("click", () => {
-        pausadoPorPersona = !pausadoPorPersona;
-        pausa.setAttribute("aria-pressed", String(pausadoPorPersona));
-        pausa.setAttribute("aria-label", pausadoPorPersona ? "Reanudar el avance automático" : "Pausar el avance automático");
-        pausadoPorPersona ? detener() : arrancar();
-      });
-    }
-    marcar();
-    arrancar();
+    marco.addEventListener("pointerup", (e) => {
+      if (!inicio) return;
+      const dx = e.clientX - inicio.x;
+      const dy = e.clientY - inicio.y;
+      inicio = null;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        deslizo = true;
+        elegir(actual + (dx < 0 ? 1 : -1));
+        setTimeout(() => (deslizo = false), 0);
+      } else {
+        programar();
+      }
+    });
+    marco.addEventListener("pointercancel", () => {
+      inicio = null;
+      programar();
+    });
+    // Un deslizamiento no tiene que contar como un toque en el botón
+    marco.addEventListener(
+      "click",
+      (e) => {
+        if (deslizo) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      },
+      true,
+    );
+
+    // Se detiene con el mouse encima y con el foco adentro
+    carrusel.addEventListener("mouseenter", () => ((mouseEncima = true), detener()));
+    carrusel.addEventListener("mouseleave", () => ((mouseEncima = false), programar()));
+    carrusel.addEventListener("focusin", detener);
+    carrusel.addEventListener("focusout", () => setTimeout(programar, 0));
+    document.addEventListener("visibilitychange", () => (document.hidden ? detener() : programar()));
+
+    // Pausa y «reducir movimiento»
+    const mostrarPausa = () => {
+      if (pausa) pausa.hidden = !conAutoplay || menosMovimiento.matches;
+    };
+    menosMovimiento.addEventListener("change", () => {
+      mostrarPausa();
+      programar();
+    });
+    pausa?.addEventListener("click", () => {
+      pausadoPorPersona = !pausadoPorPersona;
+      pausa.setAttribute("aria-pressed", String(pausadoPorPersona));
+      pausa.setAttribute("aria-label", pausadoPorPersona ? "Reanudar la reproducción automática" : "Pausar la reproducción automática");
+      programar();
+    });
+
+    mostrar(0, false);
+    mostrarPausa();
+    programar();
   }
 
   document.querySelectorAll<HTMLElement>("[data-carrusel]").forEach(iniciar);

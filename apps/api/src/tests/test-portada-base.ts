@@ -59,7 +59,7 @@ try {
   assert.match(html, /class="portada-fecha">[A-ZÁÉÍÓÚ][a-záéíóúñ]+, \d{1,2} de [a-zé]+ de \d{4}</, "la fecha completa en español, con mayúscula inicial");
 
   // Las notas que la base considera «las últimas»: visibles (publicadas y con fecha cumplida), de la más nueva a la más vieja
-  const ultimas = await prisma.articulo.findMany({ where: { estado: "PUBLICADO", publicadoEn: { lte: new Date() } }, orderBy: [{ publicadoEn: "desc" }, { id: "desc" }], take: 6, select: { id: true, slug: true, titulo: true, publicadoEn: true, encabezadoAlt: true, imagenEncabezado: { select: { clave: true } } } });
+  const ultimas = await prisma.articulo.findMany({ where: { estado: "PUBLICADO", publicadoEn: { lte: new Date() } }, orderBy: [{ publicadoEn: "desc" }, { id: "desc" }], take: 6, select: { id: true, slug: true, bajada: true, titulo: true, publicadoEn: true, encabezadoAlt: true, imagenEncabezado: { select: { clave: true } } } });
   assert.equal(ultimas[0]!.id, reciente.id, "la nota recién publicada es la primera");
   const ruta = (a: { slug: string; publicadoEn: Date | null }) => rutaArticulo({ slug: a.slug, publicadoEn: a.publicadoEn! });
 
@@ -67,21 +67,29 @@ try {
   const carrusel = /<section class="carrusel"[\s\S]*?<\/section>/.exec(html)?.[0];
   assert.ok(carrusel, "hay carrusel");
   assert.match(carrusel, /aria-roledescription="carrusel"/);
-  const slides = [...carrusel.matchAll(/<article class="diapositiva"([\s\S]*?)<\/article>/g)].map((m) => m[0]);
+  const slides = [...carrusel.matchAll(/<article class="diapositiva(?: activa)?"([\s\S]*?)<\/article>/g)].map((m) => m[0]);
   assert.equal(slides.length, 3, "3 diapositivas");
   slides.forEach((s, i) => {
     const a = ultimas[i]!;
-    assert.ok(s.includes(`href="${ruta(a)}"`), `diapositiva ${i + 1}: enlaza a la nota ${i + 1} más nueva`);
-    assert.ok(s.includes(`>${escapar(a.titulo)}</a>`), `diapositiva ${i + 1}: con su título`);
+    assert.ok(s.includes(`<a class="btn btn--primary" href="${ruta(a)}"`), `diapositiva ${i + 1}: el botón lleva a la nota ${i + 1} más nueva`);
+    assert.ok(s.includes(`<h2>${escapar(a.titulo)}</h2>`), `diapositiva ${i + 1}: con su título (que no es otro enlace igual al botón)`);
+    assert.match(s, />\s*Leer\s*<span class="solo-lectores"> la nota «/, `diapositiva ${i + 1}: el botón dice «Leer» y para un lector de pantalla, qué nota`);
+    assert.equal((s.match(/<a /g) ?? []).length, 1, `diapositiva ${i + 1}: un solo enlace`);
+    assert.equal(s.includes('class="diapositiva-descripcion"'), !!a.bajada?.trim(), `diapositiva ${i + 1}: la descripción es la bajada, y solo si la nota tiene`);
+    assert.equal(s.startsWith('<article class="diapositiva activa"'), i === 0, `diapositiva ${i + 1}: solo la primera arranca visible`);
     assert.ok(s.includes(`aria-label="${i + 1} de 3"`), `diapositiva ${i + 1}: «${i + 1} de 3» para lectores de pantalla`);
     if (a.imagenEncabezado) {
       assert.match(s, new RegExp(`<img[^>]*alt="${escapar(a.encabezadoAlt ?? "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`), `diapositiva ${i + 1}: usa el texto alternativo de la imagen`);
       assert.ok(i === 0 ? /loading="eager"/.test(s) && /fetchpriority="high"/.test(s) : /loading="lazy"/.test(s), `diapositiva ${i + 1}: ${i === 0 ? "la primera carga con prioridad" : "las demás, diferidas"}`);
     }
   });
-  assert.match(carrusel, /aria-label="Nota anterior"/);
-  assert.match(carrusel, /aria-label="Pausar el avance automático"/);
-  assert.equal((carrusel.match(/data-punto/g) ?? []).length, 3, "un punto por nota");
+  // Sin flechas: la navegación es el control inferior, con un indicador por diapositiva y la pausa
+  assert.ok(!/Nota anterior|Nota siguiente|data-anterior|data-siguiente/.test(carrusel), "no hay flechas de anterior y siguiente");
+  assert.deepEqual([...carrusel.matchAll(/aria-label="(Ir a la diapositiva \d)"/g)].map((m) => m[1]), ["Ir a la diapositiva 1", "Ir a la diapositiva 2", "Ir a la diapositiva 3"], "un indicador por nota, con su nombre");
+  assert.equal((carrusel.match(/data-indicador/g) ?? []).length, 3);
+  assert.match(carrusel, /data-indicador[^>]*aria-label="Ir a la diapositiva 1" aria-current="true"/, "el activo está marcado");
+  assert.match(carrusel, /aria-label="Pausar la reproducción automática"/, "y la pausa integrada al control");
+  assert.match(carrusel, /data-intervalo="6000"/, "avanza cada 6 segundos");
 
   // Banda: las 3 siguientes + la presentación con «Ver todo»
   const banda = /<section class="portada-banda"[\s\S]*?<\/section>/.exec(html)?.[0];

@@ -1,5 +1,6 @@
-import { prisma } from "./prisma";
+import { posicionFocal, rutaArticulo, urlMedia } from "./articulos";
 import { NOTAS_POR_PAGINA } from "./paginacion";
+import { prisma } from "./prisma";
 
 // Datos de la portada. Se arma sola con lo publicado (el editor no maqueta); ver docs/especificaciones/especificacion-home.md.
 //  - Carrusel: las 3 notas más nuevas.
@@ -17,6 +18,7 @@ const seleccion = {
   id: true,
   slug: true,
   titulo: true,
+  bajada: true,
   publicadoEn: true,
   seccion: { select: { nombre: true, interna: true } },
   imagenEncabezado: { select: { clave: true } },
@@ -30,6 +32,34 @@ export type NotaDePortada = Awaited<ReturnType<typeof ultimas>>[number];
 
 function ultimas(cantidad: number, saltear = 0) {
   return prisma.articulo.findMany({ where: visibles(), orderBy: [{ publicadoEn: "desc" }, { id: "desc" }], skip: saltear, take: cantidad, select: seleccion });
+}
+
+/** Una diapositiva del hero de la portada: solo datos, sin presentación (la dibuja `Carrusel.astro`). */
+export interface Diapositiva {
+  id: string;
+  imagen?: { src: string; alt: string; posicion: string } | undefined;
+  titulo: string;
+  descripcion?: string | undefined;
+  ctaTexto: string;
+  href: string;
+  seccion?: string | undefined;
+}
+
+const DESCRIPCION_MAX = 220;
+const recortar = (texto: string, max: number): string => (texto.length <= max ? texto : `${texto.slice(0, max).replace(/\s+\S*$/, "")}…`);
+
+/** La diapositiva de una nota: su imagen de encabezado (con su texto alternativo y punto focal), el título, la bajada si la tiene y «Leer». */
+export function diapositivaDeNota(n: NotaDePortada): Diapositiva {
+  const bajada = n.bajada?.trim();
+  return {
+    id: n.slug,
+    imagen: n.imagenEncabezado ? { src: urlMedia(n.imagenEncabezado.clave), alt: n.encabezadoAlt ?? "", posicion: posicionFocal(n.encabezadoPuntoFocalX, n.encabezadoPuntoFocalY) } : undefined,
+    titulo: n.titulo,
+    descripcion: bajada ? recortar(bajada, DESCRIPCION_MAX) : undefined,
+    ctaTexto: "Leer",
+    href: rutaArticulo({ slug: n.slug, publicadoEn: n.publicadoEn! }),
+    seccion: n.seccion.interna ? undefined : n.seccion.nombre,
+  };
 }
 
 export interface BloqueDeSeccion {

@@ -5,7 +5,7 @@ import BloqueSeccion from "../components/BloqueSeccion.astro";
 import Carrusel from "../components/Carrusel.astro";
 import Tarjeta from "../components/Tarjeta.astro";
 import { fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../lib/articulos";
-import { datosDePortada, type NotaDePortada } from "../lib/portada";
+import { datosDePortada, diapositivaDeNota, type NotaDePortada } from "../lib/portada";
 
 // Portada (fase 5): se arma sola con lo publicado. Orden: fecha, carrusel de las 3 notas más nuevas, dos secciones, banda con las 3
 // siguientes y «Últimas publicaciones», y las demás secciones. Ver docs/especificaciones/especificacion-home.md.
@@ -27,15 +27,7 @@ const hayNotas = carrusel.length > 0;
       <div class="portada">
         <p class="portada-fecha">{hoy}</p>
 
-        <Carrusel
-          diapositivas={carrusel.map((n) => ({
-            href: rutaArticulo({ slug: n.slug, publicadoEn: n.publicadoEn! }),
-            titulo: n.titulo,
-            seccion: n.seccion.interna ? undefined : n.seccion.nombre,
-            imagen: n.imagenEncabezado ? { ...imagenDe(n)!, alt: n.encabezadoAlt ?? "" } : undefined,
-            meta: meta(n),
-          }))}
-        />
+        <Carrusel diapositivas={carrusel.map(diapositivaDeNota)} intervalo={6000} />
 
         {arriba.length > 0 && (
           <div class="portada-bloques">

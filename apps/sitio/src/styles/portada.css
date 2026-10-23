@@ -12,31 +12,77 @@
   color: var(--text-muted);
 }
 
-/* ---------- Carrusel ---------- */
+/* ---------- Botón (la maqueta: .btn--primary, ver docs/decisiones-de-diseno.md) ---------- */
+.btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  height: 44px;
+  padding: 0 20px;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  color: var(--text);
+  white-space: nowrap;
+  border: 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.btn:hover {
+  color: var(--text);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--accent-700);
+  outline-offset: 2px;
+}
+.btn--primary {
+  background: var(--accent-500);
+}
+.btn--primary:hover {
+  background: var(--accent-600);
+}
+
+/* ---------- Hero con carrusel ---------- */
 .carrusel {
   position: relative;
-}
-.carrusel-pista {
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
   border-radius: var(--radius);
-  background: var(--surface-2);
-}
-.carrusel-pista::-webkit-scrollbar {
-  display: none;
-}
-.diapositiva {
-  position: relative;
-  flex: 0 0 100%;
-  scroll-snap-align: start;
-  aspect-ratio: 4 / 3;
   overflow: hidden;
+  background: var(--accent-900);
+}
+.carrusel-marco {
+  position: relative;
+  height: 480px; /* fija: la altura no cambia al pasar de una nota a otra */
+  touch-action: pan-y; /* el dedo desliza horizontalmente el carrusel; la página sigue bajando */
 }
 @media (min-width: 640px) {
-  .diapositiva {
-    aspect-ratio: 16 / 9;
+  .carrusel-marco {
+    height: clamp(440px, 48vw, 600px);
+  }
+}
+/* Fundido: todas las diapositivas apiladas; se ve solo la activa */
+.diapositiva {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 800ms ease, visibility 0s linear 800ms;
+}
+.diapositiva.activa {
+  z-index: 1;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 800ms ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .diapositiva,
+  .diapositiva.activa {
+    transition: none;
   }
 }
 .diapositiva-img {
@@ -49,94 +95,136 @@
 .diapositiva-sin-imagen {
   background: var(--accent-900);
 }
-.diapositiva-texto {
+/* El contenido va sobre un degradé oscuro para que se lea con cualquier foto; deja abajo el lugar del control */
+.diapositiva-contenido {
   position: absolute;
-  inset: auto 0 0 0;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: var(--space-2);
-  padding: var(--space-16) var(--space-6) var(--space-12);
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-6) 88px;
   color: #fefefc;
-  /* Degradé oscuro para que el título se lea con cualquier foto */
-  background: linear-gradient(to top, rgba(20, 17, 18, 0.88) 0%, rgba(20, 17, 18, 0.55) 55%, rgba(20, 17, 18, 0) 100%);
+  background: linear-gradient(to top, rgba(20, 17, 18, 0.92) 0%, rgba(20, 17, 18, 0.6) 45%, rgba(20, 17, 18, 0.2) 100%);
 }
 @media (min-width: 640px) {
-  .diapositiva-texto {
-    padding: 96px var(--space-12) var(--space-12);
+  .diapositiva-contenido {
+    padding: var(--space-8) var(--space-12) 96px;
+    background: linear-gradient(to right, rgba(20, 17, 18, 0.85) 0%, rgba(20, 17, 18, 0.55) 48%, rgba(20, 17, 18, 0.05) 100%), linear-gradient(to top, rgba(20, 17, 18, 0.6) 0%, rgba(20, 17, 18, 0) 40%);
   }
 }
 .diapositiva h2 {
   margin: 0;
-  max-width: 28ch;
+  max-width: 22ch;
   font-family: var(--font-serif);
   font-weight: 600;
-  font-size: 26px;
-  line-height: 1.2;
+  font-size: 30px;
+  line-height: 1.15;
 }
 @media (min-width: 640px) {
   .diapositiva h2 {
-    font-size: 40px;
-    line-height: 1.15;
+    font-size: 44px;
+    line-height: 1.1;
   }
 }
-.diapositiva h2 a {
-  color: inherit;
-  text-decoration: none;
-}
-.diapositiva h2 a::after {
-  content: "";
-  position: absolute;
-  inset: 0; /* toda la diapositiva es clicable */
-}
-.diapositiva h2 a:focus-visible {
-  outline: none;
-}
-.diapositiva:focus-within {
-  outline: 3px solid var(--focus);
-  outline-offset: -3px;
-}
-.diapositiva .meta {
+.diapositiva-descripcion {
+  display: none;
   margin: 0;
-  font-size: 14px;
-  color: rgba(254, 254, 252, 0.9);
+  max-width: 52ch;
+  font-size: 17px;
+  line-height: 1.5;
+  color: rgba(254, 254, 252, 0.92);
 }
-.diapositiva .etiqueta {
-  position: relative;
-  z-index: 1;
+@media (min-width: 640px) {
+  .diapositiva-descripcion {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+  }
 }
+.diapositiva .btn {
+  margin-top: var(--space-1);
+}
+
+/* Control inferior: una barrita por diapositiva (la activa, más larga y clara) y la pausa. Cada botón mide 44 px de alto aunque la barra sea fina. */
 .carrusel-controles {
   position: absolute;
-  right: var(--space-4);
+  left: var(--space-6);
+  right: var(--space-6);
   bottom: var(--space-4);
+  z-index: 2;
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  z-index: 2;
 }
-.carrusel-boton {
+@media (min-width: 640px) {
+  .carrusel-controles {
+    left: var(--space-12);
+    right: var(--space-12);
+    bottom: var(--space-6);
+  }
+}
+.carrusel-indicadores {
+  display: flex;
+  align-items: center;
+}
+.indicador {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.indicador::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 4px;
+  transform: translate(-50%, -50%);
+  background: rgba(254, 254, 252, 0.5);
+  border-radius: 999px;
+  transition: width 250ms ease, background-color 250ms ease;
+}
+.indicador:hover::before {
+  background: rgba(254, 254, 252, 0.8);
+}
+.indicador[aria-current="true"]::before {
+  width: 36px;
+  background: #fefefc;
+}
+.indicador:focus-visible,
+.carrusel-pausa:focus-visible {
+  outline: 2px solid #fefefc;
+  outline-offset: -4px;
+  box-shadow: 0 0 0 2px var(--accent-700);
+  border-radius: var(--radius);
+}
+.carrusel-pausa {
   display: inline-grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
+  margin-left: var(--space-2);
   padding: 0;
-  color: var(--text);
-  background: rgba(254, 254, 252, 0.92);
-  border: 0;
+  color: #fefefc;
+  background: rgba(20, 17, 18, 0.45);
+  border: 1px solid rgba(254, 254, 252, 0.6);
   border-radius: 50%;
   cursor: pointer;
 }
-.carrusel-boton:hover {
-  background: #fff;
+.carrusel-pausa:hover {
+  background: rgba(20, 17, 18, 0.7);
 }
-.carrusel-boton:focus-visible,
-.carrusel-punto:focus-visible {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
-}
-.carrusel-boton .icon {
-  width: 20px;
-  height: 20px;
+.carrusel-pausa .icon {
+  width: 16px;
+  height: 16px;
 }
 .carrusel-pausa .icono-reanudar,
 .carrusel-pausa[aria-pressed="true"] .icono-pausar {
@@ -145,31 +233,9 @@
 .carrusel-pausa[aria-pressed="true"] .icono-reanudar {
   display: block;
 }
-.carrusel-puntos {
-  display: flex;
-  gap: var(--space-2);
-  padding: 0 var(--space-2);
-}
-.carrusel-punto {
-  width: 12px;
-  height: 12px;
-  padding: 0;
-  background: rgba(254, 254, 252, 0.5);
-  border: 1px solid rgba(254, 254, 252, 0.9);
-  border-radius: 50%;
-  cursor: pointer;
-}
-.carrusel-punto[aria-current="true"] {
-  background: #fefefc;
-}
-@media (max-width: 639px) {
-  .carrusel-controles {
-    right: 50%;
-    transform: translateX(50%);
-    bottom: var(--space-3);
-  }
-  .diapositiva-texto {
-    padding-bottom: var(--space-16);
+@media (prefers-reduced-motion: reduce) {
+  .indicador::before {
+    transition: none;
   }
 }
 
