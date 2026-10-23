@@ -1419,7 +1419,7 @@ await t('el menú muestra Usuarios solo a quien tiene el permiso, y los roles se
   document.body.replaceChildren()
   const admin = await montar('/')
   await hasta(() => !!document.querySelector('nav a'), 'el menú')
-  assert.deepEqual(enlaces(), ['Artículos', 'Autores', 'Revisión', 'Secciones y categorías', 'Usuarios', 'Mi cuenta'])
+  assert.deepEqual(enlaces(), ['Artículos', 'Autores', 'Secciones y categorías', 'Revisión', 'Usuarios', 'Mi cuenta'])
   assert.ok(texto().includes('(administrador)'))
   await act(async () => admin.unmount())
   usuarioServido = { id: 4, email: 'rita@b.c', nombre: 'Rita', rol: 'REDACTOR', debeCambiarClave: false, permisos: ['articulos.crear'] }
@@ -1964,6 +1964,73 @@ await t('Eliminar desde el artículo: el administrador elimina un borrador; si y
   assert.ok(!boton('Eliminar este borrador') && !texto().includes('primero hay que despublicarlo'))
   await act(async () => r3.unmount())
   usuarioServido = { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINISTRADOR', debeCambiarClave: false, permisos: ['articulos.crear', 'usuarios.gestionar'] }
+})
+
+// ---------- Menú lateral ----------
+await t('Menú lateral: en escritorio arranca desplegado, se pliega a íconos con el botón de abajo y se acuerda', async () => {
+  window.localStorage.removeItem('panel-menu-plegado')
+  const r = await montar('/')
+  await hasta(() => !!document.querySelector('.menu-lateral'), 'el menú')
+  const estructura = () => document.querySelector('.estructura')!
+  assert.ok(!estructura().classList.contains('plegada'), 'desplegado por defecto')
+  assert.ok(document.querySelector('nav[aria-label="Secciones del panel"]'), 'tiene su navegación con nombre')
+  assert.deepEqual([...document.querySelectorAll('.menu-grupo-titulo')].map((g) => g.textContent), ['Contenido', 'Revisión', 'Administración', 'Cuenta'], 'agrupado')
+  const plegar = boton('Plegar el menú')!
+  assert.equal(plegar.getAttribute('aria-pressed'), 'false')
+  await clic(plegar)
+  assert.ok(estructura().classList.contains('plegada'), 'plegado: solo íconos')
+  assert.equal(window.localStorage.getItem('panel-menu-plegado'), '1', 'se recuerda en este navegador')
+  const desplegar = boton('Desplegar el menú')!
+  assert.equal(desplegar.getAttribute('aria-pressed'), 'true')
+  // Plegado, cada enlace conserva su nombre (texto oculto a la vista) y una ayuda al pasar el mouse; todos tienen ícono
+  const enlacesMenu = [...document.querySelectorAll('nav a.menu-enlace')]
+  assert.ok(enlacesMenu.length >= 5 && enlacesMenu.every((a) => a.querySelector('svg[aria-hidden="true"]') && a.querySelector('.menu-texto')!.textContent === a.getAttribute('title')))
+  assert.deepEqual(enlaces(), ['Artículos', 'Autores', 'Secciones y categorías', 'Revisión', 'Usuarios', 'Mi cuenta'], 'los mismos enlaces plegado y desplegado')
+  assert.equal(document.querySelector('.menu-enlace[aria-current="page"]')!.textContent, 'Artículos', 'marca dónde estás')
+  await act(async () => r.unmount())
+  // Una visita nueva lo encuentra como se dejó
+  const r2 = await montar('/')
+  await hasta(() => !!document.querySelector('.menu-lateral'), 'el menú de nuevo')
+  assert.ok(estructura().classList.contains('plegada'))
+  await clic(boton('Desplegar el menú')!)
+  assert.ok(!estructura().classList.contains('plegada'))
+  assert.equal(window.localStorage.getItem('panel-menu-plegado'), '0')
+  await act(async () => r2.unmount())
+})
+
+await t('Menú lateral: en celular arranca cerrado, la hamburguesa lo abre y se cierra con la X, Esc, tocando afuera o al ir a otra pantalla', async () => {
+  window.localStorage.removeItem('panel-menu-plegado')
+  const r = await montar('/')
+  await hasta(() => !!document.querySelector('.menu-lateral'), 'el menú')
+  const estructura = () => document.querySelector('.estructura')!
+  const hamburguesa = () => document.querySelector<HTMLButtonElement>('.boton-menu[aria-label="Abrir el menú"]')!
+  assert.ok(!estructura().classList.contains('menu-abierto'), 'cerrado al entrar')
+  assert.equal(hamburguesa().getAttribute('aria-expanded'), 'false')
+  assert.equal(hamburguesa().getAttribute('aria-controls'), 'menu-lateral')
+  await clic(hamburguesa())
+  assert.ok(estructura().classList.contains('menu-abierto'), 'la hamburguesa lo abre')
+  assert.equal(hamburguesa().getAttribute('aria-expanded'), 'true')
+  assert.ok(document.getElementById('menu-lateral'), 'y el botón apunta al menú')
+  // Esc lo cierra y el foco vuelve a la hamburguesa
+  await act(async () => { window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })) })
+  assert.ok(!estructura().classList.contains('menu-abierto'), 'Esc lo cierra')
+  assert.equal(document.activeElement, hamburguesa(), 'y el foco vuelve al botón')
+  // La X
+  await clic(hamburguesa())
+  await clic(document.querySelector('.menu-cerrar')!)
+  assert.ok(!estructura().classList.contains('menu-abierto'), 'la X lo cierra')
+  // Tocar afuera
+  await clic(hamburguesa())
+  await clic(document.querySelector('.fondo-menu')!)
+  assert.ok(!estructura().classList.contains('menu-abierto'), 'tocar afuera lo cierra')
+  // Ir a otra pantalla
+  await clic(hamburguesa())
+  await clic([...document.querySelectorAll('nav a')].find((a) => a.textContent === 'Mi cuenta')!)
+  await hasta(() => !!document.getElementById('cuenta-nombre'), 'Mi cuenta')
+  assert.ok(!estructura().classList.contains('menu-abierto'), 'al ir a otra pantalla se cierra')
+  // Salir sigue siendo un botón del menú
+  assert.ok(boton('Salir'))
+  await act(async () => r.unmount())
 })
 
 console.log(`\n${ok} pruebas de la pantalla ok`)

@@ -38,10 +38,7 @@ a:hover { color: var(--acento-oscuro); }
 .pantalla { max-width: 40rem; margin: 0 auto; padding: 2rem 1rem; }
 
 /* Barra superior y contenido */
-.barra { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem 1rem; padding: 0.5rem 1rem; background: var(--superficie); border-bottom: 1px solid var(--borde); }
-.barra-titulo { font-weight: 600; color: var(--texto); text-decoration: none; }
-.barra-usuario { display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; color: var(--texto-suave); }
-.contenido { max-width: 80rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+.contenido { max-width: 80rem; margin: 0 auto; padding: 1.5rem 1rem 3rem; min-width: 0; }
 
 /* Botones y campos */
 .boton { font: inherit; font-weight: 600; font-size: 0.9rem; min-height: 40px; padding: 0 1rem; border-radius: var(--radio); border: 1px solid transparent; cursor: pointer; }
@@ -281,11 +278,6 @@ a.titulo-articulo:hover { color: var(--acento); text-decoration: underline; }
 .ficha-editor details[open] summary { margin-bottom: 0.5rem; }
 
 /* Menú del panel, mi cuenta y usuarios */
-.barra-izquierda { display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1.25rem; }
-.barra-menu { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 0.95rem; }
-.barra-menu a { color: var(--texto-suave); text-decoration: none; padding: 0.25rem 0; border-bottom: 2px solid transparent; }
-.barra-menu a:hover { color: var(--texto); }
-.barra-menu a[aria-current="page"] { color: var(--texto); font-weight: 600; border-bottom-color: var(--acento); }
 .aviso-ok { background: var(--ok-fondo); border-color: var(--ok); color: var(--ok); }
 .grupo-titulo { font-size: 1.05rem; margin: 0 0 0.75rem; }
 .pantalla .grupo { display: block; margin-bottom: 1.25rem; }
@@ -319,3 +311,52 @@ form.grupo { margin-bottom: 1.25rem; background: var(--superficie); }
 .aviso-revisado > span:first-child { color: var(--texto-suave); text-decoration: line-through; }
 .asignar-seccion { display: flex; flex-direction: column; gap: 0.35rem; min-width: 11rem; }
 .asignar-seccion select { min-height: 36px; }
+
+
+/* Menú lateral (sidebar). Escritorio: desplegado, plegable a íconos. Celular: cerrado, se abre con la hamburguesa. */
+.estructura { --ancho-menu: 15rem; display: grid; grid-template-columns: var(--ancho-menu) minmax(0, 1fr); min-height: 100vh; }
+.estructura.plegada { --ancho-menu: 4.25rem; }
+.menu-lateral { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; background: var(--superficie); border-right: 1px solid var(--borde); overflow: hidden auto; }
+.menu-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; min-height: 3.5rem; padding: 0 0.75rem 0 1rem; border-bottom: 1px solid var(--borde); }
+.barra-titulo { font-weight: 600; color: var(--texto); text-decoration: none; line-height: 1.2; }
+.menu-sigla { display: none; font-weight: 700; letter-spacing: 0.04em; }
+.menu-nav { flex: 1 1 auto; padding: 0.5rem 0.5rem 1rem; }
+.menu-grupo { margin-top: 0.75rem; }
+.menu-grupo-titulo { margin: 0 0 0.25rem 0.75rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texto-suave); }
+.menu-enlace { display: flex; align-items: center; gap: 0.75rem; width: 100%; min-height: 42px; padding: 0.4rem 0.75rem; font: inherit; font-size: 0.95rem; color: var(--texto-suave); text-decoration: none; background: none; border: 0; border-radius: var(--radio); cursor: pointer; text-align: left; }
+.menu-enlace:hover:not(:disabled) { background: var(--fondo); color: var(--texto); }
+.menu-enlace[aria-current="page"] { background: #e3ecf5; color: var(--acento-oscuro); font-weight: 600; }
+.menu-enlace:disabled { opacity: 0.6; cursor: default; }
+.icono { flex: none; }
+.menu-pie { padding: 0.5rem; border-top: 1px solid var(--borde); }
+.menu-pie .barra-usuario { margin: 0 0 0.25rem; padding: 0.25rem 0.75rem; font-size: 0.85rem; color: var(--texto-suave); overflow-wrap: anywhere; }
+.boton-menu { display: inline-grid; place-items: center; width: 44px; height: 44px; padding: 0; color: var(--texto); background: none; border: 1px solid transparent; border-radius: var(--radio); cursor: pointer; }
+.boton-menu:hover { background: var(--fondo); border-color: var(--borde); }
+.barra-movil, .fondo-menu, .menu-cerrar { display: none; }
+.icono-plegar { transition: transform 0.15s; }
+
+/* Escritorio: plegado, solo íconos. El texto sigue en el HTML para quien usa lector de pantalla. */
+@media (min-width: 900px) {
+  .estructura.plegada .menu-texto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+  .estructura.plegada .menu-sigla { display: inline; }
+  .estructura.plegada .menu-cabecera { justify-content: center; padding: 0; }
+  .estructura.plegada .menu-grupo-titulo { visibility: hidden; height: 0.4rem; margin: 0; }
+  .estructura.plegada .menu-enlace { justify-content: center; padding: 0.4rem; }
+  .estructura.plegada .menu-pie .barra-usuario { padding: 0; height: 0; margin: 0; overflow: hidden; }
+  .estructura.plegada .icono-plegar { transform: rotate(180deg); }
+}
+
+/* Celular: el menú es un panel que se abre encima del contenido */
+@media (max-width: 899px) {
+  .estructura { display: block; }
+  .barra-movil { position: sticky; top: 0; z-index: 60; display: flex; align-items: center; gap: 0.5rem; min-height: 3.5rem; padding: 0 0.75rem; background: var(--superficie); border-bottom: 1px solid var(--borde); }
+  .menu-lateral { position: fixed; top: 0; left: 0; z-index: 100; width: min(18rem, 86vw); height: 100dvh; transform: translateX(-100%); visibility: hidden; transition: transform 0.2s ease, visibility 0s linear 0.2s; box-shadow: none; }
+  .estructura.menu-abierto .menu-lateral { transform: none; visibility: visible; transition: transform 0.2s ease; box-shadow: 0 0 24px rgba(0, 0, 0, 0.25); }
+  .estructura.menu-abierto .fondo-menu { display: block; position: fixed; inset: 0; z-index: 90; background: rgba(0, 0, 0, 0.4); }
+  .menu-cerrar { display: inline-grid; }
+  .menu-plegar { display: none; }
+  .menu-enlace { min-height: 48px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-lateral, .estructura.menu-abierto .menu-lateral, .icono-plegar { transition: none; }
+}

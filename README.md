@@ -254,7 +254,7 @@ Después abrir:
 | `npm run test:admin-galeria-ficha` | Galería de imágenes y ficha técnica en la edición contra `evaristo_cms_dev`, mirando también el sitio compilado (hace falta `npm run build:sitio`; crea y borra datos temporales). |
 | `npm run test:admin-subida` | Subida y borrado de imágenes (`POST` y `DELETE /api/admin/imagenes`) contra `evaristo_cms_dev`, con imágenes armadas con `sharp` y carpetas temporales (crea y borra datos temporales; no toca la muestra). |
 | `npm run test:editor` | Editor del panel con TipTap sobre jsdom: 20 pruebas y la ida y vuelta de los 35 cuerpos de `evaristo_cms_dev` (solo lee). |
-| `npm run test:pantalla` | Pantallas de edición y alta del panel montadas en jsdom con la API simulada (sin base ni servidor). |
+| `npm run test:pantalla` | Pantallas del panel (edición, usuarios, autores, secciones y categorías, revisión y menú lateral) montadas en jsdom con la API simulada (sin base ni servidor). |
 | `npm run start --workspace=@evaristo/api` | Arranca el servidor único sin compilar nada antes (pensado para producción). |
 
 > **Apagado ordenado:** el servidor atiende SIGINT y SIGTERM (cierra el servidor y desconecta Prisma), pero en Windows no se puede probar porque ahí las señales terminan el proceso sin pasar por los handlers. Se prueba en Linux al desplegar.

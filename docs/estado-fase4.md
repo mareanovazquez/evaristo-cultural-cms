@@ -130,7 +130,7 @@ Decisión de Mariano (22/10/2026), decisión 67 del plan: la galería se ve ampl
 
 ## Paso 7, etapa 7a: usuarios, roles y propiedad de los artículos (23/10/2026, rama `fase4-administracion`)
 
-Decisión 68 del plan. Detalle de lo decidido el 22/10/2026 en `plan-paso7-fase4.md` (sección "Roles y permisos").
+Decisión 68 del plan. Los roles y permisos decididos el 22/10/2026 están al final de esta sección.
 
 - **Esquema** (migración `20261023120000_usuarios_redactor_creador_autor`, aplicada a `_dev` y `_test`; **a la real, con las otras de la fase 4 en la fase 7**): valor `REDACTOR` en `RolUsuario`, `usuarios.debeCambiarClave`, `articulos.creadoPorId` (`SetNull`) y `autores.usuarioId` (único, `SetNull`). Prisma 7 no dejó crearla con `db:nueva` (modo no interactivo por la advertencia del índice único): se generó con `prisma migrate diff --from-migrations … --to-schema … --script` y se sacó a mano el `DROP/CREATE` de `PruebaConexion` que mete la diferencia de mayúsculas de MySQL en Windows.
 - **Permisos con nombre** en `packages/compartido/src/permisos.ts` (`tienePermiso`, `permisosDe`, nombres y descripciones de los roles), usados por la API y el panel. API: `exigirPermiso(nombre)` y `exigirClaveAlDia` (con la contraseña provisoria todo `/api/admin` responde 403 con `codigo: "cambiar_clave"`).
@@ -143,6 +143,38 @@ Decisión 68 del plan. Detalle de lo decidido el 22/10/2026 en `plan-paso7-fase4
 - **Tests:** `test:admin-usuarios` (contra `evaristo_cms_dev`, 7 grupos: permisos por rol, alta y duplicados, contraseña provisoria, un Redactor solo ve y edita lo suyo con 404 en todas las rutas, firma propia, publicar, revocar y devolver el acceso, restablecer, último administrador), `test:auth` 22 y `test:pantalla` 58.
 - **No se hizo (anotado):** cambiar el email de un usuario; que el Editor pueda editar las fichas de autor (es la etapa 7b); mostrar en el artículo el nombre de autores ajenos a un Redactor (cae a «Autor N»); fecha de vencimiento del acceso.
 - **Falta mirarlo en un navegador** (como el resto del panel).
+
+### Roles y permisos (decididos con Mariano el 22/10/2026)
+
+**Tres roles:** Administrador, Editor y **Redactor**. (Se pensó un cuarto, "Invitado", para quien publica una sola nota; se descartó: ese caso se resuelve con un Redactor al que después se le **revoca el acceso**, o sea, se lo desactiva. Desactivar no borra nada: su ficha de autor y sus artículos quedan intactos y con su firma, y si vuelve se reactiva.) El rol no se llama "Autor" para no mezclarlo con la firma de los artículos (el listado "Autores" del panel).
+
+Los permisos se escriben **con nombre** (por ejemplo `autores.eliminar`, `usuarios.gestionar`, `articulos.publicar.ajenos`) en un solo lugar compartido entre la API y el panel; cada nombre se resuelve según el rol. Así sumar un rol más adelante es cambiar una tabla y no revisar todo el código. No se arma un RBAC configurable (sin pantalla para crear roles ni tabla de permisos): con tres roles fijos alcanza.
+
+| Qué | Redactor | Editor | Administrador |
+|---|---|---|---|
+| Artículos: crear | Sí | Sí | Sí |
+| Artículos: ver, editar, publicar, programar, despublicar y descartar cambios | Solo los **suyos** (los que creó) | Todos | Todos |
+| Artículos: pasar un artículo a otra persona (cambiar el creador) | No | Sí | Sí |
+| Artículos migrados (sin creador) | No | Sí | Sí |
+| Biblioteca de imágenes: ver, usar y subir | Sí | Sí | Sí |
+| Biblioteca: borrar una imagen (si no está en uso) | No | Sí | Sí |
+| Autores: elegir como firma de un artículo | **Solo su propia ficha** | Cualquiera | Cualquiera |
+| Autores: editar la propia ficha | Sí | Sí | Sí |
+| Autores: crear y editar las de otros | No | Sí | Sí |
+| Autores: eliminar o unir | No | No | Sí |
+| Secciones y categorías: elegir | Sí | Sí | Sí |
+| Secciones y categorías: crear, renombrar, unir, eliminar | No | No | Sí |
+| Usuarios: alta, baja (revocar acceso), rol, restablecer contraseña | No | No | Sí |
+| Mi cuenta: cambiar mi nombre y mi contraseña | Sí | Sí | Sí |
+| Herramientas de revisión de la migración | No (trabajan sobre artículos ajenos) | Sí | Sí |
+
+**Firma de un Redactor (decidido el 22/10/2026):** un Redactor solo puede firmar con **su propia ficha de autor**; un artículo con varios autores o con la firma de otra persona lo arma un Editor o un Administrador. Por eso **cada Redactor tiene que tener una ficha de autor vinculada desde el alta** (se crea o se elige una existente al crear el usuario) y un artículo nuevo suyo ya sale con esa firma. Tampoco borra imágenes de la biblioteca (no se guarda quién subió cada una).
+
+**Un artículo "suyo" es el que creó él (decidido el 22/10/2026):** columna nueva `creadoPorId`, que además sirve de registro de quién creó cada artículo. Si un Editor crea una nota y la firma con la ficha de un Redactor, la nota no es del Redactor; un Editor o un Administrador puede **cambiar el creador** de una nota si hace falta pasársela (acción "Pasar a otra persona" en la pantalla del artículo). No cuenta quién la firma.
+
+Los artículos migrados no tienen creador ni firma de un Redactor: solo los toca un Editor o un Administrador.
+
+**Cambios de esquema que trae esto** (a `evaristo_cms_dev` y `_test` ahora; a la real, con las demás migraciones de la fase 4 en la fase 7): el valor `REDACTOR` en `RolUsuario`, `articulos.creadoPorId` (opcional, `SetNull` si se borrara el usuario; nunca se borran usuarios, se desactivan) y `autores.usuarioId` (opcional y único: un usuario puede tener su ficha de autor y un autor no necesita usuario; así un Redactor se firma solo con su ficha y la ficha sigue cuando se revoca su acceso). De paso queda resuelto el pendiente del paso 8 de saber quién creó cada artículo.
 
 ## Paso 7, etapa 7b: autores (23/10/2026, rama `fase4-administracion`)
 
@@ -185,6 +217,22 @@ Decisión 71 del plan. Decisión de Mariano del 23/10/2026 (la 8 del plan del pa
 - **Cuidado al migrar:** un borrador eliminado que viene de WordPress vuelve a aparecer si se corre otra vez la migración sobre esa base (la migración es incremental por `wpId`). Decidir con la directora qué hacer con los borradores migrados y el privado (19300) **antes** de la migración completa, o eliminarlos después de ella.
 - **No se hizo (anotado):** abrir el artículo ya posicionado en lo que hay que corregir; un enlace «Ver en revisión» desde la ficha de un autor (el filtro `autor:<id>` ya existe en la API); marcar todos los avisos de un código de una vez.
 
+## Paso 7, etapa 7e: menú lateral y cierre del paso 7 (23/10/2026, rama `fase4-administracion`)
+
+Decisiones de Mariano del 23/10/2026 sobre el menú lateral: en **celular** está siempre cerrado y se abre con un botón de hamburguesa; en **escritorio** arranca desplegado y, plegado, muestra solo los íconos. (La agrupación de los enlaces y poner «Mi cuenta» y «Salir» abajo del menú son criterio mío, no decisión suya.)
+
+- **Menú** (`apps/panel/src/Estructura.tsx`, `iconos.tsx` y las reglas «Menú lateral» de `estilos.css`): reemplaza la barra de arriba. Grupos Contenido (Artículos, Autores —o «Mi ficha» para un Redactor—, Secciones y categorías), Revisión, Administración (Usuarios) y Cuenta (Mi cuenta); cada enlace aparece solo si la persona tiene el permiso. Abajo: el nombre y el rol, «Salir» y el botón de plegar (solo en escritorio; el estado plegado se recuerda en el navegador con `localStorage`, que es una comodidad por persona).
+- **Escritorio plegado:** quedan los íconos; el texto de cada enlace sigue en el HTML, oculto a la vista pero leído por los lectores de pantalla, y con ayuda al pasar el mouse (`title`). **Celular:** la barra de arriba trae la hamburguesa (`aria-expanded` y `aria-controls`); el menú se abre encima del contenido y se cierra con la X, con Esc (el foco vuelve a la hamburguesa), tocando afuera o al ir a otra pantalla; al abrirlo el foco entra al menú. Sin animación si el sistema pide menos movimiento.
+- **Tests:** `test:pantalla` 76 (incluye el menú). **Falta mirarlo en un navegador, sobre todo en celular y plegado.**
+
+### Cierre del paso 7
+
+- Hecho: etapas 7a a 7e. Lo duradero del plan temporal (`plan-paso7-fase4.md`, ya borrado) está en las secciones de cada etapa y en las decisiones 68 a 71 del plan de implementación.
+- **Regresión del cierre:** `typecheck`, `test:fase3` (con el sitio reconstruido), `test:auth` 22, `test:auth-base`, los diez de `test:admin-*`, `test:editor` 20, `test:pantalla` 76, `test:migracion` y `test:conversor`.
+- **Migraciones nuevas que esperan a la fase 7** (en `_dev` y `_test` ya están): `usuarios_redactor_creador_autor`, `secciones_orden` y `articulos_avisos_revisados`, que se suman a `sesiones` y `borradores_y_capital`. Al aplicarlas a la real hay que borrar el respaldo de `listarSeccionesMenu` (`apps/sitio/src/lib/secciones.ts`) y recrear los usuarios.
+- **Riesgos a tener presentes en la fase 7:** no cambiar las direcciones de las 17 secciones iniciales antes de la migración completa (la migración mapea por dirección); decidir qué hacer con los 48 borradores migrados y el privado 19300 antes o después de migrar (un borrador eliminado reaparece si se vuelve a correr la migración); un Redactor necesita su ficha de autor desde el alta.
+- **Anotado sin hacer (paso 7):** abrir un artículo ya posicionado en lo que hay que corregir; enlace desde la ficha de un autor a sus artículos en revisión; marcar todos los avisos de un código de una vez; cambiar el email de un usuario; fecha de vencimiento del acceso; subir la foto de un autor desde su ficha; arrastrar para ordenar secciones; ocultar secciones (descartado por decisión).
+
 ## Reglas y cosas a tener en cuenta del editor (lo duradero del plan del paso 4)
 
 - **Sin `localStorage` como respaldo del texto en edición:** la copia de seguridad es el borrador de cambios del servidor (y el autoguardado).
@@ -221,17 +269,15 @@ Está en `testing-tiptap/src/editor` (unas 1.100 líneas) y `App.tsx` (793 líne
 - ~~Ficha técnica y galería (con su texto alternativo), y que el sitio las muestre.~~ Hecho el 22/10/2026 (ver "Paso 6 (resto)").
 - El sitio lee `conCapital` cuando las migraciones lleguen a la base real.
 
-**Paso 7: administración.**
-- Fichas de autor (bio de hasta 500 caracteres con itálica y enlaces, foto con recorte, redes con el formato definitivo); secciones y categorías (solo administrador; "unir con otra" en vez de borrar); usuarios (alta, baja, cambio de rol y de contraseña).
-- Herramientas de la revisión posterior a la migración: filtros por aviso (títulos, notas al pie, bios, `bio_con_correo`, autores, `original_faltante`, `imagen_sin_medir`, `origen_privado`, `fecha_borrador`), vista de artículos con imágenes pendientes (`altPendientes`), de los `sin-asignar` y de los borradores migrados.
+**Paso 7: administración.** ~~Usuarios y roles (7a), autores (7b), secciones y categorías (7c), revisión de la migración (7d) y menú lateral con cierre (7e).~~ Hecho el 23/10/2026 (ver las secciones «Paso 7»).
 
 **Paso 8: cierre.**
 - Mensajes de error en lenguaje común en todo el panel y prueba con alguien de la editorial: **criterio de cierre de la fase** (un editor no técnico carga y publica una nota completa sin ayuda).
-- Seguridad: política de `helmet` para el sitio y el panel (Google Fonts, YouTube, Vimeo), `trust proxy` según el hosting, límite de intentos que sobreviva a reinicios, cerrar todas las sesiones de un usuario, limpiar las vencidas (hoy no hay quien llame a `borrarSesionesVencidas`), recuperación de contraseña (depende de definir el envío de correos) y registro de quién creó y editó cada artículo.
+- Seguridad: política de `helmet` para el sitio y el panel (Google Fonts, YouTube, Vimeo), `trust proxy` según el hosting, límite de intentos que sobreviva a reinicios, recuperación de contraseña (depende de definir el envío de correos) y registro de quién creó y editó cada artículo.
 - Pruebas de las pantallas del panel (hoy solo typecheck y build).
 
-**Para cerrar la fase y lanzar:** aplicar a `evaristo_cms` las migraciones `sesiones` y `borradores_y_capital` con `db:deploy` antes de la migración completa de la fase 7 (el cliente de Prisma ya espera `conCapital` y los scripts de la migración fallan contra una base sin esa columna), y recrear los usuarios editores.
+**Para cerrar la fase y lanzar:** aplicar a `evaristo_cms` las migraciones `sesiones` y `borradores_y_capital` con `db:deploy` antes de la migración completa de la fase 7 (el cliente de Prisma ya espera `conCapital` y los scripts de la migración fallan contra una base sin esa columna), y recrear los usuarios editores. Desde el paso 7 se suman `usuarios_redactor_creador_autor`, `secciones_orden` y `articulos_avisos_revisados` (ver «Cierre del paso 7»).
 
 ## Limitaciones conocidas de lo hecho
 
-El límite de intentos vive en memoria (se reinicia con el servidor) y detrás de un proxy hay que configurar `trust proxy` para que cuente la dirección real; no hay recuperación de contraseña ni cierre de todas las sesiones de un usuario; la sesión no se renueva con el uso; el listado no abre artículos; las pantallas del panel no se probaron en un navegador.
+El límite de intentos vive en memoria (se reinicia con el servidor) y detrás de un proxy hay que configurar `trust proxy` para que cuente la dirección real; no hay recuperación de contraseña; la sesión no se renueva con el uso; las pantallas del panel (incluidas las del paso 7) no se vieron en un navegador.
