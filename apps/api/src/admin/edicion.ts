@@ -44,8 +44,10 @@ export const seleccion = {
   novedadHasta: true,
   galeria: { orderBy: { orden: "asc" as const }, select: { imagenId: true, alt: true, epigrafe: true } },
   fichaTecnica: { select: { titulo: true, autor: true, traductor: true, editorial: true, coleccion: true, anio: true, paginas: true, isbn: true, precio: true } },
-  borrador: { select: { datos: true, baseVersion: true, actualizadoEn: true } },
+  borrador: { select: { datos: true, baseVersion: true, actualizadoEn: true, usuarioId: true, usuario: { select: { id: true, nombre: true } } } },
   creadoPor: { select: { id: true, nombre: true } },
+  editadoPor: { select: { id: true, nombre: true } },
+  publicadoPor: { select: { id: true, nombre: true } },
 } as const;
 
 export type FilaArticulo = NonNullable<Awaited<ReturnType<PrismaClient["articulo"]["findFirst"]>>> & {
@@ -53,8 +55,10 @@ export type FilaArticulo = NonNullable<Awaited<ReturnType<PrismaClient["articulo
   autores: Array<{ autorId: number }>;
   galeria: Array<{ imagenId: number; alt: string | null; epigrafe: string | null }>;
   fichaTecnica: DatosArticulo["ficha"];
-  borrador: { datos: unknown; baseVersion: Date; actualizadoEn: Date } | null;
+  borrador: { datos: unknown; baseVersion: Date; actualizadoEn: Date; usuarioId: number | null; usuario: { id: number; nombre: string } | null } | null;
   creadoPor: { id: number; nombre: string } | null;
+  editadoPor: { id: number; nombre: string } | null;
+  publicadoPor: { id: number; nombre: string } | null;
 };
 
 export const iso = (d: Date): string => d.toISOString();
@@ -230,6 +234,9 @@ export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
           conCambiosSinPublicar: conBorrador,
           // Quién lo creó en el panel (los migrados no tienen).
           creadoPor: a.creadoPor,
+          // Quién guardó lo último (si hay cambios sin publicar, quien los está haciendo) y quién lo publicó.
+          editadoPor: conBorrador && a.borrador ? { ...(a.borrador.usuario ?? { id: 0, nombre: "Alguien" }), en: iso(a.borrador.actualizadoEn) } : a.editadoPor ? { ...a.editadoPor, en: iso(a.actualizadoEn) } : null,
+          publicadoPor: a.publicadoPor,
           ruta: a.estado === "PUBLICADO" && a.publicadoEn && a.publicadoEn <= ahora ? rutaArticulo({ slug: a.slug, publicadoEn: a.publicadoEn }) : null,
           datos,
           imagenEncabezado,
@@ -293,7 +300,7 @@ export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
         return;
       }
       if (!pedido.success) {
-        sinProblemas(res, ["El pedido no tiene el formato esperado."]);
+        sinProblemas(res, ["No pudimos leer los datos enviados. Recargá la pantalla y probá de nuevo."]);
         return;
       }
       const datosZod = DatosSchema.safeParse(pedido.data.datos);
@@ -360,7 +367,7 @@ export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
 
       if (esBorrador) {
         nuevaVersion = await prisma.$transaction(async (tx) => {
-          const version = await escribirDatos(tx, a.id, a.actualizadoEn, datos);
+          const version = await escribirDatos(tx, a.id, a.actualizadoEn, datos, { editadoPorId: usuarioId });
           // Un borrador que ya estuvo publicado (se despublicó) y cambia de dirección: la URL que tenía pasa a redirigir a la nueva.
           // Se anota ahora porque después, al volver a publicarlo, la fila ya no recuerda cuál fue la pública. Mientras el artículo sea
           // un borrador la redirección no se aplica (el sitio solo redirige a lo que se ve).

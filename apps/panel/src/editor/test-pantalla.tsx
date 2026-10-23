@@ -11,6 +11,7 @@ import { ProveedorSesion } from '../sesion'
 import { canonico } from './comparar-cuerpos'
 import { tiempos } from '../autoguardado'
 import { tiemposTooltip } from '../Tooltip'
+import { ErrorBoundary } from '../ErrorBoundary'
 import { lenguajeComun, problemasEnLenguajeComun } from '../mensajes'
 import { fuente } from '../VistaPrevia'
 import { htmlVistaPrevia } from '../vista-previa'
@@ -40,6 +41,8 @@ const articulo = (estado: string) => ({
   version: '2026-10-22T10:00:00.000Z',
   conCambiosSinPublicar,
   creadoPor: { id: 4, nombre: 'Rita' },
+  editadoPor: { id: 2, nombre: 'Beto', en: '2026-10-22T10:00:00.000Z' },
+  publicadoPor: estado === 'BORRADOR' ? null : { id: 4, nombre: 'Rita' },
   ruta: null,
   datos: {
     titulo: 'Título de prueba',
@@ -107,6 +110,7 @@ const creados: J[] = []
 type UsuarioDeLista = { id: number; email: string; nombre: string; rol: string; activo: boolean; debeCambiarClave: boolean; ultimoAccesoEn: string | null; creadoEn: string; autor: { id: number; nombre: string; slug: string } | null; articulos: number }
 let usuarioServido: J = { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINISTRADOR', debeCambiarClave: false, permisos: ['articulos.crear', 'usuarios.gestionar'] }
 const cambiosDeClave: J[] = []
+let listadoSinSesion = false
 const salidas: string[] = []
 const pedidosUsuarios: Array<{ ruta: string; metodo: string; cuerpo: J }> = []
 const pasados: number[] = []
@@ -171,6 +175,7 @@ globalThis.fetch = (async (entrada: string | URL | Request, init?: RequestInit) 
   const metodo = init?.method ?? 'GET'
   const responder = (estado: number, cuerpo: J) => new Response(JSON.stringify(cuerpo), { status: estado, headers: { 'Content-Type': 'application/json' } })
   if (redCaida && metodo === 'PUT') throw new TypeError('Failed to fetch')
+  if (url === '/api/admin/articulos' && metodo === 'GET' && listadoSinSesion) return responder(401, { estado: 'error', mensaje: 'Tenés que ingresar para continuar.' })
   if (url === '/api/admin/articulos' && metodo === 'GET') return responder(200, { estado: 'ok', total: 0, pagina: 1, paginas: 1, conteos: { BORRADOR: 0, PUBLICADO: 0, PROGRAMADO: 0 }, articulos: [] })
   if (url === '/api/admin/articulos/7/borrador' && metodo === 'DELETE') {
     descartados.push(url)
@@ -2210,6 +2215,66 @@ await t('Secciones y categorías: las acciones son botones de solo ícono con su
   assert.ok(document.getElementById('nombre-secciones-1'))
   tiemposTooltip.demora = 300
   await act(async () => r.unmount())
+})
+
+// ---------- Cierre: errores en lenguaje común ----------
+await t('Una pantalla que falla muestra un aviso con salida, no una página en blanco, y se va al cambiar de pantalla', async () => {
+  const consola = console.error
+  console.error = () => undefined
+  const Bomba = ({ rota }: { rota: boolean }) => {
+    if (rota) throw new Error('detalle técnico que la persona no tiene que ver: TypeError x is undefined')
+    return <p>Todo bien</p>
+  }
+  document.body.replaceChildren()
+  const div = document.createElement('div')
+  document.body.appendChild(div)
+  const r = createRoot(div)
+  try {
+    await act(async () => { r.render(<ErrorBoundary claveDeReinicio="/a"><Bomba rota /></ErrorBoundary>) })
+    const alerta = document.querySelector('[role="alert"]')!
+    assert.ok(alerta, 'hay un aviso')
+    assert.equal(alerta.querySelector('h1')!.textContent, 'Algo salió mal en esta pantalla')
+    assert.ok(alerta.textContent!.includes('Lo que ya guardaste está a salvo'))
+    assert.ok(!texto().includes('TypeError') && !texto().includes('detalle técnico'), 'no muestra detalles técnicos')
+    assert.ok(boton('Recargar la pantalla'), 'se puede recargar')
+    assert.equal(alerta.querySelector('a')!.getAttribute('href'), '/admin/', 'y volver a los artículos')
+    // Al ir a otra pantalla, se vuelve a intentar
+    await act(async () => { r.render(<ErrorBoundary claveDeReinicio="/b"><Bomba rota={false} /></ErrorBoundary>) })
+    assert.ok(texto().includes('Todo bien') && !document.querySelector('[role="alert"]'), 'se recupera al cambiar de pantalla')
+  } finally {
+    console.error = consola
+    await act(async () => r.unmount())
+  }
+})
+
+await t('Si la sesión termina mientras se usa el panel, la pantalla de ingreso lo explica', async () => {
+  listadoSinSesion = true
+  const r = await montar('/')
+  await hasta(() => !!document.getElementById('email'), 'la pantalla de ingreso')
+  assert.ok(texto().includes('Tu sesión terminó. Ingresá de nuevo para seguir'), 'avisa que la sesión terminó')
+  await act(async () => r.unmount())
+  // Una visita normal sin sesión no muestra ese aviso
+  listadoSinSesion = false
+})
+
+await t('El artículo muestra quién lo creó, quién lo editó y quién lo publicó', async () => {
+  conCambiosSinPublicar = false
+  estadoArticulo = 'BORRADOR'
+  const r = await montar('/articulos/7')
+  await hasta(() => !!document.querySelector('.historial'), 'el historial')
+  let historial = document.querySelector('.historial')!.textContent!
+  assert.ok(historial.startsWith('Lo creó Rita · Última edición: Beto, '), historial)
+  assert.ok(!historial.includes('publicó'), 'un borrador que nunca se publicó no dice quién lo publicó')
+  await act(async () => r.unmount())
+  estadoArticulo = 'PUBLICADO'
+  conCambiosSinPublicar = true
+  const r2 = await montar('/articulos/7')
+  await hasta(() => !!document.querySelector('.historial'), 'el historial de un publicado')
+  historial = document.querySelector('.historial')!.textContent!
+  assert.ok(historial.includes('Cambios sin publicar de Beto, ') && historial.endsWith('Lo publicó Rita'), historial)
+  await act(async () => r2.unmount())
+  conCambiosSinPublicar = false
+  estadoArticulo = 'BORRADOR'
 })
 
 console.log(`\n${ok} pruebas de la pantalla ok`)

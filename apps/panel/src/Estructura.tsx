@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent as TecladoReact, type ReactNode } from "react";
 import { NavLink, Link, Outlet, useLocation } from "react-router";
 import { NOMBRE_DE_ROL, tienePermiso } from "@evaristo/compartido/permisos";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { Icono, type NombreIcono } from "./iconos";
 import { confirmarSalida } from "./salida";
 import { useSesion } from "./sesion";
@@ -262,7 +263,9 @@ export function Estructura() {
       </aside>
 
       <main className="contenido" id="contenido-panel" tabIndex={-1}>
-        <Outlet />
+        <ErrorBoundary claveDeReinicio={ubicacion.pathname}>
+          <Outlet />
+        </ErrorBoundary>
       </main>
     </div>
   );

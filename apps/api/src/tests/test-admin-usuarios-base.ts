@@ -210,6 +210,22 @@ try {
   const leido = await r1("GET", `/articulos/${suyo.id}`);
   assert.equal(leido.json["articulo"]["estado"], "PUBLICADO");
   assert.equal(leido.json["articulo"]["creadoPor"]["id"], ritaId);
+  // Se sabe quién lo guardó y quién lo publicó
+  const fila = await prisma.articulo.findUniqueOrThrow({ where: { id: suyo.id }, select: { creadoPorId: true, editadoPorId: true, publicadoPorId: true } });
+  assert.deepEqual(fila, { creadoPorId: ritaId, editadoPorId: ritaId, publicadoPorId: ritaId });
+  assert.equal(leido.json["articulo"]["editadoPor"]["nombre"], `${prefijo} Rita Redactora`);
+  assert.equal(leido.json["articulo"]["publicadoPor"]["id"], ritaId);
+  // Un editor cambia el texto: los cambios sin publicar son suyos, y al publicarlos queda como quien editó y quien publicó
+  const editado = await edi("PUT", `/articulos/${suyo.id}`, { version: leido.json["articulo"]["version"], datos: datosDe("De Rita editado", [fichaRita]) });
+  assert.equal(editado.estado, 200, editado.texto);
+  const conCambios = (await edi("GET", `/articulos/${suyo.id}`)).json["articulo"];
+  assert.equal(conCambios["conCambiosSinPublicar"], true);
+  assert.equal(conCambios["editadoPor"]["nombre"], "Editor de prueba", "se ve quién hizo los cambios sin publicar");
+  assert.equal((await prisma.articulo.findUniqueOrThrow({ where: { id: suyo.id }, select: { editadoPorId: true } })).editadoPorId, ritaId, "lo ya publicado sigue con su última edición publicada");
+  assert.equal((await edi("POST", `/articulos/${suyo.id}/publicar-cambios`, { version: editado.json["version"] })).estado, 200);
+  const trasPublicar = await prisma.articulo.findUniqueOrThrow({ where: { id: suyo.id }, select: { editadoPorId: true, publicadoPorId: true, editadoPor: { select: { email: true } } } });
+  assert.equal(trasPublicar.editadoPor!.email, `editor@${dominio}`, "al publicar los cambios, lo editó quien los hizo");
+  assert.equal(trasPublicar.publicadoPorId, trasPublicar.editadoPorId, "y lo publicó quien apretó el botón (acá, la misma persona)");
 
   // El catálogo de un redactor trae solo su ficha; el de un editor, todas y la lista de usuarios para pasar artículos.
   const catRita = await r1("GET", "/catalogos");

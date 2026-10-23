@@ -17,6 +17,7 @@ import { crearRutasAdminRevision } from "./admin/revision.js";
 import { crearRutasAdminUsuarios } from "./admin/usuarios.js";
 import { crearManejadorMedia } from "./media.js";
 import { crearManejadorRedirecciones } from "./redirecciones.js";
+import { cabecerasDelPanel, cabecerasDelSitio, confiarEnProxy } from "./seguridad.js";
 
 // Salida de `npm run build:sitio` (adaptador de Node de Astro, modo middleware).
 const dirSitioCompilado = fileURLToPath(new URL("../../sitio/dist/", import.meta.url));
@@ -36,10 +37,15 @@ export interface OpcionesApp {
   dirSubidas?: string | undefined;
   /** Para las pruebas: reemplaza partes de la autenticación (repositorio, límite de intentos, cookie Secure). */
   auth?: Partial<OpcionesAuth>;
+  /** Proxies de confianza (ver `confiarEnProxy`). Por defecto, la variable TRUST_PROXY; sin ella, ninguno. */
+  proxy?: boolean | number | string;
 }
 
 export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones: OpcionesApp = {}): express.Express {
   const app = express();
+  // Dirección real de quien visita (la usa el límite de intentos de ingreso): solo se lee de los encabezados del proxy si se declaró uno.
+  app.set("trust proxy", "proxy" in opciones ? opciones.proxy : confiarEnProxy(process.env["TRUST_PROXY"]));
+  const produccion = process.env["NODE_ENV"] === "production";
   const dirSubidas = "dirSubidas" in opciones ? opciones.dirSubidas : process.env["MEDIA_DIR_SUBIDAS"] || undefined;
 
   // Se carga una sola vez, la primera vez que hace falta y existe el build.
@@ -101,7 +107,7 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
 
   // (3) Panel de administración (React + Vite) en /admin. Va antes que Astro.
   const archivosPanel = express.static(dirPanelCompilado, { index: false, fallthrough: true });
-  app.use("/admin", (req, res, next) => {
+  app.use("/admin", cabecerasDelPanel(produccion), (req, res, next) => {
     res.setHeader("X-Robots-Tag", "noindex, nofollow");
 
     // /admin sin barra final redirige a /admin/ (conservando la consulta).
@@ -135,6 +141,9 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
       });
     });
   });
+
+  // (3a) Cabeceras de seguridad del sitio público (todo lo que no es /api ni /admin).
+  app.use(cabecerasDelSitio(produccion));
 
   // (3b) Imágenes de la biblioteca: /media/<clave>. Va antes que los estáticos y el SSR.
   app.use(
@@ -196,7 +205,7 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
   app.use((error: unknown, _req: Request, res: Response, next: NextFunction) => {
     const tipo = (error as { type?: string } | null)?.type;
     if (tipo === "entity.parse.failed" || tipo === "entity.too.large") {
-      res.status(tipo === "entity.too.large" ? 413 : 400).json({ estado: "error", mensaje: "El pedido no se pudo leer." });
+      res.status(tipo === "entity.too.large" ? 413 : 400).json({ estado: "error", mensaje: tipo === "entity.too.large" ? "Lo que querés guardar es demasiado grande." : "No pudimos leer los datos enviados. Recargá la pantalla y probá de nuevo." });
       return;
     }
     console.error("Error no controlado:", error instanceof Error ? error.message : "error desconocido");

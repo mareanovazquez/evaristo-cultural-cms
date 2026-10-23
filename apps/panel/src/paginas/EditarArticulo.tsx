@@ -446,6 +446,7 @@ function Formulario({ articulo, catalogos: catalogosBase, recargar, exito: exito
         )}
         {estado === "PROGRAMADO" && articulo.publicadoEn && <span className="programado-fecha">Sale en el sitio el {fechaHora.format(new Date(articulo.publicadoEn))}</span>}
       </div>
+      <Historial articulo={articulo} />
 
       {exito && (
         <p className="aviso aviso-ok" role="status">
@@ -836,6 +837,17 @@ function PasarArticulo({ articuloId, creadoPor, usuarios }: { articuloId: number
       )}
     </fieldset>
   );
+}
+
+/** Quién creó, editó y publicó el artículo (lo que se sabe: los que vienen de WordPress no tienen autor de la carga). */
+function Historial({ articulo }: { articulo: ArticuloEditable }) {
+  const partes: string[] = [];
+  if (articulo.creadoPor) partes.push(`Lo creó ${articulo.creadoPor.nombre}`);
+  else if (articulo.wpId !== null) partes.push("Viene de WordPress");
+  if (articulo.editadoPor) partes.push(`${articulo.conCambiosSinPublicar ? "Cambios sin publicar de" : "Última edición:"} ${articulo.editadoPor.nombre}, ${fechaHora.format(new Date(articulo.editadoPor.en))}`);
+  if (articulo.publicadoPor) partes.push(`${articulo.estado === "BORRADOR" ? "Lo publicó por última vez" : "Lo publicó"} ${articulo.publicadoPor.nombre}`);
+  if (partes.length === 0) return null;
+  return <p className="ayuda historial">{partes.join(" · ")}</p>;
 }
 
 /** Eliminar el artículo: solo el administrador. Un borrador se elimina desde acá; uno publicado hay que despublicarlo antes. */

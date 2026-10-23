@@ -22,10 +22,12 @@ function mensajePorEstado(estado: number): string {
   if (estado === 401) return "Tu sesión terminó. Ingresá de nuevo.";
   if (estado === 403) return "No tenés permiso para hacer esto.";
   if (estado === 404) return "No encontramos lo que buscabas.";
-  if (estado === 409) return "Este artículo cambió mientras lo editabas.";
+  if (estado === 400) return "Los datos enviados no son válidos. Recargá la pantalla y probá de nuevo.";
+  if (estado === 409) return "Esto cambió mientras lo tenías abierto. Recargá la pantalla y probá de nuevo.";
   if (estado === 413) return "Lo que querés enviar es demasiado grande.";
   if (estado === 415) return "Ese tipo de archivo no se puede subir.";
   if (estado === 429) return "Hubo demasiados intentos. Esperá unos minutos y probá de nuevo.";
+  if (estado === 502 || estado === 503 || estado === 504) return "El panel no está disponible en este momento. Probá de nuevo en unos minutos.";
   if (estado >= 500) return "Algo salió mal de nuestro lado. Probá de nuevo en un momento.";
   return "No se pudo completar la acción. Revisá los datos y probá de nuevo.";
 }
@@ -248,6 +250,10 @@ export interface ArticuloEditable {
   conCambiosSinPublicar: boolean;
   /** Quién lo creó en el panel (los migrados no tienen). */
   creadoPor: { id: number; nombre: string } | null;
+  /** Quién guardó lo último (con cambios sin publicar, quien los está haciendo) y cuándo. */
+  editadoPor: { id: number; nombre: string; en: string } | null;
+  /** Quién lo publicó por última vez. */
+  publicadoPor: { id: number; nombre: string } | null;
   ruta: string | null;
   datos: DatosArticulo;
   /** La imagen de encabezado de datos, para mostrar su miniatura. */

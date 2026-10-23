@@ -235,6 +235,18 @@ Decisiones de Mariano del 23/10/2026 sobre el menú lateral: en **celular** est�
 - **Riesgos a tener presentes en la fase 7:** no cambiar las direcciones de las 17 secciones iniciales antes de la migración completa (la migración mapea por dirección); decidir qué hacer con los 48 borradores migrados y el privado 19300 antes o después de migrar (un borrador eliminado reaparece si se vuelve a correr la migración); un Redactor necesita su ficha de autor desde el alta.
 - **Anotado sin hacer (paso 7):** abrir un artículo ya posicionado en lo que hay que corregir; enlace desde la ficha de un autor a sus artículos en revisión; marcar todos los avisos de un código de una vez; cambiar el email de un usuario; fecha de vencimiento del acceso; subir la foto de un autor desde su ficha; ocultar secciones (descartado por decisión).
 
+## Paso 8: cierre de la fase 4 (23/10/2026, rama `fase4-cierre`)
+
+Decisión 72 del plan. Alcance acordado con Mariano el 23/10/2026: **lo que no depende del hosting**. Queda para cuando haya hosting y correo: la recuperación de contraseña por correo y guardar el límite de intentos en la base.
+
+- **Errores en lenguaje común.** Una pantalla que falla al dibujarse ya no deja la página en blanco: `ErrorBoundary.tsx` muestra «Algo salió mal en esta pantalla» con «Recargar la pantalla» y «Volver a los artículos», sin detalles técnicos (el error queda en la consola), y se va al cambiar de pantalla. Si la sesión termina mientras se usa el panel, la pantalla de ingreso lo explica («Tu sesión terminó…»; después de ingresar se vuelve a la pantalla de antes). Los mensajes de la API que sonaban técnicos («El pedido no tiene el formato esperado») se reescribieron, y los mensajes por defecto del panel para 400, 409 y 502 a 504 también.
+- **Cabeceras de seguridad** (`apps/api/src/seguridad.ts`, `apps/sitio/astro.config.mjs`). *Panel:* política de contenido estricta (scripts solo propios y sin nada en línea, imágenes y conexiones propias, videos de YouTube y Vimeo para la vista previa, nadie puede incrustarlo), `nosniff`, sin referrer. *Sitio:* Astro calcula el hash de cada script propio y manda la política en la cabecera (permite Google Fonts, YouTube sin cookies y Vimeo; `unsafe-inline` solo en estilos por los atributos de punto focal; los scripts quedan estrictos); Express suma `nosniff`, referrer, `X-Frame-Options` y que las imágenes se puedan mostrar en otros sitios. HSTS solo con `NODE_ENV=production`. **Falta mirarlo en un navegador:** una política demasiado estricta se nota ahí (algo que no carga); la prueba comprueba que todo lo que el sitio usa de afuera esté permitido y que cada script tenga su hash.
+- **`trust proxy`:** la variable `TRUST_PROXY` (un número de proxies o una lista de direcciones; `true` no se acepta). Sin ella, ninguno. Es lo que hace que el límite de intentos de ingreso cuente la dirección real detrás de un balanceador.
+- **Quién editó y quién publicó** (migración `20261023150000_articulos_editado_publicado_por`, en `_dev` y `_test`; a la real, con las otras en la fase 7): `articulos.editadoPorId` y `publicadoPorId`. Se guardan al guardar un borrador, al publicar y al publicar cambios (en este caso, lo editó quien hizo los cambios sin publicar y lo publicó quien apretó el botón). El artículo muestra una línea: «Lo creó … · Última edición: …, fecha · Lo publicó …» (los de WordPress dicen «Viene de WordPress»).
+- **Guía de la prueba con la editorial:** `docs/guia-prueba-editorial.md`, con 14 tareas (y 3 de administración), reglas para quien observa, cómo anotar y el criterio para decidir si se aprobó.
+- **Tests:** `test:seguridad` (nuevo), `test:pantalla` 82, y ampliados `test:admin-usuarios` (quién editó y publicó).
+- **Falta:** hacer la prueba con una o dos personas de la editorial y arreglar lo que salga; mirar el panel y el sitio en un navegador (política de contenido incluida).
+
 ## Reglas y cosas a tener en cuenta del editor (lo duradero del plan del paso 4)
 
 - **Sin `localStorage` como respaldo del texto en edición:** la copia de seguridad es el borrador de cambios del servidor (y el autoguardado).
@@ -273,10 +285,10 @@ Está en `testing-tiptap/src/editor` (unas 1.100 líneas) y `App.tsx` (793 líne
 
 **Paso 7: administración.** ~~Usuarios y roles (7a), autores (7b), secciones y categorías (7c), revisión de la migración (7d) y menú lateral con cierre (7e).~~ Hecho el 23/10/2026 (ver las secciones «Paso 7»).
 
-**Paso 8: cierre.**
-- Mensajes de error en lenguaje común en todo el panel y prueba con alguien de la editorial: **criterio de cierre de la fase** (un editor no técnico carga y publica una nota completa sin ayuda).
-- Seguridad: política de `helmet` para el sitio y el panel (Google Fonts, YouTube, Vimeo), `trust proxy` según el hosting, límite de intentos que sobreviva a reinicios, recuperación de contraseña (depende de definir el envío de correos) y registro de quién creó y editó cada artículo.
-- Pruebas de las pantallas del panel (hoy solo typecheck y build).
+**Paso 8: cierre** (en curso desde el 23/10/2026; ver la sección «Paso 8»).
+- ~~Mensajes de error en lenguaje común en todo el panel~~, ~~política de contenido para el sitio y el panel~~, ~~`trust proxy` por variable~~, ~~registro de quién editó y publicó cada artículo~~ y ~~guía de la prueba~~: hecho. Falta **hacer la prueba con alguien de la editorial**: criterio de cierre de la fase (una persona no técnica carga y publica una nota completa sin ayuda), con `docs/guia-prueba-editorial.md`.
+- Para cuando haya hosting y correo: recuperación de contraseña por correo y límite de intentos que sobreviva a reinicios (hoy vive en memoria).
+- Pruebas de las pantallas del panel: hechas en jsdom (`test:pantalla`); falta mirarlas en un navegador.
 
 **Para cerrar la fase y lanzar:** aplicar a `evaristo_cms` las migraciones `sesiones` y `borradores_y_capital` con `db:deploy` antes de la migración completa de la fase 7 (el cliente de Prisma ya espera `conCapital` y los scripts de la migración fallan contra una base sin esa columna), y recrear los usuarios editores. Desde el paso 7 se suman `usuarios_redactor_creador_autor`, `secciones_orden` y `articulos_avisos_revisados` (ver «Cierre del paso 7»).
 

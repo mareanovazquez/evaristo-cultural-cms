@@ -249,7 +249,7 @@ export function crearRutasAdminAutores(prisma: PrismaClient): express.Router {
       const ficha = await fichaVisible(req, res);
       if (!ficha) return;
       const pedido = GuardarSchema.safeParse(req.body);
-      if (!pedido.success) return void sinProblemas(res, ["El pedido no tiene el formato esperado."]);
+      if (!pedido.success) return void sinProblemas(res, ["No pudimos leer los datos enviados. Recargá la pantalla y probá de nuevo."]);
       const zod = DatosSchema.safeParse(pedido.data.datos);
       if (!zod.success) return void sinProblemas(res, zod.error.issues.map((i) => i.message));
       const d = zod.data;

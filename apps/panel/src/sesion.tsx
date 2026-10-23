@@ -10,6 +10,8 @@ interface ContextoSesion {
   salir: () => Promise<void>;
   /** Para cuando cualquier pedido recibe un 401. */
   sesionVencida: () => void;
+  /** true si la sesión terminó mientras se usaba el panel (para avisarlo en la pantalla de ingreso). */
+  sesionTerminada: boolean;
   /** Reemplaza los datos del usuario (por ejemplo, tras cambiar el nombre o la contraseña en "Mi cuenta"). */
   actualizarUsuario: (usuario: Usuario) => void;
 }
@@ -18,6 +20,7 @@ const Contexto = createContext<ContextoSesion | null>(null);
 
 export function ProveedorSesion({ children }: { children: ReactNode }) {
   const [usuario, setUsuario] = useState<Usuario | null | undefined>(undefined);
+  const [sesionTerminada, setSesionTerminada] = useState(false);
 
   useEffect(() => {
     const control = new AbortController();
@@ -34,6 +37,7 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
 
   const ingresar = useCallback(async (email: string, clave: string) => {
     const r = await pedirApi<{ usuario: Usuario }>("/api/auth/ingresar", { metodo: "POST", cuerpo: { email, clave } });
+    setSesionTerminada(false);
     setUsuario(r.usuario);
   }, []);
 
@@ -41,15 +45,19 @@ export function ProveedorSesion({ children }: { children: ReactNode }) {
     try {
       await pedirApi("/api/auth/salir", { metodo: "POST", cuerpo: {} });
     } finally {
+      setSesionTerminada(false);
       setUsuario(null);
     }
   }, []);
 
-  const sesionVencida = useCallback(() => setUsuario(null), []);
+  const sesionVencida = useCallback(() => {
+    setSesionTerminada(true);
+    setUsuario(null);
+  }, []);
 
   const actualizarUsuario = useCallback((nuevo: Usuario) => setUsuario(nuevo), []);
 
-  const valor = useMemo(() => ({ usuario, ingresar, salir, sesionVencida, actualizarUsuario }), [usuario, ingresar, salir, sesionVencida, actualizarUsuario]);
+  const valor = useMemo(() => ({ usuario, ingresar, salir, sesionVencida, sesionTerminada, actualizarUsuario }), [usuario, ingresar, salir, sesionVencida, sesionTerminada, actualizarUsuario]);
   return <Contexto.Provider value={valor}>{children}</Contexto.Provider>;
 }
 

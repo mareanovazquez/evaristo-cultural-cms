@@ -37,7 +37,8 @@ CMS propio de la revista Evaristo Cultural, pensado para reemplazar el WordPress
 | `MEDIA_DIR` | Carpeta con los originales de las imágenes (ruta absoluta). Sin ella ni `MEDIA_DIR_SUBIDAS`, `/media/<clave>` responde 503. |
 | `MEDIA_DIR_SUBIDAS` | Carpeta donde se guardan las imágenes subidas desde el panel (ruta absoluta; la API la crea en la primera subida). `/media` busca primero acá y después en `MEDIA_DIR`. Sin ella, subir responde 503. En desarrollo conviene una carpeta propia para no mezclar las pruebas con la muestra. |
 | `PORT` | Puerto del servidor único (3000 por defecto). |
-| `NODE_ENV` | Con `production` la cookie de sesión lleva `Secure`. |
+| `NODE_ENV` | Con `production` la cookie de sesión lleva `Secure` y el sitio y el panel mandan `Strict-Transport-Security` (HSTS). |
+| `TRUST_PROXY` | Proxies de confianza delante del servidor: un número (los que hay entre el servidor y quien visita, por ejemplo `1`), o una lista que Express entienda (`loopback`, `10.0.0.0/8`). Vacío: ninguno. Hace falta cuando se despliega detrás de un balanceador, para que el límite de intentos de ingreso cuente la dirección real de cada visitante. `true` no se acepta. |
 | `PRUEBA_LAYOUT` | Con `1`, habilita `/prueba-layout/` fuera de `astro dev` (página temporal de pruebas). |
 
 ## Crear las bases en MySQL
@@ -241,6 +242,7 @@ Después abrir:
 | `npm run test:categorias -- --originales="<carpeta>"` | Recorre las páginas de categoría y comprueba la volanta como enlace (base en solo lectura; requiere `build:sitio`). |
 | `npm run dev:desarrollo --workspace=@evaristo/api` | Arranca la API contra `evaristo_cms_dev` (la base de desarrollo del panel). |
 | `npm run usuario:crear -- --base-dev --email=… --nombre=… --rol=EDITOR|ADMINISTRADOR` | Crea un usuario del panel; pide la contraseña por teclado. |
+| `npm run test:seguridad` | Cabeceras de seguridad del panel y del sitio (política de contenido, hashes de los scripts, HSTS en producción y proxies de confianza); necesita `npm run build`. |
 | `npm run test:admin-revision` | Revisión de la migración contra `evaristo_cms_dev`: tablero, filtros, marcar avisos como revisados, asignar sección y eliminar borradores (crea y borra datos temporales y deja los avisos como estaban). |
 | `npm run test:admin-clasificacion` | Secciones y categorías del panel contra `evaristo_cms_dev`: permisos, direcciones con redirección, orden del menú (mirando el sitio), eliminar y unir (crea y borra datos temporales y deja el orden como estaba). |
 | `npm run test:admin-autores` | Autores del panel contra `evaristo_cms_dev`: permisos, bio, redes, foto, dirección con redirección, eliminar y unir (crea y borra datos temporales). |

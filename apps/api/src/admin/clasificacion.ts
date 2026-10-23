@@ -124,7 +124,7 @@ export function crearRutasAdminClasificacion(prisma: PrismaClient): express.Rout
   router.post("/secciones/orden", async (req: Request, res: Response, next: NextFunction) => {
     try {
       const datos = z.object({ ids: z.array(z.number().int().positive()).max(500) }).strict().safeParse(req.body);
-      if (!datos.success) return void sinProblemas(res, ["El orden no tiene el formato esperado."]);
+      if (!datos.success) return void sinProblemas(res, ["No pudimos leer el orden enviado. Recargá la pantalla y probá de nuevo."]);
       await prisma.$transaction(async (tx) => {
         const actuales = (await tx.seccion.findMany({ where: { interna: false }, select: { id: true } })).map((s) => s.id).sort((a, b) => a - b);
         const pedidas = [...datos.data.ids].sort((a, b) => a - b);

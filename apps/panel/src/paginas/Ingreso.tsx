@@ -6,7 +6,7 @@ import { useTitulo } from "../titulo";
 
 export function Ingreso() {
   useTitulo("Ingresar");
-  const { usuario, ingresar } = useSesion();
+  const { usuario, ingresar, sesionTerminada } = useSesion();
   const navegar = useNavigate();
   const ubicacion = useLocation();
   const desde = (ubicacion.state as { desde?: string } | null)?.desde ?? "/";
@@ -42,6 +42,11 @@ export function Ingreso() {
       <form className="ingreso-caja" onSubmit={(e) => void enviar(e)} noValidate>
         <h1>Ingresar al panel</h1>
         <p className="ayuda">Panel de Evaristo Cultural</p>
+        {sesionTerminada && !error && (
+          <p className="aviso aviso-alerta" role="status">
+            Tu sesión terminó. Ingresá de nuevo para seguir: vas a volver a la pantalla en la que estabas.
+          </p>
+        )}
         <div className="campo">
           <label htmlFor="email">Email</label>
           <input id="email" name="email" type="email" autoComplete="username" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} />

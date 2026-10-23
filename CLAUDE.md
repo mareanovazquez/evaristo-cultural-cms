@@ -29,6 +29,7 @@ Leer solo lo que la tarea necesite.
 |---|---|
 | `docs/estado-fase3.md` | Fase 3 (sitio público): qué hay, decisiones, tests, inventario de los 35 artículos y qué quedó abierto. Leer antes de tocar el sitio. |
 | `docs/estado-fase4.md` | Fase 4 (panel y API): decisiones, lo hecho (pasos 1 a 5, con las reglas y cosas a tener en cuenta del editor) y lo que falta (pasos 6 a 8). Leer al retomar la fase 4. |
+| `docs/guia-prueba-editorial.md` | Guía para la prueba del panel con la editorial (criterio de cierre de la fase 4): preparación, tareas, cómo observar y cómo decidir si se aprobó. Leer al preparar o analizar esa prueba. |
 | `docs/pendientes.md` | Estado técnico vivo (bases, tests, commits) y lista de pendientes. Leer al empezar y antes de planificar. |
 | `docs/plan-implementacion.md` | Roadmap de fases 0 a 7, decisiones 1 a 67 y riesgos. Largo: buscar la fase o decisión, no leerlo entero. |
 | `docs/decisiones-de-diseno.md` | Paleta, tipografía, tokens, componentes, notas al pie, letra capital, celular. Leer antes de tocar CSS o UI. |

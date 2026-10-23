@@ -194,7 +194,7 @@ export function crearRutasAdminPublicacion(prisma: PrismaClient): express.Router
       // La URL que tenía (si ya estuvo publicado y la cambia) pasa a redirigir a la nueva.
       const rutaAnterior = a.publicadoEn && !esProvisoria(a.slug) ? rutaArticulo({ slug: a.slug, publicadoEn: a.publicadoEn }) : null;
       const nuevaVersion = await prisma.$transaction(async (tx) => {
-        const version = await escribirDatos(tx, a.id, a.actualizadoEn, { ...datos, slug }, { estado: "PUBLICADO", publicadoEn });
+        const version = await escribirDatos(tx, a.id, a.actualizadoEn, { ...datos, slug }, { estado: "PUBLICADO", publicadoEn, publicadoPorId: req.usuario!.id });
         // Una redirección vieja que apuntaba a esta misma URL ya no hace falta.
         await tx.redireccion.deleteMany({ where: { origen: ruta, articuloId: a.id } });
         if (rutaAnterior && rutaAnterior !== ruta) {
@@ -238,7 +238,8 @@ export function crearRutasAdminPublicacion(prisma: PrismaClient): express.Router
       const nuevaVersion = await prisma.$transaction(async (tx) => {
         // La dirección y la fecha no cambian con los cambios (no se editan en un publicado).
         const { slug: _slug, ...sinSlug } = datos;
-        const version = await escribirDatos(tx, a.id, a.actualizadoEn, sinSlug);
+        // Lo editó quien hizo los cambios sin publicar (si se sabe); lo publica quien aprieta el botón.
+        const version = await escribirDatos(tx, a.id, a.actualizadoEn, sinSlug, { editadoPorId: a.borrador?.usuarioId ?? req.usuario!.id, publicadoPorId: req.usuario!.id });
         await tx.articuloBorrador.deleteMany({ where: { articuloId: a.id } });
         return version;
       });

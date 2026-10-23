@@ -148,6 +148,11 @@ model Articulo {
   // Quién lo creó en el panel (los migrados no tienen). Un Redactor solo toca los que creó.
   creadoPorId           Int?
   creadoPor             Usuario?      @relation("ArticulosCreados", fields: [creadoPorId], references: [id], onDelete: SetNull)
+  // Quién guardó por última vez los datos del artículo y quién lo publicó por última vez (los migrados no tienen ninguno).
+  editadoPorId          Int?
+  editadoPor            Usuario?      @relation("ArticulosEditados", fields: [editadoPorId], references: [id], onDelete: SetNull)
+  publicadoPorId        Int?
+  publicadoPor          Usuario?      @relation("ArticulosPublicados", fields: [publicadoPorId], references: [id], onDelete: SetNull)
   redirecciones         Redireccion[]
 
   @@index([estado, publicadoEn])
@@ -277,6 +282,8 @@ model Usuario {
   borradores     ArticuloBorrador[]
   // Artículos que creó (un Redactor solo ve y edita los suyos).
   articulosCreados Articulo[] @relation("ArticulosCreados")
+  articulosEditados Articulo[] @relation("ArticulosEditados")
+  articulosPublicados Articulo[] @relation("ArticulosPublicados")
   // Su ficha de autor, si la tiene (un Redactor firma solo con ella).
   autor          Autor?
 
