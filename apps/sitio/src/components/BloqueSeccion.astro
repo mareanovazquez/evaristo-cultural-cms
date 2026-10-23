@@ -16,7 +16,7 @@ const { seccion, notas } = Astro.props;
   <header class="bloque-encabezado">
     <h2 id={`bloque-${seccion.slug}`}><a href={urlSeccion(seccion.slug)}>{seccion.nombre}</a></h2>
     <a class="ver-todo" href={urlSeccion(seccion.slug)}>
-      Ver todo <span class="solo-lectores">de {seccion.nombre}</span>
+      Ver todo <span class="sr-only">de {seccion.nombre}</span>
       <svg class="icon" aria-hidden="true"><use href="#i-arrow-right" /></svg>
     </a>
   </header>

@@ -52,8 +52,11 @@ try {
   const { estado, html } = await pedir("/");
   assert.equal(estado, 200);
   assert.equal((html.match(/<h1[^>]*>/g) ?? []).length, 1, "un solo H1");
+  // El sitio oculta el texto solo para lectores con `sr-only` (la clase `solo-lectores` es del panel y acá no existe: el texto se vería)
+  assert.ok(!html.includes("solo-lectores"), "no se usa una clase que el sitio no define para ocultar texto");
+  assert.match(html, /<a class="btn btn--primary"[^>]*>\s*Leer\s*<span class="sr-only">/, "el botón dice solo «Leer» a la vista");
   assert.ok(/<h1[^>]*class="logo-titulo"[^>]*><a class="logo"[^>]*aria-label="Evaristo Cultural"/.test(html), "el H1 es el nombre de la revista del encabezado (no hay un título repetido)");
-  assert.ok(!html.includes('class="solo-lectores">Evaristo Cultural'), "y no hay un título oculto aparte");
+  assert.ok(!html.includes('class="sr-only">Evaristo Cultural'), "y no hay un título oculto aparte");
   // En las demás páginas el nombre de la revista es solo un enlace
   assert.ok(!/<h1[^>]*class="logo-titulo"/.test((await pedir("/ultimas/")).html), "en otras páginas el nombre de la revista no es el título");
   assert.match(html, /class="portada-fecha">[A-ZÁÉÍÓÚ][a-záéíóúñ]+, \d{1,2} de [a-zé]+ de \d{4}</, "la fecha completa en español, con mayúscula inicial");
@@ -73,7 +76,7 @@ try {
     const a = ultimas[i]!;
     assert.ok(s.includes(`<a class="btn btn--primary" href="${ruta(a)}"`), `diapositiva ${i + 1}: el botón lleva a la nota ${i + 1} más nueva`);
     assert.ok(s.includes(`<h2>${escapar(a.titulo)}</h2>`), `diapositiva ${i + 1}: con su título (que no es otro enlace igual al botón)`);
-    assert.match(s, />\s*Leer\s*<span class="solo-lectores"> la nota «/, `diapositiva ${i + 1}: el botón dice «Leer» y para un lector de pantalla, qué nota`);
+    assert.match(s, />\s*Leer\s*<span class="sr-only"> la nota «/, `diapositiva ${i + 1}: el botón dice «Leer» y para un lector de pantalla, qué nota`);
     assert.equal((s.match(/<a /g) ?? []).length, 1, `diapositiva ${i + 1}: un solo enlace`);
     assert.equal(s.includes('class="diapositiva-descripcion"'), !!a.bajada?.trim(), `diapositiva ${i + 1}: la descripción es la bajada, y solo si la nota tiene`);
     assert.equal(s.startsWith('<article class="diapositiva activa"'), i === 0, `diapositiva ${i + 1}: solo la primera arranca visible`);

@@ -50,7 +50,7 @@ const { diapositivas, intervalo = 6000, autoplay = true, etiqueta = "Notas desta
               {d.descripcion && <p class="diapositiva-descripcion">{d.descripcion}</p>}
               <a class="btn btn--primary" href={d.href}>
                 {d.ctaTexto}
-                <span class="solo-lectores"> la nota «{d.titulo}»</span>
+                <span class="sr-only"> la nota «{d.titulo}»</span>
               </a>
             </div>
           </article>
