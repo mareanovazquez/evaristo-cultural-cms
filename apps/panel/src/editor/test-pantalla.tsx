@@ -106,6 +106,7 @@ const creados: J[] = []
 type UsuarioDeLista = { id: number; email: string; nombre: string; rol: string; activo: boolean; debeCambiarClave: boolean; ultimoAccesoEn: string | null; creadoEn: string; autor: { id: number; nombre: string; slug: string } | null; articulos: number }
 let usuarioServido: J = { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINISTRADOR', debeCambiarClave: false, permisos: ['articulos.crear', 'usuarios.gestionar'] }
 const cambiosDeClave: J[] = []
+const salidas: string[] = []
 const pedidosUsuarios: Array<{ ruta: string; metodo: string; cuerpo: J }> = []
 const pasados: number[] = []
 // Eliminar el artículo que se edita (el 7)
@@ -176,6 +177,10 @@ globalThis.fetch = (async (entrada: string | URL | Request, init?: RequestInit) 
     return responder(200, { estado: 'ok' })
   }
   if (url === '/api/auth/yo' && metodo === 'GET') return responder(200, { usuario: usuarioServido })
+  if (url === '/api/auth/salir' && metodo === 'POST') {
+    salidas.push(url)
+    return responder(200, { estado: 'ok' })
+  }
   if (url === '/api/auth/yo' && metodo === 'PATCH') {
     const { nombre } = JSON.parse(String(init?.body)) as { nombre: string }
     usuarioServido = { ...usuarioServido, nombre }
@@ -1419,16 +1424,16 @@ await t('el menú muestra Usuarios solo a quien tiene el permiso, y los roles se
   document.body.replaceChildren()
   const admin = await montar('/')
   await hasta(() => !!document.querySelector('nav a'), 'el menú')
-  assert.deepEqual(enlaces(), ['Artículos', 'Autores', 'Secciones y categorías', 'Revisión', 'Usuarios', 'Mi cuenta'])
-  assert.ok(texto().includes('(administrador)'))
+  assert.deepEqual(enlaces(), ['Artículos', 'Autores', 'Secciones y categorías', 'Revisión', 'Usuarios'])
+  assert.ok(document.querySelector('.menu-usuario-rol')!.textContent === 'administrador')
   await act(async () => admin.unmount())
   usuarioServido = { id: 4, email: 'rita@b.c', nombre: 'Rita', rol: 'REDACTOR', debeCambiarClave: false, permisos: ['articulos.crear'] }
   const redactor = await montar('/usuarios')
-  await hasta(() => texto().includes('(redactor)'), 'el menú del redactor')
-  assert.deepEqual(enlaces(), ['Artículos', 'Mi ficha', 'Mi cuenta'], 'el redactor no ve Usuarios ni el listado de autores, solo su ficha')
+  await hasta(() => document.querySelector('.menu-usuario-rol')?.textContent === 'redactor', 'el menú del redactor')
+  assert.deepEqual(enlaces(), ['Artículos', 'Mi ficha'], 'el redactor no ve Usuarios ni el listado de autores, solo su ficha')
   await hasta(() => document.querySelector('h1')?.textContent === 'Artículos', 'vuelve al listado de artículos')
   assert.ok(!texto().includes('Nuevo usuario'), 'y si entra por la dirección no ve la pantalla de usuarios')
-  assert.ok(texto().includes('(redactor)'))
+  assert.ok(document.querySelector('.menu-usuario-rol')!.textContent === 'redactor')
   await act(async () => redactor.unmount())
   usuarioServido = { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINISTRADOR', debeCambiarClave: false, permisos: ['articulos.crear', 'usuarios.gestionar'] }
 })
@@ -1974,7 +1979,7 @@ await t('Menú lateral: en escritorio arranca desplegado, se pliega a íconos co
   const estructura = () => document.querySelector('.estructura')!
   assert.ok(!estructura().classList.contains('plegada'), 'desplegado por defecto')
   assert.ok(document.querySelector('nav[aria-label="Secciones del panel"]'), 'tiene su navegación con nombre')
-  assert.deepEqual([...document.querySelectorAll('.menu-grupo-titulo')].map((g) => g.textContent), ['Contenido', 'Revisión', 'Administración', 'Cuenta'], 'agrupado')
+  assert.deepEqual([...document.querySelectorAll('.menu-grupo-titulo')].map((g) => g.textContent), ['Contenido', 'Revisión', 'Administración'], 'agrupado')
   const plegar = boton('Plegar el menú')!
   assert.equal(plegar.getAttribute('aria-pressed'), 'false')
   await clic(plegar)
@@ -1985,7 +1990,7 @@ await t('Menú lateral: en escritorio arranca desplegado, se pliega a íconos co
   // Plegado, cada enlace conserva su nombre (texto oculto a la vista) y una ayuda al pasar el mouse; todos tienen ícono
   const enlacesMenu = [...document.querySelectorAll('nav a.menu-enlace')]
   assert.ok(enlacesMenu.length >= 5 && enlacesMenu.every((a) => a.querySelector('svg[aria-hidden="true"]') && a.querySelector('.menu-texto')!.textContent === a.getAttribute('title')))
-  assert.deepEqual(enlaces(), ['Artículos', 'Autores', 'Secciones y categorías', 'Revisión', 'Usuarios', 'Mi cuenta'], 'los mismos enlaces plegado y desplegado')
+  assert.deepEqual(enlaces(), ['Artículos', 'Autores', 'Secciones y categorías', 'Revisión', 'Usuarios'], 'los mismos enlaces plegado y desplegado')
   assert.equal(document.querySelector('.menu-enlace[aria-current="page"]')!.textContent, 'Artículos', 'marca dónde estás')
   await act(async () => r.unmount())
   // Una visita nueva lo encuentra como se dejó
@@ -2025,12 +2030,76 @@ await t('Menú lateral: en celular arranca cerrado, la hamburguesa lo abre y se 
   assert.ok(!estructura().classList.contains('menu-abierto'), 'tocar afuera lo cierra')
   // Ir a otra pantalla
   await clic(hamburguesa())
-  await clic([...document.querySelectorAll('nav a')].find((a) => a.textContent === 'Mi cuenta')!)
-  await hasta(() => !!document.getElementById('cuenta-nombre'), 'Mi cuenta')
+  await clic([...document.querySelectorAll('nav a')].find((a) => a.textContent === 'Autores')!)
+  await hasta(() => document.querySelector('h1')?.textContent === 'Autores', 'Autores')
   assert.ok(!estructura().classList.contains('menu-abierto'), 'al ir a otra pantalla se cierra')
-  // Salir sigue siendo un botón del menú
-  assert.ok(boton('Salir'))
   await act(async () => r.unmount())
+})
+
+await t('Menú lateral: el plegar es un botón de solo ícono en la cabecera y el footer tiene el usuario', async () => {
+  window.localStorage.removeItem('panel-menu-plegado')
+  const r = await montar('/')
+  await hasta(() => !!document.querySelector('.menu-lateral'), 'el menú')
+  const cabecera = document.querySelector('.menu-cabecera')!
+  const plegar = cabecera.querySelector<HTMLButtonElement>('.menu-plegar')!
+  assert.ok(plegar, 'el botón de plegar está en la cabecera')
+  assert.equal(plegar.textContent, '', 'y es solo ícono (sin texto)')
+  assert.equal(plegar.getAttribute('aria-label'), 'Plegar el menú')
+  assert.ok(plegar.querySelector('svg[aria-hidden="true"]'))
+  assert.ok(!document.querySelector('.menu-pie .menu-plegar'), 'ya no está en el footer')
+  const pie = document.querySelector('.menu-pie')!
+  assert.ok(pie.querySelector('.menu-avatar')!.textContent === 'P', 'el footer muestra el avatar con la inicial')
+  assert.ok(pie.textContent!.includes('Prueba') && pie.textContent!.includes('administrador'))
+  await act(async () => r.unmount())
+})
+
+await t('Menú lateral: el usuario del footer abre un popover con Mi cuenta y Salir', async () => {
+  salidas.length = 0
+  const r = await montar('/')
+  await hasta(() => !!document.querySelector('.menu-usuario-boton'), 'el usuario del footer')
+  const disparador = () => document.querySelector<HTMLButtonElement>('.menu-usuario-boton')!
+  const popover = () => document.querySelector<HTMLElement>('[role="menu"]')
+  assert.ok(!popover(), 'cerrado al entrar')
+  assert.equal(disparador().getAttribute('aria-haspopup'), 'menu')
+  assert.equal(disparador().getAttribute('aria-expanded'), 'false')
+  await clic(disparador())
+  assert.ok(popover(), 'el clic lo abre')
+  assert.equal(disparador().getAttribute('aria-expanded'), 'true')
+  assert.deepEqual([...popover()!.querySelectorAll('[role="menuitem"]')].map((i) => i.textContent), ['Mi cuenta', 'Salir'])
+  assert.equal(document.activeElement, popover()!.querySelector('[role="menuitem"]'), 'el foco entra al primer ítem')
+  // Flechas
+  await act(async () => { document.activeElement!.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })) })
+  assert.equal(document.activeElement!.textContent, 'Salir')
+  await act(async () => { document.activeElement!.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })) })
+  assert.equal(document.activeElement!.textContent, 'Mi cuenta', 'da la vuelta')
+  // Esc lo cierra y el foco vuelve al botón
+  await act(async () => { window.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true })) })
+  assert.ok(!popover())
+  assert.equal(document.activeElement, disparador())
+  // Un clic afuera lo cierra
+  await clic(disparador())
+  assert.ok(popover())
+  await act(async () => { document.querySelector('.contenido')!.dispatchEvent(new window.MouseEvent('mousedown', { bubbles: true })) })
+  assert.ok(!popover(), 'clic afuera')
+  // Salir pide confirmación solo si hay cambios sin guardar (acá no hay): cierra la sesión
+  await clic(disparador())
+  await clic([...popover()!.querySelectorAll('button')].find((b) => b.textContent === 'Salir')!)
+  await hasta(() => salidas.length === 1, 'la salida')
+  await act(async () => r.unmount())
+  // Mi cuenta lleva a la pantalla y cierra el popover
+  const r2 = await montar('/')
+  await hasta(() => !!document.querySelector('.menu-usuario-boton'), 'el usuario del footer')
+  await clic(document.querySelector('.menu-usuario-boton')!)
+  await clic([...document.querySelectorAll('[role="menu"] a')].find((a) => a.textContent === 'Mi cuenta')!)
+  await hasta(() => !!document.getElementById('cuenta-nombre'), 'Mi cuenta')
+  assert.ok(!document.querySelector('[role="menu"]'), 'el popover se cierra al elegir')
+  // Plegado, el popover sigue funcionando desde el avatar
+  await clic(boton('Plegar el menú')!)
+  await clic(document.querySelector('.menu-usuario-boton')!)
+  assert.ok(document.querySelector('[role="menu"]'), 'plegado también se abre')
+  await clic(boton('Desplegar el menú')!)
+  assert.ok(!document.querySelector('[role="menu"]'), 'y se cierra al plegar o desplegar')
+  await act(async () => r2.unmount())
 })
 
 console.log(`\n${ok} pruebas de la pantalla ok`)

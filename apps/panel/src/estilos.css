@@ -319,7 +319,6 @@ form.grupo { margin-bottom: 1.25rem; background: var(--superficie); }
 .menu-lateral { position: sticky; top: 0; height: 100vh; display: flex; flex-direction: column; background: var(--superficie); border-right: 1px solid var(--borde); overflow: hidden auto; }
 .menu-cabecera { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; min-height: 3.5rem; padding: 0 0.75rem 0 1rem; border-bottom: 1px solid var(--borde); }
 .barra-titulo { font-weight: 600; color: var(--texto); text-decoration: none; line-height: 1.2; }
-.menu-sigla { display: none; font-weight: 700; letter-spacing: 0.04em; }
 .menu-nav { flex: 1 1 auto; padding: 0.5rem 0.5rem 1rem; }
 .menu-grupo { margin-top: 0.75rem; }
 .menu-grupo-titulo { margin: 0 0 0.25rem 0.75rem; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--texto-suave); }
@@ -329,7 +328,17 @@ form.grupo { margin-bottom: 1.25rem; background: var(--superficie); }
 .menu-enlace:disabled { opacity: 0.6; cursor: default; }
 .icono { flex: none; }
 .menu-pie { padding: 0.5rem; border-top: 1px solid var(--borde); }
-.menu-pie .barra-usuario { margin: 0 0 0.25rem; padding: 0.25rem 0.75rem; font-size: 0.85rem; color: var(--texto-suave); overflow-wrap: anywhere; }
+.menu-usuario-boton { display: flex; align-items: center; gap: 0.65rem; width: 100%; min-height: 48px; padding: 0.35rem 0.5rem; font: inherit; color: var(--texto); text-align: left; background: none; border: 0; border-radius: var(--radio); cursor: pointer; }
+.menu-usuario-boton:hover, .menu-usuario-boton[aria-expanded="true"] { background: var(--fondo); }
+.menu-avatar { flex: none; display: grid; place-items: center; width: 34px; height: 34px; font-size: 0.8rem; font-weight: 700; color: #fff; background: var(--acento); border-radius: 50%; }
+.menu-usuario-datos { display: flex; flex-direction: column; min-width: 0; flex: 1 1 auto; line-height: 1.25; }
+.menu-usuario-datos .barra-usuario { font-size: 0.9rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-usuario-rol { font-size: 0.78rem; color: var(--texto-suave); text-transform: capitalize; }
+.icono-chico { width: 16px; height: 16px; flex: none; color: var(--texto-suave); }
+.popover-menu { position: fixed; z-index: 150; min-width: 12rem; padding: 0.25rem; background: var(--superficie); border: 1px solid var(--borde-fuerte); border-radius: var(--radio); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18); }
+.popover-item { display: flex; align-items: center; gap: 0.65rem; width: 100%; min-height: 42px; padding: 0.4rem 0.65rem; font: inherit; font-size: 0.95rem; color: var(--texto); text-align: left; text-decoration: none; background: none; border: 0; border-radius: var(--radio); cursor: pointer; }
+.popover-item:hover:not(:disabled), .popover-item:focus-visible { background: var(--fondo); color: var(--texto); }
+.popover-item:disabled { opacity: 0.6; cursor: default; }
 .boton-menu { display: inline-grid; place-items: center; width: 44px; height: 44px; padding: 0; color: var(--texto); background: none; border: 1px solid transparent; border-radius: var(--radio); cursor: pointer; }
 .boton-menu:hover { background: var(--fondo); border-color: var(--borde); }
 .barra-movil, .fondo-menu, .menu-cerrar { display: none; }
@@ -338,11 +347,12 @@ form.grupo { margin-bottom: 1.25rem; background: var(--superficie); }
 /* Escritorio: plegado, solo íconos. El texto sigue en el HTML para quien usa lector de pantalla. */
 @media (min-width: 900px) {
   .estructura.plegada .menu-texto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
-  .estructura.plegada .menu-sigla { display: inline; }
   .estructura.plegada .menu-cabecera { justify-content: center; padding: 0; }
+  .estructura.plegada .menu-marca { display: none; }
+  .estructura.plegada .menu-usuario-boton { justify-content: center; padding: 0.35rem 0; }
+  .estructura.plegada .menu-usuario-chevron { display: none; }
   .estructura.plegada .menu-grupo-titulo { visibility: hidden; height: 0.4rem; margin: 0; }
   .estructura.plegada .menu-enlace { justify-content: center; padding: 0.4rem; }
-  .estructura.plegada .menu-pie .barra-usuario { padding: 0; height: 0; margin: 0; overflow: hidden; }
   .estructura.plegada .icono-plegar { transform: rotate(180deg); }
 }
 

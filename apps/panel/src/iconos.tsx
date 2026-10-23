@@ -14,6 +14,7 @@ const TRAZOS = {
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,
   cerrar: <path d="M6 6l12 12M18 6 6 18" />,
   plegar: <path d="m13 7-5 5 5 5M19 7l-5 5 5 5" />,
+  chevronArriba: <path d="m6 14 6-6 6 6" />,
 } satisfies Record<string, ReactNode>;
 
 export type NombreIcono = keyof typeof TRAZOS;
