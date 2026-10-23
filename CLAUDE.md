@@ -4,7 +4,7 @@ CMS propio para reemplazar WordPress en la revista cultural Evaristo Cultural (e
 
 **Stack:** TypeScript en todo. Monorepo con npm workspaces: `apps/sitio` (Astro, SSR en modo middleware), `apps/panel` (React + Vite), `apps/api` (Express 5) y `packages/compartido` (Prisma 7, validador, conversor, migración). MySQL 8.4 + Prisma. Editor: TipTap. Un solo proceso en el puerto 3000.
 
-**Estado (23/10/2026):** las fases 0 a 3 están hechas (la 3 es el sitio público completo: artículo, autores, secciones, categorías, redirecciones y 404). La fase 4 (panel y API) está en curso: ingreso y sesiones, listado de artículos, API de edición con borrador de cambios y el editor del panel (pantalla de edición, alta, autoguardado, conflicto, vista previa; pasos 1 a 4); las imágenes (subida, biblioteca, punto focal del encabezado; paso 5); publicar, programar, despublicar, ficha técnica y galería con visor (paso 6); el paso 7 (administración: usuarios y roles, autores, secciones y categorías, revisión de la migración y menú lateral) está hecho en la rama `fase4-administracion`, todavía sin mergear a `main`; falta el cierre (paso 8). Las fases 5 (portada), 6 (buscador y novedades) y 7 (migración completa y lanzamiento) no empezaron. Para retomar, leer `docs/estado-fase4.md` y `docs/pendientes.md`.
+**Estado (23/10/2026):** las fases 0 a 3 están hechas (la 3 es el sitio público completo: artículo, autores, secciones, categorías, redirecciones y 404). La fase 4 (panel y API) está en curso: ingreso y sesiones, listado de artículos, API de edición con borrador de cambios y el editor del panel (pantalla de edición, alta, autoguardado, conflicto, vista previa; pasos 1 a 4); las imágenes (subida, biblioteca, punto focal del encabezado; paso 5); publicar, programar, despublicar, ficha técnica y galería con visor (paso 6); el paso 7 (administración: usuarios y roles, autores, secciones y categorías, revisión de la migración y menú lateral) está hecho en la rama `fase4-administracion`, todavía sin mergear a `main`; falta el cierre (paso 8). La fase 5 (portada) tiene una primera versión armada con datos reales para mostrarle a la dueña de la editorial (`docs/estado-fase5.md`). Las fases 6 (buscador y novedades) y 7 (migración completa y lanzamiento) no empezaron. Para retomar, leer `docs/estado-fase4.md` y `docs/pendientes.md`.
 
 ## Reglas de trabajo
 
@@ -28,6 +28,7 @@ Leer solo lo que la tarea necesite.
 | Archivo | Qué contiene y cuándo leerlo |
 |---|---|
 | `docs/estado-fase3.md` | Fase 3 (sitio público): qué hay, decisiones, tests, inventario de los 35 artículos y qué quedó abierto. Leer antes de tocar el sitio. |
+| `docs/estado-fase5.md` | Fase 5 (portada): qué hay, qué se decidió por defecto, qué preguntarle a la dueña de la editorial y qué falta. Leer antes de tocar la portada. |
 | `docs/estado-fase4.md` | Fase 4 (panel y API): decisiones, lo hecho (pasos 1 a 5, con las reglas y cosas a tener en cuenta del editor) y lo que falta (pasos 6 a 8). Leer al retomar la fase 4. |
 | `docs/guia-prueba-editorial.md` | Guía para la prueba del panel con la editorial (criterio de cierre de la fase 4): preparación, tareas, cómo observar y cómo decidir si se aprobó. Leer al preparar o analizar esa prueba. |
 | `docs/pendientes.md` | Estado técnico vivo (bases, tests, commits) y lista de pendientes. Leer al empezar y antes de planificar. |

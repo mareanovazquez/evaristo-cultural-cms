@@ -57,7 +57,7 @@ Detalle, decisiones y orden en `estado-fase4.md`. Hecho: ingreso, sesiones y rol
 
 ## 3. Fase 5: portada
 
-Después de la reunión con la dueña de la editorial: la especificación (`especificacion-home.md`) se pensó con cinco secciones y hay 17; hay que replantear los bloques antes. Hoy `/` muestra los 12 últimos artículos (provisorio). Temas de la reunión: secciones destacadas, quinta sección, topbar (texto y destino), footer institucional (texto, contacto, redes, datos legales), destacado y qué se hace con las novedades.
+**Primera versión armada el 23/10/2026** para mostrársela a la dueña de la editorial y ajustar con su opinión (ver `estado-fase5.md`: carrusel, bloques de sección, banda y «Últimas publicaciones»). Falta mirarla en un navegador, los textos reales del topbar y el footer, y el feedback. Contexto original: después de la reunión con la dueña de la editorial: la especificación (`especificacion-home.md`) se pensó con cinco secciones y hay 17; hay que replantear los bloques antes. Hoy `/` muestra los 12 últimos artículos (provisorio). Temas de la reunión: secciones destacadas, quinta sección, topbar (texto y destino), footer institucional (texto, contacto, redes, datos legales), destacado y qué se hace con las novedades.
 
 ## 4. Fase 6: especificaciones pendientes
 

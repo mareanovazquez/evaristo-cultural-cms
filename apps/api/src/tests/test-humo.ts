@@ -78,14 +78,20 @@ try {
   const salud = await pedir("/api/salud");
   if (salud.estado !== 200 || !salud.cuerpo.includes('"estado":"ok"')) falla("/api/salud", `dio ${salud.estado} ${salud.cuerpo.slice(0, 60)}`);
 
-  // 2) Portada provisoria: los últimos 12 artículos
+  // 2) Portada (fase 5): carrusel con las 3 más nuevas, banda con las 3 siguientes y bloques de sección sin repetir notas
   const portada = await pedir("/");
   revisarHtml("/", portada, 200);
-  const tarjetasPortada = contar(portada.cuerpo, /<article class="tarjeta"/g);
-  if (tarjetasPortada !== Math.min(12, publicados.length)) falla("/", `${tarjetasPortada} tarjetas, se esperaban ${Math.min(12, publicados.length)}`);
-  const primerosHrefs = [...portada.cuerpo.matchAll(/<h3><a href="([^"]+)"/g)].map((m) => m[1]);
-  const esperadosPortada = publicados.slice(0, 12).map((a) => canonica(a.slug, a.publicadoEn!));
-  if (JSON.stringify(primerosHrefs) !== JSON.stringify(esperadosPortada)) falla("/", "los artículos de la portada no son los 12 más nuevos, en orden");
+  const carruselPortada = /<section class="carrusel"[\s\S]*?<\/section>/.exec(portada.cuerpo)?.[0] ?? "";
+  const hrefsCarrusel = [...carruselPortada.matchAll(/<h2><a href="([^"]+)"/g)].map((m) => m[1]);
+  const esperadosCarrusel = publicados.slice(0, Math.min(3, publicados.length)).map((a) => canonica(a.slug, a.publicadoEn!));
+  if (JSON.stringify(hrefsCarrusel) !== JSON.stringify(esperadosCarrusel)) falla("/", "el carrusel no tiene las 3 notas más nuevas, en orden");
+  const bandaPortada = /<section class="portada-banda"[\s\S]*?<\/section>/.exec(portada.cuerpo)?.[0] ?? "";
+  const hrefsBanda = [...bandaPortada.matchAll(/<h3><a href="([^"]+)"/g)].map((m) => m[1]);
+  const esperadosBanda = publicados.slice(3, Math.min(6, publicados.length)).map((a) => canonica(a.slug, a.publicadoEn!));
+  if (JSON.stringify(hrefsBanda) !== JSON.stringify(esperadosBanda)) falla("/", "la banda no tiene la 4.ª a la 6.ª nota más nueva, en orden");
+  const todosLosHrefs = [...hrefsCarrusel, ...[...portada.cuerpo.matchAll(/<h3><a href="([^"]+)"/g)].map((m) => m[1])];
+  if (new Set(todosLosHrefs).size !== todosLosHrefs.length) falla("/", "la portada repite una nota");
+  if (publicados.length > 6 && contar(portada.cuerpo, /<section class="bloque-seccion"/g) < 1) falla("/", "no hay bloques de sección");
 
   // 3) Hoja de estilos y tipografías
   const css = /<link[^>]+rel="stylesheet"[^>]+href="(\/_astro\/[^"]+\.css)"/.exec(portada.cuerpo)?.[1] ?? /href="(\/_astro\/[^"]+\.css)"/.exec(portada.cuerpo)?.[1];
@@ -168,7 +174,7 @@ try {
     else imgOk++;
   }
 
-  console.log(`API: /api/salud ok. Portada: ${tarjetasPortada} artículos, hoja de estilos 200.`);
+  console.log(`API: /api/salud ok. Portada: carrusel, banda y ${contar(portada.cuerpo, /<section class="bloque-seccion"/g)} bloques de sección, hoja de estilos 200.`);
   console.log(`Artículos: ${publicados.length} publicados con 200 y ${noPublicados.length} no publicado(s) con la página 404 del sitio.`);
   console.log(`Enlaces internos de ${paginas.length} páginas: ${resueltos} resuelven. Imágenes de /media: ${imgOk} de ${imagenes.size} con 200.`);
   const secciones = [...enlaces].filter((e) => e.startsWith("/seccion/")).length;

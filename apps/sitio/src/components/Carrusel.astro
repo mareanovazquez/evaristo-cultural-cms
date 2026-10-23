@@ -1,0 +1,166 @@
+---
+// Carrusel de la portada: las 3 notas más nuevas, con la imagen de encabezado (16:9, recorte por punto focal), el título sobre un degradé
+// oscuro, flechas, puntos y una pausa. Sin JavaScript sigue funcionando como una tira que se desliza con el dedo o la rueda.
+// Accesibilidad: avanza solo cada 6 segundos, pero se detiene al pasar el mouse, al enfocar algo adentro, al tocar la pausa, con la pestaña
+// oculta y si el sistema pide menos movimiento (en ese caso no arranca). Se mueve con las flechas del teclado.
+interface Diapositiva {
+  href: string;
+  titulo: string;
+  seccion?: string | undefined;
+  imagen?: { src: string; alt: string; posicion: string } | undefined;
+  meta?: string | undefined;
+}
+interface Props {
+  diapositivas: Diapositiva[];
+}
+const { diapositivas } = Astro.props;
+---
+
+{
+  diapositivas.length > 0 && (
+    <section class="carrusel" aria-roledescription="carrusel" aria-label="Notas destacadas" data-carrusel>
+      <div class="carrusel-pista" data-pista>
+        {diapositivas.map((d, i) => (
+          <article class="diapositiva" role="group" aria-roledescription="diapositiva" aria-label={`${i + 1} de ${diapositivas.length}`} data-diapositiva>
+            {d.imagen ? (
+              <img
+                class="diapositiva-img"
+                src={d.imagen.src}
+                alt={d.imagen.alt}
+                style={`object-position: ${d.imagen.posicion}`}
+                loading={i === 0 ? "eager" : "lazy"}
+                fetchpriority={i === 0 ? "high" : "auto"}
+              />
+            ) : (
+              <div class="diapositiva-img diapositiva-sin-imagen" />
+            )}
+            <div class="diapositiva-texto">
+              {d.seccion && <span class="etiqueta">{d.seccion}</span>}
+              <h2>
+                <a href={d.href}>{d.titulo}</a>
+              </h2>
+              {d.meta && <p class="meta">{d.meta}</p>}
+            </div>
+          </article>
+        ))}
+      </div>
+      {diapositivas.length > 1 && (
+        <div class="carrusel-controles" role="group" aria-label="Controles del carrusel">
+          <button type="button" class="carrusel-boton" data-anterior aria-label="Nota anterior">
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-chevron-left" />
+            </svg>
+          </button>
+          <div class="carrusel-puntos">
+            {diapositivas.map((_, i) => (
+              <button type="button" class="carrusel-punto" data-punto aria-label={`Ir a la nota ${i + 1}`} aria-current={i === 0 ? "true" : undefined} />
+            ))}
+          </div>
+          <button type="button" class="carrusel-boton" data-siguiente aria-label="Nota siguiente">
+            <svg class="icon" aria-hidden="true">
+              <use href="#i-chevron-right" />
+            </svg>
+          </button>
+          <button type="button" class="carrusel-boton carrusel-pausa" data-pausa aria-label="Pausar el avance automático" aria-pressed="false" hidden>
+            <svg class="icon icono-pausar" aria-hidden="true">
+              <use href="#i-pause" />
+            </svg>
+            <svg class="icon icono-reanudar" aria-hidden="true">
+              <use href="#i-play" />
+            </svg>
+          </button>
+        </div>
+      )}
+    </section>
+  )
+}
+
+<script>
+  const INTERVALO_MS = 6000;
+
+  function iniciar(carrusel: HTMLElement) {
+    const pista = carrusel.querySelector<HTMLElement>("[data-pista]")!;
+    const diapositivas = [...carrusel.querySelectorAll<HTMLElement>("[data-diapositiva]")];
+    const puntos = [...carrusel.querySelectorAll<HTMLElement>("[data-punto]")];
+    const boton = (selector: string) => carrusel.querySelector<HTMLButtonElement>(selector);
+    const pausa = boton("[data-pausa]");
+    if (diapositivas.length < 2) return;
+
+    let actual = 0;
+    let reloj: ReturnType<typeof setInterval> | undefined;
+    let pausadoPorPersona = false;
+    let sobreElCarrusel = false;
+    const menosMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    const ir = (indice: number, avisar = false) => {
+      actual = (indice + diapositivas.length) % diapositivas.length;
+      pista.scrollTo({ left: diapositivas[actual]!.offsetLeft - pista.offsetLeft, behavior: menosMovimiento.matches ? "auto" : "smooth" });
+      marcar();
+      // Cuando una persona lo mueve, el lector de pantalla anuncia la nota; mientras avanza solo, no interrumpe.
+      pista.setAttribute("aria-live", avisar ? "polite" : "off");
+    };
+    const marcar = () => {
+      puntos.forEach((p, i) => (i === actual ? p.setAttribute("aria-current", "true") : p.removeAttribute("aria-current")));
+    };
+
+    const debeAvanzar = () => !menosMovimiento.matches && !pausadoPorPersona && !sobreElCarrusel && !document.hidden && !carrusel.contains(document.activeElement);
+    const arrancar = () => {
+      detener();
+      if (debeAvanzar()) reloj = setInterval(() => ir(actual + 1), INTERVALO_MS);
+    };
+    const detener = () => {
+      if (reloj) clearInterval(reloj);
+      reloj = undefined;
+    };
+
+    boton("[data-anterior]")?.addEventListener("click", () => ir(actual - 1, true));
+    boton("[data-siguiente]")?.addEventListener("click", () => ir(actual + 1, true));
+    puntos.forEach((p, i) => p.addEventListener("click", () => ir(i, true)));
+
+    // Al deslizar con el dedo o la rueda, el punto marcado sigue a la nota que se ve
+    let esperando: ReturnType<typeof setTimeout> | undefined;
+    pista.addEventListener("scroll", () => {
+      clearTimeout(esperando);
+      esperando = setTimeout(() => {
+        const ancho = pista.clientWidth || 1;
+        actual = Math.min(diapositivas.length - 1, Math.max(0, Math.round(pista.scrollLeft / ancho)));
+        marcar();
+      }, 80);
+    });
+
+    // Flechas del teclado cuando el foco está adentro
+    carrusel.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        ir(actual - 1, true);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        ir(actual + 1, true);
+      }
+    });
+
+    // Pausas: mouse encima, foco adentro, pestaña oculta, botón de pausa y «reducir movimiento»
+    carrusel.addEventListener("mouseenter", () => ((sobreElCarrusel = true), detener()));
+    carrusel.addEventListener("mouseleave", () => ((sobreElCarrusel = false), arrancar()));
+    carrusel.addEventListener("focusin", detener);
+    carrusel.addEventListener("focusout", () => setTimeout(arrancar, 0));
+    document.addEventListener("visibilitychange", () => (document.hidden ? detener() : arrancar()));
+    menosMovimiento.addEventListener("change", () => {
+      if (pausa) pausa.hidden = menosMovimiento.matches;
+      arrancar();
+    });
+    if (pausa) {
+      pausa.hidden = menosMovimiento.matches; // si no hay avance automático, no hace falta el botón
+      pausa.addEventListener("click", () => {
+        pausadoPorPersona = !pausadoPorPersona;
+        pausa.setAttribute("aria-pressed", String(pausadoPorPersona));
+        pausa.setAttribute("aria-label", pausadoPorPersona ? "Reanudar el avance automático" : "Pausar el avance automático");
+        pausadoPorPersona ? detener() : arrancar();
+      });
+    }
+    marcar();
+    arrancar();
+  }
+
+  document.querySelectorAll<HTMLElement>("[data-carrusel]").forEach(iniciar);
+</script>

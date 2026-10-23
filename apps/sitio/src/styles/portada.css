@@ -1,0 +1,286 @@
+/* Portada (fase 5). Usa los tokens y los componentes del sitio; mobile primero (una sola columna, mismo orden). */
+
+.portada {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-6) 0 var(--space-16);
+}
+.portada-fecha {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* ---------- Carrusel ---------- */
+.carrusel {
+  position: relative;
+}
+.carrusel-pista {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+}
+.carrusel-pista::-webkit-scrollbar {
+  display: none;
+}
+.diapositiva {
+  position: relative;
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+}
+@media (min-width: 640px) {
+  .diapositiva {
+    aspect-ratio: 16 / 9;
+  }
+}
+.diapositiva-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.diapositiva-sin-imagen {
+  background: var(--accent-900);
+}
+.diapositiva-texto {
+  position: absolute;
+  inset: auto 0 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-16) var(--space-6) var(--space-12);
+  color: #fefefc;
+  /* Degradé oscuro para que el título se lea con cualquier foto */
+  background: linear-gradient(to top, rgba(20, 17, 18, 0.88) 0%, rgba(20, 17, 18, 0.55) 55%, rgba(20, 17, 18, 0) 100%);
+}
+@media (min-width: 640px) {
+  .diapositiva-texto {
+    padding: 96px var(--space-12) var(--space-12);
+  }
+}
+.diapositiva h2 {
+  margin: 0;
+  max-width: 28ch;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 26px;
+  line-height: 1.2;
+}
+@media (min-width: 640px) {
+  .diapositiva h2 {
+    font-size: 40px;
+    line-height: 1.15;
+  }
+}
+.diapositiva h2 a {
+  color: inherit;
+  text-decoration: none;
+}
+.diapositiva h2 a::after {
+  content: "";
+  position: absolute;
+  inset: 0; /* toda la diapositiva es clicable */
+}
+.diapositiva h2 a:focus-visible {
+  outline: none;
+}
+.diapositiva:focus-within {
+  outline: 3px solid var(--focus);
+  outline-offset: -3px;
+}
+.diapositiva .meta {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(254, 254, 252, 0.9);
+}
+.diapositiva .etiqueta {
+  position: relative;
+  z-index: 1;
+}
+.carrusel-controles {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  z-index: 2;
+}
+.carrusel-boton {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  color: var(--text);
+  background: rgba(254, 254, 252, 0.92);
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.carrusel-boton:hover {
+  background: #fff;
+}
+.carrusel-boton:focus-visible,
+.carrusel-punto:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.carrusel-boton .icon {
+  width: 20px;
+  height: 20px;
+}
+.carrusel-pausa .icono-reanudar,
+.carrusel-pausa[aria-pressed="true"] .icono-pausar {
+  display: none;
+}
+.carrusel-pausa[aria-pressed="true"] .icono-reanudar {
+  display: block;
+}
+.carrusel-puntos {
+  display: flex;
+  gap: var(--space-2);
+  padding: 0 var(--space-2);
+}
+.carrusel-punto {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  background: rgba(254, 254, 252, 0.5);
+  border: 1px solid rgba(254, 254, 252, 0.9);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.carrusel-punto[aria-current="true"] {
+  background: #fefefc;
+}
+@media (max-width: 639px) {
+  .carrusel-controles {
+    right: 50%;
+    transform: translateX(50%);
+    bottom: var(--space-3);
+  }
+  .diapositiva-texto {
+    padding-bottom: var(--space-16);
+  }
+}
+
+/* ---------- Bloques de sección ---------- */
+.portada-bloques {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-12) var(--gutter);
+}
+@media (max-width: 899px) {
+  .portada-bloques {
+    grid-template-columns: 1fr;
+  }
+}
+.bloque-encabezado {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid var(--text);
+}
+.bloque-encabezado h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 28px;
+  line-height: 1.2;
+}
+.bloque-encabezado h2 a {
+  color: var(--text);
+  text-decoration: none;
+}
+.bloque-encabezado h2 a:hover {
+  color: var(--link-hover);
+}
+.ver-todo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--link);
+  text-decoration: none;
+}
+.ver-todo:hover {
+  color: var(--link-hover);
+  text-decoration: underline;
+}
+.ver-todo .icon {
+  width: 16px;
+  height: 16px;
+}
+.bloque-notas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+@media (max-width: 639px) {
+  .bloque-notas {
+    grid-template-columns: 1fr;
+  }
+}
+.bloque-notas .tarjeta h3 {
+  font-size: 19px;
+}
+.bloque-notas .tarjeta-texto {
+  padding: var(--space-4);
+}
+
+/* ---------- Banda de cuatro columnas ---------- */
+.portada-banda {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+  padding: var(--space-8) 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+@media (max-width: 1023px) {
+  .portada-banda {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 639px) {
+  .portada-banda {
+    grid-template-columns: 1fr;
+  }
+}
+.banda-presentacion {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-4);
+}
+.banda-presentacion h2 {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-weight: 600;
+  font-size: 30px;
+  line-height: 1.15;
+}
+.banda-presentacion p {
+  margin: 0;
+  color: var(--text-muted);
+}
+.portada-banda .tarjeta h3 {
+  font-size: 18px;
+}
+.portada-banda .tarjeta-texto {
+  padding: var(--space-4);
+}

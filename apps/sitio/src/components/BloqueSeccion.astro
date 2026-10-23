@@ -1,0 +1,35 @@
+---
+// Bloque de una sección en la portada: el nombre (con enlace a su página) y sus últimas notas.
+import Tarjeta from "./Tarjeta.astro";
+import { fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../lib/articulos";
+import type { NotaDePortada } from "../lib/portada";
+import { urlSeccion } from "../lib/rutas";
+
+interface Props {
+  seccion: { slug: string; nombre: string };
+  notas: NotaDePortada[];
+}
+const { seccion, notas } = Astro.props;
+---
+
+<section class="bloque-seccion" aria-labelledby={`bloque-${seccion.slug}`}>
+  <header class="bloque-encabezado">
+    <h2 id={`bloque-${seccion.slug}`}><a href={urlSeccion(seccion.slug)}>{seccion.nombre}</a></h2>
+    <a class="ver-todo" href={urlSeccion(seccion.slug)}>
+      Ver todo <span class="solo-lectores">de {seccion.nombre}</span>
+      <svg class="icon" aria-hidden="true"><use href="#i-arrow-right" /></svg>
+    </a>
+  </header>
+  <div class="bloque-notas">
+    {
+      notas.map((n) => (
+        <Tarjeta
+          href={rutaArticulo({ slug: n.slug, publicadoEn: n.publicadoEn! })}
+          titulo={n.titulo}
+          imagen={n.imagenEncabezado ? { src: urlMedia(n.imagenEncabezado.clave), posicion: posicionFocal(n.encabezadoPuntoFocalX, n.encabezadoPuntoFocalY) } : undefined}
+          meta={`${n.autores.length ? `Por ${n.autores.map((x) => x.autor.nombre).join(", ")} · ` : ""}${fechaLarga(n.publicadoEn!)}`}
+        />
+      ))
+    }
+  </div>
+</section>

@@ -1,0 +1,33 @@
+---
+import Base from "../layouts/Base.astro";
+import Listado from "../components/Listado.astro";
+import { fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../lib/articulos";
+import { cantidadDePaginas, paginaPedida } from "../lib/paginacion";
+import { contarUltimas, notasUltimas } from "../lib/portada";
+
+// «Últimas publicaciones»: todas las notas, de la más nueva a la más vieja, de a NOTAS_POR_PAGINA con ?pagina=N. Es el «Ver todo» de la portada.
+const noEncontrado = () => Astro.rewrite("/404");
+const total = await contarUltimas();
+const paginas = cantidadDePaginas(total);
+const pagina = paginaPedida(Astro.url.searchParams.get("pagina"));
+if (pagina > paginas) return noEncontrado();
+const notas = await notasUltimas(pagina);
+---
+
+<Base titulo={pagina > 1 ? `Últimas publicaciones (página ${pagina})` : "Últimas publicaciones"} descripcion="Las últimas notas publicadas en Evaristo Cultural.">
+  <Listado
+    titulo="Últimas publicaciones"
+    total={total}
+    base="/ultimas/"
+    pagina={pagina}
+    paginas={paginas}
+    vacio="Todavía no hay notas publicadas."
+    notas={notas.map((n) => ({
+      href: rutaArticulo({ slug: n.slug, publicadoEn: n.publicadoEn! }),
+      titulo: n.titulo,
+      seccion: n.seccion.interna ? undefined : n.seccion.nombre,
+      imagen: n.imagenEncabezado ? { src: urlMedia(n.imagenEncabezado.clave), posicion: posicionFocal(n.encabezadoPuntoFocalX, n.encabezadoPuntoFocalY) } : undefined,
+      meta: `${n.autores.length ? `Por ${n.autores.map((x) => x.autor.nombre).join(", ")} · ` : ""}${fechaLarga(n.publicadoEn!)}`,
+    }))}
+  />
+</Base>

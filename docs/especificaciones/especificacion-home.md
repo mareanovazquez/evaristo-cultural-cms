@@ -1,6 +1,6 @@
 # Revista cultural Evaristo: especificación de la portada (Home)
 
-Estado: borrador para llevar a reunión con la editorial. Cerrado el artículo (ver `especificacion-articulo.md`). Pendientes: navegación definitiva y buscador (las páginas de sección, categoría y autor ya están hechas en el sitio, ver `estado-fase3.md`). Hoy `/` muestra provisoriamente los 12 últimos artículos; la portada real espera la reunión con la editorial.
+**Nota del 23/10/2026:** hay una primera versión de la portada armada con datos reales (ver `docs/estado-fase5.md`, que dice qué se decidió por defecto con 17 secciones en lugar de 5 y qué preguntarle a la dueña de la editorial). Estado: borrador para llevar a reunión con la editorial. Cerrado el artículo (ver `especificacion-articulo.md`). Pendientes: navegación definitiva y buscador (las páginas de sección, categoría y autor ya están hechas en el sitio, ver `estado-fase3.md`). Hoy `/` muestra provisoriamente los 12 últimos artículos; la portada real espera la reunión con la editorial.
 
 ## 1. Principios
 

@@ -1,31 +1,79 @@
 ---
+import "../styles/portada.css";
 import Base from "../layouts/Base.astro";
+import BloqueSeccion from "../components/BloqueSeccion.astro";
+import Carrusel from "../components/Carrusel.astro";
 import Tarjeta from "../components/Tarjeta.astro";
-import { fechaLarga, posicionFocal, rutaArticulo, ultimosArticulos, urlMedia } from "../lib/articulos";
+import { fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../lib/articulos";
+import { datosDePortada, type NotaDePortada } from "../lib/portada";
 
-// Portada provisoria: los últimos artículos. La portada real (destacados, secciones) es la fase 5.
-const articulos = await ultimosArticulos(12);
+// Portada (fase 5): se arma sola con lo publicado. Orden: fecha, carrusel de las 3 notas más nuevas, dos secciones, banda con las 3
+// siguientes y «Últimas publicaciones», y las demás secciones. Ver docs/especificaciones/especificacion-home.md.
+const { carrusel, banda, bloques } = await datosDePortada();
+
+const fecha = new Intl.DateTimeFormat("es-AR", { dateStyle: "full", timeZone: "America/Argentina/Buenos_Aires" }).format(new Date());
+const hoy = fecha.charAt(0).toUpperCase() + fecha.slice(1);
+
+const meta = (n: NotaDePortada) => `${n.autores.length ? `Por ${n.autores.map((x) => x.autor.nombre).join(", ")} · ` : ""}${fechaLarga(n.publicadoEn!)}`;
+const imagenDe = (n: NotaDePortada) => (n.imagenEncabezado ? { src: urlMedia(n.imagenEncabezado.clave), posicion: posicionFocal(n.encabezadoPuntoFocalX, n.encabezadoPuntoFocalY) } : undefined);
+const arriba = bloques.slice(0, 2);
+const abajo = bloques.slice(2);
+const hayNotas = carrusel.length > 0;
 ---
 
-<Base titulo="Evaristo Cultural" descripcion="Revista cultural de Evaristo Editorial.">
-  <section class="section">
-    <h1 class="titulo-pagina">Últimos artículos</h1>
-    {
-      articulos.length > 0 ? (
-        <div class="grilla">
-          {articulos.map((a) => (
-            <Tarjeta
-              href={rutaArticulo({ slug: a.slug, publicadoEn: a.publicadoEn! })}
-              titulo={a.titulo}
-              seccion={a.seccion.interna ? undefined : a.seccion.nombre}
-              imagen={a.imagenEncabezado ? { src: urlMedia(a.imagenEncabezado.clave), posicion: posicionFocal(a.encabezadoPuntoFocalX, a.encabezadoPuntoFocalY) } : undefined}
-              meta={`${a.autores.length ? `Por ${a.autores.map((x) => x.autor.nombre).join(", ")} · ` : ""}${fechaLarga(a.publicadoEn!)}`}
-            />
-          ))}
-        </div>
-      ) : (
+<Base titulo="Evaristo Cultural" descripcion="Revista cultural de Evaristo Editorial: entrevistas, reseñas, ensayos y crónicas desde 2006.">
+  <h1 class="solo-lectores">Evaristo Cultural</h1>
+  {
+    hayNotas ? (
+      <div class="portada">
+        <p class="portada-fecha">{hoy}</p>
+
+        <Carrusel
+          diapositivas={carrusel.map((n) => ({
+            href: rutaArticulo({ slug: n.slug, publicadoEn: n.publicadoEn! }),
+            titulo: n.titulo,
+            seccion: n.seccion.interna ? undefined : n.seccion.nombre,
+            imagen: n.imagenEncabezado ? { ...imagenDe(n)!, alt: n.encabezadoAlt ?? "" } : undefined,
+            meta: meta(n),
+          }))}
+        />
+
+        {arriba.length > 0 && (
+          <div class="portada-bloques">
+            {arriba.map((b) => (
+              <BloqueSeccion seccion={b.seccion} notas={b.notas} />
+            ))}
+          </div>
+        )}
+
+        {banda.length > 0 && (
+          <section class="portada-banda" aria-labelledby="ultimas-publicaciones">
+            <div class="banda-presentacion">
+              <h2 id="ultimas-publicaciones">Últimas publicaciones</h2>
+              <p>Lo más nuevo de la revista.</p>
+              <a class="ver-todo" href="/ultimas/">
+                Ver todo
+                <svg class="icon" aria-hidden="true"><use href="#i-arrow-right" /></svg>
+              </a>
+            </div>
+            {banda.map((n) => (
+              <Tarjeta href={rutaArticulo({ slug: n.slug, publicadoEn: n.publicadoEn! })} titulo={n.titulo} seccion={n.seccion.interna ? undefined : n.seccion.nombre} imagen={imagenDe(n)} meta={meta(n)} />
+            ))}
+          </section>
+        )}
+
+        {abajo.length > 0 && (
+          <div class="portada-bloques">
+            {abajo.map((b) => (
+              <BloqueSeccion seccion={b.seccion} notas={b.notas} />
+            ))}
+          </div>
+        )}
+      </div>
+    ) : (
+      <section class="section">
         <p class="vacio">Todavía no hay artículos publicados.</p>
-      )
-    }
-  </section>
+      </section>
+    )
+  }
 </Base>
