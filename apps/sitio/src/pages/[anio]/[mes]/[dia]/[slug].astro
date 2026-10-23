@@ -7,7 +7,7 @@ import Galeria from "../../../../components/Galeria.astro";
 import Tarjeta from "../../../../components/Tarjeta.astro";
 import { renderArticleBody, type JSONNode } from "@evaristo/compartido/render";
 import { rutaCategoria } from "@evaristo/compartido/urls";
-import { articulosRelacionados, buscarArticulo, fechaLarga, medidasDeImagenes, posicionFocal, rutaArticulo, urlMedia } from "../../../../lib/articulos";
+import { articulosRelacionados, buscarArticulo, esNovedad, fechaLarga, medidasDeImagenes, posicionFocal, rutaArticulo, urlMedia } from "../../../../lib/articulos";
 import { pruebaLayoutHabilitada } from "../../../../lib/prueba-layout";
 
 // Vista pública del artículo. URL canónica: /AAAA/MM/DD/slug/ (fecha de publicadoEn en UTC).
@@ -58,6 +58,7 @@ const seccion = articulo.seccion.interna ? undefined : articulo.seccion.nombre;
 <Base titulo={articulo.titulo} descripcion={articulo.bajada ?? undefined}>
   <Articulo
     seccion={seccion}
+    novedad={esNovedad(articulo.novedadHasta)}
     volanta={articulo.categoriaPrincipal ? { nombre: articulo.categoriaPrincipal.nombre, href: rutaCategoria(articulo.categoriaPrincipal.slug) } : undefined}
     titulo={articulo.titulo}
     bajada={articulo.bajada}
@@ -96,6 +97,7 @@ const seccion = articulo.seccion.interna ? undefined : articulo.seccion.nombre;
               href={rutaArticulo({ slug: r.slug, publicadoEn: r.publicadoEn! })}
               titulo={r.titulo}
               seccion={r.seccion.interna ? undefined : r.seccion.nombre}
+              novedad={esNovedad(r.novedadHasta)}
               imagen={r.imagenEncabezado ? { src: urlMedia(r.imagenEncabezado.clave), posicion: posicionFocal(r.encabezadoPuntoFocalX, r.encabezadoPuntoFocalY) } : undefined}
               meta={`${r.autores.length ? `Por ${r.autores.map((x) => x.autor.nombre).join(", ")} · ` : ""}${fechaLarga(r.publicadoEn!)}`}
             />

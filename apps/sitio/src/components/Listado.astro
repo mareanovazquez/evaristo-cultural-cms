@@ -9,6 +9,7 @@ interface Nota {
   seccion?: string | undefined;
   imagen?: { src: string; posicion: string } | undefined;
   meta?: string | undefined;
+  novedad?: boolean | undefined;
 }
 interface Props {
   titulo: string;
@@ -32,7 +33,7 @@ const { titulo, total, notas, base, pagina, paginas, vacio } = Astro.props;
     notas.length > 0 ? (
       <div class="grilla">
         {notas.map((n) => (
-          <Tarjeta href={n.href} titulo={n.titulo} seccion={n.seccion} imagen={n.imagen} meta={n.meta} />
+          <Tarjeta href={n.href} titulo={n.titulo} seccion={n.seccion} imagen={n.imagen} meta={n.meta} novedad={n.novedad} />
         ))}
       </div>
     ) : (

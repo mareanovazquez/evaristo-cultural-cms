@@ -10,6 +10,8 @@ import { prisma } from "./prisma";
 // Un artículo se ve solo si está PUBLICADO y su fecha ya llegó (los programados aparecen en su fecha).
 
 export const SECCIONES_EN_PORTADA = 6;
+/** Notas de «Novedades» en la portada (un bloque más, si hay). Con novedades, las secciones se reducen en una para que los bloques queden de a pares. */
+export const NOVEDADES_EN_PORTADA = 2;
 export const NOTAS_POR_BLOQUE = 2;
 
 const visibles = () => ({ estado: "PUBLICADO" as const, publicadoEn: { lte: new Date() } });
@@ -20,6 +22,7 @@ const seleccion = {
   titulo: true,
   bajada: true,
   publicadoEn: true,
+  novedadHasta: true,
   seccion: { select: { nombre: true, interna: true } },
   imagenEncabezado: { select: { clave: true } },
   encabezadoAlt: true,
@@ -67,11 +70,17 @@ export interface BloqueDeSeccion {
   notas: NotaDePortada[];
 }
 
+const vigentes = () => ({ ...visibles(), novedadHasta: { gt: new Date() } });
+
 export async function datosDePortada() {
   const recientes = await ultimas(6);
   const carrusel = recientes.slice(0, 3);
   const banda = recientes.slice(3, 6);
   const yaMostradas = recientes.map((a) => a.id);
+  // Novedades: las notas cuya marca todavía no venció, sin repetir lo de arriba
+  const novedades = await prisma.articulo.findMany({ where: { ...vigentes(), id: { notIn: yaMostradas } }, orderBy: [{ publicadoEn: "desc" }, { id: "desc" }], take: NOVEDADES_EN_PORTADA, select: seleccion });
+  yaMostradas.push(...novedades.map((n) => n.id));
+  const cuantasSecciones = novedades.length ? SECCIONES_EN_PORTADA - 1 : SECCIONES_EN_PORTADA;
 
   // Las secciones con la publicación más reciente (sin la interna), de la más a la menos activa.
   const grupos = await prisma.articulo.groupBy({
@@ -83,14 +92,18 @@ export async function datosDePortada() {
   });
   const bloques: BloqueDeSeccion[] = [];
   for (const g of grupos) {
-    if (bloques.length >= SECCIONES_EN_PORTADA) break;
+    if (bloques.length >= cuantasSecciones) break;
     const notas = await prisma.articulo.findMany({ where: { ...visibles(), seccionId: g.seccionId, id: { notIn: yaMostradas } }, orderBy: [{ publicadoEn: "desc" }, { id: "desc" }], take: NOTAS_POR_BLOQUE, select: seleccion });
     if (!notas.length) continue;
     const seccion = await prisma.seccion.findUniqueOrThrow({ where: { id: g.seccionId }, select: { slug: true, nombre: true } });
     bloques.push({ seccion, notas });
   }
-  return { carrusel, banda, bloques };
+  return { carrusel, banda, bloques, novedades };
 }
+
+/** Las notas que cuentan como novedad (su fecha `novedadHasta` no pasó), de la más nueva a la más vieja: la página «Novedades». */
+export const contarNovedades = (): Promise<number> => prisma.articulo.count({ where: vigentes() });
+export const notasNovedades = (pagina: number) => prisma.articulo.findMany({ where: vigentes(), orderBy: [{ publicadoEn: "desc" }, { id: "desc" }], skip: (pagina - 1) * NOTAS_POR_PAGINA, take: NOTAS_POR_PAGINA, select: seleccion });
 
 /** Todas las notas publicadas, de la más nueva a la más vieja (la página «Últimas publicaciones»). */
 export const contarUltimas = (): Promise<number> => prisma.articulo.count({ where: visibles() });

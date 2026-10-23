@@ -2,7 +2,7 @@
 import Base from "../../layouts/Base.astro";
 import Tarjeta from "../../components/Tarjeta.astro";
 import { renderArticleBody, type JSONNode } from "@evaristo/compartido/render";
-import { fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../../lib/articulos";
+import { esNovedad, fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../../lib/articulos";
 import Paginacion from "../../components/Paginacion.astro";
 import { buscarAutor, contarNotasDelAutor, enlacesDeRedes, notasDelAutor } from "../../lib/autores";
 import { cantidadDePaginas, paginaPedida } from "../../lib/paginacion";
@@ -82,6 +82,7 @@ const iniciales = autor.nombre
             <Tarjeta
               href={rutaArticulo({ slug: n.slug, publicadoEn: n.publicadoEn! })}
               titulo={n.titulo}
+              novedad={esNovedad(n.novedadHasta)}
               seccion={n.seccion.interna ? undefined : n.seccion.nombre}
               imagen={n.imagenEncabezado ? { src: urlMedia(n.imagenEncabezado.clave), posicion: posicionFocal(n.encabezadoPuntoFocalX, n.encabezadoPuntoFocalY) } : undefined}
               meta={fechaLarga(n.publicadoEn!)}

@@ -645,3 +645,10 @@
     transition: none;
   }
 }
+
+/* Sección y «Novedad» juntas sobre el título */
+.rotulos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

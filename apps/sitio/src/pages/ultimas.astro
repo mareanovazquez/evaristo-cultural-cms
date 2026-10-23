@@ -1,7 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
 import Listado from "../components/Listado.astro";
-import { fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../lib/articulos";
+import { esNovedad, fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../lib/articulos";
 import { cantidadDePaginas, paginaPedida } from "../lib/paginacion";
 import { contarUltimas, notasUltimas } from "../lib/portada";
 
@@ -25,6 +25,7 @@ const notas = await notasUltimas(pagina);
     notas={notas.map((n) => ({
       href: rutaArticulo({ slug: n.slug, publicadoEn: n.publicadoEn! }),
       titulo: n.titulo,
+      novedad: esNovedad(n.novedadHasta),
       seccion: n.seccion.interna ? undefined : n.seccion.nombre,
       imagen: n.imagenEncabezado ? { src: urlMedia(n.imagenEncabezado.clave), posicion: posicionFocal(n.encabezadoPuntoFocalX, n.encabezadoPuntoFocalY) } : undefined,
       meta: `${n.autores.length ? `Por ${n.autores.map((x) => x.autor.nombre).join(", ")} · ` : ""}${fechaLarga(n.publicadoEn!)}`,

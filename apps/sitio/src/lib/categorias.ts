@@ -26,6 +26,7 @@ export async function notasDeCategoria(categoriaId: number, pagina: number) {
       slug: true,
       titulo: true,
       publicadoEn: true,
+      novedadHasta: true,
       seccion: { select: { nombre: true, interna: true } },
       imagenEncabezado: { select: { clave: true } },
       encabezadoPuntoFocalX: true,

@@ -29,6 +29,7 @@ export async function buscarArticulo(slug: string) {
       bajada: true,
       cuerpo: true,
       publicadoEn: true,
+      novedadHasta: true,
       seccionId: true,
       seccion: { select: { nombre: true, slug: true, interna: true } },
       categoriaPrincipal: { select: { nombre: true, slug: true } },

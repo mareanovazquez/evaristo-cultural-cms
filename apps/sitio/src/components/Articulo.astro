@@ -9,6 +9,8 @@ export interface AutorLinea {
 }
 interface Props {
   seccion?: string | undefined;
+  /** La nota cuenta como novedad: se marca junto a la sección. */
+  novedad?: boolean | undefined;
   volanta?: { nombre: string; href: string } | undefined;
   titulo: string;
   bajada?: string | null | undefined;
@@ -18,13 +20,18 @@ interface Props {
   html: string;
   notesHtml: string;
 }
-const { seccion, volanta, titulo, bajada, autores = [], fecha, encabezado, html, notesHtml } = Astro.props;
+const { seccion, novedad = false, volanta, titulo, bajada, autores = [], fecha, encabezado, html, notesHtml } = Astro.props;
 const hayMeta = autores.length > 0 || fecha;
 ---
 
 <article class="section nota">
   <header class="col">
-    {seccion && <p class="rotulos"><span class="etiqueta">{seccion}</span></p>}
+    {(seccion || novedad) && (
+      <p class="rotulos">
+        {seccion && <span class="etiqueta">{seccion}</span>}
+        {novedad && <span class="etiqueta etiqueta-novedad">Novedad</span>}
+      </p>
+    )}
     {volanta && <p class="volanta"><a href={volanta.href}>{volanta.nombre}</a></p>}
     <h1>{titulo}</h1>
     {bajada && <p class="bajada">{bajada}</p>}

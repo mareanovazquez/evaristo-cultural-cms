@@ -61,6 +61,8 @@ Detalle, decisiones y orden en `estado-fase4.md`. Hecho: ingreso, sesiones y rol
 
 ## 4. Fase 6: especificaciones pendientes
 
+**Primera versión hecha el 23/10/2026** (buscador, novedades y entrada en el menú; ver `estado-fase6.md`). Falta confirmarla con la editorial. Contexto original:
+
 1. Escribir y hacer: navegación, buscador (FULLTEXT sobre título, bajada y texto plano, quitando el guion blando U+00AD del texto plano) y cómo se muestran las novedades (`novedadHasta`). Las páginas de sección y de categoría ya están hechas (fase 3); queda decidir descripciones por sección y el orden.
 2. **Contador de visitas:** se guarda como histórico (`visitasWp`) y no se muestra.
 

@@ -41,6 +41,7 @@ const actual = (href: string) => (ruta === href || ruta.startsWith(href) ? "page
               Más <svg class="icon icon-chev" aria-hidden="true"><use href="#i-chevron-down" /></svg>
             </summary>
             <div class="mas-panel">
+              <a href="/novedades/" aria-current={actual("/novedades/")}>Novedades</a>
               {resto.map((s) => <a href={urlSeccion(s.slug)} aria-current={actual(urlSeccion(s.slug))}>{s.nombre}</a>)}
               <a href={URL_AUTORES} aria-current={actual(URL_AUTORES)}>Autores</a>
             </div>
@@ -60,6 +61,7 @@ const actual = (href: string) => (ruta === href || ruta.startsWith(href) ? "page
       </summary>
       <nav class="panel-movil" aria-label="Secciones">
         <ul>
+          <li><a href="/novedades/" aria-current={actual("/novedades/")}>Novedades</a></li>
           {SECCIONES_MENU.map((s) => <li><a href={urlSeccion(s.slug)} aria-current={actual(urlSeccion(s.slug))}>{s.nombre}</a></li>)}
         </ul>
         <div class="secundario"><a href={URL_AUTORES}>Autores</a><a href="/buscar/">Buscar</a></div>

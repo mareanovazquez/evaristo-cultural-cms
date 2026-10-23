@@ -38,6 +38,7 @@ export async function notasDeSeccion(seccionId: number, pagina: number) {
       slug: true,
       titulo: true,
       publicadoEn: true,
+      novedadHasta: true,
       imagenEncabezado: { select: { clave: true } },
       encabezadoPuntoFocalX: true,
       encabezadoPuntoFocalY: true,

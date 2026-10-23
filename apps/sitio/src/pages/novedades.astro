@@ -1,0 +1,35 @@
+---
+import Base from "../layouts/Base.astro";
+import Listado from "../components/Listado.astro";
+import { esNovedad, fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../lib/articulos";
+import { cantidadDePaginas, paginaPedida } from "../lib/paginacion";
+import { contarNovedades, notasNovedades } from "../lib/portada";
+
+// «Novedades»: las notas marcadas como novedad (campo `novedadHasta` del artículo) mientras su fecha no venza, de la más nueva a la más vieja,
+// de a NOTAS_POR_PAGINA con ?pagina=N. No es una sección ni una categoría (decisión 15).
+const noEncontrado = () => Astro.rewrite("/404");
+const total = await contarNovedades();
+const paginas = cantidadDePaginas(total);
+const pagina = paginaPedida(Astro.url.searchParams.get("pagina"));
+if (pagina > paginas) return noEncontrado();
+const notas = await notasNovedades(pagina);
+---
+
+<Base titulo={pagina > 1 ? `Novedades (página ${pagina})` : "Novedades"} descripcion="Las novedades de Evaristo Cultural: lo que acaba de salir.">
+  <Listado
+    titulo="Novedades"
+    total={total}
+    base="/novedades/"
+    pagina={pagina}
+    paginas={paginas}
+    vacio="Por ahora no hay novedades. Cuando haya, las vas a encontrar acá."
+    notas={notas.map((n) => ({
+      href: rutaArticulo({ slug: n.slug, publicadoEn: n.publicadoEn! }),
+      titulo: n.titulo,
+      seccion: n.seccion.interna ? undefined : n.seccion.nombre,
+      novedad: esNovedad(n.novedadHasta),
+      imagen: n.imagenEncabezado ? { src: urlMedia(n.imagenEncabezado.clave), posicion: posicionFocal(n.encabezadoPuntoFocalX, n.encabezadoPuntoFocalY) } : undefined,
+      meta: `${n.autores.length ? `Por ${n.autores.map((x) => x.autor.nombre).join(", ")} · ` : ""}${fechaLarga(n.publicadoEn!)}`,
+    }))}
+  />
+</Base>
