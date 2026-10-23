@@ -152,7 +152,7 @@ Hoy el esquema tiene el núcleo del contenido y sus complementos:
 
 | Tabla | Qué guarda |
 | --- | --- |
-| `secciones` | Las 18 secciones de la revista (17 públicas y `sin-asignar`, que es interna). Se cargan con `db:sembrar`. |
+| `secciones` | Las secciones de la revista (al principio 17 públicas y `sin-asignar`, que es interna), con su `orden` en el menú. Se cargan con `db:sembrar` y después las administra el administrador desde el panel. |
 | `categorias` | Las categorías de los artículos. |
 | `autores` | Los autores, incluidos los que son solo texto (por ejemplo, una redacción). |
 | `articulos` | Los artículos: cuerpo en JSON de TipTap, texto plano para el buscador, estado, fechas, sección y categoría principal. |
@@ -184,7 +184,7 @@ El texto alternativo del encabezado, de la galería y de la foto del autor vive 
 
 | Comando | Para qué sirve |
 | --- | --- |
-| `npm run db:sembrar` | Carga las 18 secciones (definidas en `packages/compartido/src/secciones.ts`). Es idempotente: se puede correr las veces que haga falta sin duplicar ni cambiar ids. |
+| `npm run db:sembrar` | Carga inicial de las secciones (definidas en `packages/compartido/src/secciones.ts`): crea las que faltan y no toca las que ya existen (desde el 23/10/2026 el administrador las renombra, ordena y borra desde el panel). |
 | `npm run db:probar-modelo` | Prueba el modelo contra la base real: relaciones, orden de autores, fechas en UTC, cuerpos grandes, imágenes y sus usos, ficha técnica, usuarios, redirecciones, restricciones y unicidad. Todo lo que crea lo borra al final y no toca las secciones sembradas. |
 
 ### API del panel (fase 4)
@@ -241,6 +241,7 @@ Después abrir:
 | `npm run test:categorias -- --originales="<carpeta>"` | Recorre las páginas de categoría y comprueba la volanta como enlace (base en solo lectura; requiere `build:sitio`). |
 | `npm run dev:desarrollo --workspace=@evaristo/api` | Arranca la API contra `evaristo_cms_dev` (la base de desarrollo del panel). |
 | `npm run usuario:crear -- --base-dev --email=… --nombre=… --rol=EDITOR|ADMINISTRADOR` | Crea un usuario del panel; pide la contraseña por teclado. |
+| `npm run test:admin-clasificacion` | Secciones y categorías del panel contra `evaristo_cms_dev`: permisos, direcciones con redirección, orden del menú (mirando el sitio), eliminar y unir (crea y borra datos temporales y deja el orden como estaba). |
 | `npm run test:admin-autores` | Autores del panel contra `evaristo_cms_dev`: permisos, bio, redes, foto, dirección con redirección, eliminar y unir (crea y borra datos temporales). |
 | `npm run test:admin-usuarios` | Usuarios, roles y propiedad de los artículos contra `evaristo_cms_dev` (crea y borra usuarios, fichas y artículos temporales). |
 | `npm run test:auth` | Pruebas de la autenticación (sin base). |

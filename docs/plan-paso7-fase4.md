@@ -88,7 +88,7 @@ Los artículos migrados no tienen creador ni firma de un Redactor: solo los toca
 - Tests: `test:admin-autores` (permisos, validaciones, slug único y redirección, unir sin perder artículos ni repetir autores, eliminar con artículos rechazado, la bio guardada como JSON válido para el renderizador) y pantallas.
 - **Hecho cuando:** se corrige una bio y una foto, se une "Luca Frondoni" con "lucafrondoni" y los artículos de los dos quedan en uno, la dirección vieja redirige y el sitio muestra la ficha nueva.
 
-## Etapa 7c: secciones y categorías (solo administrador)
+## Etapa 7c: secciones y categorías (solo administrador) — HECHA el 23/10/2026 (ver `estado-fase4.md`, «Paso 7, etapa 7c», y la decisión 70)
 
 **Objetivo:** que el administrador cree, renombre, una y elimine secciones y categorías (incluye el pedido de Mariano del 22/10/2026: **poder crear secciones nuevas**).
 
@@ -123,8 +123,8 @@ Los artículos migrados no tienen creador ni firma de un Redactor: solo los toca
 3. ~~**Unir autores.**~~ Resuelto el 23/10/2026: se conserva todo lo del autor elegido y solo se copia del sobrante lo que le falte (bio, foto, cada red); antes de confirmar se muestra qué artículos se mueven y qué datos se copian. Texto original de la duda: Qué pasa con la bio, la foto y las redes del sobrante (propuesta: se conserva lo del elegido y solo se completa lo que le falte) y si se avisa antes qué artículos se mueven.
 4. ~~**Redes sociales:**~~ Resuelto el 23/10/2026: se carga la **dirección completa** (http o https) en los 4 campos actuales; sin campo «otros» ni cambio de esquema. Texto original: usuario o dirección completa, y si se agrega un campo "otros" (es cambio de esquema).
 5. ~~**Bio:**~~ Resuelto el 23/10/2026: límite de **500 caracteres**, editor chico con cursiva y enlace (sin negrita, listas ni títulos) y contador. Al armar la etapa hay que medir las bios migradas: si alguna pasa de 500, poder guardarla sin tocar la bio. Texto original: reutilizar el editor chico de la nota al pie (negrita, itálica y enlace) quitando la negrita, con contador de caracteres. Confirmar el límite de 500.
-6. **Secciones:** si además de crear y renombrar se permite ocultar una sección (sin borrarla) y si cambiar su dirección genera redirección. Depende de confirmar con la editorial el modelo de secciones.
-7. **Categorías:** unir y eliminar solo vacías; y si la dirección vieja de una categoría redirige.
+6. ~~**Secciones:**~~ Resuelto el 23/10/2026: no se ocultan; solo se eliminan vacías (y se puede unir para vaciarlas). Texto original: si además de crear y renombrar se permite ocultar una sección (sin borrarla) y si cambiar su dirección genera redirección. Depende de confirmar con la editorial el modelo de secciones.
+7. ~~**Categorías:**~~ Resuelto el 23/10/2026: unir y eliminar solo vacías, y la dirección vieja de una categoría (y la de una sección) redirige. Texto original: unir y eliminar solo vacías; y si la dirección vieja de una categoría redirige.
 8. **Cómo se marca un aviso como revisado:** columna nueva (`revisadoEn` o un JSON de códigos resueltos) o quitar el aviso del JSON. Propuesta: guardar qué avisos se resolvieron y quién, sin borrar el original.
 9. ~~**Roles y permisos.**~~ Resuelto el 22/10/2026 (ver "Roles y permisos"). Un Redactor solo firma con su propia ficha y no borra imágenes (decidido). Un artículo "suyo" es el que creó (decidido). Un posible agregado futuro, sin hacer: fecha de vencimiento opcional del acceso (que se desactive solo).
 

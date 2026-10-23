@@ -157,6 +157,21 @@ Decisión 69 del plan. Decisiones de Mariano del 23/10/2026: al unir se conserva
 - **Tests:** `test:admin-autores` (contra `evaristo_cms_dev`) y `test:pantalla` 65.
 - **No se hizo (anotado):** foto de autor subida directo desde la ficha (se sube desde el selector de la biblioteca); mostrar en el listado cuánto pesa cada autor en el sitio; deshacer una unión (no se puede: hay respaldo de la base).
 
+## Paso 7, etapa 7c: secciones y categorías (23/10/2026, rama `fase4-administracion`)
+
+Decisión 70 del plan. Decisiones de Mariano del 23/10/2026: las secciones **no se ocultan** (solo se eliminan si están vacías) y cambiar la dirección de una sección o de una categoría **deja la vieja redirigiendo**.
+
+- **Esquema** (migración `20261023130000_secciones_orden`, aplicada a `_dev` y `_test`; **a la real, con las otras, en la fase 7**): `secciones.orden`, con el orden de carga como valor inicial (`orden = id`).
+- **API** (`apps/api/src/admin/clasificacion.ts`, permiso `clasificacion.gestionar`, solo administrador): secciones y categorías con listado (con la cantidad de artículos), crear (la dirección sale del nombre si no se da), renombrar y cambiar la dirección, eliminar y unir (con vista previa). Las secciones además se ordenan (`POST /secciones/orden` con la lista completa de las no internas). `sin-asignar` no se renombra, ordena, une ni elimina, y no se ofrece como destino.
+- **Direcciones:** el cambio crea una redirección `MANUAL` 301 de `/seccion/<vieja>/` (o `/categoria/…`) a la nueva; las redirecciones que ya apuntaban a la vieja se actualizan (no hay cadenas); volver a una dirección vieja borra esa redirección; una dirección ocupada por una redirección ajena se rechaza.
+- **Eliminar:** solo vacías, y sin figurar en cambios sin publicar. Borra también las redirecciones que llevaban a lo eliminado.
+- **Unir** (en una transacción, y **también para secciones**, algo que el plan no pedía pero hace falta para poder vaciar una sección con cientos de artículos): los artículos pasan a la elegida; en categorías, los que ya tenían las dos quedan con una sola y la categoría principal (volanta) pasa a la elegida; los cambios sin publicar (`articulos_borradores.datos`) se reescriben; la dirección de la unida y sus redirecciones llevan a la elegida.
+- **Sitio:** el menú y el pie leen las secciones de la base en el orden de `orden` (`listarSeccionesMenu`), ya no de la lista fija. La lista de `packages/compartido/src/secciones.ts` queda como carga inicial: `db:sembrar` ahora **solo crea las que faltan** (con su orden) y no pisa nombres ni órdenes. **Respaldo provisorio:** como la base real todavía no tiene la columna `orden`, `listarSeccionesMenu` cae al orden por id si la consulta falla por eso; borrarlo cuando la real tenga la migración.
+- **Panel:** pantalla `Clasificacion.tsx` («Secciones y categorías», con dos solapas): alta, subir y bajar (guarda el orden en el momento), editar nombre y dirección (con aviso al cambiarla), unir mostrando antes qué cambia, y eliminar. Menú del panel con el enlace nuevo.
+- **Tests:** `test:admin-clasificacion` (contra `evaristo_cms_dev`; también mira que el menú del sitio siga el orden nuevo) y `test:pantalla` 69. `test:fase3` pasa contra la base real con el respaldo.
+- **Riesgo para la fase 7:** el script de migración y el conversor mapean los artículos a secciones por su dirección (`asia`, `resena`…). Si antes de migrar el administrador cambia o elimina una de esas direcciones, la migración fallaría o crearía de nuevo la sección: **no tocar las direcciones de las 17 secciones iniciales hasta después de la migración completa** (renombrar el nombre visible sí está bien).
+- **No se hizo (anotado):** ocultar una sección (decisión 6); descripciones por sección y por categoría (fase 6); arrastrar para ordenar (se usa subir y bajar).
+
 ## Reglas y cosas a tener en cuenta del editor (lo duradero del plan del paso 4)
 
 - **Sin `localStorage` como respaldo del texto en edición:** la copia de seguridad es el borrador de cambios del servidor (y el autoguardado).

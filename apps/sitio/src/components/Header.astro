@@ -1,11 +1,14 @@
 ---
 import Marca from "./Marca.astro";
-import { SECCIONES_MENU, SECCIONES_VISIBLES, URL_AUTORES, urlSeccion } from "../lib/rutas";
+import { SECCIONES_VISIBLES, URL_AUTORES, urlSeccion } from "../lib/rutas";
+import { listarSeccionesMenu } from "../lib/secciones";
 
 // Topbar: texto provisorio. Más adelante se edita desde el panel (solo administrador).
 const TOPBAR_TEXTO = "Conseguí todos los libros de Evaristo Editorial en nuestra tienda online";
 const TOPBAR_URL = "#";
 
+// Las secciones y su orden salen de la base: las administra el administrador desde el panel.
+const SECCIONES_MENU = await listarSeccionesMenu();
 const visibles = SECCIONES_MENU.slice(0, SECCIONES_VISIBLES);
 const resto = SECCIONES_MENU.slice(SECCIONES_VISIBLES);
 const ruta = Astro.url.pathname;

@@ -1,9 +1,10 @@
 ---
 import Marca from "./Marca.astro";
-import { SECCIONES_MENU, URL_AUTORES, urlSeccion } from "../lib/rutas";
+import { URL_AUTORES, urlSeccion } from "../lib/rutas";
+import { listarSeccionesMenu } from "../lib/secciones";
 
 // Textos, contacto y redes provisorios: la editorial todavía no los definió (ver especificacion-home.md, sección 6).
-const principales = SECCIONES_MENU.slice(0, 4);
+const principales = (await listarSeccionesMenu()).slice(0, 4);
 ---
 
 <footer class="footer">

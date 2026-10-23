@@ -3,6 +3,7 @@ import { Estructura } from "./Estructura";
 import { Articulos } from "./paginas/Articulos";
 import { EditarArticulo } from "./paginas/EditarArticulo";
 import { Autores } from "./paginas/Autores";
+import { Clasificacion } from "./paginas/Clasificacion";
 import { Cuenta } from "./paginas/Cuenta";
 import { EditarAutor } from "./paginas/EditarAutor";
 import { Ingreso } from "./paginas/Ingreso";
@@ -53,6 +54,9 @@ export function App() {
           <Route path="autores/:id" element={<EditarAutor />} />
           <Route element={<ConPermiso permiso="autores.editar.ajenos" />}>
             <Route path="autores" element={<Autores />} />
+          </Route>
+          <Route element={<ConPermiso permiso="clasificacion.gestionar" />}>
+            <Route path="clasificacion" element={<Clasificacion />} />
           </Route>
           <Route element={<ConPermiso permiso="usuarios.gestionar" />}>
             <Route path="usuarios" element={<Usuarios />} />

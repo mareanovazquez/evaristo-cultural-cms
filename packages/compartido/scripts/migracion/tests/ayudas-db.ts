@@ -49,7 +49,7 @@ export async function vaciarYSembrarPruebas(prisma: PrismaClient): Promise<void>
   }
   const base = await baseActual(prisma);
   if (base !== DESTINO_PRUEBAS.base) throw new Error(`vaciarYSembrarPruebas: DATABASE() = ${base || "NULL"}: se aborta sin sembrar`);
-  await prisma.seccion.createMany({ data: SECCIONES.map((s) => ({ slug: s.slug, nombre: s.nombre, interna: s.interna })) });
+  await prisma.seccion.createMany({ data: SECCIONES.map((s, i) => ({ slug: s.slug, nombre: s.nombre, interna: s.interna, orden: i + 1 })) });
 }
 
 // ---------------------------------------------------------------------------------------------------------------

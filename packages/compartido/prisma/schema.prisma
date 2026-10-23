@@ -29,6 +29,8 @@ model Seccion {
   nombre    String     @db.VarChar(100)
   // Sección que no se elige en el panel ni tiene página pública (por ejemplo, sin-asignar).
   interna   Boolean    @default(false)
+  // Lugar en el menú del sitio (de menor a mayor). La administra el administrador desde el panel; la migración le dio el orden de la lista inicial.
+  orden     Int        @default(0)
   articulos Articulo[]
 
   @@map("secciones")

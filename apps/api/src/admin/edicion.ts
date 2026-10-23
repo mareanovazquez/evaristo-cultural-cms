@@ -180,7 +180,7 @@ export function crearRutasAdminEdicion(prisma: PrismaClient): express.Router {
     try {
       const rol = req.usuario!.rol;
       const [secciones, categorias, autores, usuarios] = await Promise.all([
-        prisma.seccion.findMany({ where: { interna: false }, orderBy: { id: "asc" }, select: { id: true, slug: true, nombre: true } }),
+        prisma.seccion.findMany({ where: { interna: false }, orderBy: [{ orden: "asc" }, { id: "asc" }], select: { id: true, slug: true, nombre: true } }),
         prisma.categoria.findMany({ orderBy: { nombre: "asc" }, select: { id: true, slug: true, nombre: true } }),
         // Un Redactor solo puede firmar con su propia ficha.
         prisma.autor.findMany({ where: tienePermiso(rol, "autores.elegir.cualquiera") ? {} : { usuarioId: req.usuario!.id }, orderBy: { nombre: "asc" }, select: { id: true, nombre: true, soloTexto: true } }),

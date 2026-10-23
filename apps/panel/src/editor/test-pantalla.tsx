@@ -108,6 +108,20 @@ let usuarioServido: J = { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINIS
 const cambiosDeClave: J[] = []
 const pedidosUsuarios: Array<{ ruta: string; metodo: string; cuerpo: J }> = []
 const pasados: number[] = []
+// Secciones y categorías
+const pedidosClasificacion: Array<{ ruta: string; metodo: string; cuerpo: J }> = []
+let respuestaClasificacion: { estado: number; cuerpo: J } = { estado: 200, cuerpo: {} }
+type ItemClasificacion = { id: number; slug: string; nombre: string; articulos: number; interna?: boolean; orden?: number; comoPrincipal?: number }
+let seccionesServidas: ItemClasificacion[] = [
+  { id: 1, slug: 'cine', nombre: 'Cine', articulos: 12, interna: false, orden: 1 },
+  { id: 2, slug: 'arte', nombre: 'Arte', articulos: 0, interna: false, orden: 2 },
+  { id: 3, slug: 'teatro', nombre: 'Teatro', articulos: 4, interna: false, orden: 3 },
+  { id: 9, slug: 'sin-asignar', nombre: 'Sin asignar', articulos: 103, interna: true, orden: 9 },
+]
+const categoriasServidas: ItemClasificacion[] = [
+  { id: 10, slug: 'entrevistas', nombre: 'Entrevistas', articulos: 30, comoPrincipal: 5 },
+  { id: 11, slug: 'ensayos', nombre: 'Ensayos', articulos: 0, comoPrincipal: 0 },
+]
 // Autores
 const pedidosAutores: Array<{ ruta: string; metodo: string; cuerpo: J }> = []
 let autorEditaTodo = true
@@ -224,6 +238,26 @@ globalThis.fetch = (async (entrada: string | URL | Request, init?: RequestInit) 
   if (borrar && metodo === 'DELETE') {
     borrados.push(Number(borrar[1]))
     return responder(respuestaBorrado.estado, respuestaBorrado.cuerpo)
+  }
+  // Secciones y categorías
+  const claseRuta = /^\/api\/admin\/(secciones|categorias)(\/(orden|\d+)(\/unir)?)?(\?.*)?$/.exec(url)
+  if (claseRuta) {
+    const tipo = claseRuta[1] as 'secciones' | 'categorias'
+    const cuerpo = metodo === 'GET' || metodo === 'DELETE' ? {} : (JSON.parse(String(init?.body)) as J)
+    pedidosClasificacion.push({ ruta: url, metodo, cuerpo })
+    if (metodo === 'GET' && !claseRuta[2]) return responder(200, { estado: 'ok', [tipo]: tipo === 'secciones' ? seccionesServidas : categoriasServidas })
+    if (metodo === 'GET' && claseRuta[4]) {
+      const destinoId = Number(new URL(url, 'http://x').searchParams.get('destinoId'))
+      const lista = tipo === 'secciones' ? seccionesServidas : categoriasServidas
+      return responder(200, { estado: 'ok', sobrante: { nombre: lista.find((x) => x.id === Number(claseRuta[3]))!.nombre }, elegida: { nombre: lista.find((x) => x.id === destinoId)!.nombre }, articulos: 3, yaConAmbas: tipo === 'categorias' ? 1 : undefined, comoPrincipal: tipo === 'categorias' ? 2 : undefined, enBorradores: 1, redireccion: '/x/ → /y/' })
+    }
+    if (respuestaClasificacion.estado !== 200 && metodo !== 'GET') return responder(respuestaClasificacion.estado, respuestaClasificacion.cuerpo)
+    if (metodo === 'POST' && claseRuta[3] === 'orden') {
+      const ids = cuerpo['ids'] as number[]
+      seccionesServidas = [...ids.map((id, i) => ({ ...seccionesServidas.find((x) => x.id === id)!, orden: i + 1 })), ...seccionesServidas.filter((x) => x.interna)]
+      return responder(200, { estado: 'ok' })
+    }
+    return responder(metodo === 'POST' && !claseRuta[2] ? 201 : 200, { estado: 'ok' })
   }
   // Autores
   if (url.startsWith('/api/admin/autores') && url !== '/api/admin/autores/mia' && !/^\/api\/admin\/autores\/\d+/.test(url) && metodo === 'GET') {
@@ -1349,7 +1383,7 @@ await t('el menú muestra Usuarios solo a quien tiene el permiso, y los roles se
   document.body.replaceChildren()
   const admin = await montar('/')
   await hasta(() => !!document.querySelector('nav a'), 'el menú')
-  assert.deepEqual(enlaces(), ['Artículos', 'Autores', 'Usuarios', 'Mi cuenta'])
+  assert.deepEqual(enlaces(), ['Artículos', 'Autores', 'Secciones y categorías', 'Usuarios', 'Mi cuenta'])
   assert.ok(texto().includes('(administrador)'))
   await act(async () => admin.unmount())
   usuarioServido = { id: 4, email: 'rita@b.c', nombre: 'Rita', rol: 'REDACTOR', debeCambiarClave: false, permisos: ['articulos.crear'] }
@@ -1675,6 +1709,110 @@ await t('Ficha de autor: el administrador une con otro viendo antes qué cambia,
   await hasta(() => document.querySelector('h1')?.textContent === 'Autores', 'vuelve al listado')
   await act(async () => r2.unmount())
   autorServido = { ...autorServido, articulos: 2 }
+})
+
+// ---------- Secciones y categorías ----------
+const filaDe = (nombre: string) => [...document.querySelectorAll('tbody tr')].find((f) => f.querySelector('.titulo-articulo')?.textContent === nombre)!
+const botonEn = (fila: Element, texto: string) => [...fila.querySelectorAll('button')].find((b) => b.textContent?.trim().startsWith(texto) || b.getAttribute('aria-label')?.startsWith(texto))!
+
+await t('Secciones: lista en el orden del menú, «Sin asignar» sin acciones, y subir y bajar guardan el orden', async () => {
+  const r = await montar('/clasificacion')
+  await hasta(() => !!document.querySelector('table'), 'la lista de secciones')
+  const nombres = [...document.querySelectorAll('tbody .titulo-articulo')].map((n) => n.textContent)
+  assert.deepEqual(nombres, ['Cine', 'Arte', 'Teatro', 'Sin asignar'])
+  assert.equal(filaDe('Sin asignar').querySelectorAll('button').length, 0, 'la interna no se toca')
+  assert.ok(filaDe('Sin asignar').textContent!.includes('Es interna'))
+  assert.equal((botonEn(filaDe('Cine'), 'Subir') as HTMLButtonElement).disabled, true, 'la primera no sube')
+  assert.equal((botonEn(filaDe('Teatro'), 'Bajar') as HTMLButtonElement).disabled, true, 'la última no baja')
+  await clic(botonEn(filaDe('Cine'), 'Bajar'))
+  await hasta(() => texto().includes('Guardamos el orden del menú.'), 'el aviso')
+  const pedido = pedidosClasificacion.filter((p) => p.ruta === '/api/admin/secciones/orden').at(-1)!
+  assert.deepEqual(pedido.cuerpo, { ids: [2, 1, 3] }, 'manda el orden completo, sin la interna')
+  assert.deepEqual([...document.querySelectorAll('tbody .titulo-articulo')].map((n) => n.textContent), ['Arte', 'Cine', 'Teatro', 'Sin asignar'], 'y la lista se recarga con el orden nuevo')
+  await act(async () => r.unmount())
+})
+
+await t('Secciones: crear, editar el nombre y la dirección (con aviso), y eliminar solo las vacías', async () => {
+  const r = await montar('/clasificacion')
+  await hasta(() => !!document.querySelector('table'), 'la lista')
+  await clic(boton('Crear sección')!)
+  assert.ok(texto().includes('Escribí el nombre de la sección.'))
+  await escribir(document.getElementById('nuevo-secciones') as HTMLInputElement, 'Cine Argentino')
+  await clic(boton('Crear sección')!)
+  await hasta(() => texto().includes('Creamos la sección «Cine Argentino».'), 'el aviso de alta')
+  assert.deepEqual(pedidosClasificacion.filter((p) => p.metodo === 'POST' && p.ruta === '/api/admin/secciones').at(-1)!.cuerpo, { nombre: 'Cine Argentino' })
+  // Editar
+  await clic(botonEn(filaDe('Teatro'), 'Editar'))
+  await escribir(document.getElementById('nombre-secciones-3') as HTMLInputElement, 'Teatro y danza')
+  assert.ok(!texto().includes('conviene hacerlo pocas veces'), 'solo avisa cuando se cambia la dirección')
+  await escribir(document.getElementById('slug-secciones-3') as HTMLInputElement, 'teatro-y-danza')
+  assert.ok(texto().includes('la vieja redirige'))
+  await clic(boton('Guardar')!)
+  await hasta(() => texto().includes('Guardamos los cambios.'), 'el aviso de guardado')
+  assert.deepEqual(pedidosClasificacion.filter((p) => p.metodo === 'PUT').at(-1), { ruta: '/api/admin/secciones/3', metodo: 'PUT', cuerpo: { nombre: 'Teatro y danza', slug: 'teatro-y-danza' } })
+  // Un 422 de la API se muestra en lenguaje común
+  respuestaClasificacion = { estado: 422, cuerpo: { estado: 'error', mensaje: 'Revisá los datos antes de guardar.', problemas: ['Ya hay una sección con esa dirección. Elegí otra.'] } }
+  await clic(botonEn(filaDe('Teatro'), 'Editar'))
+  await escribir(document.getElementById('slug-secciones-3') as HTMLInputElement, 'cine')
+  await clic(boton('Guardar')!)
+  await hasta(() => texto().includes('Ya hay una sección con esa dirección.'), 'el problema')
+  respuestaClasificacion = { estado: 200, cuerpo: {} }
+  // Eliminar: la que tiene artículos no se puede; la vacía pide confirmación
+  assert.equal((botonEn(filaDe('Cine'), 'Eliminar') as HTMLButtonElement).disabled, true, 'tiene 12 artículos')
+  assert.equal((botonEn(filaDe('Arte'), 'Eliminar') as HTMLButtonElement).disabled, false)
+  respuestaConfirm = false
+  await clic(botonEn(filaDe('Arte'), 'Eliminar'))
+  assert.equal(pedidosClasificacion.filter((p) => p.metodo === 'DELETE').length, 0, 'sin confirmar no se elimina')
+  respuestaConfirm = true
+  await clic(botonEn(filaDe('Arte'), 'Eliminar'))
+  await hasta(() => texto().includes('Eliminamos la sección «Arte».'), 'el aviso')
+  assert.equal(pedidosClasificacion.filter((p) => p.metodo === 'DELETE').at(-1)!.ruta, '/api/admin/secciones/2')
+  await act(async () => r.unmount())
+})
+
+await t('Secciones: unir muestra antes cuántos artículos se mueven y pide confirmación', async () => {
+  const r = await montar('/clasificacion')
+  await hasta(() => !!document.querySelector('table'), 'la lista')
+  await clic(botonEn(filaDe('Teatro'), 'Unir'))
+  const select = document.getElementById('unir-secciones-3') as HTMLSelectElement
+  assert.ok(![...select.options].some((o) => o.textContent?.startsWith('Teatro')), 'no se ofrece consigo misma')
+  assert.ok(![...select.options].some((o) => o.textContent?.startsWith('Sin asignar')), 'ni la interna')
+  await act(async () => {
+    select.value = '1'
+    select.dispatchEvent(new window.Event('change', { bubbles: true }))
+  })
+  await hasta(() => texto().includes('Se mueven 3 artículos a Cine.'), 'la vista previa')
+  assert.ok(texto().includes('También se corrigen 1 con cambios sin publicar.'))
+  respuestaConfirm = false
+  await clic(boton('Unir')!)
+  assert.equal(pedidosClasificacion.filter((p) => p.ruta.endsWith('/unir') && p.metodo === 'POST').length, 0)
+  respuestaConfirm = true
+  await clic(boton('Unir')!)
+  await hasta(() => texto().includes('Unimos «Teatro» con la otra sección.'), 'el aviso')
+  assert.deepEqual(pedidosClasificacion.filter((p) => p.ruta === '/api/admin/secciones/3/unir' && p.metodo === 'POST').at(-1)!.cuerpo, { destinoId: 1 })
+  await act(async () => r.unmount())
+})
+
+await t('Categorías: sin orden, con las volantas, y unir avisa de las que tienen las dos', async () => {
+  const r = await montar('/clasificacion?ver=categorias')
+  await hasta(() => !!document.querySelector('table') && !!document.getElementById('nuevo-categorias'), 'la lista de categorías')
+  assert.deepEqual([...document.querySelectorAll('tbody .titulo-articulo')].map((n) => n.textContent), ['Entrevistas', 'Ensayos'])
+  assert.ok(filaDe('Entrevistas').textContent!.includes('30') && filaDe('Entrevistas').textContent!.includes('5 como principal'))
+  assert.ok(!document.querySelector('button[aria-label^="Subir"]'), 'las categorías no se ordenan')
+  assert.ok(filaDe('Entrevistas').textContent!.includes('/categoria/entrevistas/'))
+  await clic(botonEn(filaDe('Entrevistas'), 'Unir'))
+  const select = document.getElementById('unir-categorias-10') as HTMLSelectElement
+  await act(async () => {
+    select.value = '11'
+    select.dispatchEvent(new window.Event('change', { bubbles: true }))
+  })
+  await hasta(() => texto().includes('Se mueven 3 artículos a Ensayos.'), 'la vista previa')
+  assert.ok(texto().includes('1 ya tienen las dos y quedan con una sola.'))
+  assert.ok(texto().includes('2 la tenían como principal (volanta)'))
+  // Cambiar de solapa vuelve a las secciones
+  await clic([...document.querySelectorAll('.solapa')].find((b) => b.textContent === 'Secciones')!)
+  await hasta(() => !!document.getElementById('nuevo-secciones'), 'las secciones')
+  await act(async () => r.unmount())
 })
 
 console.log(`\n${ok} pruebas de la pantalla ok`)
