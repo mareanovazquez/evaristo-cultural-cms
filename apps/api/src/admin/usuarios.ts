@@ -68,7 +68,7 @@ class Rechazo extends Error {
 }
 
 /** Dirección libre para la ficha de un autor nuevo, a partir de su nombre. */
-async function slugLibreDeAutor(tx: Prisma.TransactionClient, nombre: string): Promise<string> {
+export async function slugLibreDeAutor(tx: Prisma.TransactionClient, nombre: string): Promise<string> {
   const base = slugDesdeTitulo(nombre);
   for (let n = 1; n < 200; n++) {
     const candidato = n === 1 ? base : `${base}-${n}`;

@@ -144,6 +144,19 @@ Decisión 68 del plan. Detalle de lo decidido el 22/10/2026 en `plan-paso7-fase4
 - **No se hizo (anotado):** cambiar el email de un usuario; que el Editor pueda editar las fichas de autor (es la etapa 7b); mostrar en el artículo el nombre de autores ajenos a un Redactor (cae a «Autor N»); fecha de vencimiento del acceso.
 - **Falta mirarlo en un navegador** (como el resto del panel).
 
+## Paso 7, etapa 7b: autores (23/10/2026, rama `fase4-administracion`)
+
+Decisión 69 del plan. Decisiones de Mariano del 23/10/2026: al unir se conserva lo del autor elegido y solo se completa lo que le falte; redes con la dirección completa; bio de hasta 500 caracteres.
+
+- **API** (`apps/api/src/admin/autores.ts`): listado con búsqueda (nombre o dirección), filtros (sin bio, sin foto, foto sin texto alternativo, no son personas, con usuario) y paginado de 25; `GET /autores/mia` (la ficha del usuario); leer, crear, guardar (con `version` para detectar conflictos), eliminar y unir (vista previa por `GET …/unir?destinoId=` y `POST …/unir`). Permisos: editor y administrador crean y editan cualquiera; un Redactor solo la suya y sin tocar la dirección ni «no es una persona» (lo ajeno responde 404); eliminar y unir, solo administrador.
+- **Validaciones:** nombre; dirección con el formato de las del sitio, única y sin chocar con redirecciones de otros; bio solo con párrafos, itálica y enlaces permitidos (`packages/compartido/src/bio.ts`, que usan también el contador del panel); redes con dirección http o https completa; foto de la biblioteca (sin foto no queda texto alternativo); punto focal de 0 a 1. **Lo migrado que ya no cumple no bloquea:** una bio de más de 500 caracteres (en `_dev` 7 de 13 pasan de 500, hasta 1.507) o una red guardada como usuario se pueden seguir guardando mientras ese campo no se toque.
+- **Dirección:** si cambia, la vieja pasa a redirigir (`AUTOR`); volver a una dirección que ya fue de esa ficha borra esa redirección.
+- **Eliminar:** solo sin artículos, sin usuario y sin figurar en cambios sin publicar de algún artículo.
+- **Unir** (una transacción): los artículos del sobrante pasan al elegido en el mismo lugar de la firma (los que ya tenían a los dos quedan con uno solo); los cambios sin publicar (`articulos_borradores.datos.autorIds`) se reescriben; se copia lo que falte (bio, foto con su texto alternativo y punto focal, cada red) sin pisar; las redirecciones del sobrante y su dirección pasan al elegido. No se une la ficha de un usuario del panel.
+- **Panel:** `Autores.tsx` (listado, búsqueda, filtros y alta), `EditarAutor.tsx` (nombre, bio con `BioEditor.tsx` y contador, redes, foto con selector de la biblioteca, texto alternativo y punto focal cuadrado, vista de cómo se ve en el artículo, aviso de cambios sin guardar y de conflicto; el administrador ve «Administrar» con unir —mostrando antes qué cambia— y eliminar), menú «Autores» (o «Mi ficha» para un Redactor) y, en la pantalla del artículo, buscador de autores y «Crear un autor nuevo» sin salir.
+- **Tests:** `test:admin-autores` (contra `evaristo_cms_dev`) y `test:pantalla` 65.
+- **No se hizo (anotado):** foto de autor subida directo desde la ficha (se sube desde el selector de la biblioteca); mostrar en el listado cuánto pesa cada autor en el sitio; deshacer una unión (no se puede: hay respaldo de la base).
+
 ## Reglas y cosas a tener en cuenta del editor (lo duradero del plan del paso 4)
 
 - **Sin `localStorage` como respaldo del texto en edición:** la copia de seguridad es el borrador de cambios del servidor (y el autoguardado).

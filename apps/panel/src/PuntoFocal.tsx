@@ -11,12 +11,16 @@ interface PuntoFocalProps {
   x: number;
   y: number;
   onCambio: (x: number, y: number) => void;
+  /** Proporción del recuadro con el que el sitio muestra la imagen (por defecto, la del encabezado). */
+  proporcion?: string;
+  /** Explicación sobre cómo se muestra (por defecto, la del encabezado). */
+  ayuda?: string;
 }
 
 const limitar = (v: number): number => Math.min(1, Math.max(0, Number.isFinite(v) ? v : 0.5));
 const redondear = (v: number): number => Math.round(v * 100) / 100;
 
-export function PuntoFocal({ src, x, y, onCambio }: PuntoFocalProps) {
+export function PuntoFocal({ src, x, y, onCambio, proporcion = PROPORCION_ENCABEZADO, ayuda = "Hacé clic en la parte más importante de la imagen (o arrastrá la marca). En el sitio se muestra en un recuadro apaisado y esa parte no se corta." }: PuntoFocalProps) {
   const marco = useRef<HTMLDivElement>(null);
   const arrastrando = useRef(false);
 
@@ -29,7 +33,7 @@ export function PuntoFocal({ src, x, y, onCambio }: PuntoFocalProps) {
   return (
     <div className="punto-focal">
       <p className="ayuda" id="punto-focal-ayuda">
-        Hacé clic en la parte más importante de la imagen (o arrastrá la marca). En el sitio se muestra en un recuadro apaisado y esa parte no se corta.
+        {ayuda}
       </p>
       <div
         ref={marco}
@@ -54,7 +58,7 @@ export function PuntoFocal({ src, x, y, onCambio }: PuntoFocalProps) {
         <span className="punto-focal-marca" style={{ left: `${limitar(x) * 100}%`, top: `${limitar(y) * 100}%` }} aria-hidden="true" />
       </div>
       <p className="ayuda">Así se va a ver en el sitio:</p>
-      <div className="punto-focal-previa" style={{ aspectRatio: PROPORCION_ENCABEZADO }}>
+      <div className="punto-focal-previa" style={{ aspectRatio: proporcion }}>
         <img src={src} alt="" style={{ objectPosition: `${limitar(x) * 100}% ${limitar(y) * 100}%` }} />
       </div>
     </div>

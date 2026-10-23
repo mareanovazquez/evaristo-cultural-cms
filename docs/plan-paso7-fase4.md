@@ -77,7 +77,7 @@ Los artículos migrados no tienen creador ni firma de un Redactor: solo los toca
 - Tests: `test:admin-usuarios` contra `evaristo_cms_dev` (permisos por rol, alta y duplicados, el último administrador, contraseña débil, sesiones que se cortan, que no se filtre el hash), más pantallas en `test:pantalla`.
 - **Hecho cuando:** un administrador crea un **redactor** desde el panel, ese redactor ingresa, crea y publica un artículo suyo, no ve ni puede abrir los de otros (ni por la dirección) ni el menú de administración, y el administrador le revoca el acceso: su sesión deja de servir, su ficha y su artículo siguen en el sitio con su firma, y se le puede volver a dar acceso.
 
-## Etapa 7b: autores
+## Etapa 7b: autores — HECHA el 23/10/2026 (ver `estado-fase4.md`, «Paso 7, etapa 7b», y la decisión 69)
 
 **Objetivo:** que la editorial cargue y corrija autores, y unir los duplicados que dejó WordPress.
 

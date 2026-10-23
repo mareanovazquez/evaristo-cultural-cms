@@ -2,7 +2,9 @@ import { Link, Navigate, Outlet, Route, Routes, useLocation } from "react-router
 import { Estructura } from "./Estructura";
 import { Articulos } from "./paginas/Articulos";
 import { EditarArticulo } from "./paginas/EditarArticulo";
+import { Autores } from "./paginas/Autores";
 import { Cuenta } from "./paginas/Cuenta";
+import { EditarAutor } from "./paginas/EditarAutor";
 import { Ingreso } from "./paginas/Ingreso";
 import { NuevoArticulo } from "./paginas/NuevoArticulo";
 import { Usuarios } from "./paginas/Usuarios";
@@ -48,6 +50,10 @@ export function App() {
           <Route path="articulos/nuevo" element={<NuevoArticulo />} />
           <Route path="articulos/:id" element={<EditarArticulo />} />
           <Route path="cuenta" element={<Cuenta />} />
+          <Route path="autores/:id" element={<EditarAutor />} />
+          <Route element={<ConPermiso permiso="autores.editar.ajenos" />}>
+            <Route path="autores" element={<Autores />} />
+          </Route>
           <Route element={<ConPermiso permiso="usuarios.gestionar" />}>
             <Route path="usuarios" element={<Usuarios />} />
           </Route>

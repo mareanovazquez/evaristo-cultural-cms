@@ -295,3 +295,16 @@ a.titulo-articulo:hover { color: var(--acento); text-decoration: underline; }
 .ficha-usuario { margin-top: 1.25rem; background: var(--superficie); }
 .ficha-usuario hr { border: 0; border-top: 1px solid var(--borde); margin: 1rem 0; }
 form.grupo { margin-bottom: 1.25rem; background: var(--superficie); }
+
+/* Autores */
+.bio-editor .ProseMirror { min-height: 7rem; font-size: 1rem; line-height: 1.6; }
+.bio-editor .editor-area { padding: 0.75rem 1rem; }
+.bio-contador { margin: 0; padding: 0.4rem 1rem 0.6rem; font-size: 0.85rem; color: var(--texto-suave); border-top: 1px solid var(--borde); }
+.bio-contador-excedido { color: var(--peligro); font-weight: 600; }
+.bio-contador-aviso { color: var(--alerta); }
+.bio-previa { display: flex; gap: 0.75rem; align-items: flex-start; }
+.bio-previa-foto { flex: none; width: 72px; height: 72px; border-radius: 50%; overflow: hidden; background: var(--borde); display: grid; place-items: center; font-weight: 600; color: var(--texto-suave); }
+.bio-previa-foto img { width: 100%; height: 100%; object-fit: cover; }
+.bio-previa-nombre { margin: 0 0 0.25rem; font-weight: 600; }
+.bio-previa-texto { font-size: 0.9rem; line-height: 1.5; }
+.bio-previa-texto p { margin: 0 0 0.5rem; }

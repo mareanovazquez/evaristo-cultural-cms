@@ -17,6 +17,7 @@
     "test:admin-imagenes": "tsx --env-file=../../.env src/tests/test-admin-imagenes-base.ts",
     "test:admin-subida": "tsx --env-file=../../.env src/tests/test-admin-subida-base.ts",
     "test:admin-publicacion": "tsx --env-file=../../.env src/tests/test-admin-publicacion-base.ts",
+    "test:admin-autores": "tsx --env-file=../../.env src/tests/test-admin-autores-base.ts",
     "test:admin-usuarios": "tsx --env-file=../../.env src/tests/test-admin-usuarios-base.ts",
     "test:admin-galeria-ficha": "tsx --env-file=../../.env src/tests/test-admin-galeria-ficha-base.ts",
     "test:categorias": "tsx --env-file=../../.env src/tests/test-categorias.ts",

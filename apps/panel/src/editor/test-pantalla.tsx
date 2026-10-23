@@ -108,6 +108,35 @@ let usuarioServido: J = { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINIS
 const cambiosDeClave: J[] = []
 const pedidosUsuarios: Array<{ ruta: string; metodo: string; cuerpo: J }> = []
 const pasados: number[] = []
+// Autores
+const pedidosAutores: Array<{ ruta: string; metodo: string; cuerpo: J }> = []
+let autorEditaTodo = true
+let respuestaAutorPut: { estado: number; cuerpo: J } = { estado: 200, cuerpo: {} }
+const bioCorta = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Escribe y enseña.' }] }] }
+let autorServido: J = {
+  id: 20,
+  slug: 'luca',
+  nombre: 'Luca',
+  soloTexto: false,
+  bio: bioCorta,
+  instagram: 'https://instagram.com/luca',
+  x: null,
+  facebook: null,
+  sitioWeb: null,
+  fotoId: 5,
+  fotoAlt: 'Retrato de Luca',
+  fotoPuntoFocalX: 0.5,
+  fotoPuntoFocalY: 0.5,
+  foto: { id: 5, clave: 'foto.jpg', nombreOriginal: 'foto.jpg' },
+  version: '2026-10-23T12:00:00.000Z',
+  usuario: null,
+  articulos: 2,
+}
+const autoresListados = [
+  { id: 20, slug: 'luca', nombre: 'Luca', soloTexto: false, conBio: true, conFoto: true, fotoSinAlt: false, usuario: null, articulos: 2 },
+  { id: 22, slug: 'redaccion', nombre: 'Redacción', soloTexto: true, conBio: false, conFoto: false, fotoSinAlt: false, usuario: null, articulos: 40 },
+  { id: 23, slug: 'sin-datos', nombre: 'Sin Datos', soloTexto: false, conBio: false, conFoto: false, fotoSinAlt: false, usuario: { id: 4, nombre: 'Rita' }, articulos: 0 },
+]
 let usuariosServidos: UsuarioDeLista[] = [
   { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINISTRADOR', activo: true, debeCambiarClave: false, ultimoAccesoEn: '2026-10-23T09:00:00.000Z', creadoEn: '2026-10-01T09:00:00.000Z', autor: null, articulos: 0 },
   { id: 4, email: 'rita@b.c', nombre: 'Rita', rol: 'REDACTOR', activo: true, debeCambiarClave: false, ultimoAccesoEn: null, creadoEn: '2026-10-02T09:00:00.000Z', autor: { id: 20, nombre: 'Rita', slug: 'rita' }, articulos: 3 },
@@ -195,6 +224,42 @@ globalThis.fetch = (async (entrada: string | URL | Request, init?: RequestInit) 
   if (borrar && metodo === 'DELETE') {
     borrados.push(Number(borrar[1]))
     return responder(respuestaBorrado.estado, respuestaBorrado.cuerpo)
+  }
+  // Autores
+  if (url.startsWith('/api/admin/autores') && url !== '/api/admin/autores/mia' && !/^\/api\/admin\/autores\/\d+/.test(url) && metodo === 'GET') {
+    pedidosAutores.push({ ruta: url, metodo, cuerpo: {} })
+    return responder(200, { estado: 'ok', total: 2, pagina: 1, paginas: 1, autores: autoresListados })
+  }
+  if (url === '/api/admin/autores' && metodo === 'POST') {
+    const cuerpo = JSON.parse(String(init?.body)) as J
+    pedidosAutores.push({ ruta: url, metodo, cuerpo })
+    return responder(201, { estado: 'ok', id: 21 })
+  }
+  if (url === '/api/admin/autores/mia') return responder(200, { estado: 'ok', id: 20 })
+  const autorUnir = /^\/api\/admin\/autores\/(\d+)\/unir/.exec(url)
+  if (autorUnir && metodo === 'GET') {
+    return responder(200, { estado: 'ok', sobrante: { id: 20, nombre: 'Luca', slug: 'luca' }, elegido: { id: 22, nombre: 'Luca Frondoni', slug: 'luca-frondoni' }, articulos: 2, muestra: [{ id: 1, titulo: 'Una nota', yaTieneAlElegido: false }, { id: 2, titulo: 'Otra nota', yaTieneAlElegido: true }], seCompleta: ['la bio', 'la foto'], redireccion: '/author/luca/ → /author/luca-frondoni/' })
+  }
+  if (autorUnir && metodo === 'POST') {
+    pedidosAutores.push({ ruta: url, metodo, cuerpo: JSON.parse(String(init?.body)) as J })
+    return responder(200, { estado: 'ok', movidos: 2 })
+  }
+  const sobreAutor = /^\/api\/admin\/autores\/(\d+)$/.exec(url)
+  if (sobreAutor && metodo === 'GET') {
+    if (sobreAutor[1] === '404') return responder(404, { estado: 'error', mensaje: 'No encontramos a ese autor.' })
+    return responder(200, { estado: 'ok', autor: { ...autorServido, id: Number(sobreAutor[1]) }, puedeEditarTodo: autorEditaTodo, bioMax: 500 })
+  }
+  if (sobreAutor && metodo === 'PUT') {
+    const cuerpo = JSON.parse(String(init?.body)) as J
+    pedidosAutores.push({ ruta: url, metodo, cuerpo })
+    if (respuestaAutorPut.estado !== 200) return responder(respuestaAutorPut.estado, respuestaAutorPut.cuerpo)
+    const d = cuerpo['datos'] as J
+    autorServido = { ...autorServido, ...d, version: '2026-10-23T12:00:01.000Z', foto: d['fotoId'] ? autorServido.foto : null }
+    return responder(200, { estado: 'ok', autor: autorServido })
+  }
+  if (sobreAutor && metodo === 'DELETE') {
+    pedidosAutores.push({ ruta: url, metodo, cuerpo: {} })
+    return responder(200, { estado: 'ok' })
   }
   if (url.startsWith('/api/admin/imagenes')) return responder(200, { estado: 'ok', total: 1, pagina: 1, paginas: 1, imagenes: [{ id: 6, clave: 'otra.jpg', nombreOriginal: 'otra.jpg', ancho: 10, alto: 10 }] })
   if (url === '/api/admin/articulos' && metodo === 'POST') {
@@ -1284,13 +1349,13 @@ await t('el menú muestra Usuarios solo a quien tiene el permiso, y los roles se
   document.body.replaceChildren()
   const admin = await montar('/')
   await hasta(() => !!document.querySelector('nav a'), 'el menú')
-  assert.deepEqual(enlaces(), ['Artículos', 'Usuarios', 'Mi cuenta'])
+  assert.deepEqual(enlaces(), ['Artículos', 'Autores', 'Usuarios', 'Mi cuenta'])
   assert.ok(texto().includes('(administrador)'))
   await act(async () => admin.unmount())
   usuarioServido = { id: 4, email: 'rita@b.c', nombre: 'Rita', rol: 'REDACTOR', debeCambiarClave: false, permisos: ['articulos.crear'] }
   const redactor = await montar('/usuarios')
   await hasta(() => texto().includes('(redactor)'), 'el menú del redactor')
-  assert.deepEqual(enlaces(), ['Artículos', 'Mi cuenta'], 'el redactor no ve Usuarios')
+  assert.deepEqual(enlaces(), ['Artículos', 'Mi ficha', 'Mi cuenta'], 'el redactor no ve Usuarios ni el listado de autores, solo su ficha')
   await hasta(() => document.querySelector('h1')?.textContent === 'Artículos', 'vuelve al listado de artículos')
   assert.ok(!texto().includes('Nuevo usuario'), 'y si entra por la dirección no ve la pantalla de usuarios')
   assert.ok(texto().includes('(redactor)'))
@@ -1434,6 +1499,182 @@ await t('un editor ve «De quién es» en el artículo y puede pasárselo a otra
   await hasta(() => !!document.getElementById('titulo'), 'el artículo')
   assert.ok(!document.getElementById('pasar-a'))
   await act(async () => r2.unmount())
+})
+
+
+await t('en el artículo se puede crear un autor nuevo sin salir de la pantalla y queda agregado a la firma', async () => {
+  catalogos.usuarios = []
+  estadoArticulo = 'BORRADOR'
+  const r = await montar('/articulos/7')
+  await hasta(() => !!document.getElementById('titulo'), 'el artículo')
+  assert.ok(boton('Crear un autor nuevo'))
+  await clic(boton('Crear un autor nuevo')!)
+  await clic(boton('Crear y agregar')!)
+  assert.ok(texto().includes('Escribí el nombre del autor.'))
+  await escribir(document.getElementById('autor-nuevo-nombre') as HTMLInputElement, 'Nora Nueva')
+  const antes = pedidosAutores.length
+  await clic(boton('Crear y agregar')!)
+  await hasta(() => !!document.querySelector('.lista-autores') && [...document.querySelectorAll('.lista-autores li')].some((li) => li.textContent!.includes('Nora Nueva')), 'el autor nuevo en la firma')
+  assert.deepEqual(pedidosAutores.slice(antes).at(-1)!.cuerpo, { nombre: 'Nora Nueva' })
+  assert.ok(!document.getElementById('autor-nuevo-nombre'), 'se cierra el formulario')
+  await act(async () => r.unmount())
+})
+
+// ---------- Autores ----------
+await t('Autores: listado con marcas, búsqueda, filtros y alta de un autor nuevo', async () => {
+  const r = await montar('/autores')
+  await hasta(() => !!document.querySelector('table'), 'el listado de autores')
+  const filas = [...document.querySelectorAll('tbody tr')].map((f) => f.textContent!)
+  assert.equal(filas.length, 3)
+  assert.ok(filas[0]!.includes('Luca') && filas[0]!.includes('Completa'))
+  assert.ok(filas[1]!.includes('No es una persona') && filas[1]!.includes('40'))
+  assert.ok(filas[2]!.includes('Sin bio') && filas[2]!.includes('Sin foto') && filas[2]!.includes('Rita'))
+  // Búsqueda y filtro llegan a la API
+  await escribir(document.getElementById('busqueda-autores') as HTMLInputElement, 'luc')
+  await clic(boton('Buscar')!)
+  await hasta(() => pedidosAutores.some((p) => p.ruta === '/api/admin/autores?q=luc'), 'la búsqueda')
+  await clic(boton('Sin bio')!)
+  await hasta(() => pedidosAutores.some((p) => p.ruta.includes('filtro=sin-bio') && p.ruta.includes('q=luc')), 'el filtro junto con la búsqueda')
+  // Alta
+  await clic(boton('Nuevo autor')!)
+  await clic(boton('Crear autor')!)
+  assert.ok(texto().includes('Escribí el nombre del autor.'))
+  await escribir(document.getElementById('autor-nuevo') as HTMLInputElement, 'Ana Nueva')
+  await clic(boton('Crear autor')!)
+  await hasta(() => !!document.getElementById('autor-nombre'), 'la ficha del autor nuevo')
+  assert.deepEqual(pedidosAutores.filter((p) => p.metodo === 'POST').at(-1)!.cuerpo, { nombre: 'Ana Nueva' })
+  await act(async () => r.unmount())
+})
+
+await t('Ficha de autor: campos, redes con dirección completa, guardado y mensajes', async () => {
+  autorEditaTodo = true
+  const r = await montar('/autores/20')
+  await hasta(() => !!document.getElementById('autor-nombre'), 'la ficha')
+  assert.equal((document.getElementById('autor-nombre') as HTMLInputElement).value, 'Luca')
+  assert.equal((document.getElementById('autor-slug') as HTMLInputElement).value, 'luca')
+  assert.equal((document.getElementById('red-instagram') as HTMLInputElement).value, 'https://instagram.com/luca')
+  assert.equal((document.getElementById('foto-alt') as HTMLInputElement).value, 'Retrato de Luca')
+  assert.ok(document.querySelector('.bio-prosemirror')!.textContent!.includes('Escribe y enseña.'), 'la bio se abre en el editor')
+  assert.ok(texto().includes('17 de 500 caracteres'), 'el contador cuenta la bio')
+  assert.equal(boton('Guardar')!.disabled, true, 'sin cambios no se guarda')
+  assert.ok(texto().includes('Todo guardado.'))
+  // Cambios: el nombre, una red y la dirección
+  await escribir(document.getElementById('autor-nombre') as HTMLInputElement, 'Luca Frondoni')
+  await escribir(document.getElementById('red-x') as HTMLInputElement, '  https://x.com/luca  ')
+  await escribir(document.getElementById('autor-slug') as HTMLInputElement, 'luca-frondoni')
+  assert.ok(texto().includes('Hay cambios sin guardar.'))
+  await clic(boton('Guardar')!)
+  await hasta(() => texto().includes('Guardamos los cambios.'), 'el aviso de éxito')
+  const put = pedidosAutores.filter((p) => p.metodo === 'PUT').at(-1)!
+  assert.equal(put.ruta, '/api/admin/autores/20')
+  assert.equal(put.cuerpo['version'], '2026-10-23T12:00:00.000Z', 'manda la versión que abrió')
+  const d = put.cuerpo['datos'] as J
+  assert.deepEqual({ nombre: d['nombre'], slug: d['slug'], soloTexto: d['soloTexto'], instagram: d['instagram'], x: d['x'], facebook: d['facebook'], sitioWeb: d['sitioWeb'], fotoId: d['fotoId'], fotoAlt: d['fotoAlt'] }, { nombre: 'Luca Frondoni', slug: 'luca-frondoni', soloTexto: false, instagram: 'https://instagram.com/luca', x: 'https://x.com/luca', facebook: null, sitioWeb: null, fotoId: 5, fotoAlt: 'Retrato de Luca' })
+  assert.deepEqual(d['bio'], bioCorta, 'la bio sin tocar vuelve igual')
+  assert.equal(boton('Guardar')!.disabled, true, 'después de guardar vuelve a «todo guardado»')
+  // Un 422 muestra lo que hay que corregir, en lenguaje común
+  respuestaAutorPut = { estado: 422, cuerpo: { estado: 'error', mensaje: 'Revisá la ficha antes de guardar.', problemas: ['Instagram: pegá la dirección completa, que empiece con http:// o https://.'] } }
+  await escribir(document.getElementById('red-instagram') as HTMLInputElement, '@luca')
+  await clic(boton('Guardar')!)
+  await hasta(() => texto().includes('Instagram: pegá la dirección completa'), 'el problema')
+  assert.ok(texto().includes('Revisá la ficha antes de guardar.'))
+  // Un 409 avisa que otra persona guardó y ofrece cargar la versión nueva
+  respuestaAutorPut = { estado: 409, cuerpo: { estado: 'conflicto', mensaje: 'Esta ficha cambió mientras la editabas.' } }
+  await clic(boton('Guardar')!)
+  await hasta(() => texto().includes('no guardamos nada para no pisar el cambio'), 'el aviso de conflicto')
+  assert.ok(boton('Cargar la versión nueva'))
+  assert.equal(boton('Guardar')!.disabled, true, 'mientras hay conflicto no se guarda')
+  respuestaAutorPut = { estado: 200, cuerpo: {} }
+  await act(async () => r.unmount())
+})
+
+await t('Ficha de autor: una bio migrada más larga que el límite se avisa y se puede guardar sin tocarla', async () => {
+  const larga = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'x'.repeat(900) }] }] }
+  autorServido = { ...autorServido, bio: larga, version: '2026-10-23T12:00:00.000Z' }
+  const r = await montar('/autores/20')
+  await hasta(() => !!document.getElementById('bio-contador'), 'el contador')
+  assert.ok(texto().includes('900 de 500 caracteres'))
+  assert.ok(texto().includes('se puede guardar así mientras no la cambies'))
+  await escribir(document.getElementById('autor-nombre') as HTMLInputElement, 'Luca Y')
+  await clic(boton('Guardar')!)
+  await hasta(() => texto().includes('Guardamos los cambios.'), 'guardado')
+  assert.deepEqual(((pedidosAutores.filter((p) => p.metodo === 'PUT').at(-1)!.cuerpo['datos']) as J)['bio'], larga, 'la bio larga vuelve igual')
+  autorServido = { ...autorServido, bio: bioCorta, version: '2026-10-23T12:00:00.000Z', nombre: 'Luca', slug: 'luca', x: null }
+  await act(async () => r.unmount())
+})
+
+await t('Ficha de autor: «No es una persona» esconde la bio y la foto; sin foto se pide una', async () => {
+  autorServido = { ...autorServido, soloTexto: true }
+  const r = await montar('/autores/20')
+  await hasta(() => !!document.getElementById('autor-nombre'), 'la ficha')
+  assert.ok(!document.getElementById('bio-contador') && !document.getElementById('foto-alt'))
+  await act(async () => r.unmount())
+  autorServido = { ...autorServido, soloTexto: false, fotoId: null, foto: null, fotoAlt: null }
+  const r2 = await montar('/autores/20')
+  await hasta(() => !!document.getElementById('autor-nombre'), 'la ficha sin foto')
+  assert.ok(boton('Elegir una foto'))
+  assert.ok(!document.getElementById('foto-alt'))
+  assert.ok(texto().includes('Sin foto se muestran las iniciales.'))
+  await act(async () => r2.unmount())
+  autorServido = { ...autorServido, fotoId: 5, foto: { id: 5, clave: 'foto.jpg', nombreOriginal: 'foto.jpg' }, fotoAlt: 'Retrato de Luca' }
+})
+
+await t('Ficha de autor: «Mi ficha» lleva a la propia y un redactor no ve dirección, tipo ni administración', async () => {
+  usuarioServido = { id: 4, email: 'rita@b.c', nombre: 'Rita', rol: 'REDACTOR', debeCambiarClave: false, permisos: ['articulos.crear'] }
+  autorEditaTodo = false
+  const r = await montar('/autores/mia')
+  await hasta(() => !!document.getElementById('autor-nombre'), 'la ficha propia')
+  assert.ok(!document.getElementById('autor-slug'), 'no cambia su dirección')
+  assert.ok(!texto().includes('No es una persona (por ejemplo'), 'ni el tipo de autor')
+  assert.ok(!texto().includes('Administrar') && !boton('Eliminar este autor'), 'ni une ni elimina')
+  assert.ok(!document.querySelector('.migas'), 'y no hay vuelta al listado que no ve')
+  await act(async () => r.unmount())
+  // Un autor que no existe da un mensaje claro
+  const r2 = await montar('/autores/404')
+  await hasta(() => texto().includes('No pudimos abrir la ficha'), 'el error')
+  assert.ok(texto().includes('No encontramos a ese autor.'))
+  await act(async () => r2.unmount())
+  usuarioServido = { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINISTRADOR', debeCambiarClave: false, permisos: ['articulos.crear', 'usuarios.gestionar'] }
+  autorEditaTodo = true
+})
+
+await t('Ficha de autor: el administrador une con otro viendo antes qué cambia, y la elimina solo si no tiene artículos', async () => {
+  const r = await montar('/autores/20')
+  await hasta(() => !!document.getElementById('unir-busqueda'), 'la administración')
+  assert.equal(boton('Eliminar este autor')!.disabled, true, 'tiene 2 artículos: no se elimina')
+  assert.equal(boton('Ver qué cambia')!.disabled, true, 'primero hay que elegir con quién')
+  await escribir(document.getElementById('unir-busqueda') as HTMLInputElement, 'luca')
+  await hasta(() => !!document.getElementById('unir-destino'), 'los candidatos')
+  const opciones = [...(document.getElementById('unir-destino') as HTMLSelectElement).options].map((o) => o.textContent)
+  assert.ok(!opciones.some((o) => o?.startsWith('Luca (')), 'no se ofrece unirlo consigo mismo')
+  const select = document.getElementById('unir-destino') as HTMLSelectElement
+  await act(async () => {
+    select.value = '22'
+    select.dispatchEvent(new window.Event('change', { bubbles: true }))
+  })
+  await clic(boton('Ver qué cambia')!)
+  await hasta(() => texto().includes('Se mueven 2 artículos a Luca Frondoni.'), 'la vista previa')
+  assert.ok(texto().includes('Se le completa la bio, la foto con lo de «Luca»'))
+  assert.ok(texto().includes('Otra nota (ya tiene a los dos: queda con uno solo)'))
+  respuestaConfirm = false
+  await clic(boton('Unir los dos autores')!)
+  assert.equal(pedidosAutores.filter((p) => p.ruta.endsWith('/unir')).length, 0, 'sin confirmar no se une')
+  respuestaConfirm = true
+  await clic(boton('Unir los dos autores')!)
+  await hasta(() => pedidosAutores.some((p) => p.metodo === 'POST' && p.ruta === '/api/admin/autores/20/unir'), 'la unión')
+  assert.deepEqual(pedidosAutores.find((p) => p.ruta === '/api/admin/autores/20/unir')!.cuerpo, { destinoId: 22 })
+  await hasta(() => !!document.getElementById('autor-nombre'), 'la ficha del que quedó')
+  await act(async () => r.unmount())
+  // Eliminar uno sin artículos
+  autorServido = { ...autorServido, articulos: 0 }
+  const r2 = await montar('/autores/20')
+  await hasta(() => !!boton('Eliminar este autor'), 'eliminar')
+  assert.equal(boton('Eliminar este autor')!.disabled, false)
+  await clic(boton('Eliminar este autor')!)
+  await hasta(() => pedidosAutores.some((p) => p.metodo === 'DELETE'), 'el borrado')
+  await hasta(() => document.querySelector('h1')?.textContent === 'Autores', 'vuelve al listado')
+  await act(async () => r2.unmount())
+  autorServido = { ...autorServido, articulos: 2 }
 })
 
 console.log(`\n${ok} pruebas de la pantalla ok`)

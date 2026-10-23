@@ -69,6 +69,58 @@ export interface Usuario {
   permisos: Permiso[];
 }
 
+// ---------- Autores ----------
+
+export interface AutorDeLista {
+  id: number;
+  slug: string;
+  nombre: string;
+  soloTexto: boolean;
+  conBio: boolean;
+  conFoto: boolean;
+  fotoSinAlt: boolean;
+  usuario: { id: number; nombre: string } | null;
+  articulos: number;
+}
+
+export interface RespuestaAutores {
+  total: number;
+  pagina: number;
+  paginas: number;
+  autores: AutorDeLista[];
+}
+
+/** La ficha de un autor tal como se edita. */
+export interface AutorFicha {
+  id: number;
+  slug: string;
+  nombre: string;
+  soloTexto: boolean;
+  bio: JSONNode | null;
+  instagram: string | null;
+  x: string | null;
+  facebook: string | null;
+  sitioWeb: string | null;
+  fotoId: number | null;
+  fotoAlt: string | null;
+  fotoPuntoFocalX: number;
+  fotoPuntoFocalY: number;
+  foto: { id: number; clave: string; nombreOriginal: string } | null;
+  /** Se manda de vuelta al guardar: así la API detecta si otra persona guardó en el medio. */
+  version: string;
+  usuario: { id: number; nombre: string } | null;
+  articulos: number;
+}
+
+export interface VistaPreviaUnion {
+  sobrante: { id: number; nombre: string; slug: string };
+  elegido: { id: number; nombre: string; slug: string };
+  articulos: number;
+  muestra: Array<{ id: number; titulo: string; yaTieneAlElegido: boolean }>;
+  seCompleta: string[];
+  redireccion: string;
+}
+
 /** Un usuario tal como lo ve el administrador en la pantalla de usuarios. */
 export interface UsuarioAdmin {
   id: number;

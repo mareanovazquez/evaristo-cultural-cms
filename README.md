@@ -241,6 +241,7 @@ Después abrir:
 | `npm run test:categorias -- --originales="<carpeta>"` | Recorre las páginas de categoría y comprueba la volanta como enlace (base en solo lectura; requiere `build:sitio`). |
 | `npm run dev:desarrollo --workspace=@evaristo/api` | Arranca la API contra `evaristo_cms_dev` (la base de desarrollo del panel). |
 | `npm run usuario:crear -- --base-dev --email=… --nombre=… --rol=EDITOR|ADMINISTRADOR` | Crea un usuario del panel; pide la contraseña por teclado. |
+| `npm run test:admin-autores` | Autores del panel contra `evaristo_cms_dev`: permisos, bio, redes, foto, dirección con redirección, eliminar y unir (crea y borra datos temporales). |
 | `npm run test:admin-usuarios` | Usuarios, roles y propiedad de los artículos contra `evaristo_cms_dev` (crea y borra usuarios, fichas y artículos temporales). |
 | `npm run test:auth` | Pruebas de la autenticación (sin base). |
 | `npm run test:auth-base` | Ingreso y sesiones contra `evaristo_cms_dev` (crea y borra un usuario temporal). |

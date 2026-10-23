@@ -23,6 +23,7 @@ export function Estructura() {
             <NavLink to="/" end>
               Artículos
             </NavLink>
+            {usuario && (tienePermiso(usuario.rol, "autores.editar.ajenos") ? <NavLink to="/autores">Autores</NavLink> : <NavLink to="/autores/mia">Mi ficha</NavLink>)}
             {usuario && tienePermiso(usuario.rol, "usuarios.gestionar") && <NavLink to="/usuarios">Usuarios</NavLink>}
             <NavLink to="/cuenta">Mi cuenta</NavLink>
           </nav>

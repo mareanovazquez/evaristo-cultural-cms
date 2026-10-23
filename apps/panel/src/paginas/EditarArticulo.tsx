@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/core";
 import { renderArticleBody } from "@evaristo/compartido/render";
 import { Link, useParams } from "react-router";
+import { tienePermiso } from "@evaristo/compartido/permisos";
 import { ErrorApi, pedirApi, urlImagen, type ArticuloEditable, type Catalogos, type DatosArticulo, type ImagenDeLista, type RespuestaPublicar } from "../api";
 import { EditorFicha, EditorGaleria, fichaParaEnviar, type Miniatura } from "../GaleriaYFicha";
 import { PublicarDialog } from "../PublicarDialog";
@@ -108,9 +109,17 @@ export function EditarArticulo() {
 
 type Falla = "red" | "invalido" | null;
 
-function Formulario({ articulo, catalogos, recargar, exito: exitoInicial }: { articulo: ArticuloEditable; catalogos: Catalogos; recargar: (exito?: Exito) => void; exito: Exito | null }) {
+function Formulario({ articulo, catalogos: catalogosBase, recargar, exito: exitoInicial }: { articulo: ArticuloEditable; catalogos: Catalogos; recargar: (exito?: Exito) => void; exito: Exito | null }) {
   useTitulo(`Editando: ${articulo.datos.titulo}`);
-  const { sesionVencida } = useSesion();
+  const { usuario, sesionVencida } = useSesion();
+  // Autores creados desde esta pantalla (se suman a los del catálogo sin recargar).
+  const [autoresCreados, setAutoresCreados] = useState<Catalogos["autores"]>([]);
+  const catalogos = useMemo(() => ({ ...catalogosBase, autores: [...catalogosBase.autores, ...autoresCreados] }), [catalogosBase, autoresCreados]);
+  const [filtroAutor, setFiltroAutor] = useState("");
+  const [creandoAutor, setCreandoAutor] = useState(false);
+  const [nombreAutorNuevo, setNombreAutorNuevo] = useState("");
+  const [errorAutorNuevo, setErrorAutorNuevo] = useState<string | null>(null);
+  const [guardandoAutorNuevo, setGuardandoAutorNuevo] = useState(false);
   const [campos, setCampos] = useState<DatosArticulo>(articulo.datos);
   const [imagenEncabezado, setImagenEncabezado] = useState(articulo.imagenEncabezado);
   // Cómo se ve cada imagen de la galería (por su id), para las miniaturas.
@@ -381,7 +390,31 @@ function Formulario({ articulo, catalogos, recargar, exito: exitoInicial }: { ar
     [ids[indice], ids[destino]] = [ids[destino]!, ids[indice]!];
     poner({ autorIds: ids });
   };
-  const autoresDisponibles = catalogos.autores.filter((a) => !campos.autorIds.includes(a.id));
+  const sinTildes = (t: string) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+  const autoresDisponibles = catalogos.autores.filter((a) => !campos.autorIds.includes(a.id) && sinTildes(a.nombre).includes(sinTildes(filtroAutor.trim())));
+  const hayAutoresParaElegir = catalogos.autores.some((a) => !campos.autorIds.includes(a.id));
+  const puedeCrearAutor = !!usuario && tienePermiso(usuario.rol, "autores.crear");
+  const crearAutor = async () => {
+    setErrorAutorNuevo(null);
+    if (!nombreAutorNuevo.trim()) {
+      setErrorAutorNuevo("Escribí el nombre del autor.");
+      return;
+    }
+    setGuardandoAutorNuevo(true);
+    try {
+      const r = await pedirApi<{ id: number }>("/api/admin/autores", { metodo: "POST", cuerpo: { nombre: nombreAutorNuevo } });
+      const nuevo = { id: r.id, nombre: nombreAutorNuevo.trim(), soloTexto: false };
+      setAutoresCreados((l) => [...l, nuevo]);
+      poner({ autorIds: [...campos.autorIds, r.id] });
+      setNombreAutorNuevo("");
+      setCreandoAutor(false);
+    } catch (e) {
+      if (e instanceof ErrorApi && e.estado === 401) sesionVencida();
+      setErrorAutorNuevo(e instanceof ErrorApi ? (e.problemas[0] ?? e.message) : "No se pudo crear el autor. Probá de nuevo.");
+    } finally {
+      setGuardandoAutorNuevo(false);
+    }
+  };
   const puntoFocal = (eje: "encabezadoPuntoFocalX" | "encabezadoPuntoFocalY", texto: string) => {
     const n = Number(texto);
     if (texto.trim() === "" || !Number.isFinite(n)) return;
@@ -561,8 +594,14 @@ function Formulario({ articulo, catalogos, recargar, exito: exitoInicial }: { ar
                 </li>
               ))}
             </ol>
-            {autoresDisponibles.length > 0 && (
+            {hayAutoresParaElegir && (
               <div className="campo">
+                {catalogos.autores.length > 12 && (
+                  <>
+                    <label htmlFor="autor-buscar">Buscar un autor</label>
+                    <input id="autor-buscar" type="search" value={filtroAutor} onChange={(e) => setFiltroAutor(e.target.value)} placeholder="Escribí parte del nombre" />
+                  </>
+                )}
                 <label htmlFor="autor-agregar">Agregar un autor</label>
                 <select
                   id="autor-agregar"
@@ -573,13 +612,37 @@ function Formulario({ articulo, catalogos, recargar, exito: exitoInicial }: { ar
                     if (elegido) poner({ autorIds: [...campos.autorIds, elegido] });
                   }}
                 >
-                  <option value="">Elegí un autor…</option>
+                  <option value="">{autoresDisponibles.length ? "Elegí un autor…" : "Ningún autor coincide"}</option>
                   {autoresDisponibles.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.nombre}
                     </option>
                   ))}
                 </select>
+              </div>
+            )}
+            {puedeCrearAutor && (
+              <div className="campo">
+                {creandoAutor ? (
+                  <>
+                    <label htmlFor="autor-nuevo-nombre">Nombre del autor nuevo</label>
+                    <input id="autor-nuevo-nombre" type="text" maxLength={255} value={nombreAutorNuevo} onChange={(e) => setNombreAutorNuevo(e.target.value)} />
+                    <p className="ayuda">Se crea la ficha con solo el nombre (la bio y la foto se completan en «Autores») y se suma a este artículo.</p>
+                    {errorAutorNuevo && <p className="form-error">{errorAutorNuevo}</p>}
+                    <div className="acciones-fila">
+                      <button type="button" className="boton boton-suave" disabled={guardandoAutorNuevo} onClick={() => void crearAutor()}>
+                        {guardandoAutorNuevo ? "Creando…" : "Crear y agregar"}
+                      </button>
+                      <button type="button" className="boton boton-suave" onClick={() => setCreandoAutor(false)}>
+                        Cancelar
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <button type="button" className="boton boton-suave" onClick={() => setCreandoAutor(true)}>
+                    Crear un autor nuevo
+                  </button>
+                )}
               </div>
             )}
           </fieldset>
