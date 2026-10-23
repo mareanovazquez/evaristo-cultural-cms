@@ -99,7 +99,7 @@ Los artículos migrados no tienen creador ni firma de un Redactor: solo los toca
 - Tests: `test:admin-clasificacion` (permisos, crear con dirección única, unir sin dejar categorías repetidas ni volantas inválidas, eliminar solo vacías, el orden de las secciones en el sitio) y pantallas.
 - **Hecho cuando:** el administrador crea una sección "Cine argentino", la ordena, un editor la elige en un artículo, el sitio la muestra en el menú y en su página; y une dos categorías sin perder artículos.
 
-## Etapa 7d: herramientas de revisión posterior a la migración
+## Etapa 7d: herramientas de revisión posterior a la migración — HECHA el 23/10/2026 (ver `estado-fase4.md`, «Paso 7, etapa 7d», y la decisión 71)
 
 **Objetivo:** que se pueda recorrer de a poco lo que dejó la migración (`pendientes.md`, sección 7: 2.431 imágenes sin texto alternativo en 813 artículos, ~361 palabras ambiguas en títulos, títulos vacíos, notas que no cierran, bios con correo, 103 artículos en `sin-asignar`, 48 borradores y 1 privado).
 
@@ -125,7 +125,7 @@ Los artículos migrados no tienen creador ni firma de un Redactor: solo los toca
 5. ~~**Bio:**~~ Resuelto el 23/10/2026: límite de **500 caracteres**, editor chico con cursiva y enlace (sin negrita, listas ni títulos) y contador. Al armar la etapa hay que medir las bios migradas: si alguna pasa de 500, poder guardarla sin tocar la bio. Texto original: reutilizar el editor chico de la nota al pie (negrita, itálica y enlace) quitando la negrita, con contador de caracteres. Confirmar el límite de 500.
 6. ~~**Secciones:**~~ Resuelto el 23/10/2026: no se ocultan; solo se eliminan vacías (y se puede unir para vaciarlas). Texto original: si además de crear y renombrar se permite ocultar una sección (sin borrarla) y si cambiar su dirección genera redirección. Depende de confirmar con la editorial el modelo de secciones.
 7. ~~**Categorías:**~~ Resuelto el 23/10/2026: unir y eliminar solo vacías, y la dirección vieja de una categoría (y la de una sección) redirige. Texto original: unir y eliminar solo vacías; y si la dirección vieja de una categoría redirige.
-8. **Cómo se marca un aviso como revisado:** columna nueva (`revisadoEn` o un JSON de códigos resueltos) o quitar el aviso del JSON. Propuesta: guardar qué avisos se resolvieron y quién, sin borrar el original.
+8. ~~**Cómo se marca un aviso como revisado:**~~ Resuelto el 23/10/2026: se guarda quién y cuándo, sin borrar el aviso original (propuesta aceptada). Texto original: columna nueva (`revisadoEn` o un JSON de códigos resueltos) o quitar el aviso del JSON. Propuesta: guardar qué avisos se resolvieron y quién, sin borrar el original.
 9. ~~**Roles y permisos.**~~ Resuelto el 22/10/2026 (ver "Roles y permisos"). Un Redactor solo firma con su propia ficha y no borra imágenes (decidido). Un artículo "suyo" es el que creó (decidido). Un posible agregado futuro, sin hacer: fecha de vencimiento opcional del acceso (que se desactive solo).
 
 ## Riesgos y cosas que mirar

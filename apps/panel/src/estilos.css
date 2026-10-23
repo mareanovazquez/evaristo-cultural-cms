@@ -308,3 +308,14 @@ form.grupo { margin-bottom: 1.25rem; background: var(--superficie); }
 .bio-previa-nombre { margin: 0 0 0.25rem; font-weight: 600; }
 .bio-previa-texto { font-size: 0.9rem; line-height: 1.5; }
 .bio-previa-texto p { margin: 0 0 0.5rem; }
+
+/* Revisión de la migración */
+.tablero { list-style: none; margin: 0 0 1.5rem; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 0.75rem; }
+.tablero-tarjeta { display: flex; flex-direction: column; gap: 0.25rem; padding: 0.9rem 1rem; background: var(--superficie); border: 1px solid var(--borde); border-radius: var(--radio); }
+.tablero-numero { font-size: 1.75rem; font-weight: 700; line-height: 1.1; }
+.avisos-fila { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.4rem; }
+.avisos-fila li { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; font-size: 0.9rem; }
+.avisos-fila .boton { min-height: 32px; padding: 0 0.5rem; font-size: 0.8rem; }
+.aviso-revisado > span:first-child { color: var(--texto-suave); text-decoration: line-through; }
+.asignar-seccion { display: flex; flex-direction: column; gap: 0.35rem; min-width: 11rem; }
+.asignar-seccion select { min-height: 36px; }

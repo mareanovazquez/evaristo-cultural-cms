@@ -7,6 +7,8 @@ import { Clasificacion } from "./paginas/Clasificacion";
 import { Cuenta } from "./paginas/Cuenta";
 import { EditarAutor } from "./paginas/EditarAutor";
 import { Ingreso } from "./paginas/Ingreso";
+import { Revision } from "./paginas/Revision";
+import { RevisionLista } from "./paginas/RevisionLista";
 import { NuevoArticulo } from "./paginas/NuevoArticulo";
 import { Usuarios } from "./paginas/Usuarios";
 import { tienePermiso, type Permiso } from "@evaristo/compartido/permisos";
@@ -54,6 +56,10 @@ export function App() {
           <Route path="autores/:id" element={<EditarAutor />} />
           <Route element={<ConPermiso permiso="autores.editar.ajenos" />}>
             <Route path="autores" element={<Autores />} />
+          </Route>
+          <Route element={<ConPermiso permiso="revision.usar" />}>
+            <Route path="revision" element={<Revision />} />
+            <Route path="revision/articulos" element={<RevisionLista />} />
           </Route>
           <Route element={<ConPermiso permiso="clasificacion.gestionar" />}>
             <Route path="clasificacion" element={<Clasificacion />} />

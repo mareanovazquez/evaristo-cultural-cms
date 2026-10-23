@@ -18,6 +18,7 @@ export const PERMISOS = [
   "articulos.crear",
   "articulos.gestionar.ajenos",
   "articulos.reasignar",
+  "articulos.eliminar",
   // Biblioteca de imágenes: ver, usar y subir es de todos.
   "imagenes.borrar",
   // Autores
@@ -36,7 +37,7 @@ export type Permiso = (typeof PERMISOS)[number];
 
 const DE_TODOS: Permiso[] = ["articulos.crear"];
 const DE_EDITOR: Permiso[] = ["articulos.gestionar.ajenos", "articulos.reasignar", "imagenes.borrar", "autores.elegir.cualquiera", "autores.crear", "autores.editar.ajenos", "revision.usar"];
-const DE_ADMINISTRADOR: Permiso[] = ["autores.eliminar", "clasificacion.gestionar", "usuarios.gestionar"];
+const DE_ADMINISTRADOR: Permiso[] = ["articulos.eliminar", "autores.eliminar", "clasificacion.gestionar", "usuarios.gestionar"];
 
 const TABLA: Record<Rol, ReadonlySet<Permiso>> = {
   REDACTOR: new Set(DE_TODOS),

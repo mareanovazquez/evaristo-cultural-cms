@@ -121,6 +121,37 @@ export interface VistaPreviaUnion {
   redireccion: string;
 }
 
+// ---------- Revisión de la migración ----------
+
+export interface ResumenRevision {
+  avisos: Array<{ codigo: string; etiqueta: string; pendientes: number; revisados: number }>;
+  altPendientes: number;
+  sinAsignar: number;
+  sinAutor: number;
+  borradoresMigrados: number;
+  secciones: Array<{ id: number; nombre: string; interna: boolean; articulos: number }>;
+}
+
+export interface ArticuloDeRevision {
+  id: number;
+  wpId: number | null;
+  titulo: string;
+  estado: EstadoArticulo;
+  publicadoEn: string | null;
+  altPendientes: number;
+  seccion: { id: number; nombre: string; interna: boolean };
+  autores: string[];
+  avisos: Array<{ codigo: string; etiqueta: string; revisado: boolean; por: string | null; en: string | null }>;
+  ruta: string | null;
+}
+
+export interface RespuestaRevision {
+  total: number;
+  pagina: number;
+  paginas: number;
+  articulos: ArticuloDeRevision[];
+}
+
 /** Un usuario tal como lo ve el administrador en la pantalla de usuarios. */
 export interface UsuarioAdmin {
   id: number;

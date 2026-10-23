@@ -108,6 +108,12 @@ let usuarioServido: J = { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINIS
 const cambiosDeClave: J[] = []
 const pedidosUsuarios: Array<{ ruta: string; metodo: string; cuerpo: J }> = []
 const pasados: number[] = []
+// Revisión de la migración
+const pedidosRevision: Array<{ ruta: string; metodo: string; cuerpo: J }> = []
+let articulosRevision: J[] = [
+  { id: 31, wpId: 3100, titulo: 'El camino de SEDA', estado: 'PUBLICADO', publicadoEn: '2020-05-01T00:00:00.000Z', altPendientes: 2, seccion: { id: 1, nombre: 'Cine', interna: false }, autores: ['Ana'], avisos: [{ codigo: 'palabra_ambigua', etiqueta: 'Palabra ambigua en el título', revisado: false, por: null, en: null }, { codigo: 'nota_duplicada', etiqueta: 'Nota al pie repetida', revisado: true, por: 'Beto', en: '2026-10-22T10:00:00.000Z' }], ruta: '/2020/05/01/el-camino-de-seda/' },
+  { id: 32, wpId: 3200, titulo: 'Sin dueño', estado: 'BORRADOR', publicadoEn: null, altPendientes: 0, seccion: { id: 9, nombre: 'Sin asignar', interna: true }, autores: [], avisos: [], ruta: null },
+]
 // Secciones y categorías
 const pedidosClasificacion: Array<{ ruta: string; metodo: string; cuerpo: J }> = []
 let respuestaClasificacion: { estado: number; cuerpo: J } = { estado: 200, cuerpo: {} }
@@ -238,6 +244,25 @@ globalThis.fetch = (async (entrada: string | URL | Request, init?: RequestInit) 
   if (borrar && metodo === 'DELETE') {
     borrados.push(Number(borrar[1]))
     return responder(respuestaBorrado.estado, respuestaBorrado.cuerpo)
+  }
+  // Revisión de la migración
+  if (url === '/api/admin/revision/resumen') {
+    return responder(200, { estado: 'ok', avisos: [{ codigo: 'palabra_ambigua', etiqueta: 'Palabra ambigua en el título', pendientes: 2, revisados: 1 }, { codigo: 'nota_duplicada', etiqueta: 'Nota al pie repetida', pendientes: 0, revisados: 0 }], altPendientes: 5, sinAsignar: 1, sinAutor: 0, borradoresMigrados: 2, secciones: [{ id: 1, nombre: 'Cine', interna: false, articulos: 10 }, { id: 9, nombre: 'Sin asignar', interna: true, articulos: 1 }] })
+  }
+  if (url.startsWith('/api/admin/revision/articulos')) {
+    pedidosRevision.push({ ruta: url, metodo, cuerpo: {} })
+    const filtro = new URL(url, 'http://x').searchParams.get('filtro')
+    const lista = filtro === 'sin-asignar' ? articulosRevision.filter((a) => (a['seccion'] as J)['interna']) : articulosRevision
+    return responder(200, { estado: 'ok', total: lista.length, pagina: 1, paginas: 1, articulos: lista })
+  }
+  const sobreRevision = /^\/api\/admin\/articulos\/(\d+)(\/(avisos|seccion))?$/.exec(url)
+  if (sobreRevision && Number(sobreRevision[1]) !== 7) {
+    const cuerpo = metodo === 'DELETE' ? {} : (JSON.parse(String(init?.body)) as J)
+    pedidosRevision.push({ ruta: url, metodo, cuerpo })
+    const id = Number(sobreRevision[1])
+    if (sobreRevision[3] === 'seccion') articulosRevision = articulosRevision.map((a) => (a['id'] === id ? { ...a, seccion: { id: cuerpo['seccionId'], nombre: 'Cine', interna: false } } : a))
+    if (metodo === 'DELETE') articulosRevision = articulosRevision.filter((a) => a['id'] !== id)
+    return responder(200, { estado: 'ok', por: cuerpo['revisado'] ? 'Prueba' : null })
   }
   // Secciones y categorías
   const claseRuta = /^\/api\/admin\/(secciones|categorias)(\/(orden|\d+)(\/unir)?)?(\?.*)?$/.exec(url)
@@ -1383,7 +1408,7 @@ await t('el menú muestra Usuarios solo a quien tiene el permiso, y los roles se
   document.body.replaceChildren()
   const admin = await montar('/')
   await hasta(() => !!document.querySelector('nav a'), 'el menú')
-  assert.deepEqual(enlaces(), ['Artículos', 'Autores', 'Secciones y categorías', 'Usuarios', 'Mi cuenta'])
+  assert.deepEqual(enlaces(), ['Artículos', 'Autores', 'Revisión', 'Secciones y categorías', 'Usuarios', 'Mi cuenta'])
   assert.ok(texto().includes('(administrador)'))
   await act(async () => admin.unmount())
   usuarioServido = { id: 4, email: 'rita@b.c', nombre: 'Rita', rol: 'REDACTOR', debeCambiarClave: false, permisos: ['articulos.crear'] }
@@ -1813,6 +1838,85 @@ await t('Categorías: sin orden, con las volantas, y unir avisa de las que tiene
   await clic([...document.querySelectorAll('.solapa')].find((b) => b.textContent === 'Secciones')!)
   await hasta(() => !!document.getElementById('nuevo-secciones'), 'las secciones')
   await act(async () => r.unmount())
+})
+
+// ---------- Revisión de la migración ----------
+await t('Revisión: el tablero muestra lo que falta y lleva a cada lista', async () => {
+  const r = await montar('/revision')
+  await hasta(() => !!document.querySelector('.tablero'), 'el tablero')
+  const tarjetas = [...document.querySelectorAll('.tablero-tarjeta')].map((c) => c.textContent)
+  assert.deepEqual(tarjetas, ['5Artículos con imágenes sin texto alternativo', '1Artículos sin sección (en «Sin asignar»)', '0Artículos sin autor', '2Borradores que vienen de WordPress'])
+  const enlacesTablero = [...document.querySelectorAll('.tablero a')].map((a) => a.getAttribute('href'))
+  assert.deepEqual(enlacesTablero, ['/revision/articulos?filtro=alt', '/revision/articulos?filtro=sin-asignar', '/revision/articulos?filtro=borrador-migrado'], 'lo que está en cero no es un enlace')
+  const hrefs = [...document.querySelectorAll('table a')].map((a) => a.getAttribute('href'))
+  assert.ok(hrefs.includes('/revision/articulos?filtro=aviso%3Apalabra_ambigua') && hrefs.includes('/revision/articulos?filtro=revisado%3Apalabra_ambigua'))
+  assert.ok(hrefs.includes('/revision/articulos?filtro=seccion%3A1'))
+  assert.ok(texto().includes('Palabra ambigua en el título') && texto().includes('Nota al pie repetida'))
+  await act(async () => r.unmount())
+})
+
+await t('Revisión: marcar un aviso como revisado y deshacerlo', async () => {
+  const r = await montar('/revision/articulos?filtro=aviso:palabra_ambigua')
+  await hasta(() => !!document.querySelector('table'), 'la lista')
+  assert.equal(document.querySelector('h1')!.textContent, 'Por revisar: Palabra ambigua en el título', 'el título usa el nombre del aviso, no su código')
+  const fila = [...document.querySelectorAll('tbody tr')][0]!
+  assert.ok(fila.textContent!.includes('El camino de SEDA') && fila.textContent!.includes('2 imágenes sin texto alternativo'))
+  assert.ok(fila.textContent!.includes('revisado por Beto'), 'los ya revisados muestran quién')
+  assert.ok(!fila.textContent!.includes('Eliminar'), 'es un artículo publicado')
+  await clic(boton('Marcar como revisado: Palabra ambigua en el título en El camino de SEDA')!)
+  await hasta(() => texto().includes('Marcamos el aviso como revisado.'), 'el aviso')
+  assert.deepEqual(pedidosRevision.filter((p) => p.ruta === '/api/admin/articulos/31/avisos').at(-1)!.cuerpo, { codigo: 'palabra_ambigua', revisado: true })
+  assert.ok(boton('Deshacer: Palabra ambigua en el título en El camino de SEDA'), 'cambia el botón')
+  await clic(boton('Deshacer: Palabra ambigua en el título en El camino de SEDA')!)
+  await hasta(() => texto().includes('Volvió a quedar pendiente.'), 'el aviso de deshacer')
+  assert.deepEqual(pedidosRevision.filter((p) => p.ruta === '/api/admin/articulos/31/avisos').at(-1)!.cuerpo, { codigo: 'palabra_ambigua', revisado: false })
+  await act(async () => r.unmount())
+})
+
+await t('Revisión: asignar la sección a un artículo de «Sin asignar» sin abrirlo, y eliminar un borrador', async () => {
+  const r = await montar('/revision/articulos?filtro=sin-asignar')
+  await hasta(() => !!document.querySelector('.asignar-seccion'), 'la fila sin sección')
+  assert.equal(boton('Asignar sección a Sin dueño')!.disabled, true, 'primero hay que elegir')
+  const select = document.querySelector('.asignar-seccion select') as HTMLSelectElement
+  assert.ok([...select.options].some((o) => o.textContent === 'Cine') && ![...select.options].some((o) => o.textContent === 'Sin asignar'), 'ofrece las secciones reales')
+  await act(async () => {
+    select.value = '1'
+    select.dispatchEvent(new window.Event('change', { bubbles: true }))
+  })
+  await clic(boton('Asignar sección a Sin dueño')!)
+  await hasta(() => texto().includes('«Sin dueño» quedó en Cine.'), 'el aviso')
+  assert.deepEqual(pedidosRevision.filter((p) => p.ruta === '/api/admin/articulos/32/seccion').at(-1)!.cuerpo, { seccionId: 1 })
+  await hasta(() => document.querySelector('.vacio') !== null, 'la cola de «Sin asignar» se vacía')
+  await act(async () => r.unmount())
+  // Eliminar un borrador: el administrador lo ve; un editor no
+  articulosRevision = [articulosRevision[1]!]
+  const r2 = await montar('/revision/articulos')
+  await hasta(() => !!boton('Eliminar el borrador Sin dueño'), 'el botón de eliminar')
+  respuestaConfirm = false
+  await clic(boton('Eliminar el borrador Sin dueño')!)
+  assert.equal(pedidosRevision.filter((p) => p.metodo === 'DELETE').length, 0, 'sin confirmar no se elimina')
+  respuestaConfirm = true
+  await clic(boton('Eliminar el borrador Sin dueño')!)
+  await hasta(() => texto().includes('Eliminamos el borrador «Sin dueño».'), 'el aviso')
+  assert.equal(pedidosRevision.filter((p) => p.metodo === 'DELETE').at(-1)!.ruta, '/api/admin/articulos/32')
+  await act(async () => r2.unmount())
+  articulosRevision = [{ ...articulosRevision[0] ?? {}, id: 32, wpId: 3200, titulo: 'Sin dueño', estado: 'BORRADOR', publicadoEn: null, altPendientes: 0, seccion: { id: 1, nombre: 'Cine', interna: false }, autores: [], avisos: [], ruta: null }]
+  usuarioServido = { id: 2, email: 'e@b.c', nombre: 'Editor', rol: 'EDITOR', debeCambiarClave: false, permisos: ['articulos.crear'] }
+  const r3 = await montar('/revision/articulos')
+  await hasta(() => !!document.querySelector('table'), 'la lista del editor')
+  assert.ok(!texto().includes('Eliminar el borrador'), 'un editor no elimina')
+  assert.ok(enlaces().includes('Revisión'), 'pero sí ve el menú de revisión')
+  await act(async () => r3.unmount())
+  usuarioServido = { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINISTRADOR', debeCambiarClave: false, permisos: ['articulos.crear', 'usuarios.gestionar'] }
+})
+
+await t('Revisión: un redactor no ve el menú ni entra por la dirección', async () => {
+  usuarioServido = { id: 4, email: 'rita@b.c', nombre: 'Rita', rol: 'REDACTOR', debeCambiarClave: false, permisos: ['articulos.crear'] }
+  const r = await montar('/revision')
+  await hasta(() => document.querySelector('h1')?.textContent === 'Artículos', 'vuelve al listado de artículos')
+  assert.ok(!enlaces().includes('Revisión'))
+  await act(async () => r.unmount())
+  usuarioServido = { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINISTRADOR', debeCambiarClave: false, permisos: ['articulos.crear', 'usuarios.gestionar'] }
 })
 
 console.log(`\n${ok} pruebas de la pantalla ok`)

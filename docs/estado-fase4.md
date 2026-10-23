@@ -172,6 +172,18 @@ Decisión 70 del plan. Decisiones de Mariano del 23/10/2026: las secciones **no 
 - **Riesgo para la fase 7:** el script de migración y el conversor mapean los artículos a secciones por su dirección (`asia`, `resena`…). Si antes de migrar el administrador cambia o elimina una de esas direcciones, la migración fallaría o crearía de nuevo la sección: **no tocar las direcciones de las 17 secciones iniciales hasta después de la migración completa** (renombrar el nombre visible sí está bien).
 - **No se hizo (anotado):** ocultar una sección (decisión 6); descripciones por sección y por categoría (fase 6); arrastrar para ordenar (se usa subir y bajar).
 
+## Paso 7, etapa 7d: revisión de la migración (23/10/2026, rama `fase4-administracion`)
+
+Decisión 71 del plan. Decisión de Mariano del 23/10/2026 (la 8 del plan del paso 7): un aviso se marca como revisado **guardando quién y cuándo, sin borrar el aviso original**.
+
+- **Esquema** (migración `20261023140000_articulos_avisos_revisados`, aplicada a `_dev` y `_test`; **a la real, con las otras, en la fase 7**): `articulos.avisosRevisados` (JSON `{ "<código>": { por, nombre, en } }`) y el permiso `articulos.eliminar` (administrador).
+- **API** (`apps/api/src/admin/revision.ts`; `revision.usar` para editores y administradores): `GET /revision/resumen` (cuánto hay por revisar: avisos por código con pendientes y revisados, imágenes sin texto alternativo, sin sección, sin autor, borradores migrados, y artículos por sección) y `GET /revision/articulos` con filtros (`aviso:<código>`, `revisado:<código>`, `alt`, `sin-asignar`, `sin-autor`, `borrador-migrado`, `seccion:<id>`, `autor:<id>`, más búsqueda por título y paginado de 25). Los códigos salen de las cuatro formas de `avisosMigracion` (`cuerpo` y `migracion` con `code`; `titulo` como `código:detalle`; `validador` como un solo código) y cada uno tiene su etiqueta en lenguaje común.
+- **Acciones:** `POST /articulos/:id/avisos` (marcar o deshacer un aviso), `POST /articulos/:id/seccion` (asignar la sección a un artículo que está en «Sin asignar»; si tiene cambios sin publicar que todavía dicen «Sin asignar», también los pasa) y `DELETE /articulos/:id` (solo administrador y solo un borrador; la galería, la ficha, los cambios sin publicar y las redirecciones se van con él, las imágenes quedan en la biblioteca). **Ninguna cambia `actualizadoEn`**, para no generar un conflicto a quien está editando ese artículo.
+- **Panel:** `Revision.tsx` (tablero con tarjetas, tabla de avisos con enlaces a la cola y a los ya revisados, y artículos por sección) y `RevisionLista.tsx` (por artículo: abrir, asignar sección, avisos con «Marcar revisado» y «Deshacer», y para el administrador «Eliminar» en los borradores). Menú «Revisión».
+- **Tests:** `test:admin-revision` (contra `evaristo_cms_dev`: el tablero cuenta lo mismo que la base, filtros, marcar y deshacer sin cambiar la versión, asignar sección, eliminar) y `test:pantalla` 73.
+- **Cuidado al migrar:** un borrador eliminado que viene de WordPress vuelve a aparecer si se corre otra vez la migración sobre esa base (la migración es incremental por `wpId`). Decidir con la directora qué hacer con los borradores migrados y el privado (19300) **antes** de la migración completa, o eliminarlos después de ella.
+- **No se hizo (anotado):** abrir el artículo ya posicionado en lo que hay que corregir; un enlace «Ver en revisión» desde la ficha de un autor (el filtro `autor:<id>` ya existe en la API); marcar todos los avisos de un código de una vez.
+
 ## Reglas y cosas a tener en cuenta del editor (lo duradero del plan del paso 4)
 
 - **Sin `localStorage` como respaldo del texto en edición:** la copia de seguridad es el borrador de cambios del servidor (y el autoguardado).
