@@ -52,7 +52,10 @@ try {
   const { estado, html } = await pedir("/");
   assert.equal(estado, 200);
   assert.equal((html.match(/<h1[^>]*>/g) ?? []).length, 1, "un solo H1");
-  assert.ok(/<h1[^>]*>Evaristo Cultural<\/h1>/.test(html), "el H1 es el nombre de la revista");
+  assert.ok(/<h1[^>]*class="logo-titulo"[^>]*><a class="logo"[^>]*aria-label="Evaristo Cultural"/.test(html), "el H1 es el nombre de la revista del encabezado (no hay un título repetido)");
+  assert.ok(!html.includes('class="solo-lectores">Evaristo Cultural'), "y no hay un título oculto aparte");
+  // En las demás páginas el nombre de la revista es solo un enlace
+  assert.ok(!/<h1[^>]*class="logo-titulo"/.test((await pedir("/ultimas/")).html), "en otras páginas el nombre de la revista no es el título");
   assert.match(html, /class="portada-fecha">[A-ZÁÉÍÓÚ][a-záéíóúñ]+, \d{1,2} de [a-zé]+ de \d{4}</, "la fecha completa en español, con mayúscula inicial");
 
   // Las notas que la base considera «las últimas»: visibles (publicadas y con fecha cumplida), de la más nueva a la más vieja

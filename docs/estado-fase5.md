@@ -7,7 +7,7 @@ Actualizado el 23/10/2026. La dueña de la editorial dio el visto bueno para **d
 La portada (`/`) se arma sola con lo publicado: el editor no maqueta. De arriba hacia abajo:
 
 1. **Topbar** y **menú** (ya existían, con el texto provisorio de la tienda).
-2. **Fecha** del día en español, con la zona de Argentina («Viernes, 23 de octubre de 2026»). Un solo `h1` oculto con el nombre de la revista.
+2. **Fecha** del día en español, con la zona de Argentina («Viernes, 23 de octubre de 2026»). El nombre de la revista del menú es el `h1` de la portada (no hay un título repetido ni oculto); en las demás páginas es solo un enlace.
 3. **Carrusel** (`components/Carrusel.astro`): las 3 notas más nuevas, con la imagen de encabezado (16:9 en escritorio y 4:3 en celular, recorte por punto focal), la sección, el título sobre un degradé oscuro y la fecha y el autor. Toda la diapositiva es un enlace. Flechas, puntos y botón de pausa. Avanza solo cada 6 segundos y se detiene con el mouse encima, con el foco adentro, con la pestaña oculta y con la pausa; con «reducir movimiento» del sistema **no arranca** (y no muestra la pausa). Se mueve con las flechas del teclado y se desliza con el dedo; sin JavaScript queda una tira deslizable. Es JavaScript propio y chico (no hizo falta sumar React al sitio); la política de seguridad lo permite con su hash.
 4. **Dos bloques de sección** (`components/BloqueSeccion.astro`): cada uno con el nombre de la sección (enlace a su página), «Ver todo» y sus 2 notas más nuevas.
 5. **Banda de cuatro columnas**: «Últimas publicaciones» con «Ver todo» más las notas 4.ª a 6.ª más nuevas. El «Ver todo» lleva a la página nueva `/ultimas/` (todas las notas, de la más nueva a la más vieja, de a 12).
