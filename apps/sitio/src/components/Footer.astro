@@ -1,9 +1,10 @@
 ---
-import Marca from "./Marca.astro";
 import { URL_AUTORES, urlSeccion } from "../lib/rutas";
 import { listarSeccionesMenu } from "../lib/secciones";
 
-// Textos, contacto y redes provisorios: la editorial todavía no los definió (ver especificacion-home.md, sección 6).
+// Textos de «Quiénes somos» y «Contacto» provisorios: la editorial todavía no los definió (ver especificacion-home.md, sección 6).
+const URL_EDITORIAL = "https://evaristoeditorial.com.ar";
+const URL_INSTAGRAM = "https://www.instagram.com/evaristoeditorial/";
 const principales = (await listarSeccionesMenu()).slice(0, 4);
 ---
 
@@ -11,9 +12,8 @@ const principales = (await listarSeccionesMenu()).slice(0, 4);
   <div class="page">
     <div class="footer-grilla">
       <div class="footer-sobre">
-        <Marca nombre="Cultural" />
-        <p>Revista cultural de Evaristo Editorial. Entrevistas, reseñas, ensayos y crónicas desde 2006. (Texto provisorio.)</p>
-        <a class="footer-tienda" href="#">Tienda de Evaristo Editorial <svg class="icon" aria-hidden="true"><use href="#i-arrow-up-right" /></svg></a>
+        <a class="footer-logo" href="/"><img src="/logotipo-blanco.svg" alt="Evaristo Cultural" width="781" height="959" /></a>
+        <p>Revista cultural de Evaristo Editorial. Entrevistas, reseñas, ensayos y crónicas desde 2006.</p>
       </div>
       <div>
         <h2>Secciones</h2>
@@ -31,16 +31,16 @@ const principales = (await listarSeccionesMenu()).slice(0, 4);
         </ul>
       </div>
       <div>
-        <h2>Seguinos</h2>
+        <h2>Evaristo Editorial</h2>
         <ul>
-          <li><a href="#">Instagram</a></li>
-          <li><a href="#">Facebook</a></li>
-          <li><a href="#">X</a></li>
+          <li><a href={URL_EDITORIAL} rel="noopener">Tienda <svg class="icon" aria-hidden="true"><use href="#i-arrow-up-right" /></svg></a></li>
+          <li><a href={URL_INSTAGRAM} rel="noopener">Instagram <svg class="icon" aria-hidden="true"><use href="#i-arrow-up-right" /></svg></a></li>
         </ul>
       </div>
     </div>
     <div class="footer-legal">
-      <p>© 2006–{new Date().getFullYear()} <Marca nombre="Editorial" />. Todos los derechos reservados.</p>
+      <p>© 2006–{new Date().getFullYear()} Evaristo Editorial. Todos los derechos reservados.</p>
+      <p>Desarrollado por <a href="https://marianovazquez.ar" rel="noopener">Mariano Vazquez</a></p>
     </div>
   </div>
 </footer>

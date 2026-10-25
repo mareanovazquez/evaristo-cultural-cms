@@ -208,12 +208,11 @@
 /* ---------- Footer ---------- */
 .footer {
   margin-top: var(--space-24);
-  background: var(--surface);
-  border-top: 1px solid var(--border-soft);
+  background: var(--accent-500);
   padding: var(--space-16) 0 var(--space-8);
   font-size: 15px;
   line-height: 1.5;
-  color: var(--text-soft);
+  color: var(--text);
 }
 .footer-grilla {
   display: grid;
@@ -259,56 +258,46 @@
   margin: 0 0 var(--space-2);
 }
 .footer a {
-  color: var(--text-soft);
+  color: var(--text);
   text-decoration: underline;
   text-underline-offset: 3px;
-  text-decoration-color: var(--border-strong);
+  text-decoration-color: var(--accent-800);
   font-weight: 500;
 }
 .footer a:hover {
   color: var(--accent-900);
-  text-decoration-color: var(--accent-500);
+  text-decoration-color: var(--accent-900);
 }
-.footer .logo {
-  text-decoration: none;
+.footer-logo {
+  display: inline-block;
   margin-bottom: var(--space-3);
 }
-.footer-tienda {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  height: 44px;
-  padding: 0 20px;
-  margin-top: var(--space-2);
-  background: var(--accent-500);
-  color: var(--text) !important;
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1.2;
-  text-decoration: none !important;
-  border-radius: var(--radius);
-  transition: background 150ms ease;
+.footer a.footer-logo {
+  text-decoration: none;
 }
-.footer-tienda:hover {
-  background: var(--accent-600);
+.footer-logo img {
+  display: block;
+  width: 96px;
+  height: auto;
+}
+.footer li .icon {
+  width: 0.9em;
+  height: 0.9em;
+  vertical-align: -0.1em;
 }
 .footer-legal {
   margin-top: var(--space-10);
   padding-top: var(--space-6);
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--accent-700);
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2) var(--space-6);
   justify-content: space-between;
   font-size: 14px;
-  color: var(--text-muted);
+  color: var(--text);
 }
 .footer-legal p {
   margin: 0;
-}
-.footer-legal .logo {
-  font-size: 13px;
-  margin-bottom: 0;
 }
 
 /* ---------- Foto de autor y bio ---------- */
