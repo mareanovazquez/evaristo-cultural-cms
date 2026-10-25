@@ -30,6 +30,8 @@
 
 ## Bloque A: topbar y footer
 
+> **Actualización del 25/10/2026 (decisión 75):** el **footer queda fijo en el código** (`Footer.astro`), sin pantalla en el panel, y cerrado hasta que Roxana Artal lo vea. Ya tiene logotipo, colores, tienda, Instagram y firma (commit `863283e`). De este bloque solo queda abierto el **topbar** y qué se hace con «Quiénes somos» y «Contacto»; lo que sigue sobre un footer editable (tabla `configuracion_sitio`, `GET/PUT /api/admin/sitio`, pantalla «Sitio») **se descartó para el footer**.
+
 **Hoy:** el topbar y el footer tienen textos y enlaces **provisorios** escritos en el código (`Header.astro` y `Footer.astro`): el mensaje de la tienda con enlace `#`, un texto institucional de relleno, y «Quiénes somos», «Contacto», Instagram, Facebook y X como enlaces vacíos. La especificación de la portada dice que el texto del topbar «se edita desde el panel (solo administrador)».
 
 ### Decisiones (de a una, con Mariano)

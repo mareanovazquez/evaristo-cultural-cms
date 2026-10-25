@@ -13,7 +13,7 @@ La portada (`/`) se arma sola con lo publicado: el editor no maqueta. De arriba 
 4. **Dos bloques de sección** (`components/BloqueSeccion.astro`): cada uno con el nombre de la sección (enlace a su página), «Ver todo» y sus 2 notas más nuevas.
 5. **Banda de cuatro columnas**: «Últimas publicaciones» con «Ver todo» más las notas 4.ª a 6.ª más nuevas. El «Ver todo» lleva a la página nueva `/ultimas/` (todas las notas, de la más nueva a la más vieja, de a 12).
 6. **Más bloques de sección** (hasta 4 más, de a dos columnas).
-7. **Footer** (el de siempre, con textos provisorios).
+7. **Footer** (fijo en `Footer.astro`; cerrado hasta el visto bueno de Roxana Artal; decisión 75 de `plan-implementacion.md`).
 
 **Reglas.** Las secciones que se muestran son **las 6 con la publicación más reciente** (sin «Sin asignar»); cada bloque muestra sus 2 notas más nuevas **que no estén ya en el carrusel ni en la banda**, así no se repite nada; una sección sin notas para mostrar no aparece; un artículo programado aparece recién en su fecha y un borrador nunca. En celular todo va en una columna, en el mismo orden.
 

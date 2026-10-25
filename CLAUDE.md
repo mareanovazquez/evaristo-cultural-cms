@@ -28,7 +28,7 @@ Leer solo lo que la tarea necesite.
 | Archivo | Qué contiene y cuándo leerlo |
 |---|---|
 | `docs/estado-fase3.md` | Fase 3 (sitio público): qué hay, decisiones, tests, inventario de los 35 artículos y qué quedó abierto. Leer antes de tocar el sitio. |
-| `docs/plan-proximos-pasos.md` | **Temporal (borrar cuando la fase 7 esté en marcha).** Plan para retomar el 24/10/2026: topbar y footer editables y la fase 7 (descarga de WordPress antes del 28/11/2026, trabajo técnico previo, ensayo en copia, migración real y lanzamiento), con las decisiones a plantear. Leer al empezar. |
+| `docs/plan-proximos-pasos.md` | **Temporal (borrar cuando la fase 7 esté en marcha).** Plan para retomar el 24/10/2026: topbar editable (el footer es fijo en el código, decisión 75) y la fase 7 (descarga de WordPress antes del 28/11/2026, trabajo técnico previo, ensayo en copia, migración real y lanzamiento), con las decisiones a plantear. Leer al empezar. |
 | `docs/estado-fase6.md` | Fase 6 (buscador y novedades): qué hay, cómo busca, dónde se ven las novedades, qué falta confirmar con la editorial y qué queda para la fase 7. Leer antes de tocar el buscador o las novedades. |
 | `docs/estado-fase5.md` | Fase 5 (portada): qué hay, qué se decidió por defecto, qué preguntarle a la dueña de la editorial y qué falta. Leer antes de tocar la portada. |
 | `docs/estado-fase4.md` | Fase 4 (panel y API): decisiones, lo hecho (pasos 1 a 5, con las reglas y cosas a tener en cuenta del editor) y lo que falta (pasos 6 a 8). Leer al retomar la fase 4. |
