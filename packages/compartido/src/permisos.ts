@@ -10,7 +10,7 @@ export const NOMBRE_DE_ROL: Record<Rol, string> = { REDACTOR: "Redactor", EDITOR
 export const DESCRIPCION_DE_ROL: Record<Rol, string> = {
   REDACTOR: "Escribe y publica sus propios artículos, firmados con su ficha de autor.",
   EDITOR: "Edita y publica todos los artículos, y administra autores y la revisión de la migración.",
-  ADMINISTRADOR: "Todo lo anterior, más usuarios, secciones y categorías.",
+  ADMINISTRADOR: "Todo lo anterior, más usuarios, secciones, categorías y el topbar del sitio.",
 };
 
 export const PERMISOS = [
@@ -30,6 +30,8 @@ export const PERMISOS = [
   "clasificacion.gestionar",
   // Usuarios
   "usuarios.gestionar",
+  // Configuración del sitio (topbar)
+  "sitio.configurar",
   // Herramientas de revisión de la migración
   "revision.usar",
 ] as const;
@@ -37,7 +39,7 @@ export type Permiso = (typeof PERMISOS)[number];
 
 const DE_TODOS: Permiso[] = ["articulos.crear"];
 const DE_EDITOR: Permiso[] = ["articulos.gestionar.ajenos", "articulos.reasignar", "imagenes.borrar", "autores.elegir.cualquiera", "autores.crear", "autores.editar.ajenos", "revision.usar"];
-const DE_ADMINISTRADOR: Permiso[] = ["articulos.eliminar", "autores.eliminar", "clasificacion.gestionar", "usuarios.gestionar"];
+const DE_ADMINISTRADOR: Permiso[] = ["articulos.eliminar", "autores.eliminar", "clasificacion.gestionar", "sitio.configurar", "usuarios.gestionar"];
 
 const TABLA: Record<Rol, ReadonlySet<Permiso>> = {
   REDACTOR: new Set(DE_TODOS),

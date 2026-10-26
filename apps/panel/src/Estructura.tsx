@@ -52,8 +52,8 @@ const iniciales = (nombre: string): string =>
     .map((p) => p[0]?.toUpperCase() ?? "")
     .join("") || "?";
 
-/** El usuario del footer y su popover (Mi cuenta, Salir). Se abre hacia arriba; con el menú plegado, hacia la derecha. */
-function MenuUsuario({ nombre, rol, plegado }: { nombre: string; rol: string; plegado: boolean }) {
+/** El usuario del footer y su popover (Mi cuenta, Configuración del sitio si tiene el permiso, Salir). Se abre hacia arriba; con el menú plegado, hacia la derecha. */
+function MenuUsuario({ nombre, rol, plegado, configuraSitio }: { nombre: string; rol: string; plegado: boolean; configuraSitio: boolean }) {
   const { salir } = useSesion();
   const [abierto, setAbierto] = useState(false);
   const [saliendo, setSaliendo] = useState(false);
@@ -136,6 +136,12 @@ function MenuUsuario({ nombre, rol, plegado }: { nombre: string; rol: string; pl
             <Icono nombre="cuenta" />
             Mi cuenta
           </Link>
+          {configuraSitio && (
+            <Link to="/sitio" role="menuitem" className="popover-item" onClick={() => setAbierto(false)}>
+              <Icono nombre="sitio" />
+              Configuración del sitio
+            </Link>
+          )}
           <button
             type="button"
             role="menuitem"
@@ -259,7 +265,7 @@ export function Estructura() {
           )}
         </nav>
 
-        <div className="menu-pie">{usuario && <MenuUsuario nombre={usuario.nombre} rol={nombreDelRol} plegado={plegado} />}</div>
+        <div className="menu-pie">{usuario && <MenuUsuario nombre={usuario.nombre} rol={nombreDelRol} plegado={plegado} configuraSitio={puede("sitio.configurar")} />}</div>
       </aside>
 
       <main className="contenido" id="contenido-panel" tabIndex={-1}>

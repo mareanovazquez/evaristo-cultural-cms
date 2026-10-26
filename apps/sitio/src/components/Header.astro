@@ -8,10 +8,10 @@ interface Props {
 const { esPortada = false } = Astro.props;
 import { SECCIONES_VISIBLES, URL_AUTORES, urlSeccion } from "../lib/rutas";
 import { listarSeccionesMenu } from "../lib/secciones";
+import { leerTopbar } from "../lib/sitio";
 
-// Topbar: texto provisorio. Más adelante se edita desde el panel (solo administrador).
-const TOPBAR_TEXTO = "Conseguí todos los libros de Evaristo Editorial en nuestra tienda online";
-const TOPBAR_URL = "#";
+// Topbar: lo edita el administrador en el panel («Sitio»). Apagado o sin texto, no se dibuja.
+const topbar = await leerTopbar();
 
 // Las secciones y su orden salen de la base: las administra el administrador desde el panel.
 const SECCIONES_MENU = await listarSeccionesMenu();
@@ -21,7 +21,18 @@ const ruta = Astro.url.pathname;
 const actual = (href: string) => (ruta === href || ruta.startsWith(href) ? "page" : undefined);
 ---
 
-<a class="topbar" href={TOPBAR_URL}><span>{TOPBAR_TEXTO}</span></a>
+{
+  topbar &&
+    (topbar.enlace ? (
+      <a class="topbar" href={topbar.enlace}>
+        <span>{topbar.texto}</span>
+      </a>
+    ) : (
+      <p class="topbar topbar-sin-enlace">
+        <span>{topbar.texto}</span>
+      </p>
+    ))
+}
 <header class="header">
   <div class="page header-fila">
     {esPortada ? <h1 class="logo-titulo"><Marca nombre="Cultural" /></h1> : <Marca nombre="Cultural" />}

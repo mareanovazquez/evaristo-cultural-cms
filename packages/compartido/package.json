@@ -11,6 +11,7 @@
     "./render": "./src/render/render.ts",
     "./urls": "./src/urls.ts",
     "./permisos": "./src/permisos.ts",
+    "./sitio": "./src/sitio.ts",
     "./bio": "./src/bio.ts",
     "./texto-plano": "./src/texto-plano.ts"
   },

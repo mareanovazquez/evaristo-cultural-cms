@@ -95,8 +95,9 @@ try {
       assert.ok(csp.get("img-src")!.includes("'self'"), `${ruta}: las imágenes propias`);
       assert.deepEqual(csp.get("object-src"), ["'none'"]);
       assert.deepEqual(csp.get("base-uri"), ["'self'"]);
-      // Todo lo que carga de otro dominio está en la lista: hojas de estilo, tipografías y videos
-      const externos = [...html.matchAll(/(?:href|src)="(https:\/\/[^"]+)"/g)].map((m) => new URL(m[1]!).origin);
+      // Todo lo que carga de otro dominio está en la lista: hojas de estilo, tipografías y videos. Los enlaces (<a href>, como la tienda
+      // o Instagram en el pie y el topbar) no cargan nada: el navegador solo los abre si alguien hace clic.
+      const externos = [...html.matchAll(/(?:<link\b[^>]*\bhref|\bsrc)="(https:\/\/[^"]+)"/g)].map((m) => new URL(m[1]!).origin);
       for (const origen of new Set(externos)) {
         assert.ok([...csp.values()].some((v) => v.includes(origen)), `${ruta}: el sitio carga algo de ${origen} y la política no lo permite`);
       }

@@ -328,6 +328,20 @@ model Sesion {
   @@map("sesiones")
 }
 
+// Configuración del sitio que edita el administrador desde el panel. Una sola fila (id 1): si no existe, el sitio usa los valores por
+// defecto de `src/sitio.ts`. Hoy solo tiene el topbar (la franja de arriba del sitio); el footer es fijo en el código (decisión 75).
+model ConfiguracionSitio {
+  id            Int      @id @default(1)
+  // Si el topbar se muestra. Apagado, o sin texto, el sitio no dibuja la franja.
+  topbarActivo  Boolean  @default(true)
+  topbarTexto   String   @default("") @db.VarChar(200)
+  // Dirección `http(s)://…` o interna (`/…`). Sin enlace, el texto se muestra sin vínculo.
+  topbarEnlace  String?  @db.VarChar(512)
+  actualizadoEn DateTime @updatedAt
+
+  @@map("configuracion_sitio")
+}
+
 model Redireccion {
   id         Int             @id @default(autoincrement())
   // Ruta vieja tal cual de WordPress. Sus URLs usan la fecha en hora local y publicadoEn está en UTC,

@@ -390,3 +390,17 @@ form.grupo { margin-bottom: 1.25rem; background: var(--superficie); }
 .boton-arrastre:active { cursor: grabbing; }
 .fila-arrastrando { background: var(--superficie); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18); outline: 2px solid var(--acento); outline-offset: -2px; }
 .fila-arrastrando .boton-arrastre { cursor: grabbing; }
+
+/* Sitio: interruptor y vista del topbar */
+.interruptor { display: inline-flex; align-items: center; gap: 0.6rem; margin-bottom: 1rem; font-size: 0.95rem; font-weight: 600; cursor: pointer; min-height: 44px; }
+.interruptor input { position: absolute; opacity: 0; width: 44px; height: 44px; margin: 0; cursor: pointer; }
+.interruptor-pista { position: relative; flex: none; width: 44px; height: 24px; border-radius: 12px; background: var(--borde-fuerte); transition: background 0.15s; }
+.interruptor-pista::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; transition: transform 0.15s; }
+.interruptor input:checked + .interruptor-pista { background: var(--acento); }
+.interruptor input:checked + .interruptor-pista::after { transform: translateX(20px); }
+.interruptor input:focus-visible + .interruptor-pista { outline: 2px solid var(--acento); outline-offset: 2px; }
+.vista-titulo { font-size: 0.9rem; margin: 1.25rem 0 0.4rem; }
+.vista-topbar { background: var(--texto); color: #fff; text-align: center; font-size: 14px; font-weight: 500; padding: 10px 1rem; border-radius: var(--radio); overflow-wrap: anywhere; }
+.vista-topbar-enlace { text-decoration: underline; text-underline-offset: 3px; }
+.vista-topbar-vacio { margin: 0; padding: 10px 1rem; border: 1px dashed var(--borde-fuerte); border-radius: var(--radio); color: var(--texto-suave); font-size: 0.9rem; text-align: center; }
+.pantalla .vista-topbar, .pantalla .vista-topbar-vacio { margin-bottom: 1.25rem; }

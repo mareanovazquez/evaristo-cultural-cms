@@ -247,6 +247,18 @@ Decisión 72 del plan. Alcance acordado con Mariano el 23/10/2026: **lo que no d
 - **Tests:** `test:seguridad` (nuevo), `test:pantalla` 82, y ampliados `test:admin-usuarios` (quién editó y publicó).
 - **Falta:** hacer la prueba con una o dos personas de la editorial y arreglar lo que salga; mirar el panel y el sitio en un navegador (política de contenido incluida).
 
+## Sitio: topbar editable (26/10/2026)
+
+Decisión 76 del plan. Fuera de los pasos numerados de la fase 4: es una pantalla de administración más.
+
+- **Modelo:** tabla `configuracion_sitio` (migración `20261026120000_configuracion_sitio`, en `_dev` y `_test`; a la real, con las otras en la fase 7): una fila con `topbarActivo`, `topbarTexto` (hasta 200) y `topbarEnlace` (opcional, hasta 512).
+- **Compartido** (`packages/compartido/src/sitio.ts`): límites, `TOPBAR_POR_DEFECTO` y `enlaceValido` (solo `http(s)://` con dominio o interno con una sola `/`; sin espacios, `\`, `<`, `>`, `"` ni caracteres de control). Permiso nuevo `sitio.configurar`, del administrador.
+- **API** (`apps/api/src/admin/sitio.ts`): `GET` y `PUT /api/admin/sitio`, validados con `zod` y mensajes en lenguaje común. El texto se normaliza (espacios y saltos de línea juntos) y un enlace en blanco pasa a «sin enlace». Con el topbar encendido, el texto es obligatorio.
+- **Panel** (`paginas/Sitio.tsx`, «Configuración del sitio»; se abre desde el **popover del usuario** del menú lateral, entre «Mi cuenta» y «Salir», y no desde el menú lateral, porque es configuración del sitio y no parte del trabajo diario de editar y publicar; solo lo ve quien tiene `sitio.configurar`): interruptor (`role="switch"`), texto con contador, enlace, vista de cómo queda, aviso de cambios sin guardar y al salir.
+- **Sitio** (`apps/sitio/src/lib/sitio.ts`, `Header.astro`): lee la configuración en cada pedido (una consulta por clave primaria, sin caché). Con enlace dibuja `<a class="topbar">`; sin enlace, `<p class="topbar topbar-sin-enlace">`. Un enlace inválido que llegara a la base no se dibuja. **Respaldo provisorio:** si la tabla no existe usa los valores por defecto; borrarlo cuando la real tenga la migración.
+- **Tests:** `test:admin-sitio` (nuevo, contra `evaristo_cms_dev` y el sitio compilado: permisos, defecto, guardado, validaciones, HTML del sitio, escape y sin tabla) y `test:pantalla` 85 (3 nuevas). Además se corrigió `test:seguridad`: tomaba como recurso cargado cualquier `<a href="https://…">` (fallaba desde el footer con la tienda y el Instagram) y ahora solo mira `src` y `<link href>`.
+- **Falta:** mirarlo en un navegador (el interruptor, la vista previa y el topbar en celular) y que la editorial confirme el texto y a dónde lleva (hoy, la tienda).
+
 ## Reglas y cosas a tener en cuenta del editor (lo duradero del plan del paso 4)
 
 - **Sin `localStorage` como respaldo del texto en edición:** la copia de seguridad es el borrador de cambios del servidor (y el autoguardado).

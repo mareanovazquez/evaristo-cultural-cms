@@ -123,8 +123,12 @@ let articulosRevision: J[] = [
   { id: 31, wpId: 3100, titulo: 'El camino de SEDA', estado: 'PUBLICADO', publicadoEn: '2020-05-01T00:00:00.000Z', altPendientes: 2, seccion: { id: 1, nombre: 'Cine', interna: false }, autores: ['Ana'], avisos: [{ codigo: 'palabra_ambigua', etiqueta: 'Palabra ambigua en el título', revisado: false, por: null, en: null }, { codigo: 'nota_duplicada', etiqueta: 'Nota al pie repetida', revisado: true, por: 'Beto', en: '2026-10-22T10:00:00.000Z' }], ruta: '/2020/05/01/el-camino-de-seda/' },
   { id: 32, wpId: 3200, titulo: 'Sin dueño', estado: 'BORRADOR', publicadoEn: null, altPendientes: 0, seccion: { id: 9, nombre: 'Sin asignar', interna: true }, autores: [], avisos: [], ruta: null },
 ]
+// Sitio (topbar)
+let topbarServido: J = { activo: true, texto: 'Conseguí los libros en la tienda', enlace: 'https://tienda.ejemplo.org' }
+const pedidosSitio: J[] = []
+let respuestaSitio: { estado: number; cuerpo: J } = { estado: 200, cuerpo: {} }
 // Secciones y categorías
-const pedidosClasificacion: Array<{ ruta: string; metodo: string; cuerpo: J }> = []
+const pedidosClasificacion:Array<{ ruta: string; metodo: string; cuerpo: J }> = []
 let respuestaClasificacion: { estado: number; cuerpo: J } = { estado: 200, cuerpo: {} }
 type ItemClasificacion = { id: number; slug: string; nombre: string; articulos: number; interna?: boolean; orden?: number; comoPrincipal?: number }
 let seccionesServidas: ItemClasificacion[] = [
@@ -286,8 +290,17 @@ globalThis.fetch = (async (entrada: string | URL | Request, init?: RequestInit) 
     if (metodo === 'DELETE') articulosRevision = articulosRevision.filter((a) => a['id'] !== id)
     return responder(200, { estado: 'ok', por: cuerpo['revisado'] ? 'Prueba' : null })
   }
+  // Sitio (topbar)
+  if (url === '/api/admin/sitio') {
+    if (metodo === 'GET') return responder(200, { estado: 'ok', topbar: topbarServido })
+    const cuerpo = JSON.parse(String(init?.body)) as J
+    pedidosSitio.push(cuerpo)
+    if (respuestaSitio.estado !== 200) return responder(respuestaSitio.estado, respuestaSitio.cuerpo)
+    topbarServido = cuerpo['topbar'] as J
+    return responder(200, { estado: 'ok', topbar: topbarServido })
+  }
   // Secciones y categorías
-  const claseRuta = /^\/api\/admin\/(secciones|categorias)(\/(orden|\d+)(\/unir)?)?(\?.*)?$/.exec(url)
+  const claseRuta =/^\/api\/admin\/(secciones|categorias)(\/(orden|\d+)(\/unir)?)?(\?.*)?$/.exec(url)
   if (claseRuta) {
     const tipo = claseRuta[1] as 'secciones' | 'categorias'
     const cuerpo = metodo === 'GET' || metodo === 'DELETE' ? {} : (JSON.parse(String(init?.body)) as J)
@@ -1916,6 +1929,101 @@ await t('Categorías: sin orden, con las volantas, y unir avisa de las que tiene
   await act(async () => r.unmount())
 })
 
+// ---------- Sitio (topbar) ----------
+const interruptor = () => document.querySelector('input[role="switch"]') as HTMLInputElement
+const textoTopbar = () => document.getElementById('topbar-texto') as HTMLInputElement
+const enlaceTopbar = () => document.getElementById('topbar-enlace') as HTMLInputElement
+const guardarSitio = () => boton('Guardar los cambios') as HTMLButtonElement
+const cambiarInterruptor = async (valor: boolean) => {
+  if (interruptor().checked !== valor) await clic(interruptor())
+}
+
+await t('Configuración del sitio: solo el administrador la ve (en el popover del usuario y por la dirección)', async () => {
+  usuarioServido = { id: 4, email: 'ed@b.c', nombre: 'Eli', rol: 'EDITOR', debeCambiarClave: false, permisos: ['articulos.crear'] }
+  const e = await montar('/sitio')
+  await hasta(() => document.querySelector('h1')?.textContent === 'Artículos', 'el editor vuelve al listado')
+  assert.ok(!enlaces().includes('Sitio') && !enlaces().includes('Configuración del sitio'), 'no está en el menú lateral')
+  await clic(document.querySelector('.menu-usuario-boton')!)
+  assert.deepEqual([...document.querySelectorAll('[role="menuitem"]')].map((i) => i.textContent), ['Mi cuenta', 'Salir'], 'y el editor no la tiene en el popover')
+  assert.ok(!document.getElementById('topbar-texto'))
+  await act(async () => e.unmount())
+  usuarioServido = { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINISTRADOR', debeCambiarClave: false, permisos: ['articulos.crear', 'usuarios.gestionar'] }
+})
+
+await t('Configuración del sitio: muestra lo guardado, avisa de los cambios sin guardar y guarda', async () => {
+  const r = await montar('/sitio')
+  await hasta(() => !!document.getElementById('topbar-texto'), 'la pantalla')
+  assert.equal(document.querySelector('h1')?.textContent, 'Configuración del sitio')
+  assert.equal(interruptor().checked, true)
+  assert.equal(textoTopbar().value, 'Conseguí los libros en la tienda')
+  assert.equal(enlaceTopbar().value, 'https://tienda.ejemplo.org')
+  assert.equal(document.querySelector('.vista-topbar')?.textContent, 'Conseguí los libros en la tienda', 'la vista previa muestra el texto')
+  assert.ok(document.querySelector('.vista-topbar-enlace'), 'subrayado porque lleva enlace')
+  assert.ok(texto().includes('32 de 200 caracteres'), 'cuenta los caracteres')
+  assert.equal(guardarSitio().disabled, true, 'sin cambios no se guarda')
+  assert.ok(!texto().includes('Hay cambios sin guardar.'))
+  assert.equal(document.querySelector('label[for="topbar-texto"]')?.textContent, 'Texto', 'los campos tienen su etiqueta')
+  assert.equal(document.querySelector('label.interruptor')?.textContent, 'Se muestra en el sitio')
+
+  await escribir(textoTopbar(), 'Libros nuevos en la tienda')
+  assert.equal(document.querySelector('.vista-topbar')?.textContent, 'Libros nuevos en la tienda', 'la vista previa sigue lo que se escribe')
+  assert.ok(texto().includes('Hay cambios sin guardar.'))
+  assert.equal(guardarSitio().disabled, false)
+  // Salir con cambios pregunta
+  preguntas.length = 0
+  respuestaConfirm = false
+  await clic([...document.querySelectorAll('nav a')].find((a) => a.textContent === 'Artículos')!)
+  assert.equal(preguntas.length, 1, 'al salir con cambios sin guardar, pregunta')
+  assert.equal(document.querySelector('h1')?.textContent, 'Configuración del sitio', 'y si se dice que no, se queda')
+  respuestaConfirm = true
+
+  await escribir(enlaceTopbar(), '   ')
+  assert.ok(!document.querySelector('.vista-topbar-enlace'), 'sin enlace no se subraya')
+  await cambiarInterruptor(false)
+  assert.equal(document.querySelector('label.interruptor')?.textContent, 'Está oculto')
+  assert.ok(!document.querySelector('.vista-topbar') && texto().includes('El topbar no se muestra.'), 'apagado, la vista previa dice que no se muestra')
+  await cambiarInterruptor(true)
+  await escribir(textoTopbar(), '')
+  assert.ok(texto().includes('Sin texto, el topbar no se muestra.'))
+  await escribir(textoTopbar(), 'Libros nuevos en la tienda')
+
+  await clic(guardarSitio())
+  await hasta(() => texto().includes('Guardamos los cambios.'), 'el aviso de guardado')
+  assert.deepEqual(pedidosSitio.at(-1), { topbar: { activo: true, texto: 'Libros nuevos en la tienda', enlace: null } }, 'el enlace en blanco viaja como null')
+  assert.equal(guardarSitio().disabled, true, 'guardado, vuelve a no haber cambios')
+  assert.ok(!texto().includes('Hay cambios sin guardar.'))
+
+  await cambiarInterruptor(false)
+  await clic(guardarSitio())
+  await hasta(() => !!document.querySelector('.aviso-ok') && guardarSitio().disabled, 'guardó apagado')
+  assert.deepEqual(pedidosSitio.at(-1), { topbar: { activo: false, texto: 'Libros nuevos en la tienda', enlace: null } })
+  await act(async () => r.unmount())
+})
+
+await t('Configuración del sitio: los problemas de la API se muestran en lenguaje común y lo escrito no se pierde', async () => {
+  const r = await montar('/sitio')
+  await hasta(() => !!document.getElementById('topbar-texto'), 'la pantalla')
+  await cambiarInterruptor(true)
+  await escribir(enlaceTopbar(), 'javascript:alert(1)')
+  respuestaSitio = { estado: 422, cuerpo: { estado: 'error', mensaje: 'Revisá los datos antes de guardar.', problemas: ['El enlace tiene que empezar con https:// (o con / si es una página de este sitio) y no puede tener espacios.'] } }
+  await clic(guardarSitio())
+  await hasta(() => !!document.querySelector('.aviso-error'), 'el problema')
+  assert.ok(document.querySelector('.aviso-error')!.textContent!.includes('El enlace tiene que empezar con https://'))
+  assert.equal(document.querySelector('.aviso-error')!.getAttribute('role'), 'alert')
+  assert.equal(enlaceTopbar().value, 'javascript:alert(1)', 'lo escrito queda para corregirlo')
+  assert.equal(guardarSitio().disabled, false, 'y se puede volver a intentar')
+  respuestaSitio = { estado: 500, cuerpo: { estado: 'error' } }
+  await clic(guardarSitio())
+  await hasta(() => texto().includes('Algo salió mal de nuestro lado.'), 'el error de servidor en lenguaje común')
+  respuestaSitio = { estado: 200, cuerpo: {} }
+  await escribir(enlaceTopbar(), 'https://ejemplo.org')
+  assert.ok(!document.querySelector('.aviso-error'), 'al corregir, el problema se va')
+  await clic(guardarSitio())
+  await hasta(() => texto().includes('Guardamos los cambios.'), 'guardó')
+  assert.deepEqual(pedidosSitio.at(-1), { topbar: { activo: true, texto: 'Libros nuevos en la tienda', enlace: 'https://ejemplo.org' } })
+  await act(async () => r.unmount())
+})
+
 // ---------- Revisión de la migración ----------
 await t('Revisión: el tablero muestra lo que falta y lleva a cada lista', async () => {
   const r = await montar('/revision')
@@ -2125,9 +2233,11 @@ await t('Menú lateral: el usuario del footer abre un popover con Mi cuenta y Sa
   await clic(disparador())
   assert.ok(popover(), 'el clic lo abre')
   assert.equal(disparador().getAttribute('aria-expanded'), 'true')
-  assert.deepEqual([...popover()!.querySelectorAll('[role="menuitem"]')].map((i) => i.textContent), ['Mi cuenta', 'Salir'])
+  assert.deepEqual([...popover()!.querySelectorAll('[role="menuitem"]')].map((i) => i.textContent), ['Mi cuenta', 'Configuración del sitio', 'Salir'], 'el administrador tiene además la configuración del sitio')
   assert.equal(document.activeElement, popover()!.querySelector('[role="menuitem"]'), 'el foco entra al primer ítem')
   // Flechas
+  await act(async () => { document.activeElement!.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })) })
+  assert.equal(document.activeElement!.textContent, 'Configuración del sitio')
   await act(async () => { document.activeElement!.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })) })
   assert.equal(document.activeElement!.textContent, 'Salir')
   await act(async () => { document.activeElement!.dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true })) })
@@ -2152,6 +2262,11 @@ await t('Menú lateral: el usuario del footer abre un popover con Mi cuenta y Sa
   await clic(document.querySelector('.menu-usuario-boton')!)
   await clic([...document.querySelectorAll('[role="menu"] a')].find((a) => a.textContent === 'Mi cuenta')!)
   await hasta(() => !!document.getElementById('cuenta-nombre'), 'Mi cuenta')
+  assert.ok(!document.querySelector('[role="menu"]'), 'el popover se cierra al elegir')
+  // Configuración del sitio lleva a su pantalla y también cierra el popover
+  await clic(document.querySelector('.menu-usuario-boton')!)
+  await clic([...document.querySelectorAll('[role="menu"] a')].find((a) => a.textContent === 'Configuración del sitio')!)
+  await hasta(() => !!document.getElementById('topbar-texto'), 'Configuración del sitio')
   assert.ok(!document.querySelector('[role="menu"]'), 'el popover se cierra al elegir')
   // Plegado, el popover sigue funcionando desde el avatar
   await clic(boton('Plegar el menú')!)

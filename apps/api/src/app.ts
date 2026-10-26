@@ -14,6 +14,7 @@ import { crearRutasAdminEdicion } from "./admin/edicion.js";
 import { crearRutasAdminImagenes } from "./admin/imagenes.js";
 import { crearRutasAdminPublicacion } from "./admin/publicacion.js";
 import { crearRutasAdminRevision } from "./admin/revision.js";
+import { crearRutasAdminSitio } from "./admin/sitio.js";
 import { crearRutasAdminUsuarios } from "./admin/usuarios.js";
 import { crearManejadorMedia } from "./media.js";
 import { crearManejadorRedirecciones } from "./redirecciones.js";
@@ -85,11 +86,13 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
   });
   // Secciones y categorías: solo el administrador.
   app.use(["/api/admin/secciones", "/api/admin/categorias"], auth.exigirPermiso("clasificacion.gestionar"));
+  // Topbar del sitio: solo el administrador.
+  app.use("/api/admin/sitio", auth.exigirPermiso("sitio.configurar"));
   // Herramientas de revisión de la migración: editor y administrador.
   app.use("/api/admin/revision", auth.exigirPermiso("revision.usar"));
   // Borrar imágenes de la biblioteca: editor y administrador.
   app.delete("/api/admin/imagenes/:id", auth.exigirPermiso("imagenes.borrar"));
-  app.use("/api/admin", crearRutasAdminUsuarios(prisma, auth.exigirPermiso("usuarios.gestionar")), crearRutasAdminAutores(prisma), crearRutasAdminClasificacion(prisma), crearRutasAdminRevision(prisma), crearRutasAdminArticulos(prisma), crearRutasAdminEdicion(prisma), crearRutasAdminPublicacion(prisma), crearRutasAdminImagenes(prisma, { dirSubidas }));
+  app.use("/api/admin", crearRutasAdminUsuarios(prisma, auth.exigirPermiso("usuarios.gestionar")), crearRutasAdminAutores(prisma), crearRutasAdminClasificacion(prisma), crearRutasAdminRevision(prisma), crearRutasAdminSitio(prisma), crearRutasAdminArticulos(prisma), crearRutasAdminEdicion(prisma), crearRutasAdminPublicacion(prisma), crearRutasAdminImagenes(prisma, { dirSubidas }));
 
   app.get("/api/salud", async (_req, res) => {
     try {

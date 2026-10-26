@@ -35,7 +35,7 @@
   padding: 10px var(--gutter);
   text-decoration: none;
 }
-.topbar:hover {
+a.topbar:hover {
   color: var(--bg);
   background: #3a3536;
 }
@@ -43,6 +43,13 @@
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-color: var(--accent-500);
+}
+/* Sin enlace es solo un mensaje: sin subrayado y sin el margen de un párrafo. */
+.topbar-sin-enlace {
+  margin: 0;
+}
+.topbar-sin-enlace span {
+  text-decoration: none;
 }
 
 /* ---------- Header ---------- */
