@@ -1,6 +1,6 @@
 # CMS Evaristo: lo que falta cerrar
 
-Actualizado el 23/10/2026. Estado técnico vivo y lista de pendientes, ordenada por fase. El detalle está en `plan-implementacion.md` (fases, decisiones 1 a 63, riesgos), `estado-fase3.md` y `estado-fase4.md` (lo hecho y lo que falta de esas fases), `diseno-script-migracion.md` (migración), `decisiones-de-diseno.md` (diseño visual) y `glosario-comandos-bases.md` (bases).
+Actualizado el 26/10/2026. Estado técnico vivo y lista de pendientes, ordenada por fase. El detalle está en `plan-implementacion.md` (fases, decisiones 1 a 63, riesgos), `estado-fase3.md` y `estado-fase4.md` (lo hecho y lo que falta de esas fases), `diseno-script-migracion.md` (migración), `decisiones-de-diseno.md` (diseño visual) y `glosario-comandos-bases.md` (bases).
 
 ## Estado técnico (21/10/2026)
 

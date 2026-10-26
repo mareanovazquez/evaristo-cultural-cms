@@ -1,74 +1,61 @@
-# Plan para retomar: topbar y footer, y fase 7
+# Plan para retomar: fase 7 y lo que falta de la portada
 
-**Documento temporal.** Se escribió el 23/10/2026 al cerrar el día, para arrancar sin releer todo. **Borrarlo** (con `git rm`, sacando su fila del índice de `CLAUDE.md`) cuando la fase 7 esté en marcha y lo duradero esté en `estado-fase7.md` (a crear) y en `pendientes.md`.
+**Documento temporal.** Se escribió el 23/10/2026 y se actualizó el 26/10/2026 al cerrar el día, para arrancar sin releer todo. **Borrarlo** (con `git rm`, sacando su fila del índice de `CLAUDE.md`) cuando la fase 7 esté en marcha y lo duradero esté en `estado-fase7.md` (a crear) y en `pendientes.md`.
 
-## Dónde quedamos (23/10/2026)
+## Dónde quedamos (26/10/2026)
+
+**Resuelto en estos días** (el detalle y las decisiones están en `plan-implementacion.md` y `estado-fase4.md`):
+
+- **Footer fijo en el código** (decisión 75, 25/10): logotipo, colores, tienda, Instagram y firma; cerrado hasta el visto bueno de Roxana Artal.
+- **Topbar editable desde el panel** (decisión 76, 26/10; commit `0938882`): pantalla «Configuración del sitio» (se abre desde el popover del usuario, solo administrador) con interruptor, texto y enlace opcional. Tabla `configuracion_sitio`, `GET/PUT /api/admin/sitio`.
+- **Banner promocional en la portada** (decisión 77, 26/10; commit `90303c9`): hasta 3 imágenes de 1800 × 600 (3:1, una sola medida), con texto alternativo obligatorio y enlace opcional, cargadas desde la misma pantalla. Una queda fija; varias rotan cada 6 s con fundido y puntos debajo. Va entre «Últimas publicaciones» y los bloques de abajo. Tabla `banner_imagenes`, `GET/PATCH/PUT /api/admin/banner`.
+- `test:seguridad` se corrigió (tomaba los enlaces `<a href>` como recursos cargados y fallaba por el footer).
+
+**Estado general**
 
 - Fase 4 (panel y API) completa en el código; falta **la prueba con alguien de la editorial** (`guia-prueba-editorial.md`) y que Mariano recorra el panel en el navegador.
 - Fase 5 (portada) y fase 6 (buscador y novedades): primera versión hecha y mergeada; falta el **feedback de la dueña** y los textos reales (`estado-fase5.md`, `estado-fase6.md`).
-- `main` está al día con el remoto (push hecho). Las ramas de trabajo se borraron. Las bases de desarrollo (`evaristo_cms_dev`) y de pruebas (`evaristo_cms_test`) tienen **todas las migraciones**; la **real (`evaristo_cms`) no tiene ninguna de la fase 4 en adelante**.
-- Migraciones que esperan para la real: `sesiones`, `borradores_y_capital`, `usuarios_redactor_creador_autor`, `secciones_orden`, `articulos_avisos_revisados`, `articulos_editado_publicado_por`, `busqueda_fulltext`, `configuracion_sitio` y `banner_portada` (nueve; las dos últimas se sumaron el 26/10/2026 con el topbar editable y el banner de la portada). Al aplicarlas hay que **borrar el respaldo** de `listarSeccionesMenu` en `apps/sitio/src/lib/secciones.ts`, el de `leerTopbar` en `apps/sitio/src/lib/sitio.ts` y el de `leerBanner` en `apps/sitio/src/lib/banner.ts`.
+- **`main` está dos commits adelante de `origin/main`** (`0938882` y `90303c9`): falta el `push`, que hace Mariano. Las ramas de trabajo se borraron.
+- Las bases de desarrollo (`evaristo_cms_dev`) y de pruebas (`evaristo_cms_test`) tienen **todas las migraciones**; la **real (`evaristo_cms`) no tiene ninguna de la fase 4 en adelante**.
+- Migraciones que esperan para la real: `sesiones`, `borradores_y_capital`, `usuarios_redactor_creador_autor`, `secciones_orden`, `articulos_avisos_revisados`, `articulos_editado_publicado_por`, `busqueda_fulltext`, `configuracion_sitio` y `banner_portada` (nueve). Al aplicarlas hay que **borrar el respaldo** de `listarSeccionesMenu` en `apps/sitio/src/lib/secciones.ts`, el de `leerTopbar` en `apps/sitio/src/lib/sitio.ts` y el de `leerBanner` en `apps/sitio/src/lib/banner.ts`.
+- Pruebas al día: `test:pantalla` 92, y `test:admin-sitio`, `test:admin-banner` y `test:banner` nuevos (los tres contra `evaristo_cms_dev` y, los de banner, con el sitio compilado).
 
-## Antes de empezar mañana (15 minutos)
+## Lo que falta de lo hecho (no es urgente, no bloquea la fase 7)
 
-1. `git status -sb` (tiene que decir `main...origin/main` sin «ahead»), `git pull` si hace falta.
+1. **Mirar en un navegador** (Claude Code no los arranca): el topbar y el banner en escritorio y celular (fundido, puntos, el levantado al pasar el mouse, el arrastre con el dedo en el panel, el interruptor), el popover del usuario con el menú plegado y la portada completa.
+2. **Contenido real de la editorial:** el texto del topbar y a dónde lleva (hoy, la tienda), y las primeras imágenes del banner (1800 × 600 px, JPEG, PNG o WebP de hasta 2 MB, con su texto y su enlace).
+3. **Decisión abierta (la que más cambia el trabajo): «Quiénes somos» y «Contacto».** Hoy son enlaces vacíos del footer. ¿Páginas propias con texto (un mini editor de **páginas fijas**, que además sirve para las páginas fijas de WordPress que hay que redirigir o migrar; modelo `Pagina`, pantalla en el panel y ruta pública, medio día más), enlaces a otro sitio, o se sacan por ahora? Se plantea con Mariano de a una decisión.
+4. **Feedback de la dueña** sobre la portada (estructura, qué secciones van arriba, destacado a mano) y su comentario del «lavado»; ver `estado-fase5.md`.
+5. **Prueba del panel con alguien de la editorial** (`guia-prueba-editorial.md`).
+
+## Antes de empezar mañana (27/10/2026, 15 minutos)
+
+1. `git status -sb`: tiene que decir `main...origin/main` **sin «ahead»** si Mariano ya hizo el `push` (hoy está `ahead 2`); `git pull` si hace falta.
 2. `Test-NetConnection 127.0.0.1 -Port 3308` (siempre). El 3307 (WordPress) solo si se lee WordPress.
 3. `npm run build` y las pruebas rápidas (`npm run typecheck`, `npm run test:pantalla`) para saber que arrancamos en verde.
 4. **Lo que necesito de Mariano** (se puede traer en el chat, sin contraseñas):
-   - Los **textos reales** del topbar y el footer, si ya los tiene (ver más abajo). Si no, seguimos con provisorios.
    - Si el plan de Hostinger **se renueva** y quién es el dueño del plan; **dónde se va a alojar** el sitio nuevo (fase 1, todavía sin decidir) y si ya hay un servicio de correo.
    - **Lugar y espacio en disco** para los `uploads` (unos 8 GB de descarga, más los derivados que se generen: conviene tener 25 GB libres).
    - Cómo se conecta por SSH al hosting (qué cliente usa). **Las credenciales no pasan por el chat ni por un documento.**
+   - Si ya miró el topbar y el banner en el navegador y qué ajustó (ver arriba).
 
-## Orden sugerido del día
+## Orden sugerido para mañana
 
-1. **Primero la descarga de WordPress** (bloque B, etapa 0): es lo único con fecha límite y tarda horas. Dejar la guía lista y a Mariano descargando en segundo plano mientras seguimos.
-2. **Topbar y footer** (bloque A).
-3. **Fase 7, etapa 1**: lo técnico que no depende de la descarga (bloque B).
-
----
-
-## Bloque A: topbar y footer
-
-> **Actualización del 26/10/2026 (decisión 76):** el **topbar quedó hecho y editable desde el panel** (pantalla «Configuración del sitio», en el popover del usuario: interruptor, texto y enlace opcional; tabla `configuracion_sitio`, `GET/PUT /api/admin/sitio`). Falta mirarlo en un navegador y que la editorial defina el texto real; sigue abierto qué hacer con «Quiénes somos» y «Contacto». Lo de abajo sobre la pantalla «Sitio» ya se hizo, pero solo para el topbar.
->
-> **Actualización del 25/10/2026 (decisión 75):** el **footer queda fijo en el código** (`Footer.astro`), sin pantalla en el panel, y cerrado hasta que Roxana Artal lo vea. Ya tiene logotipo, colores, tienda, Instagram y firma (commit `863283e`). De este bloque solo queda abierto el **topbar** y qué se hace con «Quiénes somos» y «Contacto»; lo que sigue sobre un footer editable (tabla `configuracion_sitio`, `GET/PUT /api/admin/sitio`, pantalla «Sitio») **se descartó para el footer**.
-
-**Hoy:** el topbar y el footer tienen textos y enlaces **provisorios** escritos en el código (`Header.astro` y `Footer.astro`): el mensaje de la tienda con enlace `#`, un texto institucional de relleno, y «Quiénes somos», «Contacto», Instagram, Facebook y X como enlaces vacíos. La especificación de la portada dice que el texto del topbar «se edita desde el panel (solo administrador)».
-
-### Decisiones (de a una, con Mariano)
-
-1. **¿Ya tenemos los textos?** Topbar: texto y a qué página de la tienda lleva (home o una colección). Footer: texto institucional, contacto (correo, teléfono, dirección), redes (Instagram, Facebook, X, YouTube…), datos legales y créditos. Si faltan, se arma todo editable y se cargan cuando lleguen.
-2. **¿Dónde se editan?** Propuesta: una pantalla **«Sitio»** en el panel, solo para el administrador, que guarda esos textos en la base (una fila de configuración). Alternativa: dejarlos en el código y cambiarlos con un commit (más simple, pero la editorial no puede tocarlos).
-3. **«Quiénes somos» y «Contacto»:** ¿páginas propias con texto (un mini editor de **páginas fijas**, que además sirve para las páginas fijas de WordPress que hay que redirigir o migrar), enlaces a otro sitio, o se sacan los enlaces por ahora? Es la decisión que más cambia el trabajo.
-
-### Trabajo (si se hace la pantalla «Sitio»)
-
-- **Esquema:** tabla `configuracion_sitio` (una fila) con el topbar (texto, enlace y si se muestra) y el footer (texto, contacto, redes, legales). Migración en `_dev` y `_test`; a la real, con las demás en la fase 7.
-- **API:** `GET/PUT /api/admin/sitio` con permiso nuevo (`sitio.configurar`, solo administrador), validación con `zod` (enlaces `http`/`https` o internos; largos máximos; correo con formato) y mensajes en lenguaje común.
-- **Panel:** pantalla «Sitio» en el menú lateral (grupo Administración), con vista de cómo queda y aviso de cambios sin guardar, como el resto.
-- **Sitio:** `Header` y `Footer` leen la configuración (con una caché corta, 30 s) y, **si la tabla no existe (la base real hasta la fase 7) o está vacía, usan los textos de hoy**. El topbar solo se muestra si tiene texto.
-- **Si hay páginas fijas:** modelo `Pagina` (dirección, título, cuerpo con el mismo editor), pantalla en el panel, ruta pública `/p/<dirección>/` o similar, y su lugar en las redirecciones de WordPress. Calcular medio día más.
-- **Pruebas:** API (permisos, validación), sitio (se ve lo configurado, el respaldo cuando no hay configuración, escape de lo escrito), panel (jsdom).
-- **Hecho cuando:** el administrador cambia el texto del topbar y los datos del footer desde el panel y el sitio los muestra; sin configuración, el sitio se ve como hoy.
-- **Estimación:** 3 a 4 horas sin páginas fijas; 6 a 8 con ellas.
-
-### Riesgos
-
-- Que los textos reales no estén y haya que volver sobre el diseño del footer (largo, columnas, redes que se agregan).
-- Políticas de contenido: si el footer suma íconos o imágenes de afuera (redes), hay que permitirlos en la política de Astro (`apps/sitio/astro.config.mjs`).
+1. **Primero la descarga de WordPress** (fase 7, etapa 0): es lo único con fecha límite y tarda horas. Dejar la guía lista (`docs/guia-descarga-wordpress.md`) y a Mariano descargando en segundo plano mientras seguimos.
+2. **Fase 7, etapa 1**: lo técnico que no depende de la descarga (fase 7).
+3. **Si hay tiempo o llegan los contenidos:** «Quiénes somos» y «Contacto» (punto 3 de arriba) y lo que salga de mirar el topbar y el banner en el navegador.
 
 ---
 
-## Bloque B: fase 7 (migración completa y lanzamiento)
+## Fase 7 (migración completa y lanzamiento)
 
 Lista completa en `plan-implementacion.md` (sección 10) y `pendientes.md` (sección 6). La migración **real** no empieza hasta tener el dump nuevo y los `uploads`; mientras, se avanza en lo que no depende de eso.
 
-### Etapa 0: descarga de WordPress (Mariano, **antes del 28/11/2026**; hoy faltan 36 días)
+### Etapa 0: descarga de WordPress (Mariano, **antes del 28/11/2026**; al 27/10/2026 faltan 32 días)
 
 - **Bajar `wp-content/uploads` completo** (unos 7,9 GB, carpeta plana, ~10.975 archivos) por SSH y **volver a exportar la base** (`mysqldump`) justo antes de migrar. El plan de Hostinger vence el 28/11: confirmar si se renueva.
 - **Trampa conocida:** el `tar` de Windows altera los nombres con tildes y símbolos. Usar `rsync` (desde WSL, si hay) o un cliente SFTP que respete los nombres (por ejemplo WinSCP), y **verificar los nombres contra `_wp_attached_file`** de la base nueva, sensible a mayúsculas.
-- **Mañana, primero:** yo escribo la guía paso a paso (`docs/guia-descarga-wordpress.md`) y un script de verificación que compare la carpeta descargada con lo que dice la base (faltantes, sobrantes, nombres alterados, tamaños en cero). Se corre cuando termine la descarga.
+- **Primero, el 27/10/2026:** yo escribo la guía paso a paso (`docs/guia-descarga-wordpress.md`) y un script de verificación que compare la carpeta descargada con lo que dice la base (faltantes, sobrantes, nombres alterados, tamaños en cero). Se corre cuando termine la descarga.
 - Guardar el dump y los `uploads` fuera del repositorio (`CMS-EVARISTO(ASSETS)`), y **respaldar** todo en un segundo lugar.
 
 ### Etapa 1: lo técnico que no depende de la descarga (Claude)
