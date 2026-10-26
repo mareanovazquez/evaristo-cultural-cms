@@ -19,6 +19,8 @@
     "test:admin-publicacion": "tsx --env-file=../../.env src/tests/test-admin-publicacion-base.ts",
     "test:admin-autores": "tsx --env-file=../../.env src/tests/test-admin-autores-base.ts",
     "test:admin-clasificacion": "tsx --env-file=../../.env src/tests/test-admin-clasificacion-base.ts",
+    "test:admin-banner": "tsx --env-file=../../.env src/tests/test-admin-banner-base.ts",
+    "test:banner": "tsx --env-file=../../.env src/tests/test-banner-base.ts",
     "test:admin-sitio": "tsx --env-file=../../.env src/tests/test-admin-sitio-base.ts",
     "test:admin-revision":"tsx --env-file=../../.env src/tests/test-admin-revision-base.ts",
     "test:seguridad": "tsx --env-file=../../.env src/tests/test-seguridad-base.ts",

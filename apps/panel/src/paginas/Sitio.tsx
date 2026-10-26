@@ -1,12 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { TOPBAR_ENLACE_MAX, TOPBAR_TEXTO_MAX, type Topbar } from "@evaristo/compartido/sitio";
 import { ErrorApi, pedirApi } from "../api";
+import { BannerAdmin } from "../BannerAdmin";
 import { useAvisarAlSalir } from "../salida";
 import { useSesion } from "../sesion";
 import { useTitulo } from "../titulo";
 
-// Sitio (solo administrador): el topbar, la franja de arriba del sitio público. Un interruptor para mostrarlo u ocultarlo, el texto y un
-// enlace opcional. Debajo, cómo queda. El footer no se edita acá (es fijo en el código, decisión 75).
+// Configuración del sitio (solo administrador): el topbar, la franja de arriba del sitio público (un interruptor para mostrarlo u ocultarlo,
+// el texto y un enlace opcional, con una vista de cómo queda) y el banner de la portada. El footer no se edita acá (es fijo en el código, decisión 75).
 
 interface Campos {
   activo: boolean;
@@ -26,6 +27,7 @@ export function Sitio() {
   const [problemas, setProblemas] = useState<string[]>([]);
   const [ok, setOk] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  const [bannerConCambios, setBannerConCambios] = useState(false);
 
   useEffect(() => {
     const control = new AbortController();
@@ -43,7 +45,7 @@ export function Sitio() {
   }, [sesionVencida]);
 
   const hayCambios = guardado !== null && !igual(campos, guardado);
-  useAvisarAlSalir(hayCambios);
+  useAvisarAlSalir(hayCambios || bannerConCambios);
 
   const poner = (cambio: Partial<Campos>) => {
     setCampos((c) => ({ ...c, ...cambio }));
@@ -148,6 +150,8 @@ export function Sitio() {
           {guardando ? "Guardando…" : "Guardar los cambios"}
         </button>
       </form>
+
+      <BannerAdmin alCambiar={setBannerConCambios} />
     </section>
   );
 }

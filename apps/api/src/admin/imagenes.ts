@@ -30,7 +30,7 @@ export interface OpcionesImagenes {
 }
 
 export interface UsoDeImagen {
-  tipo: "cuerpo" | "borrador" | "encabezado" | "redes" | "galeria" | "autor";
+  tipo: "cuerpo" | "borrador" | "encabezado" | "redes" | "galeria" | "autor" | "banner";
   id: number;
   nombre: string;
 }
@@ -38,11 +38,12 @@ export interface UsoDeImagen {
 /** Dónde se usa una imagen. Vacío si no se usa en ningún lado. */
 export async function usosDeLaImagen(prisma: PrismaClient, id: number): Promise<UsoDeImagen[]> {
   const usos: UsoDeImagen[] = [];
-  const [encabezados, redes, galerias, autores, enCuerpo, enBorrador] = await Promise.all([
+  const [encabezados, redes, galerias, autores, enBanner, enCuerpo, enBorrador] = await Promise.all([
     prisma.articulo.findMany({ where: { imagenEncabezadoId: id }, select: { id: true, titulo: true }, take: 10 }),
     prisma.articulo.findMany({ where: { redesImagenId: id }, select: { id: true, titulo: true }, take: 10 }),
     prisma.galeriaItem.findMany({ where: { imagenId: id }, select: { articulo: { select: { id: true, titulo: true } } }, take: 10 }),
     prisma.autor.findMany({ where: { fotoId: id }, select: { id: true, nombre: true }, take: 10 }),
+    prisma.bannerImagen.findMany({ where: { imagenId: id }, select: { id: true }, take: 1 }),
     // El cuerpo guarda la imagen como un nodo con imagenId, en cualquier profundidad: se busca con una ruta con comodín.
     prisma.$queryRaw<Array<{ id: number; titulo: string }>>(Prisma.sql`SELECT id, titulo FROM articulos WHERE JSON_CONTAINS(JSON_EXTRACT(cuerpo, '$**.imagenId'), JSON_ARRAY(${id})) LIMIT 10`),
     prisma.$queryRaw<Array<{ id: number; titulo: string }>>(
@@ -54,6 +55,7 @@ export async function usosDeLaImagen(prisma: PrismaClient, id: number): Promise<
   for (const a of redes) usos.push({ tipo: "redes", id: a.id, nombre: a.titulo });
   for (const g of galerias) usos.push({ tipo: "galeria", id: g.articulo.id, nombre: g.articulo.titulo });
   for (const a of autores) usos.push({ tipo: "autor", id: a.id, nombre: a.nombre });
+  for (const b of enBanner) usos.push({ tipo: "banner", id: b.id, nombre: "" });
   for (const a of enCuerpo) usos.push({ tipo: "cuerpo", id: a.id, nombre: a.titulo });
   for (const a of enBorrador) usos.push({ tipo: "borrador", id: a.id, nombre: a.titulo });
   return usos;
@@ -66,6 +68,7 @@ const DONDE: Record<UsoDeImagen["tipo"], string> = {
   redes: "la imagen para redes del artículo",
   galeria: "la galería del artículo",
   autor: "la foto del autor",
+  banner: "el banner de la portada",
 };
 
 function mensajeDeUsos(usos: UsoDeImagen[]): string {
@@ -75,11 +78,26 @@ function mensajeDeUsos(usos: UsoDeImagen[]): string {
     const clave = `${u.tipo}:${u.id}`;
     if (vistos.has(clave)) continue;
     vistos.add(clave);
-    lineas.push(`${DONDE[u.tipo]} «${u.nombre}»`);
+    lineas.push(u.nombre ? `${DONDE[u.tipo]} «${u.nombre}»` : DONDE[u.tipo]);
   }
   const primeras = lineas.slice(0, 3).join("; ");
   const resto = lineas.length > 3 ? ` (y ${lineas.length - 3} más)` : "";
   return `No se puede borrar esta imagen porque se usa en ${primeras}${resto}. Sacala de ahí primero.`;
+}
+
+/** Borra una imagen (la fila y, si está en la carpeta de subidas, el archivo) solo si no se usa en ningún lado. Devuelve si la borró. */
+export async function borrarImagenSinUso(prisma: PrismaClient, id: number, dirSubidas: string | undefined): Promise<boolean> {
+  const imagen = await prisma.imagen.findUnique({ where: { id }, select: { id: true, clave: true } });
+  if (!imagen || (await usosDeLaImagen(prisma, id)).length > 0) return false;
+  try {
+    await prisma.imagen.delete({ where: { id } });
+  } catch (e) {
+    // La base también protege los usos con clave foránea: si apareció uno mientras tanto, la imagen se queda.
+    if (e instanceof Prisma.PrismaClientKnownRequestError && (e.code === "P2003" || e.code === "P2014")) return false;
+    throw e;
+  }
+  if (dirSubidas) await rm(join(dirSubidas, imagen.clave), { force: true });
+  return true;
 }
 
 export function crearRutasAdminImagenes(prisma: PrismaClient, opciones: OpcionesImagenes = {}): express.Router {

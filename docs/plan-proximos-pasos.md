@@ -7,7 +7,7 @@
 - Fase 4 (panel y API) completa en el código; falta **la prueba con alguien de la editorial** (`guia-prueba-editorial.md`) y que Mariano recorra el panel en el navegador.
 - Fase 5 (portada) y fase 6 (buscador y novedades): primera versión hecha y mergeada; falta el **feedback de la dueña** y los textos reales (`estado-fase5.md`, `estado-fase6.md`).
 - `main` está al día con el remoto (push hecho). Las ramas de trabajo se borraron. Las bases de desarrollo (`evaristo_cms_dev`) y de pruebas (`evaristo_cms_test`) tienen **todas las migraciones**; la **real (`evaristo_cms`) no tiene ninguna de la fase 4 en adelante**.
-- Migraciones que esperan para la real: `sesiones`, `borradores_y_capital`, `usuarios_redactor_creador_autor`, `secciones_orden`, `articulos_avisos_revisados`, `articulos_editado_publicado_por`, `busqueda_fulltext` y `configuracion_sitio` (ocho; la última se sumó el 26/10/2026 con el topbar editable). Al aplicarlas hay que **borrar el respaldo** de `listarSeccionesMenu` en `apps/sitio/src/lib/secciones.ts` y el de `leerTopbar` en `apps/sitio/src/lib/sitio.ts`.
+- Migraciones que esperan para la real: `sesiones`, `borradores_y_capital`, `usuarios_redactor_creador_autor`, `secciones_orden`, `articulos_avisos_revisados`, `articulos_editado_publicado_por`, `busqueda_fulltext`, `configuracion_sitio` y `banner_portada` (nueve; las dos últimas se sumaron el 26/10/2026 con el topbar editable y el banner de la portada). Al aplicarlas hay que **borrar el respaldo** de `listarSeccionesMenu` en `apps/sitio/src/lib/secciones.ts`, el de `leerTopbar` en `apps/sitio/src/lib/sitio.ts` y el de `leerBanner` en `apps/sitio/src/lib/banner.ts`.
 
 ## Antes de empezar mañana (15 minutos)
 
@@ -84,13 +84,13 @@ En este orden (de lo que más condiciona a lo que menos):
 
 ### Etapa 2: ensayo general en una copia (Claude y Mariano)
 
-- Restaurar un respaldo de `evaristo_cms` en una base de ensayo, **aplicar las ocho migraciones**, y correr la migración completa con el dump y los `uploads` nuevos: medir tiempo, errores y avisos. Es el único modo de saber qué va a pasar antes de tocar la real.
+- Restaurar un respaldo de `evaristo_cms` en una base de ensayo, **aplicar las nueve migraciones**, y correr la migración completa con el dump y los `uploads` nuevos: medir tiempo, errores y avisos. Es el único modo de saber qué va a pasar antes de tocar la real.
 - Revisar los resultados con la herramienta «Revisión» del panel (avisos, imágenes sin texto alternativo, `sin-asignar`, borradores).
 
 ### Etapa 3: la migración real
 
 - **Ceremonia de la decisión 50:** respaldo con `mysqldump --result-file`; ensayo en seco y aprobación; commit aparte con `ESCRITURA_REAL_HABILITADA = true` (sin push ni tests); Mariano ejecuta `migrar:escribir` en su terminal interactiva; verificación en solo lectura; `git revert --no-commit` y commit con el interruptor en `false`; recién ahí el push. **Nunca dejar el `true` al cerrar una sesión.**
-- **Antes:** aplicar las ocho migraciones a `evaristo_cms` con `db:deploy` (con respaldo previo) y regenerar el texto plano de los 19 artículos de la decisión 53 (con `--sobrescribir`).
+- **Antes:** aplicar las nueve migraciones a `evaristo_cms` con `db:deploy` (con respaldo previo) y regenerar el texto plano de los 19 artículos de la decisión 53 (con `--sobrescribir`).
 - **Después:** comparación independiente contra WordPress con los 2.637, revisión por muestreo, reparto de `sin-asignar` (103), bios y fotos de los 424 autores, y decidir con la dueña qué hacer con los 48 borradores y el privado 19300.
 
 ### Etapa 4: lanzamiento (depende de la fase 1)

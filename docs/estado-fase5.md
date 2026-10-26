@@ -12,6 +12,7 @@ La portada (`/`) se arma sola con lo publicado: el editor no maqueta. De arriba 
    - **Cómo editar las diapositivas:** son datos (`Diapositiva` en `apps/sitio/src/lib/portada.ts`: `id`, `imagen` con `src`, `alt` y `posicion`, `titulo`, `descripcion`, `ctaTexto`, `href` y `seccion`) que `diapositivaDeNota` arma desde cada nota, así que **se cambian cambiando la nota** en el panel (título, bajada, imagen de encabezado con su texto alternativo y punto focal). Para otro texto del botón: `ctaTexto` en `diapositivaDeNota`. Para el tiempo o apagar el avance: las props `intervalo` (milisegundos) y `autoplay` de `<Carrusel>` en `pages/index.astro`. El estilo está en `styles/portada.css` (sección «Hero con carrusel»).
 4. **Dos bloques de sección** (`components/BloqueSeccion.astro`): cada uno con el nombre de la sección (enlace a su página), «Ver todo» y sus 2 notas más nuevas.
 5. **Banda de cuatro columnas**: «Últimas publicaciones» con «Ver todo» más las notas 4.ª a 6.ª más nuevas. El «Ver todo» lleva a la página nueva `/ultimas/` (todas las notas, de la más nueva a la más vieja, de a 12).
+   - **Banner promocional** (26/10/2026, decisión 77; `components/Banner.astro`): va justo después de la banda y se carga desde el panel («Configuración del sitio»). Hasta 3 imágenes de 1800 × 600 px (3:1, la misma proporción en todos los anchos), cada una con enlace opcional; una sola queda fija y varias rotan cada 6 s con fundido, con puntos debajo. Sin imágenes o apagado no dibuja nada. Estilos en `styles/portada.css` (sección «Banner promocional»); datos en `lib/banner.ts`; el tiempo es `BANNER_INTERVALO_MS` en `packages/compartido/src/sitio.ts`.
 6. **Más bloques de sección** (hasta 4 más, de a dos columnas).
 7. **Footer** (fijo en `Footer.astro`; cerrado hasta el visto bueno de Roxana Artal; decisión 75 de `plan-implementacion.md`).
 
@@ -42,6 +43,7 @@ La portada (`/`) se arma sola con lo publicado: el editor no maqueta. De arriba 
 
 - `test:portada` (nuevo, contra `evaristo_cms_dev`): el carrusel tiene las 3 notas más nuevas en orden y con su accesibilidad (`aria-roledescription`, «1 de 3», texto alternativo de la imagen, la primera con prioridad), la banda las 3 siguientes, los bloques salen de las secciones más activas y no repiten notas, una nota recién publicada es la primera, y lo programado y los borradores no aparecen; `/ultimas/` pagina y da 404 fuera de rango.
 - `test:carrusel` (nuevo, sin navegador: ejecuta en jsdom el HTML y el script reales del carrusel con el intervalo acortado): diapositivas inactivas fuera del Tab, indicadores, flechas del teclado, vuelta al principio, avance automático, pausas (mouse, foco, botón), «reducir movimiento», deslizar con el dedo y avisos solo cuando lo cambia una persona.
+- `test:admin-banner` (nuevo, contra `evaristo_cms_dev` y el sitio compilado) y `test:banner` (nuevo, ejecuta en jsdom el HTML y el script reales del banner con el intervalo acortado): ver `estado-fase4.md`, sección «Banner de la portada».
 - `test:humo` se actualizó a la portada nueva; `test:seguridad` ya comprueba que cada script en línea tenga su hash.
 
 ## Pendiente de esta fase

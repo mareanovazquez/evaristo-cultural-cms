@@ -14,6 +14,7 @@ import { tiemposTooltip } from '../Tooltip'
 import { ErrorBoundary } from '../ErrorBoundary'
 import { lenguajeComun, problemasEnLenguajeComun } from '../mensajes'
 import { fuente } from '../VistaPrevia'
+import { lectorDeImagen } from '../BannerAdmin'
 import { htmlVistaPrevia } from '../vista-previa'
 import { renderArticleBody } from '@evaristo/compartido/render'
 
@@ -127,6 +128,20 @@ let articulosRevision: J[] = [
 let topbarServido: J = { activo: true, texto: 'Conseguí los libros en la tienda', enlace: 'https://tienda.ejemplo.org' }
 const pedidosSitio: J[] = []
 let respuestaSitio: { estado: number; cuerpo: J } = { estado: 200, cuerpo: {} }
+// Banner de la portada
+let bannerServido: J = { activo: false, max: 3, slides: [] }
+const pedidosBanner: Array<{ ruta: string; metodo: string; cuerpo: J }> = []
+let respuestaBannerPut: { estado: number; cuerpo: J } | null = null
+let respuestaBannerActivo: { estado: number; cuerpo: J } | null = null
+const imagenesDeBanner = new Map<number, J>()
+let contadorSubidasBanner = 0
+// jsdom no trae las direcciones temporales de archivos: se simulan para comprobar que se liberan
+const objetosCreados: string[] = []
+const objetosLiberados: string[] = []
+URL.createObjectURL = (() => { const u = `blob:banner-${objetosCreados.length + 1}`; objetosCreados.push(u); return u }) as typeof URL.createObjectURL
+URL.revokeObjectURL = ((u: string) => { objetosLiberados.push(u) }) as typeof URL.revokeObjectURL
+const medidasPorArchivo = new Map<string, { ancho: number; alto: number } | null>([['banner-cuadrada.jpg', { ancho: 1000, alto: 1000 }], ['banner-roto.png', null]])
+lectorDeImagen.medir = async (f: File) => (medidasPorArchivo.has(f.name) ? medidasPorArchivo.get(f.name)! : { ancho: 1800, alto: 600 })
 // Secciones y categorías
 const pedidosClasificacion:Array<{ ruta: string; metodo: string; cuerpo: J }> = []
 let respuestaClasificacion: { estado: number; cuerpo: J } = { estado: 200, cuerpo: {} }
@@ -256,6 +271,13 @@ globalThis.fetch = (async (entrada: string | URL | Request, init?: RequestInit) 
   if (url === '/api/admin/imagenes' && metodo === 'POST') {
     const archivo = (init?.body as FormData).get('archivo') as File
     subidas.push({ nombre: archivo.name, tamano: archivo.size })
+    if (archivo.name.startsWith('banner-')) {
+      if (archivo.name === 'banner-falla.jpg') return responder(413, { estado: 'error', mensaje: 'La imagen pesa más de 10 MB. Reducila y probá de nuevo.' })
+      const n = ++contadorSubidasBanner
+      const imagen = { id: 100 + n, clave: `subida-${n}.jpg`, nombreOriginal: archivo.name, ancho: 1800, alto: 600 }
+      imagenesDeBanner.set(imagen.id, imagen)
+      return responder(201, { estado: 'ok', repetida: false, imagen })
+    }
     return responder(respuestaSubida.estado, respuestaSubida.cuerpo)
   }
   const borrar = /^\/api\/admin\/imagenes\/(\d+)$/.exec(url)
@@ -299,8 +321,26 @@ globalThis.fetch = (async (entrada: string | URL | Request, init?: RequestInit) 
     topbarServido = cuerpo['topbar'] as J
     return responder(200, { estado: 'ok', topbar: topbarServido })
   }
+  // Banner de la portada
+  if (url === '/api/admin/banner/activo' && metodo === 'PATCH') {
+    const cuerpo = JSON.parse(String(init?.body)) as J
+    pedidosBanner.push({ ruta: url, metodo, cuerpo })
+    if (respuestaBannerActivo) return responder(respuestaBannerActivo.estado, respuestaBannerActivo.cuerpo)
+    bannerServido = { ...bannerServido, activo: cuerpo['activo'] }
+    return responder(200, { estado: 'ok', activo: cuerpo['activo'] })
+  }
+  if (url === '/api/admin/banner') {
+    if (metodo === 'GET') return responder(200, { estado: 'ok', ...bannerServido })
+    const cuerpo = JSON.parse(String(init?.body)) as J
+    pedidosBanner.push({ ruta: url, metodo, cuerpo })
+    if (respuestaBannerPut) return responder(respuestaBannerPut.estado, respuestaBannerPut.cuerpo)
+    const pedidas = cuerpo['slides'] as Array<{ imagenId: number; enlace: string | null; alt: string }>
+    const antes = (bannerServido['slides'] as Array<{ imagenId: number }>).map((x) => x.imagenId)
+    bannerServido = { ...bannerServido, slides: pedidas.map((x) => ({ imagenId: x.imagenId, imagen: imagenesDeBanner.get(x.imagenId)!, enlace: x.enlace, alt: x.alt })) }
+    return responder(200, { estado: 'ok', borradas: antes.filter((id) => !pedidas.some((x) => x.imagenId === id)).length, ...bannerServido })
+  }
   // Secciones y categorías
-  const claseRuta =/^\/api\/admin\/(secciones|categorias)(\/(orden|\d+)(\/unir)?)?(\?.*)?$/.exec(url)
+  const claseRuta = /^\/api\/admin\/(secciones|categorias)(\/(orden|\d+)(\/unir)?)?(\?.*)?$/.exec(url)
   if (claseRuta) {
     const tipo = claseRuta[1] as 'secciones' | 'categorias'
     const cuerpo = metodo === 'GET' || metodo === 'DELETE' ? {} : (JSON.parse(String(init?.body)) as J)
@@ -2022,6 +2062,258 @@ await t('Configuración del sitio: los problemas de la API se muestran en lengua
   await hasta(() => texto().includes('Guardamos los cambios.'), 'guardó')
   assert.deepEqual(pedidosSitio.at(-1), { topbar: { activo: true, texto: 'Libros nuevos en la tienda', enlace: 'https://ejemplo.org' } })
   await act(async () => r.unmount())
+})
+
+// ---------- Banner de la portada ----------
+const interruptorBanner = () => document.querySelectorAll<HTMLInputElement>('input[role="switch"]')[1]!
+const textoInterruptorBanner = () => document.querySelectorAll('label.interruptor')[1]!.textContent
+const filasBanner = () => [...document.querySelectorAll<HTMLElement>('.banner-fila')]
+const campoDeFila = (i: number, sufijo: 'alt' | 'enlace') => filasBanner()[i]!.querySelector<HTMLInputElement>(`input[id$="-${sufijo}"]`)!
+const guardarBanner = () => boton('Guardar el banner') as HTMLButtonElement
+const errorDeFila = (i: number) => filasBanner()[i]!.querySelector('.aviso-error')?.textContent ?? ''
+const previewDeFila = (i: number) => filasBanner()[i]!.querySelector('.banner-fila-preview img')?.getAttribute('src') ?? null
+const elegirEnBanner = async (i: number, archivo: File) => {
+  const input = filasBanner()[i]!.querySelector<HTMLInputElement>('input[type="file"]')!
+  Object.defineProperty(input, 'files', { value: [archivo], configurable: true })
+  await act(async () => { input.dispatchEvent(new window.Event('change', { bubbles: true })) })
+}
+const imagenBanner = (nombre: string, tipo = 'image/jpeg', bytes = 100) => new File([new Uint8Array(bytes)], nombre, { type: tipo })
+const abrirBanner = async () => {
+  const r = await montar('/sitio')
+  await hasta(() => !!document.getElementById('banner-titulo') && filasBanner().length > 0, 'el banner')
+  return r
+}
+/** Mientras dura `fn`, las filas del banner miden 100 px de alto y se apilan (jsdom no calcula posiciones y el arrastre las necesita). */
+const conFilasDeBanner = async (fn: () => Promise<void>) => {
+  const original = Element.prototype.getBoundingClientRect
+  Element.prototype.getBoundingClientRect = function (this: Element) {
+    if (this.tagName === 'LI' && this.classList.contains('banner-fila')) {
+      const top = [...this.parentElement!.children].indexOf(this) * 100
+      return { x: 0, y: top, top, bottom: top + 100, left: 0, right: 600, width: 600, height: 100, toJSON: () => ({}) } as DOMRect
+    }
+    return original.call(this)
+  }
+  try {
+    await fn()
+  } finally {
+    Element.prototype.getBoundingClientRect = original
+  }
+}
+
+await t('Banner: sin imágenes hay una fila vacía, se explica la medida y el enlace, y no se puede guardar nada', async () => {
+  const r = await abrirBanner()
+  assert.equal(document.getElementById('banner-titulo')!.textContent, 'Banner de la portada')
+  assert.ok(texto().includes('1800 × 600 píxeles (proporción 3:1), JPEG, PNG o WebP, de hasta 2 MB'), 'la recomendación de proporción y tamaño')
+  assert.ok(texto().includes('Se ve igual en computadora y en celular'), 'y por qué una sola medida')
+  assert.equal(interruptorBanner().checked, false)
+  assert.equal(textoInterruptorBanner(), 'Está oculto')
+  assert.equal(filasBanner().length, 1)
+  assert.equal((boton('Eliminar la imagen 1 del banner') as HTMLButtonElement).disabled, true, 'con una sola fila no se elimina')
+  assert.equal((boton('Agregar imagen') as HTMLButtonElement).disabled, false)
+  assert.ok(filasBanner()[0]!.textContent!.includes('Puede ser interno (por ejemplo /contacto) o externo (https://…). Sin enlace, la imagen no es clickeable.'), 'la ayuda del enlace')
+  assert.equal(filasBanner()[0]!.querySelector('label[for$="-enlace"]')!.textContent, 'Enlace (opcional)')
+  assert.equal(guardarBanner().disabled, true, 'sin cambios no se guarda')
+  assert.equal(previewDeFila(0), null)
+  assert.equal(document.querySelector('ol.banner-lista')!.getAttribute('aria-label'), 'Imágenes del banner, en el orden en que rotan')
+  await act(async () => r.unmount())
+})
+
+await t('Banner: el interruptor se guarda solo, sin el botón Guardar, y si falla vuelve a como estaba', async () => {
+  pedidosBanner.length = 0
+  const r = await abrirBanner()
+  await clic(interruptorBanner())
+  await hasta(() => texto().includes('El banner está activado, pero todavía no tiene imágenes'), 'el aviso')
+  assert.deepEqual(pedidosBanner, [{ ruta: '/api/admin/banner/activo', metodo: 'PATCH', cuerpo: { activo: true } }], 'un solo pedido, sin pasar por Guardar')
+  assert.equal(interruptorBanner().checked, true)
+  assert.equal(textoInterruptorBanner(), 'Se muestra en la portada')
+  assert.equal(guardarBanner().disabled, true, 'y no hay nada para guardar')
+  respuestaBannerActivo = { estado: 500, cuerpo: { estado: 'error' } }
+  await clic(interruptorBanner())
+  await hasta(() => texto().includes('Algo salió mal de nuestro lado.'), 'el error en lenguaje común')
+  assert.equal(interruptorBanner().checked, true, 'el interruptor vuelve a como estaba')
+  assert.equal(interruptorBanner().disabled, false, 'y se puede volver a intentar')
+  respuestaBannerActivo = null
+  await clic(interruptorBanner())
+  await hasta(() => texto().includes('El banner está oculto.'), 'apagado')
+  assert.equal(interruptorBanner().checked, false)
+  await act(async () => r.unmount())
+})
+
+await t('Banner: cada archivo se revisa al elegirlo (tipo, peso y medida) y el error sale en su fila', async () => {
+  objetosCreados.length = 0
+  objetosLiberados.length = 0
+  const r = await abrirBanner()
+  await elegirEnBanner(0, imagenBanner('banner-doc.pdf', 'application/pdf'))
+  assert.equal(errorDeFila(0), 'Tiene que ser una imagen JPEG, PNG o WebP.')
+  await elegirEnBanner(0, imagenBanner('banner-animada.gif', 'image/gif'))
+  assert.equal(errorDeFila(0), 'Tiene que ser una imagen JPEG, PNG o WebP.', 'un GIF tampoco')
+  await elegirEnBanner(0, imagenBanner('banner-pesada.jpg', 'image/jpeg', 3 * 1024 * 1024))
+  assert.ok(errorDeFila(0).startsWith('Pesa demasiado (máximo 2 MB)'), errorDeFila(0))
+  await elegirEnBanner(0, imagenBanner('banner-cuadrada.jpg'))
+  assert.ok(errorDeFila(0).includes('Mide 1000 × 1000 píxeles y tiene que tener proporción 3:1'), errorDeFila(0))
+  await elegirEnBanner(0, imagenBanner('banner-roto.png', 'image/png'))
+  assert.equal(errorDeFila(0), 'No se pudo leer la imagen. Probá con otro archivo.')
+  assert.equal(previewDeFila(0), null, 'ninguna quedó elegida')
+  assert.equal(objetosCreados.length, 0, 'y no se creó ninguna vista previa')
+  assert.equal(guardarBanner().disabled, true, 'no hay nada para guardar')
+  await elegirEnBanner(0, imagenBanner('banner-uno.jpg'))
+  assert.equal(errorDeFila(0), '', 'con un archivo bueno el error se va')
+  assert.equal(previewDeFila(0), objetosCreados[0], 'y se ve la vista previa')
+  assert.ok(filasBanner()[0]!.textContent!.includes('banner-uno.jpg: se sube al guardar.'))
+  assert.equal(filasBanner()[0]!.querySelector('input[type="file"]')!.getAttribute('accept'), 'image/jpeg,image/png,image/webp', 'el selector solo ofrece JPEG, PNG y WebP')
+  // Cambiar el archivo libera la vista previa anterior
+  await elegirEnBanner(0, imagenBanner('banner-otro.jpg'))
+  assert.deepEqual(objetosLiberados, [objetosCreados[0]], 'la dirección temporal del archivo reemplazado se libera')
+  await act(async () => r.unmount())
+})
+
+await t('Banner: hasta 3 imágenes, se completan en cada fila, se reordenan arrastrando y se guardan juntas en ese orden', async () => {
+  bannerServido = { activo: true, max: 3, slides: [] }
+  pedidosBanner.length = 0
+  subidas.length = 0
+  objetosCreados.length = 0
+  objetosLiberados.length = 0
+  const r = await abrirBanner()
+  await clic(boton('Agregar imagen')!)
+  await clic(boton('Agregar imagen')!)
+  assert.equal(filasBanner().length, 3)
+  assert.equal((boton('Agregar imagen') as HTMLButtonElement).disabled, true, 'con 3 no se agrega otra')
+  assert.ok(texto().includes('Llegaste al máximo de 3 imágenes. Eliminá una para agregar otra.'), 'y se explica por qué')
+  assert.equal(boton('Agregar imagen')!.getAttribute('aria-describedby'), 'banner-maximo')
+  assert.equal((boton('Eliminar la imagen 1 del banner') as HTMLButtonElement).disabled, false, 'con 3 sí se puede eliminar')
+
+  await elegirEnBanner(0, imagenBanner('banner-uno.jpg'))
+  await elegirEnBanner(1, imagenBanner('banner-dos.png', 'image/png'))
+  await elegirEnBanner(2, imagenBanner('banner-tres.webp', 'image/webp'))
+  assert.equal(objetosCreados.length, 3)
+  assert.deepEqual([0, 1, 2].map(previewDeFila), objetosCreados, 'cada fila muestra su vista previa')
+
+  // Sin el texto de la imagen no se guarda, y el error sale en cada fila
+  assert.equal(guardarBanner().disabled, false)
+  await clic(guardarBanner())
+  assert.ok([0, 1, 2].every((i) => errorDeFila(i).startsWith('Escribí qué dice la imagen')), 'una advertencia por fila')
+  assert.ok(texto().includes('Revisá las imágenes marcadas antes de guardar.'))
+  assert.equal(subidas.length, 0, 'no se subió nada')
+  assert.equal(pedidosBanner.length, 0, 'ni se guardó')
+  await escribir(campoDeFila(0, 'alt'), 'Uno')
+  await escribir(campoDeFila(1, 'alt'), 'Dos')
+  await escribir(campoDeFila(2, 'alt'), 'Tres')
+  assert.equal(errorDeFila(0), '', 'al escribir, el error de esa fila se va')
+  await escribir(campoDeFila(1, 'enlace'), 'javascript:alert(1)')
+  await clic(guardarBanner())
+  assert.ok(errorDeFila(1).startsWith('El enlace tiene que empezar con https://'), errorDeFila(1))
+  assert.equal(subidas.length, 0, 'un enlace malo tampoco sube nada')
+  await escribir(campoDeFila(0, 'enlace'), '/contacto')
+  await escribir(campoDeFila(1, 'enlace'), '  https://ejemplo.org/dos ')
+
+  // Arrastrar con el teclado: la tercera pasa al lugar 2 y cada fila conserva su texto y su enlace
+  const manijas = () => [...document.querySelectorAll<HTMLButtonElement>('.banner-fila .boton-arrastre')]
+  assert.deepEqual(manijas().map((m) => m.getAttribute('aria-label')), ['Cambiar de lugar la imagen 1 del banner', 'Cambiar de lugar la imagen 2 del banner', 'Cambiar de lugar la imagen 3 del banner'])
+  assert.ok(document.getElementById(manijas()[0]!.getAttribute('aria-describedby')!)!.textContent!.includes('barra espaciadora'), 'con instrucciones en español')
+  await conFilasDeBanner(async () => {
+    await act(async () => { manijas()[2]!.focus() })
+    await teclaEn(manijas()[2]!, 'Space')
+    await hasta(() => anuncios().includes('Levantaste la imagen 3 de 3.'), 'el aviso al levantar')
+    await teclaEn(document.body, 'ArrowUp')
+    await hasta(() => anuncios().includes('La imagen 3 pasó sobre el lugar 2 de 3.'), 'el aviso al pasar')
+    await teclaEn(document.body, 'Space')
+    await hasta(() => anuncios().includes('Soltaste la imagen en el lugar 2 de 3. Guardá para que quede así.'), 'el aviso al soltar')
+  })
+  assert.deepEqual([0, 1, 2].map((i) => campoDeFila(i, 'alt').value), ['Uno', 'Tres', 'Dos'], 'el orden nuevo')
+  assert.deepEqual([0, 1, 2].map((i) => campoDeFila(i, 'enlace').value), ['/contacto', '', '  https://ejemplo.org/dos '], 'y cada enlace se fue con su imagen')
+  assert.deepEqual([0, 1, 2].map(previewDeFila), [objetosCreados[0], objetosCreados[2], objetosCreados[1]], 'y cada vista previa también')
+  assert.equal(pedidosBanner.length, 0, 'reordenar no guarda: eso lo hace el botón')
+  assert.ok(texto().includes('Hay cambios sin guardar.'))
+
+  await clic(guardarBanner())
+  await hasta(() => texto().includes('Guardamos el banner.'), 'el aviso de guardado')
+  assert.deepEqual(subidas.map((x) => x.nombre), ['banner-uno.jpg', 'banner-tres.webp', 'banner-dos.png'], 'se suben los archivos pendientes, en el orden de las filas')
+  const put = pedidosBanner.filter((p) => p.metodo === 'PUT')
+  assert.equal(put.length, 1)
+  assert.deepEqual(put[0]!.cuerpo, { slides: [{ imagenId: 101, enlace: '/contacto', alt: 'Uno' }, { imagenId: 102, enlace: null, alt: 'Tres' }, { imagenId: 103, enlace: 'https://ejemplo.org/dos', alt: 'Dos' }] }, 'un único array en el orden de rotación, con el enlace recortado y vacío como null')
+  assert.deepEqual([...objetosLiberados].sort(), [...objetosCreados].sort(), 'al guardar se liberan todas las direcciones temporales')
+  assert.deepEqual([0, 1, 2].map(previewDeFila), ['/media/subida-1.jpg', '/media/subida-2.jpg', '/media/subida-3.jpg'], 'y ahora se ven las imágenes guardadas')
+  assert.equal(guardarBanner().disabled, true, 'sin cambios pendientes')
+  assert.ok(!texto().includes('Borramos'), 'no se borró ninguna')
+  await act(async () => r.unmount())
+})
+
+await t('Banner: eliminar una fila avisa de lo que se borra al guardar, no deja sacar la última y libera la vista previa', async () => {
+  pedidosBanner.length = 0
+  objetosCreados.length = 0
+  objetosLiberados.length = 0
+  const r = await abrirBanner()
+  assert.equal(filasBanner().length, 3, 'vuelve a cargar lo guardado')
+  assert.deepEqual([0, 1, 2].map((i) => campoDeFila(i, 'alt').value), ['Uno', 'Tres', 'Dos'])
+  assert.equal(campoDeFila(2, 'enlace').value, 'https://ejemplo.org/dos')
+  await clic(boton('Eliminar la imagen 2 del banner')!)
+  assert.deepEqual([0, 1].map((i) => campoDeFila(i, 'alt').value), ['Uno', 'Dos'])
+  await clic(guardarBanner())
+  await hasta(() => texto().includes('Guardamos el banner.'), 'guardó')
+  assert.ok(texto().includes('Borramos 1 imagen que ya no se usaba.'), 'dice que se borró la imagen que ya no se usa')
+  assert.deepEqual(pedidosBanner.filter((p) => p.metodo === 'PUT').at(-1)!.cuerpo, { slides: [{ imagenId: 101, enlace: '/contacto', alt: 'Uno' }, { imagenId: 103, enlace: 'https://ejemplo.org/dos', alt: 'Dos' }] })
+  assert.equal(pedidosBanner.filter((p) => p.metodo === 'PUT').length, 1, 'sin subir nada nuevo')
+  // Una fila nueva con un archivo elegido que se quita: su dirección temporal se libera
+  await clic(boton('Agregar imagen')!)
+  await elegirEnBanner(2, imagenBanner('banner-cuatro.jpg'))
+  assert.equal(objetosCreados.length, 1)
+  await clic(boton('Eliminar la imagen 3 del banner')!)
+  assert.deepEqual(objetosLiberados, [objetosCreados[0]], 'al quitar la fila se libera')
+  assert.equal(filasBanner().length, 2)
+  // Una fila vacía se descarta al guardar
+  await clic(boton('Agregar imagen')!)
+  assert.equal(guardarBanner().disabled, true, 'una fila vacía no es un cambio')
+  await clic(boton('Eliminar la imagen 3 del banner')!)
+  await clic(boton('Eliminar la imagen 2 del banner')!)
+  assert.equal(filasBanner().length, 1)
+  assert.equal((boton('Eliminar la imagen 1 del banner') as HTMLButtonElement).disabled, true, 'cuando queda una sola, no se puede eliminar')
+  await act(async () => r.unmount())
+})
+
+await t('Banner: si falla la subida o el guardado se explica en la fila o arriba del botón, y lo escrito no se pierde', async () => {
+  const r = await abrirBanner()
+  assert.equal(filasBanner().length, 2)
+  await clic(boton('Agregar imagen')!)
+  await elegirEnBanner(2, imagenBanner('banner-falla.jpg'))
+  await escribir(campoDeFila(2, 'alt'), 'Nueva')
+  const putsAntes = pedidosBanner.filter((p) => p.metodo === 'PUT').length
+  await clic(guardarBanner())
+  await hasta(() => errorDeFila(2).includes('pesa más de 10 MB'), 'el error de la subida en su fila')
+  assert.ok(texto().includes('No se pudo subir una imagen. No se guardó nada.'))
+  assert.equal(pedidosBanner.filter((p) => p.metodo === 'PUT').length, putsAntes, 'no se guardó el banner')
+  assert.equal(campoDeFila(2, 'alt').value, 'Nueva', 'lo escrito sigue')
+  assert.equal(guardarBanner().disabled, false, 'se puede volver a intentar')
+  await elegirEnBanner(2, imagenBanner('banner-nuevo.jpg'))
+  respuestaBannerPut = { estado: 422, cuerpo: { estado: 'error', mensaje: 'Revisá los datos antes de guardar.', problemas: ['Imagen 3: Pesa demasiado (máximo 2 MB). Reducila y probá de nuevo.'] } }
+  const subidasAntes = subidas.length
+  await clic(guardarBanner())
+  await hasta(() => texto().includes('Imagen 3: Pesa demasiado'), 'el problema de la API')
+  assert.equal(document.querySelector('.grupo > .aviso-error')!.getAttribute('role'), 'alert')
+  assert.equal(subidas.length, subidasAntes + 1, 'la imagen se subió una vez')
+  assert.equal(campoDeFila(2, 'alt').value, 'Nueva')
+  respuestaBannerPut = null
+  await clic(guardarBanner())
+  await hasta(() => texto().includes('Guardamos el banner.'), 'al reintentar, guardó')
+  assert.equal(subidas.length, subidasAntes + 1, 'y no volvió a subir la imagen que ya estaba subida')
+  assert.equal(filasBanner().length, 3)
+  await act(async () => r.unmount())
+})
+
+await t('Banner: salir con cambios sin guardar pregunta, y sin cambios no', async () => {
+  const r = await abrirBanner()
+  preguntas.length = 0
+  await clic([...document.querySelectorAll('nav a')].find((a) => a.textContent === 'Artículos')!)
+  await hasta(() => document.querySelector('h1')?.textContent === 'Artículos', 'sin cambios se va sin preguntar')
+  assert.equal(preguntas.length, 0)
+  await act(async () => r.unmount())
+  const r2 = await abrirBanner()
+  await escribir(campoDeFila(0, 'alt'), 'Otro texto')
+  respuestaConfirm = false
+  await clic([...document.querySelectorAll('nav a')].find((a) => a.textContent === 'Artículos')!)
+  assert.equal(preguntas.length, 1, 'con cambios en el banner, pregunta')
+  assert.equal(document.querySelector('h1')?.textContent, 'Configuración del sitio', 'y si se dice que no, se queda')
+  respuestaConfirm = true
+  await act(async () => r2.unmount())
 })
 
 // ---------- Revisión de la migración ----------

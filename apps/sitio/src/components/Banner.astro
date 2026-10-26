@@ -1,0 +1,114 @@
+---
+// Banner promocional de la portada: imágenes a lo ancho, sin texto encima (la imagen es todo el contenido); cada una puede llevar un enlace.
+// Las imágenes y su orden las carga el administrador en el panel («Configuración del sitio»); acá solo se dibujan (`SlideDeBanner`, lib/banner.ts).
+//
+//  - Una imagen: fija, sin puntos ni rotación. Dos o tres: carrusel con fundido por opacidad (las capas van apiladas) que rota solo cada
+//    `intervalo` y tiene los puntos debajo del banner, no encima.
+//  - Tocar un punto muestra esa imagen y reinicia el tiempo, para que se vea completa. La rotación se detiene con el mouse o el foco sobre el
+//    banner y los puntos (juntos), con la pestaña oculta y con «reducir movimiento» del sistema, que se escucha en vivo.
+//  - Las capas que no se ven siguen en la página: `inert` (sin Tab ni clic) y `aria-hidden`.
+//  - Un enlace que empieza con http se abre en otra pestaña; uno interno es un enlace común (el sitio no tiene enrutador del lado del cliente).
+//    Si la imagen que se ve tiene enlace, la pieza se levanta un poco al pasar el mouse (el efecto va en la pieza, no en el enlace: el marco
+//    recorta con `overflow: hidden` y cortaría la sombra).
+//  - Sin imágenes no dibuja nada. Una sola medida para todos los anchos (3:1), así que no hay recortes distintos en el celular.
+import { BANNER_INTERVALO_MS, BANNER_MAX_IMAGENES } from "@evaristo/compartido/sitio";
+import type { SlideDeBanner } from "../lib/banner";
+
+interface Props {
+  slides: SlideDeBanner[];
+  /** Milisegundos entre una imagen y la siguiente. */
+  intervalo?: number;
+}
+const { slides: todos, intervalo = BANNER_INTERVALO_MS } = Astro.props;
+const slides = todos.filter((s) => s.src).slice(0, BANNER_MAX_IMAGENES);
+const esExterno = (enlace: string) => /^http/i.test(enlace);
+---
+
+{
+  slides.length > 0 && (
+    <section class="banner" aria-label="Promociones" data-banner data-intervalo={intervalo} data-con-enlace={slides[0]!.enlace ? "true" : "false"}>
+      <div class="banner-pieza">
+        <div class="banner-marco">
+          {slides.map((s, i) => {
+            const imagen = <img class="banner-img" src={s.src} alt={s.alt} loading={i === 0 ? "eager" : "lazy"} />;
+            return (
+              <div class={`banner-capa${i === 0 ? " activa" : ""}`} data-capa data-enlace={s.enlace ? "true" : "false"} aria-hidden={i === 0 ? "false" : "true"} inert={i !== 0}>
+                {s.enlace ? (
+                  <a class="banner-enlace" href={s.enlace} aria-label={esExterno(s.enlace) ? `${s.alt} (se abre en una pestaña nueva)` : s.alt} {...(esExterno(s.enlace) ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
+                    {imagen}
+                  </a>
+                ) : (
+                  imagen
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {slides.length > 1 && (
+        <div class="banner-puntos" role="group" aria-label="Elegir la imagen del banner">
+          {slides.map((_, i) => (
+            <button type="button" class="banner-punto" data-punto aria-label={`Ver imagen ${i + 1} de ${slides.length}`} aria-current={i === 0 ? "true" : undefined} />
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+<script>
+  function iniciar(banner: HTMLElement) {
+    const capas = [...banner.querySelectorAll<HTMLElement>("[data-capa]")];
+    const puntos = [...banner.querySelectorAll<HTMLElement>("[data-punto]")];
+    // Una sola imagen: fija, sin reloj.
+    if (capas.length < 2) return;
+
+    const intervalo = Number(banner.dataset["intervalo"]) || 6000;
+    const menosMovimiento = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let actual = 0;
+    let reloj: ReturnType<typeof setInterval> | undefined;
+    let mouseEncima = false;
+
+    const mostrar = (indice: number) => {
+      actual = (indice + capas.length) % capas.length;
+      capas.forEach((c, i) => {
+        const activa = i === actual;
+        c.classList.toggle("activa", activa);
+        c.toggleAttribute("inert", !activa);
+        c.setAttribute("aria-hidden", String(!activa));
+      });
+      puntos.forEach((p, i) => (i === actual ? p.setAttribute("aria-current", "true") : p.removeAttribute("aria-current")));
+      banner.dataset["conEnlace"] = capas[actual]!.dataset["enlace"] === "true" ? "true" : "false";
+    };
+
+    const detener = () => {
+      if (reloj) clearInterval(reloj);
+      reloj = undefined;
+    };
+    const debeRotar = () => !menosMovimiento.matches && !mouseEncima && !document.hidden && !banner.contains(document.activeElement);
+    const programar = () => {
+      detener();
+      if (debeRotar()) reloj = setInterval(() => mostrar(actual + 1), intervalo);
+    };
+
+    puntos.forEach((p, i) =>
+      p.addEventListener("click", () => {
+        mostrar(i);
+        programar();
+      }),
+    );
+
+    // El mouse o el foco sobre el banner y los puntos (todo está dentro de la sección) detienen la rotación.
+    banner.addEventListener("mouseenter", () => ((mouseEncima = true), detener()));
+    banner.addEventListener("mouseleave", () => ((mouseEncima = false), programar()));
+    banner.addEventListener("focusin", detener);
+    banner.addEventListener("focusout", () => setTimeout(programar, 0));
+    document.addEventListener("visibilitychange", () => (document.hidden ? detener() : programar()));
+    menosMovimiento.addEventListener("change", programar);
+
+    mostrar(0);
+    programar();
+  }
+
+  document.querySelectorAll<HTMLElement>("[data-banner]").forEach(iniciar);
+</script>

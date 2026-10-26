@@ -323,3 +323,20 @@ export interface RespuestaPublicar {
   slug: string;
   ruta: string;
 }
+
+// ---------- Banner de la portada ----------
+
+export interface BannerSlideDatos {
+  imagenId: number;
+  imagen: { id: number; clave: string; nombreOriginal: string; ancho: number; alto: number };
+  enlace: string | null;
+  alt: string;
+}
+
+/** GET y PUT /api/admin/banner. `borradas` solo viene al guardar: las imágenes que quedaron sin uso y se eliminaron. */
+export interface RespuestaBanner {
+  activo: boolean;
+  max: number;
+  slides: BannerSlideDatos[];
+  borradas?: number;
+}

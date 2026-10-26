@@ -225,6 +225,7 @@ model Imagen {
   redesDe        Articulo[]    @relation("ImagenRedes")
   galerias       GaleriaItem[]
   fotoDe         Autor[]       @relation("FotoAutor")
+  banners        BannerImagen[]
 
   @@index([nombreOriginal])
   @@index([hash])
@@ -329,7 +330,9 @@ model Sesion {
 }
 
 // Configuración del sitio que edita el administrador desde el panel. Una sola fila (id 1): si no existe, el sitio usa los valores por
-// defecto de `src/sitio.ts`. Hoy solo tiene el topbar (la franja de arriba del sitio); el footer es fijo en el código (decisión 75).
+// defecto de `src/sitio.ts`. Tiene el topbar (la franja de arriba del sitio) y el interruptor del banner de la portada; el footer es fijo
+// en el código (decisión 75). Al crear la fila desde el banner hay que copiar los valores por defecto del topbar: los de la columna no son
+// los que muestra el sitio mientras no hay fila.
 model ConfiguracionSitio {
   id            Int      @id @default(1)
   // Si el topbar se muestra. Apagado, o sin texto, el sitio no dibuja la franja.
@@ -337,9 +340,27 @@ model ConfiguracionSitio {
   topbarTexto   String   @default("") @db.VarChar(200)
   // Dirección `http(s)://…` o interna (`/…`). Sin enlace, el texto se muestra sin vínculo.
   topbarEnlace  String?  @db.VarChar(512)
+  // Si el banner de la portada se muestra. Apagado, o sin imágenes, el sitio no dibuja nada.
+  bannerActivo  Boolean  @default(false)
   actualizadoEn DateTime @updatedAt
 
   @@map("configuracion_sitio")
+}
+
+// Imágenes del banner de la portada, en el orden en que rotan (`orden` desde 1). La imagen es la de la biblioteca: `Restrict` impide
+// borrarla mientras esté acá. El texto alternativo es obligatorio porque la imagen es todo el contenido del banner.
+model BannerImagen {
+  id       Int     @id @default(autoincrement())
+  orden    Int
+  imagenId Int
+  // Dirección `http(s)://…` o interna (`/…`); sin enlace, la imagen no es clickeable.
+  enlace   String? @db.VarChar(512)
+  alt      String  @db.VarChar(200)
+  imagen   Imagen  @relation(fields: [imagenId], references: [id], onDelete: Restrict)
+
+  @@index([orden])
+  @@index([imagenId])
+  @@map("banner_imagenes")
 }
 
 model Redireccion {

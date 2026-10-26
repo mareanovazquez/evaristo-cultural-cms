@@ -1,15 +1,18 @@
 ---
 import "../styles/portada.css";
 import Base from "../layouts/Base.astro";
+import Banner from "../components/Banner.astro";
 import BloqueSeccion from "../components/BloqueSeccion.astro";
 import Carrusel from "../components/Carrusel.astro";
 import Tarjeta from "../components/Tarjeta.astro";
 import { esNovedad, fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../lib/articulos";
+import { leerBanner } from "../lib/banner";
 import { datosDePortada, diapositivaDeNota, type NotaDePortada } from "../lib/portada";
 
 // Portada (fase 5): se arma sola con lo publicado. Orden: fecha, carrusel de las 3 notas más nuevas, dos secciones, banda con las 3
-// siguientes y «Últimas publicaciones», y las demás secciones. Ver docs/especificaciones/especificacion-home.md.
+// siguientes y «Últimas publicaciones», el banner promocional (si el administrador lo cargó) y las demás secciones. Ver docs/especificaciones/especificacion-home.md.
 const { carrusel, banda, bloques: bloquesDeSeccion, novedades } = await datosDePortada();
+const banner = await leerBanner();
 
 const fecha = new Intl.DateTimeFormat("es-AR", { dateStyle: "full", timeZone: "America/Argentina/Buenos_Aires" }).format(new Date());
 const hoy = fecha.charAt(0).toUpperCase() + fecha.slice(1);
@@ -54,6 +57,8 @@ const hayNotas = carrusel.length > 0;
             ))}
           </section>
         )}
+
+        <Banner slides={banner} />
 
         {abajo.length > 0 && (
           <div class="portada-bloques">
