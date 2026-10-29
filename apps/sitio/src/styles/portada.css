@@ -6,10 +6,41 @@
   gap: var(--space-8);
   padding: var(--space-6) 0 var(--space-16);
 }
-.portada-fecha {
+.portada-titulo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: center;
+}
+/* El h1 usa los estilos del logo (.logo, sitio.css), más grande */
+.portada-titulo h1.logo {
   margin: 0;
-  font-size: 14px;
+  font-size: clamp(32px, 7vw, 56px);
+}
+.portada-bajada {
+  margin: 0;
+  font-size: 18px;
   color: var(--text-muted);
+}
+/* La fecha, como línea de edición: entre dos filetes */
+.portada-fecha {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  margin: var(--space-4) 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.portada-fecha::before,
+.portada-fecha::after {
+  content: "";
+  flex: 1;
+  border-top: 1px solid var(--border-strong);
 }
 
 /* ---------- Hero con carrusel ---------- */

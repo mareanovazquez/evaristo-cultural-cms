@@ -11,10 +11,8 @@ interface Props {
   titulo: string;
   descripcion?: string;
   noindex?: boolean;
-  /** La portada: el nombre de la revista del encabezado es su título (h1). */
-  portada?: boolean;
 }
-const { titulo, descripcion, noindex = false, portada = false } = Astro.props;
+const { titulo, descripcion, noindex = false } = Astro.props;
 const tituloCompleto = titulo === "Evaristo Cultural" ? titulo : `${titulo} · Evaristo Cultural`;
 ---
 
@@ -37,7 +35,7 @@ const tituloCompleto = titulo === "Evaristo Cultural" ? titulo : `${titulo} · E
   <body>
     <a class="salto-contenido" href="#contenido">Saltar al contenido</a>
     <Iconos />
-    <Header esPortada={portada} />
+    <Header />
     <main id="contenido" class="page">
       <slot />
     </main>

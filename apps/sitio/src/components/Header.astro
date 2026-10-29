@@ -1,11 +1,6 @@
 ---
 import Marca from "./Marca.astro";
 
-interface Props {
-  /** En la portada, el nombre de la revista es el título de la página (h1); en las demás es solo un enlace. */
-  esPortada?: boolean;
-}
-const { esPortada = false } = Astro.props;
 import { SECCIONES_VISIBLES, URL_AUTORES, urlSeccion } from "../lib/rutas";
 import { listarSeccionesMenu } from "../lib/secciones";
 import { leerTopbar } from "../lib/sitio";
@@ -35,7 +30,7 @@ const actual = (href: string) => (ruta === href || ruta.startsWith(href) ? "page
 }
 <header class="header">
   <div class="page header-fila">
-    {esPortada ? <h1 class="logo-titulo"><Marca nombre="Cultural" /></h1> : <Marca nombre="Cultural" />}
+    <Marca nombre="Cultural" />
 
     <nav class="menu-principal" aria-label="Secciones">
       <ul class="menu">

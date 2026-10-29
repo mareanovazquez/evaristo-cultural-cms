@@ -640,11 +640,6 @@ a.topbar:hover {
   border-radius: var(--radius);
 }
 
-/* En la portada el nombre de la revista del encabezado es el h1: sin caja propia, para no cambiar el diseño */
-.logo-titulo {
-  display: contents;
-}
-
 /* ---------- Botón (la maqueta: .btn--primary, ver docs/decisiones-de-diseno.md) ---------- */
 .btn {
   position: relative;

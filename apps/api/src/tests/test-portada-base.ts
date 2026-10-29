@@ -55,10 +55,12 @@ try {
   // El sitio oculta el texto solo para lectores con `sr-only` (la clase `solo-lectores` es del panel y acá no existe: el texto se vería)
   assert.ok(!html.includes("solo-lectores"), "no se usa una clase que el sitio no define para ocultar texto");
   assert.match(html, /<a class="btn btn--primary"[^>]*>\s*Leer\s*<span class="sr-only">/, "el botón dice solo «Leer» a la vista");
-  assert.ok(/<h1[^>]*class="logo-titulo"[^>]*><a class="logo"[^>]*aria-label="Evaristo Cultural"/.test(html), "el H1 es el nombre de la revista del encabezado (no hay un título repetido)");
+  assert.match(html, /<header class="portada-titulo">\s*<h1 class="logo"><b>Evaristo<\/b> <span>Cultural<\/span><\/h1>\s*<p class="portada-bajada">Revista cultural de Evaristo Editorial<\/p>/, "el H1 es visible, en el cuerpo, con los estilos del logo y su bajada");
   assert.ok(!html.includes('class="sr-only">Evaristo Cultural'), "y no hay un título oculto aparte");
-  // En las demás páginas el nombre de la revista es solo un enlace
-  assert.ok(!/<h1[^>]*class="logo-titulo"/.test((await pedir("/ultimas/")).html), "en otras páginas el nombre de la revista no es el título");
+  // El logo del menú es solo un enlace, en la portada y en las demás páginas
+  assert.ok(!/<h1[^>]*>\s*<a class="logo"/.test(html), "el logo del menú no está dentro de un h1");
+  assert.ok(/<header class="header">[\s\S]*?<a class="logo"/.test(html), "la portada mantiene el logo en el menú");
+  assert.ok(!(await pedir("/ultimas/")).html.includes("portada-titulo"), "en otras páginas no está el título de la portada");
   assert.match(html, /class="portada-fecha">[A-ZÁÉÍÓÚ][a-záéíóúñ]+, \d{1,2} de [a-zé]+ de \d{4}</, "la fecha completa en español, con mayúscula inicial");
 
   // Las notas que la base considera «las últimas»: visibles (publicadas y con fecha cumplida), de la más nueva a la más vieja

@@ -24,13 +24,19 @@ const bloques = [...(novedades.length ? [{ seccion: { slug: "novedades", nombre:
 const arriba = bloques.slice(0, 2);
 const abajo = bloques.slice(2);
 const hayNotas = carrusel.length > 0;
+// La bajada del h1 es también la meta description
+const BAJADA = "Revista cultural de Evaristo Editorial: entrevistas, reseñas, ensayos y crónicas desde 2006.";
 ---
 
-<Base titulo="Evaristo Cultural" descripcion="Revista cultural de Evaristo Editorial: entrevistas, reseñas, ensayos y crónicas desde 2006." portada>
+<Base titulo="Evaristo Cultural" descripcion={BAJADA}>
   {
     hayNotas ? (
       <div class="portada">
-        <p class="portada-fecha">{hoy}</p>
+        <header class="portada-titulo">
+          <h1 class="logo"><b>Evaristo</b> <span>Cultural</span></h1>
+          <p class="portada-bajada">Revista cultural de Evaristo Editorial</p>
+          <p class="portada-fecha">{hoy}</p>
+        </header>
 
         <Carrusel diapositivas={carrusel.map(diapositivaDeNota)} intervalo={6000} />
 
