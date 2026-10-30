@@ -6,11 +6,11 @@
 //                 (solo acá: el renderizador no hace esa reescritura).
 import { mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { renderArticleBody, escapeHtml, SPRITE_ICONO_VOLVER } from "../../src/render/render.ts";
 import { leerArticulosYDimensiones } from "./lib/leer-articulos.ts";
 
-const SALIDA_POR_DEFECTO = "C:\\Users\\Usuario\\Documents\\Proyectos frontend\\CMS-EVARISTO(ASSETS)\\previews-fase3";
+const SALIDA_POR_DEFECTO = fileURLToPath(new URL("../../../../../CMS-EVARISTO(ASSETS)/previews-fase3", import.meta.url));
 // Artículos que se generan también con letra capital (variante -capital.html).
 const CON_VARIANTE_CAPITAL = new Set([620, 4265, 5287, 5296, 15027, 19660, 3306]);
 

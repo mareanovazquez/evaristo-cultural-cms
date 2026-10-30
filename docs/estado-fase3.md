@@ -51,4 +51,4 @@ Nodos: paragraph 3.217, footnote 178, imagen 172, hardBreak 44, listItem 29, vid
 
 Ver `pendientes.md`, sección 2: `<head>` para redes (hace falta la URL base), variantes de tamaño de las imágenes, galería y ficha técnica, botón de búsqueda, mirar el sitio en un navegador, visto bueno de la directora, manual de estilo, textos provisorios del topbar y el footer. La portada real (fase 5) y el buscador y las novedades (fase 6) siguen sin empezar.
 
-Antes de cualquier tarea que use Prisma hay que comprobar el 3308 con `Test-NetConnection`; los prompts se pegan desde `C:\Users\Usuario\Documents\Proyectos frontend`, sin push.
+Antes de cualquier tarea que use Prisma hay que comprobar el 3308 con `Test-NetConnection`; los prompts se pegan desde `C:\Users\marea\Documents\Proyectos Frontend`, sin push.

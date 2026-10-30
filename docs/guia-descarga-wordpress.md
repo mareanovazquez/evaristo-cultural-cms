@@ -33,7 +33,7 @@ Además, al conectarte por primera vez hay que confirmar con hPanel (no son preg
 Carpeta de destino sugerida (se crea una por descarga):
 
 ```
-C:\Users\Usuario\Documents\Proyectos frontend\CMS-EVARISTO(ASSETS)\wordpress-2026-MM-DD\
+C:\Users\marea\Documents\Proyectos Frontend\CMS-EVARISTO(ASSETS)\wordpress-2026-MM-DD\
     uploads\            (los originales)
     colisiones.tar
     colisiones.txt
@@ -128,13 +128,13 @@ Creá la carpeta de destino (la de arriba, con la fecha de hoy) y bajá **de `~/
 **Con WinSCP (recomendado).** Protocolo SFTP, el mismo servidor, puerto y usuario. En las preferencias de transferencia, que **no modifique los nombres de archivo**. Sincronizá en dirección «remoto → local». Es **reanudable**: si se corta, se vuelve a correr y baja solo lo que falta o cambió. Desde la línea de comandos de WinSCP (`winscp.com` está en la carpeta donde se instaló WinSCP; si no está en el PATH, se escribe la ruta completa):
 
 ```powershell
-winscp.com /command "open sftp://<usuario>@<dirección>:65002/" "synchronize local ""C:\Users\Usuario\Documents\Proyectos frontend\CMS-EVARISTO(ASSETS)\wordpress-2026-MM-DD\uploads"" /home/<usuario>/descarga/uploads-sin-colisiones" "exit"
+winscp.com /command "open sftp://<usuario>@<dirección>:65002/" "synchronize local ""C:\Users\marea\Documents\Proyectos Frontend\CMS-EVARISTO(ASSETS)\wordpress-2026-MM-DD\uploads"" /home/<usuario>/descarga/uploads-sin-colisiones" "exit"
 ```
 
 **Con `scp` (ya instalado, no reanuda).** Si se corta, hay que repetir; lo ya bajado se vuelve a bajar.
 
 ```powershell
-scp -r -P 65002 <usuario>@<dirección>:descarga/uploads-sin-colisiones "C:\Users\Usuario\Documents\Proyectos frontend\CMS-EVARISTO(ASSETS)\wordpress-2026-MM-DD\"
+scp -r -P 65002 <usuario>@<dirección>:descarga/uploads-sin-colisiones "C:\Users\marea\Documents\Proyectos Frontend\CMS-EVARISTO(ASSETS)\wordpress-2026-MM-DD\"
 ```
 
 Eso crea `uploads-sin-colisiones` dentro de esa carpeta: renombrala a `uploads`. Para los archivos sueltos: `scp -P 65002 <usuario>@<dirección>:descarga/colisiones.tar <destino>` (igual para los otros cuatro).
@@ -162,7 +162,7 @@ Tiene que decir `OK`: 0 faltantes, 0 nombres alterados, 0 tamaños distintos, 0 
 **6c. Las imágenes contra la base de WordPress** (lo que la migración va a buscar). Primero hay que cargar el dump nuevo **en una base aparte** en la 3307 (levantala vos, ver `glosario-comandos-bases.md`; **no reemplaces `evaristo_lectura`**: los tests y la migración de la muestra dependen de ella):
 
 ```powershell
-$mariadb = "C:\Users\Usuario\Documents\Proyectos frontend\CMS-EVARISTO(ASSETS)\mariadb-local\mariadb-11.8.9-winx64\bin\mariadb.exe"
+$mariadb = "C:\Users\marea\Documents\Proyectos Frontend\CMS-EVARISTO(ASSETS)\mariadb-local\mariadb-11.8.9-winx64\bin\mariadb.exe"
 & $mariadb --host=127.0.0.1 --port=3307 --user=root --execute="CREATE DATABASE evaristo_lectura_nueva CHARACTER SET utf8mb4"
 & $mariadb --host=127.0.0.1 --port=3307 --user=root --default-character-set=utf8mb4 --database=evaristo_lectura_nueva --execute="source <carpeta con barras>/wordpress.sql"
 ```

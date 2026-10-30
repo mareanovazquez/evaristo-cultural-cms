@@ -32,8 +32,8 @@ config({ path: fileURLToPath(new URL("../../../../.env", import.meta.url)), quie
 const aRuta = (p: string) => fileURLToPath(new URL(p, import.meta.url));
 
 // Carpetas de imágenes (solo lectura). Los originales se llaman como figuran en _wp_attached_file.
-const CARPETA_ORIGINALES = "C:\\Users\\Usuario\\Documents\\Proyectos frontend\\CMS-EVARISTO(ASSETS)\\uploads-muestra\\originales";
-const CARPETA_DERIVADAS = "C:\\Users\\Usuario\\Documents\\Proyectos frontend\\CMS-EVARISTO(ASSETS)\\uploads-muestra\\derivadas";
+const CARPETA_ORIGINALES = aRuta("../../../../../CMS-EVARISTO(ASSETS)/uploads-muestra/originales");
+const CARPETA_DERIVADAS = aRuta("../../../../../CMS-EVARISTO(ASSETS)/uploads-muestra/derivadas");
 const LISTA_IMAGENES = aRuta("../../out/imagenes-muestra-ampliada.txt");
 
 // ---------------------------------------------------------------------------------------------------------------

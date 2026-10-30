@@ -14,7 +14,7 @@
 **Estado general**
 
 - Fase 4 (panel y API) completa en el código; falta **la prueba con alguien de la editorial** (`guia-prueba-editorial.md`) y que Mariano recorra el panel en el navegador.
-- Fase 5 (portada) y fase 6 (buscador y novedades): primera versión hecha y mergeada; falta el **feedback de la dueña** y los textos reales (`estado-fase5.md`, `estado-fase6.md`).
+- Fase 5 (portada) y fase 6 (buscador y novedades): primera versión hecha y mergeada. **A la dueña le gustó la portada en líneas generales (30/10/2026);** faltan sus respuestas concretas y los textos reales (`estado-fase5.md`, `estado-fase6.md`).
 - **La real (`evaristo_cms`) conserva el modelo viejo:** 17 secciones más `sin-asignar`, los 35 artículos con su sección vieja, 8 categorías viejas y **ninguna de las nueve migraciones** de la fase 4 en adelante. La dev y la de pruebas tienen todo.
 - **El código de `main` ya espera el modelo nuevo.** Apuntado a la real, el menú mostraría las secciones viejas y varias `/category/…` irían a páginas que no existen (404). Hoy no hay despliegue (fase 1 sin hosting), así que no pasa nada; **no desplegar contra la real antes de convertirla** (ver Etapa 3).
 - Migraciones que esperan para la real: `sesiones`, `borradores_y_capital`, `usuarios_redactor_creador_autor`, `secciones_orden`, `articulos_avisos_revisados`, `articulos_editado_publicado_por`, `busqueda_fulltext`, `configuracion_sitio` y `banner_portada` (nueve). Al aplicarlas hay que **borrar el respaldo** de `listarSeccionesMenu` en `apps/sitio/src/lib/secciones.ts`, el de `leerTopbar` en `apps/sitio/src/lib/sitio.ts` y el de `leerBanner` en `apps/sitio/src/lib/banner.ts`.
@@ -34,12 +34,12 @@
 1. **Mirar en un navegador** (Claude Code no los arranca): el menú nuevo, el topbar y el banner en escritorio y celular, el popover del usuario y la portada completa. Para verlo con los datos nuevos: `npm run build:sitio` y `npm run dev:desarrollo -w @evaristo/api` (no `npm run dev`, que lee la real), en `http://127.0.0.1:3000/`.
 2. **Contenido real de la editorial:** el texto del topbar y a dónde lleva (hoy, la tienda), y las primeras imágenes del banner (1800 × 600 px, JPEG, PNG o WebP de hasta 2 MB, con su texto y su enlace).
 3. **Decisión abierta: «Quiénes somos» y «Contacto».** Hoy son enlaces vacíos del footer. ¿Páginas propias con texto (un mini editor de **páginas fijas**, que además sirve para las páginas fijas de WordPress que hay que redirigir o migrar; modelo `Pagina`, pantalla en el panel y ruta pública, medio día más), enlaces a otro sitio, o se sacan por ahora? Se plantea con Mariano de a una decisión.
-4. **Feedback de la dueña** sobre la portada (estructura, qué secciones van arriba, destacado a mano) y su comentario del «lavado»; ver `estado-fase5.md`.
+4. **Preguntas abiertas para la dueña** sobre la portada (qué secciones van arriba, destacado a mano) y su comentario del «lavado»; en líneas generales le gustó. Ver `estado-fase5.md`.
 5. **Prueba del panel con alguien de la editorial** (`guia-prueba-editorial.md`). La dev ya no tiene artículos de prueba propios: hay que crear los que haga falta.
 
 ## Al retomar (15 minutos)
 
-0. **La semana del 2/11/2026 se cambia de equipo** (Samsung Galaxy Book 3 → equipo nuevo con Windows 11 Home). **Antes de cualquier otra tarea, seguir `docs/plan-cambio-de-equipo.md`**; la descarga de WordPress y todo lo demás se continúan en el equipo nuevo. Este equipo no se toca ni se vende hasta cerrar la Fase C de ese plan.
+0. **El cambio de equipo se hizo el 30/10/2026:** se trabaja en la Lenovo y **lo que sigue es la descarga de WordPress** (`guia-descarga-wordpress.md`). Antes de arrancar, mirar en `plan-cambio-de-equipo.md` qué quedó de la Fase C. El Galaxy no se toca ni se vende hasta cerrarla.
 1. `git status -sb`: tiene que decir `main...origin/main` sin «ahead» ni «behind».
 2. `Test-NetConnection 127.0.0.1 -Port 3308` (siempre). El 3307 (WordPress) solo si se lee WordPress. Si están caídas, las levanta Mariano (`glosario-comandos-bases.md`).
 3. `npm run build`, `npm run typecheck`, `npm run test:pantalla`, `npm run test:conversor` y `npm run test:migracion` para saber que arrancamos en verde.

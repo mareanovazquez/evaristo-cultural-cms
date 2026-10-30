@@ -1,6 +1,6 @@
 # Fase 5: portada (primera versión para mostrar a la dueña de la editorial)
 
-Actualizado el 23/10/2026. La dueña de la editorial dio el visto bueno para **diseñar y mostrarle algo armado** y ajustar con su opinión (no piensa en abstracto: quiere ver la portada). Esta es la primera versión, hecha con los datos reales de la base de desarrollo. La especificación original (`especificaciones/especificacion-home.md`) es de antes de que las secciones pasaran de 5 a 17; lo que sigue dice qué se hizo y qué quedó para preguntarle.
+Actualizado el 30/10/2026. **Feedback de la dueña (Roxana Artal, informado por Mariano el 30/10/2026): en líneas generales le gustó la portada.** No hay todavía pedidos de cambio concretos; las preguntas de abajo siguen abiertas. Antes, la dueña de la editorial había dado el visto bueno para **diseñar y mostrarle algo armado** y ajustar con su opinión (no piensa en abstracto: quiere ver la portada). Esta es la primera versión, hecha con los datos reales de la base de desarrollo. La especificación original (`especificaciones/especificacion-home.md`) es de antes de que las secciones pasaran de 5 a 17; lo que sigue dice qué se hizo y qué quedó para preguntarle.
 
 ## Qué hay (rama `fase5-portada`)
 
@@ -28,7 +28,7 @@ La portada (`/`) se arma sola con lo publicado: el editor no maqueta. De arriba 
 
 ## Para preguntarle a la dueña (mostrándole la portada)
 
-1. ¿Le gusta la estructura (carrusel, dos secciones, banda, más secciones)? ¿Qué sacaría o agregaría?
+1. ~~¿Le gusta la estructura?~~ En líneas generales sí (30/10/2026). Falta saber si sacaría o agregaría algo.
 2. **Secciones:** ¿cuáles quiere arriba y en qué orden, o prefiere que la portada elija las más activas?
 3. **Carrusel:** ¿alcanza con «las 3 últimas» o quieren elegir a mano la nota destacada?
 4. **Textos reales:** topbar (texto y a qué página de la tienda lleva), footer (texto institucional, contacto, redes, datos legales), «Quiénes somos».
@@ -48,7 +48,7 @@ La portada (`/`) se arma sola con lo publicado: el editor no maqueta. De arriba 
 
 ## Pendiente de esta fase
 
-- Mirarla en el navegador y ajustar con el feedback de la dueña.
+- Mirarla en el navegador y responder con la dueña las preguntas de arriba que siguen abiertas (le gustó en líneas generales; no pidió cambios concretos).
 - Textos reales del topbar y el footer; «Quiénes somos» y «Contacto» (hoy son enlaces vacíos).
 - El destacado en portada, si lo piden.
 - Variantes de tamaño de las imágenes (hoy el carrusel usa el original; ver `pendientes.md`, sección 2). **Si más adelante se quiere un hero de borde a borde**, hace falta antes una guía de tamaño para las fotos nuevas (mínimo 1.600 px de ancho) y las variantes de tamaño: las fotos migradas son chicas (de 34, solo 3 pasan los 1.200 px).

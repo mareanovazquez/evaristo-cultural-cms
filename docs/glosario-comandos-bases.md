@@ -28,13 +28,13 @@ Regla: antes de un prompt que lea WordPress, comprobar el 3307. Antes de uno que
 **Iniciar.** En una ventana de PowerShell nueva, que queda ocupada mientras el servidor corre (dejarla abierta). Puede no imprimir nada: es normal.
 
 ```powershell
-& "C:\Users\Usuario\Documents\Proyectos frontend\CMS-EVARISTO(ASSETS)\mariadb-local\mariadb-11.8.9-winx64\bin\mysqld.exe" --no-defaults --datadir="C:\Users\Usuario\Documents\Proyectos frontend\CMS-EVARISTO(ASSETS)\mariadb-local\data" --bind-address=127.0.0.1 --port=3307 --max-allowed-packet=256M
+& "C:\Users\marea\Documents\Proyectos Frontend\CMS-EVARISTO(ASSETS)\mariadb-local\mariadb-11.8.9-winx64\bin\mysqld.exe" --no-defaults --datadir="C:\Users\marea\Documents\Proyectos Frontend\CMS-EVARISTO(ASSETS)\mariadb-local\data" --bind-address=127.0.0.1 --port=3307 --max-allowed-packet=256M
 ```
 
 **Comprobar que responde** (desde OTRA ventana):
 
 ```powershell
-& "C:\Users\Usuario\Documents\Proyectos frontend\CMS-EVARISTO(ASSETS)\mariadb-local\mariadb-11.8.9-winx64\bin\mariadb-admin.exe" --host=127.0.0.1 --port=3307 --user=root ping
+& "C:\Users\marea\Documents\Proyectos Frontend\CMS-EVARISTO(ASSETS)\mariadb-local\mariadb-11.8.9-winx64\bin\mariadb-admin.exe" --host=127.0.0.1 --port=3307 --user=root ping
 ```
 
 Tiene que contestar `mysqld is alive`. Si da error `10061`, puede estar todavía iniciando: esperar un minuto y repetir.
@@ -42,13 +42,13 @@ Tiene que contestar `mysqld is alive`. Si da error `10061`, puede estar todavía
 **Ver el log si tarda** (por ejemplo, recuperación de InnoDB tras un apagado sucio). Buscar `ready for connections`:
 
 ```powershell
-Get-ChildItem "C:\Users\Usuario\Documents\Proyectos frontend\CMS-EVARISTO(ASSETS)\mariadb-local\data" -Filter *.err | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | ForEach-Object { Get-Content $_.FullName -Tail 20 }
+Get-ChildItem "C:\Users\marea\Documents\Proyectos Frontend\CMS-EVARISTO(ASSETS)\mariadb-local\data" -Filter *.err | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | ForEach-Object { Get-Content $_.FullName -Tail 20 }
 ```
 
 **Detener (ordenado).** Siempre con `shutdown`, NUNCA con `Stop-Process`:
 
 ```powershell
-& "C:\Users\Usuario\Documents\Proyectos frontend\CMS-EVARISTO(ASSETS)\mariadb-local\mariadb-11.8.9-winx64\bin\mariadb-admin.exe" --host=127.0.0.1 --port=3307 --user=root shutdown
+& "C:\Users\marea\Documents\Proyectos Frontend\CMS-EVARISTO(ASSETS)\mariadb-local\mariadb-11.8.9-winx64\bin\mariadb-admin.exe" --host=127.0.0.1 --port=3307 --user=root shutdown
 ```
 
 Usar siempre las opciones largas (`--host=...`): la forma corta `-h127.0.0.1` falla en PowerShell.
@@ -101,4 +101,4 @@ Para ejecutar varias sentencias juntas: Execute All (`Ctrl+Shift+Enter`, el rayo
 
 ## Claude Code
 
-Los prompts se pegan desde la carpeta `C:\Users\Usuario\Documents\Proyectos frontend`. Claude Code no hace push: lo hace Mariano.
+Los prompts se pegan desde la carpeta `C:\Users\marea\Documents\Proyectos Frontend`. Claude Code no hace push: lo hace Mariano.

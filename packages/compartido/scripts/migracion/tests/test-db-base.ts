@@ -91,10 +91,13 @@ try {
     const recorrer = (d: string) => { for (const e of readdirSync(d, { withFileTypes: true })) { const p = join(d, e.name); if (e.isDirectory()) recorrer(p); else if (p.endsWith(".ts")) todos.push(p); } };
     recorrer(MIGRACION);
     const crean = todos.filter((a) => /new PrismaClient\(/.test(readFileSync(a, "utf8"))).map(rel).sort();
-    assert.deepEqual(crean, ["scripts/migracion/lib/escribir.ts", "scripts/migracion/lib/leer-wordpress.ts"]);
+    assert.deepEqual(crean, ["scripts/migracion/lib/escribir.ts", "scripts/migracion/lib/leer-wordpress.ts", "scripts/migracion/verificar-descarga.ts"]);
     // leer-wordpress.ts abre siempre con READ ONLY
     assert.equal((readFileSync(join(MIGRACION, "lib", "leer-wordpress.ts"), "utf8").match(/new PrismaClient\(/g) ?? []).length, 2);
     assert.equal((readFileSync(join(MIGRACION, "lib", "leer-wordpress.ts"), "utf8").match(/initSql: SOLO_LECTURA/g) ?? []).length, 2);
+    // verificar-descarga.ts también: un solo cliente, y en solo lectura
+    assert.equal((readFileSync(join(MIGRACION, "verificar-descarga.ts"), "utf8").match(/new PrismaClient\(/g) ?? []).length, 1);
+    assert.equal((readFileSync(join(MIGRACION, "verificar-descarga.ts"), "utf8").match(/initSql: SOLO_LECTURA/g) ?? []).length, 1);
   });
 
   // -------------------------------------------------------------------------------------------------------------

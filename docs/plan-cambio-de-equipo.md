@@ -11,11 +11,20 @@
 - **Equipo nuevo:** Intel Core i5-12450HX (8 núcleos, 12 hilos), 24 GB de RAM DDR5, SSD NVMe de 512 GB, NVIDIA GeForce RTX 4050, pantalla de 15,6" a 144 Hz, **Windows 11 Home**. Sobra para el proyecto (no usa la GPU). El disco de 512 GB alcanza: hacen falta ~10 GB para traer lo de acá y ~10 GB para la descarga de WordPress.
 - **Cuándo:** el cambio se hace **la semana del 2/11/2026**. Todo lo que sigue del proyecto (incluida la descarga de WordPress) se continúa **en el equipo nuevo**.
 - **Orden con la descarga de WordPress:** primero el cambio de equipo y **después la descarga, directo en el equipo nuevo** (sección 8). Hay margen: el plazo es el 28/11.
+- **Nombre del usuario de Windows en el equipo nuevo (Lenovo 83GS):** es `marea`, y la carpeta es `C:\Users\marea\Documents\Proyectos Frontend` (con F mayúscula). No es `Usuario`, así que hay que cambiar las rutas de la sección 10.
+
+**Hecho en el equipo nuevo (30/10/2026)**
+
+- `npm ci`, `db:generate`, `astro sync`, `typecheck` y `build`, sin errores. El Control Inteligente de Aplicaciones está activo y no bloquea Astro.
+- MySQL **8.4.13** instalado (puerto 3308, servicio `MySQL84`, inicio manual, `lower_case_table_names=1`), sin bases ni usuarios del proyecto todavía. Se usa 8.4.13 en vez de 8.4.11 porque es la misma línea LTS. **Ojo al instalar:** la página de descargas ofrece por defecto una versión más nueva (26.10), que no sirve: hay que elegir la 8.4 LTS. El nombre del servicio no indica la versión.
+- Fases A y B completas: el pendrive `backup2` y la copia en la Lenovo coinciden con el manifiesto (18.994 y 18.760 archivos; la diferencia es `_claude`, que no se copia entero). Bases, usuarios con claves nuevas, `.env` y dumps listos. De `_claude` se copió solo la memoria: el `settings.json` era del proyecto `ecommerce-epica` y los `skills\synced` los sincroniza la cuenta.
+- Fase C: puntos 1 a 11 en verde (todas las suites, 200 nombres en `verificar:descarga`, y Mariano vio el sitio y entró al panel en el navegador). La prueba T20 de `test:migracion-db` fallaba desde el 30/10 porque no conocía `verificar-descarga.ts`, que es de solo lectura; se corrigió la prueba. Faltan los puntos 12 (el push) y 13 (abrir una sesión nueva de Claude Code y ver que carga la memoria).
+- Las 3 rutas absolutas del código ya son relativas al repo. Los documentos que se siguen usando tienen las rutas nuevas; los dos `.cmd` de `CMS-EVARISTO(ASSETS)` (`iniciar-mariadb.cmd` y `fase-b-bases.cmd`) se abren con doble clic. `iniciar-mariadb.cmd` queda para el uso diario; `fase-b-bases.cmd` y `fase-b-bases.ps1` ya se usaron y no hay que repetirlos.
+- **Sigue pendiente antes de la Fase D:** comprobar el otro pendrive con el manifiesto y borrar el dump sin cifrar `u728005081_evaristo.sql` de los dos pendrives al terminar.
 
 **Pendiente (se resuelve al llegar al equipo nuevo)**
 
-1. **Nombre del usuario de Windows.** Si es `Usuario`, todas las rutas absolutas siguen valiendo; si no, hay unas pocas que cambiar (sección 10). Conviene crear el usuario con ese nombre si se puede, pero no es obligatorio.
-2. **Con qué se mueven los datos:** un **disco externo** (~1 GB). Ojo: este equipo y el nuevo son **Windows 11 Home**, que **no puede crear unidades BitLocker To Go** (solo desbloquearlas). Como el paquete lleva el dump de WordPress con datos personales, hay que protegerlo de otra forma: comprimir el dump con **7-Zip y clave (AES-256)** o usar **VeraCrypt**. Instalar cualquiera es decisión tuya. Alternativa sin instalar nada: llevar el dump por cable de red o por una unidad que no se preste a nadie, y borrarlo del disco externo al terminar.
+1. **Con qué se mueven los datos:** un **disco externo** (~1 GB). Ojo: este equipo y el nuevo son **Windows 11 Home**, que **no puede crear unidades BitLocker To Go** (solo desbloquearlas). Como el paquete lleva el dump de WordPress con datos personales, hay que protegerlo de otra forma: comprimir el dump con **7-Zip y clave (AES-256)** o usar **VeraCrypt**. Instalar cualquiera es decisión tuya. Alternativa sin instalar nada: llevar el dump por cable de red o por una unidad que no se preste a nadie, y borrarlo del disco externo al terminar.
 
 ## 2. Qué hay en este equipo y cómo se lleva
 
@@ -53,7 +62,7 @@
 |---|---|---|
 | Git for Windows | 2.53.0 | Instalación por defecto (incluye el administrador de credenciales). Mantener `core.autocrlf=true`, como acá. |
 | Node.js | **24.x** (acá, 24.14.0; `.nvmrc` dice `24`; `engines` pide `>=22.12`) | npm 11.9.0 viene con Node. |
-| MySQL Server | **8.4.11** | Puerto **3308**, servicio **`MySQL84`**, inicio manual. Dejar `lower_case_table_names=1` (es el valor de Windows y **no se puede cambiar después** de inicializar). |
+| MySQL Server | **8.4.11** (en el equipo nuevo quedó 8.4.13, misma línea LTS) | Puerto **3308**, servicio **`MySQL84`**, inicio manual. Dejar `lower_case_table_names=1` (es el valor de Windows y **no se puede cambiar después** de inicializar). |
 | MariaDB | 11.8.9 portable (se copia con `mariadb-local\`) | Puerto 3307, solo para leer WordPress. |
 | Claude Code | la versión vigente | Iniciar sesión de nuevo. |
 | WinSCP | cualquiera reciente | Para la descarga de WordPress (ver `guia-descarga-wordpress.md`). |
