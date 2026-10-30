@@ -8,10 +8,10 @@
 
 El plan asume Windows 11 y la misma estructura de carpetas. Hay que confirmar:
 
-1. **¿Qué equipo es el nuevo y qué sistema operativo tiene?** (El README ya hablaba de «pasar a la Lenovo»: si es esa, probablemente Windows 11.) Si no es Windows, ver la sección 9.
+1. **¿Qué equipo es el nuevo y qué sistema operativo tiene?** (`pendientes.md` ya mencionaba «pasar a la Lenovo» y el README trae una nota para Windows 11: si es ese equipo, es probable que sea Windows 11, pero hay que confirmarlo.) Si no es Windows, ver la sección 9.
 2. **¿Cómo se llama el usuario de Windows en el equipo nuevo?** Si es `Usuario`, todas las rutas absolutas siguen valiendo. Si no, hay que cambiar unas pocas (sección 10).
 3. **¿Para cuándo se entrega este equipo?** Decide el orden con la descarga de WordPress (sección 8).
-4. **¿Con qué se mueven los datos?** Lo recomendado: un **disco externo** (~1,2 GB; mejor si se cifra con BitLocker To Go, porque lleva el dump de WordPress con datos personales de los usuarios).
+4. **¿Con qué se mueven los datos?** Lo recomendado: un **disco externo** (~1 GB; mejor si se cifra con BitLocker To Go, porque lleva el dump de WordPress con datos personales de los usuarios).
 
 ## 2. Qué hay en este equipo y cómo se lleva
 
@@ -78,7 +78,7 @@ El plan asume Windows 11 y la misma estructura de carpetas. Hay que confirmar:
 
    Después, borrá `mariadb-local\mysqld.pid` (queda de la sesión anterior).
 4. **Juntar todo en el disco externo**, conservando los nombres (con tildes y paréntesis): la carpeta `CMS-EVARISTO(ASSETS)` entera (incluye `mariadb-local`, los dumps y `traslado-…`), `packages\compartido\out\`, `packages\compartido\posts.json`, las tres carpetas sueltas de la sección 2 y los archivos de la raíz. Que el árbol del disco externo sea igual al de origen.
-5. **Memoria y configuración de Claude Code:** copiar las carpetas `memory` de `C:\Users\Usuario\.claude\projects\C--Users-Usuario-Documents-Proyectos-frontend-evaristo-cultural-cms\` y de `...\C--Users-Usuario-Documents-Proyectos-frontend\` (las sesiones se abren desde la carpeta padre), `settings.json` y `skills\`. El historial de conversaciones (`projects\*\*.jsonl`, `history.jsonl`) es opcional. **No copiar `.credentials.json`.**
+5. **Memoria y configuración de Claude Code:** copiar la carpeta `memory` de `C:\Users\Usuario\.claude\projects\C--Users-Usuario-Documents-Proyectos-frontend-evaristo-cultural-cms\` y, si existe, la de `...\C--Users-Usuario-Documents-Proyectos-frontend\` (`CLAUDE.md` dice que los prompts se pegan desde la carpeta padre), más `settings.json` y `skills\`. El historial de conversaciones (`projects\*\*.jsonl`, `history.jsonl`) es opcional. **No copiar `.credentials.json`.**
 6. **Manifiesto de verificación** de lo que se copió (para comprobar en el equipo nuevo que llegó idéntico). En la carpeta raíz del disco externo:
 
    ```powershell
@@ -154,7 +154,7 @@ Todo en el equipo nuevo. **Cada paso tiene que dar lo mismo que en este equipo.*
 | 7 | `npm run test:pantalla` | 92 pruebas ok |
 | 8 | Las suites con base: `test:admin-articulos`, `test:admin-edicion`, `test:admin-clasificacion`, `test:admin-revision`, `test:portada`, `test:novedades`, `test:busqueda`, `test:editor` y las demás de `pendientes.md` | Verdes (con el sitio compilado: `npm run build:sitio`) |
 | 9 | `npm run test:fase3` | Verde (necesita `MEDIA_DIR`) |
-| 10 | `npm run verificar:descarga -- --uploads="<...>\uploads-muestra\originales" --sin-base --lista-servidor=...` o, con la 3307 arriba, sin `--sin-base` | Reconoce los 200 de la muestra |
+| 10 | Con la 3307 arriba: `npm run verificar:descarga -- --uploads="<...>\uploads-muestra\originales"` | Dice «un nombre que la migración reconoce: 200». Los demás figuran como faltantes y sale con 1: es lo esperable, la carpeta es solo la muestra. |
 | 11 | `npm run build` y `npm run dev:desarrollo -w @evaristo/api`; abrir `http://127.0.0.1:3000/` y `/admin/` | El sitio con el menú nuevo; el panel deja ingresar con el usuario que ya existía en `evaristo_cms_dev` |
 | 12 | Un commit real y su `git push` desde el equipo nuevo | Llega a GitHub |
 | 13 | Claude Code abre el proyecto | Lee `CLAUDE.md` y carga la memoria (`MEMORY.md`) |
@@ -174,8 +174,8 @@ Solo cuando la Fase C esté completa **y** exista una copia del disco externo en
 
 La descarga (`guia-descarga-wordpress.md`) baja ~8 GB y **tiene fecha límite**. Hay dos órdenes posibles:
 
-- **Si este equipo se entrega después del 15/11:** primero el cambio de equipo (esta guía) y **después la descarga, directo en el equipo nuevo**. Así no se mueven 8 GB dos veces.
-- **Si se entrega antes de esa fecha:** o se baja primero en este equipo y se suma al disco externo (la guía ocupa ~10 GB más), o se hace el cambio de equipo cuanto antes y se baja en el nuevo. Lo que **no** conviene es dejar la descarga para después de entregar este equipo sin tener ya el nuevo andando: el plan de Hostinger vence el 28/11.
+- **Si el cambio de equipo se puede completar con tiempo de sobra antes del 28/11:** primero el cambio (esta guía) y **después la descarga, directo en el equipo nuevo**. Así no se mueven ~8 GB dos veces.
+- **Si la entrega de este equipo es antes, o el cambio se demora:** bajar primero en este equipo y sumar esa carpeta al disco externo (suma ~10 GB), o hacer el cambio cuanto antes y bajar en el nuevo. Lo que **no** conviene es entregar este equipo sin tener ya el nuevo andando y la descarga hecha: el plan de Hostinger vence el 28/11 y lo que no se baje se pierde.
 
 ## 9. Si el equipo nuevo no es Windows
 
