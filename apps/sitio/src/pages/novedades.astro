@@ -5,8 +5,8 @@ import { esNovedad, fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "..
 import { cantidadDePaginas, paginaPedida } from "../lib/paginacion";
 import { contarNovedades, notasNovedades } from "../lib/portada";
 
-// «Novedades»: las notas marcadas como novedad (campo `novedadHasta` del artículo) mientras su fecha no venza, de la más nueva a la más vieja,
-// de a NOTAS_POR_PAGINA con ?pagina=N. No es una sección ni una categoría (decisión 15).
+// «Novedades»: el archivo de todas las notas que alguna vez fueron novedad (campo `novedadHasta` del artículo, vigente o vencida): primero las vigentes,
+// después las vencidas, de a NOTAS_POR_PAGINA con ?pagina=N. No es una sección ni una categoría (decisión 15; archivo según la decisión 78).
 const noEncontrado = () => Astro.rewrite("/404");
 const total = await contarNovedades();
 const paginas = cantidadDePaginas(total);
@@ -15,7 +15,7 @@ if (pagina > paginas) return noEncontrado();
 const notas = await notasNovedades(pagina);
 ---
 
-<Base titulo={pagina > 1 ? `Novedades (página ${pagina})` : "Novedades"} descripcion="Las novedades de Evaristo Cultural: lo que acaba de salir.">
+<Base titulo={pagina > 1 ? `Novedades (página ${pagina})` : "Novedades"} descripcion="Las novedades de Evaristo Cultural: lo que acaba de salir y el archivo de lo que fue novedad.">
   <Listado
     titulo="Novedades"
     total={total}

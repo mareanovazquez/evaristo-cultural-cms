@@ -12,7 +12,7 @@ export const posicionFocal = (x: number, y: number): string => {
   return `${Math.round(limitar(x) * 100)}% ${Math.round(limitar(y) * 100)}%`;
 };
 
-/** ¿La nota cuenta como novedad? Su fecha `novedadHasta` todavía no pasó (los migrados no tienen fecha). */
+/** ¿La nota cuenta como novedad? Su fecha `novedadHasta` todavía no pasó (los migrados con la marca de Novedades de WordPress traen una fecha ya vencida, así que no cuentan). */
 export const esNovedad = (novedadHasta: Date | null | undefined, ahora: Date = new Date()): boolean => !!novedadHasta && novedadHasta > ahora;
 
 // Un artículo se ve solo si está PUBLICADO y su fecha ya llegó.
