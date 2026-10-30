@@ -43,7 +43,7 @@
 2. `Test-NetConnection 127.0.0.1 -Port 3308` (siempre). El 3307 (WordPress) solo si se lee WordPress. Si están caídas, las levanta Mariano (`glosario-comandos-bases.md`).
 3. `npm run build`, `npm run typecheck`, `npm run test:pantalla`, `npm run test:conversor` y `npm run test:migracion` para saber que arrancamos en verde.
 4. **Lo que necesito de Mariano** (se puede traer en el chat, sin contraseñas):
-   - Si el plan de Hostinger **se renueva** y quién es el dueño del plan; **dónde se va a alojar** el sitio nuevo (fase 1, todavía sin decidir) y si ya hay un servicio de correo.
+   - **Las tres preguntas abiertas están en `guia-descarga-wordpress.md`, sección «Antes de empezar: preguntas abiertas»; empezar por ahí.** En resumen: si el plan de Hostinger **se renueva** y quién es el dueño del plan; **dónde se va a alojar** el sitio nuevo (fase 1, todavía sin decidir) y si ya hay un servicio de correo.
    - **Lugar y espacio en disco** para los `uploads` (unos 8 GB de descarga, más los derivados que se generen: conviene tener 25 GB libres).
    - Cómo se conecta por SSH al hosting (qué cliente usa). **Las credenciales no pasan por el chat ni por un documento.**
    - Si ya miró el menú, el topbar y el banner en el navegador y qué ajustó.

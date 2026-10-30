@@ -15,12 +15,20 @@ Todo lo que se descarga queda **fuera del repositorio**, en `CMS-EVARISTO(ASSETS
 
 Espacio: el disco `C:` tiene ~250 GB libres (30/10/2026); sobra. Se necesitan unos 10 GB para la descarga y otros tantos para el segundo respaldo.
 
-## Antes de empezar: lo que hay que confirmar
+## Antes de empezar: preguntas abiertas (resolver primero)
 
-- ☐ ¿El plan de Hostinger **se renueva**? ¿Quién es el dueño y puede entrar a hPanel? Si no se renueva, esta descarga es la última oportunidad.
-- ☐ **Acceso SSH** habilitado en hPanel (en Hostinger suele estar en «Avanzado → Acceso SSH»; el puerto habitual es **65002**, confirmalo ahí). Anotá usuario, dirección y puerto. Sin SSH se puede igual, con más pasos (ver «Si no hay SSH»).
-- ☐ **Cliente de transferencia.** Este equipo tiene `ssh`, `scp` y `sftp` (OpenSSH), pero **no tiene `rsync` ni WinSCP**. Recomiendo instalar **WinSCP** (gratis): reanuda sin volver a bajar lo que ya está. Instalarlo es decisión tuya. Alternativa sin instalar nada: `scp` (no reanuda).
-- ☐ Dónde guardar el **segundo respaldo** (otro disco físico o un servicio): el hosting desaparece el 28/11 y esta descarga pasa a ser la única copia.
+**Estado al 30/10/2026: sin responder.** Son lo primero que hay que cerrar al retomar; sin estas respuestas no se puede empezar a bajar. Anotá cada respuesta acá mismo, con la fecha.
+
+1. ☐ **¿El plan de Hostinger se renueva, y tenés acceso a hPanel?** ¿Quién es el dueño del plan? Si no se renueva, esta descarga es la última oportunidad y hay que hacerla **antes del 28/11/2026**.
+   - Respuesta: _______________
+2. ☐ **¿Instalamos WinSCP o usamos `scp`?** Este equipo tiene `ssh`, `scp` y `sftp` (OpenSSH), pero **no tiene `rsync` ni WinSCP**. WinSCP (gratis) **reanuda** una descarga cortada sin volver a bajar lo ya bajado; `scp` no reanuda. Instalar software es decisión tuya.
+   - Respuesta: _______________
+3. ☐ **¿Dónde va el segundo respaldo?** Otro disco físico o un servicio. El hosting desaparece el 28/11 y la descarga pasa a ser la única copia, así que tiene que haber dos. (El disco `C:` tiene ~250 GB libres, el espacio de la descarga no es problema; la pregunta es la copia en *otro* lugar.)
+   - Respuesta: _______________
+
+Además, al conectarte por primera vez hay que confirmar con hPanel (no son preguntas para mí, son datos que se leen ahí):
+
+- **Acceso SSH habilitado** (en Hostinger suele estar en «Avanzado → Acceso SSH»; el puerto habitual es **65002**, confirmalo ahí). Anotá usuario, dirección y puerto. **La contraseña no se anota en ningún documento ni se pasa por el chat.** Sin SSH se puede igual, con más pasos (ver «Si no hay SSH»).
 
 Carpeta de destino sugerida (se crea una por descarga):
 
