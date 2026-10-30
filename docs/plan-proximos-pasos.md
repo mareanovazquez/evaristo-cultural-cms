@@ -50,7 +50,7 @@
 
 ## Orden sugerido
 
-1. **Primero la descarga de WordPress** (fase 7, etapa 0): es lo único con fecha límite (**28/11/2026**, quedan 29 días al 30/10) y tarda horas. `docs/guia-descarga-wordpress.md` **todavía no existe**: escribirla junto con el script que compara la carpeta descargada con la base, y dejar a Mariano descargando en segundo plano mientras se sigue.
+1. **Primero la descarga de WordPress** (fase 7, etapa 0): es lo único con fecha límite (**28/11/2026**, quedan 29 días al 30/10) y tarda horas. La guía y el script de verificación **ya existen** (`docs/guia-descarga-wordpress.md`, `npm run verificar:descarga`; 30/10/2026): falta que Mariano confirme los datos del hosting y empiece a bajar en segundo plano mientras se sigue.
 2. **El 90 días por defecto** (punto 1 de «Lo que falta de la decisión 78»), que es chico y deja cerrada la reorganización.
 3. **Fase 7, etapa 1:** lo técnico que no depende de la descarga.
 4. **Si hay tiempo o llegan los contenidos:** «Quiénes somos» y «Contacto» y lo que salga de mirar el sitio en el navegador.
@@ -64,20 +64,22 @@ Lista completa en `plan-implementacion.md` (sección 10) y `pendientes.md` (secc
 ### Etapa 0: descarga de WordPress (Mariano, **antes del 28/11/2026**)
 
 - **Bajar `wp-content/uploads` completo** (unos 7,9 GB, carpeta plana, ~10.975 archivos) por SSH y **volver a exportar la base** (`mysqldump`) justo antes de migrar. El plan de Hostinger vence el 28/11: confirmar si se renueva.
-- **Trampa conocida:** el `tar` de Windows altera los nombres con tildes y símbolos. Usar `rsync` (desde WSL, si hay) o un cliente SFTP que respete los nombres (por ejemplo WinSCP), y **verificar los nombres contra `_wp_attached_file`** de la base nueva, sensible a mayúsculas.
+- **Guía y verificación listas (30/10/2026):** `docs/guia-descarga-wordpress.md` (paso a paso) y `npm run verificar:descarga` (compara la carpeta bajada con la base de WordPress y con una lista hecha en el servidor: faltantes, nombres alterados, tamaños cero o distintos, sobrantes; solo lectura; 16 pruebas en `test:migracion`).
+- **Dos trampas conocidas:** (1) el `tar` de Windows altera los nombres con tildes y símbolos. En este equipo hay `ssh`, `scp` y `sftp` (OpenSSH) pero **no hay `rsync` ni WinSCP**: la guía recomienda instalar WinSCP (reanuda) o usar `scp`. **Verificar los nombres contra `_wp_attached_file`** de la base nueva, sensible a mayúsculas. (2) **39 grupos de imágenes (78 archivos) solo difieren en las mayúsculas** (`TAPA.jpg` / `tapa.jpg`): en Windows uno pisa al otro. La guía los aparta en el servidor en un `colisiones.tar`.
 - Guardar el dump y los `uploads` fuera del repositorio (`CMS-EVARISTO(ASSETS)`), y **respaldar** todo en un segundo lugar.
 
 ### Etapa 1: lo técnico que no depende de la descarga (Claude)
 
 En este orden (de lo que más condiciona a lo que menos):
 
-1. **`--todos`** en `migrar` y `migrar:escribir` (hoy rechazado) y la **consulta de colisiones de slug en lote** (hoy una por artículo; no escala a 2.637). Con su política de errores y pruebas.
-2. **Procesamiento de imágenes:** hoy el script mide JPEG, PNG y GIF sin librerías; otro formato da `imagen_sin_medir`, y falta la orientación EXIF 5 a 8. Con `sharp` (ya aprobado en `apps/api`; en `packages/compartido` sería una dependencia nueva: **preguntar antes**, versión exacta y fecha). Revisar de paso las variantes de tamaño (las fotos migradas son chicas: la mediana mide 700 px).
-3. **Arreglos de datos conocidos:** el 4265 (dos anclas por nota al pie), los enlaces internos de texto (28 a artículos y 28 a `uploads`; falta averiguar qué pasó con 26), el 5360 (cuatro íconos de Word con ruta relativa) y los originales faltantes `escanear0006.jpg` y `mankell.jpg`. Contar cuántos artículos empiezan con «Por …» (firmas dentro del cuerpo).
-4. **Redirecciones que faltan:** `/tag/…`, `/feed/`, `/?p=ID`, `/wp-content/uploads/…` y las páginas fijas (las `/category/…` ya están, decisión 78); confirmar con el corpus completo que la fecha UTC de `publicadoEn` reproduce las URLs viejas (en la muestra, 33 de 34). Caché en memoria si la carga lo pide.
-5. **Permiso** de `evaristo_migracion` sobre `evaristo_cms_test` (dejarlo o revocarlo).
-6. **Buscador con los 2.637:** probar el rendimiento (algunos textos pasan de 100 KB).
-7. **`run-corpus`** y el nombre de los informes de `test-flujo` (ver arriba).
+1. **Resolver las colisiones de nombres de imagen (descubierto el 30/10/2026).** En la base de WordPress hay **45 grupos de claves** (`_wp_attached_file`) que el CMS no distingue: 39 solo por mayúsculas (`TAPA.jpg` / `tapa.jpg`; 78 archivos) y 6 por una tilde (`Perón.jpg` / `peron.jpg`). `imagenes.clave` es única y su colación (`utf8mb4_es_0900_ai_ci`) no distingue mayúsculas ni tildes, así que la segunda fila de cada grupo **falla al insertarse** y la migración con `--todos` no puede completarse. Opciones: renombrar los colisionantes al importar (con sufijo estable) guardando la correspondencia y actualizando las referencias de los artículos, o cambiar la colación de `imagenes.clave` a binaria (migración de esquema, con su prueba). Además, en Windows los 78 de mayúsculas no caben en una carpeta: están en `colisiones.tar`. Decidir con Mariano antes de `--todos`.
+2. **`--todos`** en `migrar` y `migrar:escribir` (hoy rechazado) y la **consulta de colisiones de slug en lote** (hoy una por artículo; no escala a 2.637). Con su política de errores y pruebas.
+3. **Procesamiento de imágenes:** hoy el script mide JPEG, PNG y GIF sin librerías; otro formato da `imagen_sin_medir`, y falta la orientación EXIF 5 a 8. Con `sharp` (ya aprobado en `apps/api`; en `packages/compartido` sería una dependencia nueva: **preguntar antes**, versión exacta y fecha). Revisar de paso las variantes de tamaño (las fotos migradas son chicas: la mediana mide 700 px).
+4. **Arreglos de datos conocidos:** el 4265 (dos anclas por nota al pie), los enlaces internos de texto (28 a artículos y 28 a `uploads`; falta averiguar qué pasó con 26), el 5360 (cuatro íconos de Word con ruta relativa) y los originales faltantes `escanear0006.jpg` y `mankell.jpg`. Contar cuántos artículos empiezan con «Por …» (firmas dentro del cuerpo).
+5. **Redirecciones que faltan:** `/tag/…`, `/feed/`, `/?p=ID`, `/wp-content/uploads/…` y las páginas fijas (las `/category/…` ya están, decisión 78); confirmar con el corpus completo que la fecha UTC de `publicadoEn` reproduce las URLs viejas (en la muestra, 33 de 34). Caché en memoria si la carga lo pide.
+6. **Permiso** de `evaristo_migracion` sobre `evaristo_cms_test` (dejarlo o revocarlo).
+7. **Buscador con los 2.637:** probar el rendimiento (algunos textos pasan de 100 KB).
+8. **`run-corpus`** y el nombre de los informes de `test-flujo` (ver arriba).
 
 ### Etapa 2: ensayo general en una copia (Claude y Mariano)
 
@@ -100,9 +102,10 @@ En este orden (de lo que más condiciona a lo que menos):
 
 1. **Hosting y correo** (cuándo se decide y con quién): condiciona el lanzamiento.
 2. **Cómo convertir la real** (en el lugar o re-migrando los 35): ver Etapa 3.
-3. **Variantes de tamaño de las imágenes:** hacerlas al migrar (conviene, para el hero y las tarjetas) o después.
-4. **Borradores migrados y privado 19300:** publicar, eliminar o dejar.
-5. **Páginas fijas de WordPress** (Quiénes somos, Contacto, etc.): se migran, se reescriben o se redirigen.
+3. **Cómo resolver las 45 colisiones de nombres de imagen** (renombrar al importar o colación binaria): ver Etapa 1, punto 1.
+4. **Variantes de tamaño de las imágenes:** hacerlas al migrar (conviene, para el hero y las tarjetas) o después.
+5. **Borradores migrados y privado 19300:** publicar, eliminar o dejar.
+6. **Páginas fijas de WordPress** (Quiénes somos, Contacto, etc.): se migran, se reescriben o se redirigen.
 
 ## Qué NO se hace al retomar
 
