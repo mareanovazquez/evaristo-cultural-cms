@@ -84,7 +84,9 @@ try {
     assert.equal(s.startsWith('<article class="diapositiva activa"'), i === 0, `diapositiva ${i + 1}: solo la primera arranca visible`);
     assert.ok(s.includes(`aria-label="${i + 1} de 3"`), `diapositiva ${i + 1}: «${i + 1} de 3» para lectores de pantalla`);
     if (a.imagenEncabezado) {
-      assert.match(s, new RegExp(`<img[^>]*alt="${escapar(a.encabezadoAlt ?? "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`), `diapositiva ${i + 1}: usa el texto alternativo de la imagen`);
+      // Un alt vacío (migrados sin texto alternativo) lo escribe Astro como `alt` sin valor: es HTML válido y equivale a alt=""
+      const alt = escapar(a.encabezadoAlt ?? "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      assert.match(s, new RegExp(alt === "" ? `<img[^>]*\\balt(?:="")?(?=[\\s>])` : `<img[^>]*alt="${alt}"`), `diapositiva ${i + 1}: usa el texto alternativo de la imagen`);
       assert.ok(i === 0 ? /loading="eager"/.test(s) && /fetchpriority="high"/.test(s) : /loading="lazy"/.test(s), `diapositiva ${i + 1}: ${i === 0 ? "la primera carga con prioridad" : "las demás, diferidas"}`);
     }
   });
