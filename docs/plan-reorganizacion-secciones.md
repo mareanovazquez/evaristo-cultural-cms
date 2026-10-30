@@ -119,7 +119,9 @@ Estimación a partir de la corrida del 13/10/2026 (2.637 artículos), a confirma
 | **Textos** | **~942** (los que ganaban por tema y no tienen formato) |
 | `sin-asignar` | ~8 (Uncategorized y «Artículos»), o ~103 si Novedades no se confirma |
 
-Los 942 de Textos conservan su tema como categoría, así que tienen volanta. Hoy 1.609 artículos no tienen ninguna; el número baja en la misma medida (a confirmar en el paso 1).
+**Resultado real (30/10/2026, mapeo nuevo sobre las 2.637, categorías leídas de la 3307):** Entrevista 469, Asia 414, Reseña 348, Rastros 245, Ensayo 81, Crónica 35, Crítica 0, **Textos 1.037**, `sin-asignar` 8. De los 102 con Novedades, 96 quedan en Textos y 6 conservan su formato. 261 artículos tenían más de una sección candidata (las perdedoras se descartan). 972 quedan sin categoría. No hay taxonomías sin mapear. `run-corpus` no se pudo usar porque sus dos generadores (`consultar-categorias.ts`, `extraer-autores-por-post.ts`) ya no existen en el repo; el reparto salió de una consulta de solo lectura y un script descartable.
+
+Los ~942 de Textos (estimación original) conservan su tema como categoría, así que tienen volanta. Hoy 1.609 artículos no tienen ninguna; el número baja en la misma medida (a confirmar en el paso 1).
 
 ## 7. Riesgos y consecuencias
 
