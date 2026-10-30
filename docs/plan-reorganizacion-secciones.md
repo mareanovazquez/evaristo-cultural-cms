@@ -1,6 +1,8 @@
 # Plan: reorganización de secciones y categorías
 
-**Estado (27/10/2026):** propuesta. **No implementada.** Depende de la reunión con la editorial (dentro de 48 horas de esta fecha). Cuando la editorial responda, se confirma o se ajusta este plan, se registra como decisión numerada en `plan-implementacion.md` (la 78) y se implementa en la rama `fase7-secciones`.
+**Estado (30/10/2026):** aprobada por la editorial el 29/10/2026 y registrada como decisión 78 de `plan-implementacion.md`. Implementación en curso en la rama `fase7-secciones`: el paso 1 tiene hecho el mapeo, `taxonomia.ts` y `test-taxonomia` (faltan `run-corpus` y el resto de los pasos). Respuestas de la reunión, que ajustan el texto de abajo: Crítica se queda (identidad propia, arranca vacía); Textos va en el navbar (dentro de «Más») y no en la portada, y admite cuentos nuevos; la novedad dura **90 días** por defecto (no 60), ajustable; los 102 artículos de Novedades van a su formato o, sin formato, a **Textos con la novedad vencida** (no a Reseña, así que no hay «candidata Reseña» ni conflicto de prioridad con Ensayo y Crónica); menú con Novedades, Entrevista, Reseña, Ensayo y Crónica en el primer nivel (`SECCIONES_VISIBLES` = 4).
+
+**Desvío respecto de la sección 4:** `convertWpPost` no recibe la fecha del post, así que no fija `novedadHasta`. La taxonomía devuelve `novedad: true` y la fecha pasada (la de publicación) la pone el armado de la migración (`armar.ts`, paso 2).
 
 Reabre el modelo que la editorial cerró el 7/10/2026 (`especificaciones/especificacion-articulo.md`, secciones 2 y 13).
 
