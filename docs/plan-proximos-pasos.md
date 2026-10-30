@@ -78,7 +78,7 @@ En este orden (de lo que más condiciona a lo que menos):
 
 - **Ceremonia de la decisión 50:** respaldo con `mysqldump --result-file`; ensayo en seco y aprobación; commit aparte con `ESCRITURA_REAL_HABILITADA = true` (sin push ni tests); Mariano ejecuta `migrar:escribir` en su terminal interactiva; verificación en solo lectura; `git revert --no-commit` y commit con el interruptor en `false`; recién ahí el push. **Nunca dejar el `true` al cerrar una sesión.**
 - **Antes:** aplicar las nueve migraciones a `evaristo_cms` con `db:deploy` (con respaldo previo) y regenerar el texto plano de los 19 artículos de la decisión 53 (con `--sobrescribir`).
-- **Después:** comparación independiente contra WordPress con los 2.637, revisión por muestreo, reparto de `sin-asignar` (103), bios y fotos de los 424 autores, y decidir con la dueña qué hacer con los 48 borradores y el privado 19300.
+- **Después:** comparación independiente contra WordPress con los 2.637, revisión por muestreo, reparto de `sin-asignar` (8) y revisión de Textos (~1.037, 96 de ellos Novedades de WordPress con la novedad vencida; decisión 78), bios y fotos de los 424 autores, y decidir con la dueña qué hacer con los 48 borradores y el privado 19300.
 
 ### Etapa 4: lanzamiento (depende de la fase 1)
 
@@ -89,7 +89,7 @@ En este orden (de lo que más condiciona a lo que menos):
 
 1. **Hosting y correo** (cuándo se decide y con quién): condiciona el lanzamiento.
 2. **Variantes de tamaño de las imágenes:** hacerlas al migrar (conviene, para el hero y las tarjetas) o después.
-3. **Qué pasa con las notas de «Novedades» de WordPress** (95 en `sin-asignar`): ¿se marcan como novedad al migrar y con qué fecha?
+3. ~~Qué pasa con las notas de «Novedades» de WordPress~~: resuelto el 29/10/2026 (decisión 78). Migran con la novedad vencida (su fecha de publicación), en su formato o en Textos.
 4. **Borradores migrados y privado 19300:** publicar, eliminar o dejar.
 5. **Páginas fijas de WordPress** (Quiénes somos, Contacto, etc.): se migran, se reescriben o se redirigen.
 

@@ -3,6 +3,7 @@
 // valida; no abre conexiones, no conoce ningún destino y no importa escribir.ts, correr-escritura.ts ni flujo-escribir.ts. Todo pasa por consultar()
 // (un único SELECT por vez). Quien la llama decide la base: el script verificar-escritura.ts, siempre evaristo_cms; los tests con base, evaristo_cms_test.
 // Nunca devuelve ni imprime correos, textos de bio ni claves: solo nombres de comprobaciones, ids y cantidades.
+import { SECCIONES } from "../../../src/secciones.ts";
 import { validateArticleBodyDetallado } from "../../../src/schema/validate.ts";
 import { leerDestinoServidor } from "./conexiones.ts";
 import type { DestinoUrl } from "./destinos.ts";
@@ -213,7 +214,7 @@ export async function verificarEscritura(o: OpcionesVerificacion): Promise<Resul
       articulos_galeria: 0, fichas_tecnicas: 0, usuarios: 0, pruebaconexion: 0,
     };
     for (const [t, n] of Object.entries(esperado)) chk(null, `(a) conteo ${t}`, conteos[t] === n, `esperado ${n}, hay ${conteos[t]}`);
-    chk(null, "(i) secciones no cambiaron", conteos["secciones"] === 18, `hay ${conteos["secciones"]}`);
+    chk(null, "(i) secciones no cambiaron", conteos["secciones"] === SECCIONES.length, `esperado ${SECCIONES.length}, hay ${conteos["secciones"]}`);
     // La migración no toca esta tabla. Eran 3 al cerrar la fase 2; la fase 4 suma más (sesiones, borradores de cambios), así que se pide que no falte ninguna de las 3 originales.
     if ("_prisma_migrations" in conteos) chk(null, "(i) _prisma_migrations no perdió migraciones", (conteos["_prisma_migrations"] ?? 0) >= 3, `hay ${conteos["_prisma_migrations"]}`);
     const otras = tablas.filter((t) => !(t in esperado) && !["secciones", "_prisma_migrations"].includes(t));

@@ -54,7 +54,7 @@ const servidorCms = { puerto: 3308, base: "evaristo_cms", readOnly: 0, version: 
 const servidorWordPress = { puerto: 3307, base: "evaristo_lectura", readOnly: 0, version: "10.11.2-MariaDB" };
 
 await ta("T16: la simulación de los 35 solo emite SELECT y devuelve el informe esperado", async () => {
-  const bd = clienteSimulado({ categorias: ["ensayo"] }), wp = clienteSimulado();
+  const bd = clienteSimulado({ categorias: ["poesia"] }), wp = clienteSimulado();
   const { informe } = await simular(opciones, { wp: wp.consulta, bd: bd.consulta, destino: { ...DESTINO_REAL }, servidorCms, servidorWordPress }, {
     leerEntrada: async () => entradaDesdeSnapshot(), largos: leerLargosSchema(), medir: medirFalso, ahora: () => new Date("2026-10-17T14:03:22.123Z"),
   });
@@ -68,7 +68,7 @@ await ta("T16: la simulación de los 35 solo emite SELECT y devuelve el informe 
   assert.equal(informe.resumen.invalidos, 0);
   assert.equal(informe.resumen.excluidos, 0);
   assert.equal(informe.redirecciones.total, 58);
-  assert.equal(informe.categoriasACrear.length, 8);
+  assert.equal(informe.categoriasACrear.length, 7);
   assert.equal(informe.imagenes.referenciadas, 202);
   assert.equal(informe.imagenes.conFila, 200);
   assert.equal(informe.imagenes.bytesTotales, 200 * 1000);
@@ -80,8 +80,8 @@ await ta("T16: la simulación de los 35 solo emite SELECT y devuelve el informe 
   assert.deepEqual(informe.bloqueantes, []);
   const tabla = (n: string) => informe.tablas.find((t) => t.tabla === n)!;
   assert.equal(tabla("articulos").insertar, 35);
-  assert.equal(tabla("categorias").enElPlan, 8);
-  assert.deepEqual([tabla("categorias").insertar, tabla("categorias").yaExisteSinComparar], [7, 1], "ensayo ya existe en el CMS simulado");
+  assert.equal(tabla("categorias").enElPlan, 7);
+  assert.deepEqual([tabla("categorias").insertar, tabla("categorias").yaExisteSinComparar], [6, 1], "poesia ya existe en el CMS simulado");
   assert.equal(tabla("imagenes").insertar, 200);
   assert.equal(tabla("redirecciones").insertar, 58);
   assert.ok(informe.tablas.every((t) => t.actualizar === 0 && t.omitir === 0));
@@ -91,7 +91,7 @@ await ta("T16: la simulación de los 35 solo emite SELECT y devuelve el informe 
 });
 
 await ta("T16: lo que ya existe por clave natural se informa como \"ya existe (sin comparar)\" y no se actualiza", async () => {
-  const bd = clienteSimulado({ articulos: ["22546", "2462"], categorias: ["poesia", "ensayo"], redirecciones: [] });
+  const bd = clienteSimulado({ articulos: ["22546", "2462"], categorias: ["poesia", "literatura"], redirecciones: [] });
   const { informe } = await simular(opciones, { wp: clienteSimulado().consulta, bd: bd.consulta, destino: { ...DESTINO_REAL }, servidorCms, servidorWordPress }, {
     leerEntrada: async () => entradaDesdeSnapshot(), largos: leerLargosSchema(), medir: medirFalso,
   });
@@ -99,7 +99,7 @@ await ta("T16: lo que ya existe por clave natural se informa como \"ya existe (s
   assert.deepEqual([art.enElPlan, art.insertar, art.actualizar, art.omitir, art.yaExisteSinComparar], [35, 33, 0, 0, 2]);
   assert.deepEqual(art.existentes.sort(), ["22546", "2462"]);
   const cat = informe.tablas.find((t) => t.tabla === "categorias")!;
-  assert.deepEqual([cat.enElPlan, cat.insertar, cat.yaExisteSinComparar], [8, 6, 2]);
+  assert.deepEqual([cat.enElPlan, cat.insertar, cat.yaExisteSinComparar], [7, 5, 2]);
   assert.ok(bd.sql.every((s) => /^\s*SELECT\b/i.test(s)));
 });
 

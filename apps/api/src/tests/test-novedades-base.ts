@@ -1,5 +1,6 @@
 // Prueba de las novedades del sitio (campo `novedadHasta` del artículo) con la base de desarrollo y el sitio compilado (`npm run build:sitio`).
-// Crea artículos temporales y los borra al terminar. Comprueba: la página /novedades/ (solo las vigentes y publicadas, paginada), la etiqueta
+// Crea artículos temporales y los borra al terminar. Comprueba: la página /novedades/ (el archivo de todo lo que alguna vez fue novedad y está
+// publicado, con las vigentes primero; paginada), la etiqueta
 // «Novedad» en las tarjetas, en la nota y en los resultados del buscador, el bloque «Novedades» de la portada, y los enlaces del menú y del pie.
 //
 // Uso: npm run test:novedades
@@ -57,11 +58,14 @@ try {
       select: { id: true, slug: true, publicadoEn: true },
     });
 
-  // Sin ninguna novedad vigente en la base, la portada no tiene el bloque ni el menú se rompe
-  const yaHay = await prisma.articulo.count({ where: { estado: "PUBLICADO", publicadoEn: { lte: new Date() }, novedadHasta: { gt: new Date() } } });
-  if (yaHay === 0) {
+  // Sin ninguna novedad en la base (ni vigente ni vencida), la portada no tiene el bloque ni el menú se rompe y el archivo lo explica
+  const yaHayVigentes = await prisma.articulo.count({ where: { estado: "PUBLICADO", publicadoEn: { lte: new Date() }, novedadHasta: { gt: new Date() } } });
+  const yaHayAlguna = await prisma.articulo.count({ where: { estado: "PUBLICADO", publicadoEn: { lte: new Date() }, novedadHasta: { not: null } } });
+  if (yaHayVigentes === 0) {
     const sin = await pedir("/");
-    assert.ok(!sin.html.includes('id="bloque-novedades"'), "sin novedades, la portada no tiene el bloque «Novedades»");
+    assert.ok(!sin.html.includes('id="bloque-novedades"'), "sin novedades vigentes, la portada no tiene el bloque «Novedades»");
+  }
+  if (yaHayAlguna === 0) {
     const vacia = await pedir("/novedades/");
     assert.equal(vacia.estado, 200);
     assert.match(vacia.html, /Por ahora no hay novedades/, "la página vacía lo explica");
@@ -84,10 +88,13 @@ try {
   assert.match(pagina.html, /<h1[^>]*>Novedades<\/h1>/);
   const titulos = titulosEn(pagina.html);
   assert.ok(titulos.includes(`Novtest ${sufijo} vigente`), "una nota cuya novedad no venció está");
-  assert.ok(!titulos.includes(`Novtest ${sufijo} vencida`), "una cuya fecha pasó ya no");
-  assert.ok(!titulos.includes(`Novtest ${sufijo} comun`), "una sin marca tampoco");
+  assert.ok(titulos.includes(`Novtest ${sufijo} vencida`), "una cuya fecha pasó sigue en el archivo");
+  assert.ok(!titulos.includes(`Novtest ${sufijo} comun`), "una sin marca no");
   assert.ok(!titulos.some((t) => t.includes("borrador") || t.includes("programada")), "ni un borrador ni una programada");
   assert.equal(etiquetaPorTarjeta(pagina.html).get(`Novtest ${sufijo} vigente`), true, "y lleva la etiqueta «Novedad»");
+  assert.equal(etiquetaPorTarjeta(pagina.html).get(`Novtest ${sufijo} vencida`), false, "la vencida, no");
+  const ultimaVigente = Math.max(...titulos.map((t, i) => (etiquetaPorTarjeta(pagina.html).get(t) ? i : -1)));
+  assert.ok(ultimaVigente < titulos.indexOf(`Novtest ${sufijo} vencida`), "las vigentes van antes que las vencidas");
   assert.equal((await pedir("/novedades/?pagina=999")).estado, 404);
 
   // ---------- Etiqueta en los listados ----------
@@ -121,7 +128,27 @@ try {
   assert.ok(bloques % 2 === 0 || bloques <= 1, `los bloques quedan de a pares (${bloques})`);
   assert.ok((home.html.match(/href="\/novedades\/"/g) ?? []).length >= 4, "enlaces a Novedades en el menú (escritorio y celular), el pie y el bloque");
 
-  console.log("OK: las novedades se ven donde corresponde (página /novedades/ solo con las vigentes y publicadas, etiqueta «Novedad» en listados, nota y buscador, bloque en la portada, menú y pie).");
+  // ---------- Paginación del archivo: las vigentes primero y, a continuación, las vencidas, también al cruzar de página ----------
+  // Se suman notas de más para que el archivo ocupe varias páginas y el cambio de vigentes a vencidas caiga en el medio de una.
+  for (let i = 0; i < 14; i++) await nota(`Novtest ${sufijo} pag vigente ${String(i).padStart(2, "0")}`, new Date(Date.now() + 10 * DIA), { publicadoEn: new Date(Date.now() - (10 + i) * 60_000) });
+  for (let i = 0; i < 3; i++) await nota(`Novtest ${sufijo} pag vencida ${i}`, new Date(Date.now() - 2 * DIA), { publicadoEn: new Date(Date.now() - (60 + i) * 60_000) });
+  const propias = await prisma.articulo.findMany({ where: { slug: { startsWith: `novtest-${sufijo}` }, estado: "PUBLICADO", publicadoEn: { lte: new Date() }, novedadHasta: { not: null } }, select: { titulo: true, publicadoEn: true, novedadHasta: true, id: true } });
+  const nuevaAVieja = (x: { publicadoEn: Date | null; id: number }, y: { publicadoEn: Date | null; id: number }) => y.publicadoEn!.getTime() - x.publicadoEn!.getTime() || y.id - x.id;
+  const ahora = Date.now();
+  const esperado = [...propias.filter((n) => n.novedadHasta!.getTime() > ahora).sort(nuevaAVieja), ...propias.filter((n) => n.novedadHasta!.getTime() <= ahora).sort(nuevaAVieja)].map((n) => n.titulo);
+  const recorridas: string[] = [];
+  let paginasVistas = 0;
+  for (let n = 1; ; n++) {
+    const r = await pedir(`/novedades/?pagina=${n}`);
+    if (r.estado === 404) break;
+    assert.equal(r.estado, 200);
+    recorridas.push(...titulosEn(r.html).filter((t) => t.startsWith(`Novtest ${sufijo}`)));
+    paginasVistas++;
+  }
+  assert.ok(paginasVistas >= 2, `el archivo ocupa varias páginas (${paginasVistas})`);
+  assert.deepEqual(recorridas, esperado, "al recorrer las páginas salen todas, sin repetir ni saltear, las vigentes antes que las vencidas");
+
+  console.log("OK: las novedades se ven donde corresponde (página /novedades/ como archivo, con las vigentes primero y solo las publicadas, etiqueta «Novedad» en listados, nota y buscador, bloque en la portada, menú y pie).");
 } finally {
   await prisma.articulo.deleteMany({ where: { slug: { startsWith: `novtest-${sufijo}` } } });
   servidor.closeAllConnections();

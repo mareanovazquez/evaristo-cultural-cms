@@ -38,7 +38,7 @@ async function foto() {
 const todoSinCambios = (r: ResultadoEscritura, plan: PlanEscribible) => {
   assert.equal(r.estado, "ok");
   assert.deepEqual(r.conteos, { escritos: 0, sinCambios: plan.articulos.length, difieren: 0, sobrescritos: 0, fallidos: 0 });
-  assert.deepEqual(r.base.categorias, { enElPlan: 8, creadas: 0, existentes: 8 });
+  assert.deepEqual(r.base.categorias, { enElPlan: 7, creadas: 0, existentes: 7 });
   assert.deepEqual(r.base.autores, { enElPlan: plan.autores.length, creados: 0, sinCambios: plan.autores.length, difieren: 0, sobrescritos: 0, conflictos: 0 });
   assert.deepEqual(r.base.imagenes, { enElPlan: 200, creadas: 0, sinCambios: 200, difieren: 0, sobrescritas: 0, conflictos: 0 });
   assert.deepEqual(r.redirecciones, { creadas: 0, sinCambios: plan.redirecciones.length, conflictos: 0 });

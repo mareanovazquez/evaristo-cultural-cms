@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { request, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import express from "express";
+import { cargarMapeo, destinoCategoriaWp } from "@evaristo/compartido/taxonomia";
 import { crearManejadorRedirecciones, destinoDe, type FilaRedireccion } from "../redirecciones.js";
 
 let ok = 0;
@@ -44,7 +45,8 @@ const buscar = async (candidatos: string[]) => {
 };
 
 const app = express();
-app.use(crearManejadorRedirecciones(buscar));
+const mapeo = cargarMapeo();
+app.use(crearManejadorRedirecciones(buscar, (ruta) => destinoCategoriaWp(ruta, mapeo)));
 app.use((_req, res) => res.status(200).type("text/plain").send("sitio"));
 const server = await new Promise<Server>((listo) => {
   const s = app.listen(0, "127.0.0.1", () => listo(s));
@@ -137,6 +139,39 @@ t("si la base falla, el pedido sigue al sitio", async () => {
   } finally {
     romper = false;
   }
+});
+t("categorías de WordPress: /category/<slug>/ va a la sección, la categoría, /novedades/ o la portada, sin consultar la base", async () => {
+  const casos: Array<[string, string]> = [
+    ["/category/resena/", "/seccion/resena/"],
+    ["/category/seda/", "/seccion/asia/"],
+    ["/category/resenas-seda/", "/seccion/asia/"],
+    ["/category/resenas-historietas/", "/categoria/historieta/"],
+    ["/category/tv-cine/", "/categoria/tv-y-cine/"],
+    ["/category/series-tv/", "/categoria/tv-y-cine/"],
+    ["/category/musica/", "/categoria/musica/"],
+    ["/category/novedades/", "/novedades/"],
+    ["/category/mexico/", "/"],
+    ["/category/uncategorized/", "/"],
+  ];
+  const antes = consultas;
+  for (const [ruta, destino] of casos) {
+    const r = await pedir(ruta);
+    assert.equal(r.estado, 301, ruta);
+    assert.equal(r.ubicacion, destino, ruta);
+  }
+  assert.equal(consultas, antes, "las categorías no consultan la base");
+});
+t("categorías de WordPress: sin barra final, paginadas, con feed y con consulta", async () => {
+  for (const ruta of ["/category/resena", "/category/resena/page/2/", "/category/resena/page/15", "/category/resena/feed/", "/category/resena/feed/atom/"]) {
+    const r = await pedir(ruta);
+    assert.equal(r.estado, 301, ruta);
+    assert.equal(r.ubicacion, "/seccion/resena/", ruta);
+  }
+  assert.equal((await pedir("/category/resena/?paged=2")).ubicacion, "/seccion/resena/?paged=2");
+  assert.equal((await pedir("/category/%72esena/")).ubicacion, "/seccion/resena/", "slug con %XX");
+});
+t("categorías de WordPress: lo que no es una categoría del mapeo sigue al sitio", async () => {
+  for (const ruta of ["/category/", "/category/no-existe/", "/category/constructor/", "/category/__proto__/", "/category/resena/otra-cosa/", "/category/resena/page/x/", "/category/Resena/", "/category/%E0%A4%A/", "/categoria/resena/", "/seccion/resena/"]) await aSitio(ruta);
 });
 t("destinoDe: casos puros", async () => {
   assert.equal(destinoDe(fila({ origen: "/x/", tipo: "ARTICULO", articulo: art("a b") }), new Date("2011-01-01")), "/2010/05/04/a%20b/");

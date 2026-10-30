@@ -8,6 +8,8 @@ import { normalizarRuta, rutaArticulo, rutaAutor } from "@evaristo/compartido/ur
 //  - La base compara con una colación laxa, así que la fila se elige con igualdad exacta en JavaScript.
 //  - Si el destino es la misma ruta del pedido (la URL vieja ya es la canónica), no se redirige: lo atiende el sitio.
 //  - Un artículo que no se ve (borrador, programado a futuro) o un autor de solo texto no redirigen: el pedido sigue y da 404.
+//  - Las categorías de WordPress (/category/<slug>/…) no están en la tabla: las resuelve `destinoEstatico` (el mapeo de taxonomías, decisión 78),
+//    sin consultar la base. Si no es de una categoría conocida, el pedido sigue el camino normal.
 
 export type TipoRedireccion = "ARTICULO" | "SLUG_ANTERIOR" | "AUTOR" | "MANUAL";
 
@@ -49,13 +51,21 @@ function sinBarraFinalCambiada(ruta: string): string {
   return ruta.endsWith("/") ? ruta.slice(0, -1) : `${ruta}/`;
 }
 
-export function crearManejadorRedirecciones(buscar: BuscarRedirecciones): RequestHandler {
+export type DestinoEstatico = (ruta: string) => string | undefined;
+
+export function crearManejadorRedirecciones(buscar: BuscarRedirecciones, destinoEstatico?: DestinoEstatico): RequestHandler {
   return async (req, res, next) => {
     if ((req.method !== "GET" && req.method !== "HEAD") || !req.path.startsWith("/") || req.path === "/") {
       next();
       return;
     }
     try {
+      const consulta = req.originalUrl.includes("?") ? req.originalUrl.slice(req.originalUrl.indexOf("?")) : "";
+      const fijo = destinoEstatico?.(req.path);
+      if (fijo !== undefined) {
+        res.redirect(301, fijo + consulta);
+        return;
+      }
       const pedido = normalizarRuta(req.path);
       const candidatos = [pedido, sinBarraFinalCambiada(pedido)];
       const filas = (await buscar(candidatos)).filter((f) => candidatos.includes(f.origen));
@@ -71,7 +81,6 @@ export function crearManejadorRedirecciones(buscar: BuscarRedirecciones): Reques
         next();
         return;
       }
-      const consulta = req.originalUrl.includes("?") ? req.originalUrl.slice(req.originalUrl.indexOf("?")) : "";
       res.redirect(CODIGOS.has(fila.codigo) ? fila.codigo : 301, destino + consulta);
     } catch (error) {
       // Si la base falla, el pedido sigue: el sitio responderá lo que corresponda.

@@ -102,13 +102,13 @@ try {
   // -------------------------------------------------------------------------------------------------------------
   await ta("D-categorías-autores-imágenes: cantidades y contenido contra el plan, y es idempotente", async () => {
     await vaciarYSembrarPruebas(prisma);
-    assert.equal(await prisma.seccion.count(), 18);
+    assert.equal(await prisma.seccion.count(), 9);
     const { plan } = await planDePruebas(prisma);
-    assert.equal(plan.categoriasACrear.length, 8);
+    assert.equal(plan.categoriasACrear.length, 7);
     assert.equal(plan.imagenes.length, 200);
 
     const r = await escribirBase(prisma, plan);
-    assert.deepEqual(r.categorias, { enElPlan: 8, creadas: 8, existentes: 0 });
+    assert.deepEqual(r.categorias, { enElPlan: 7, creadas: 7, existentes: 0 });
     assert.deepEqual(r.autores, { enElPlan: plan.autores.length, creados: plan.autores.length, sinCambios: 0, difieren: 0, sobrescritos: 0, conflictos: 0 });
     assert.deepEqual(r.imagenes, { enElPlan: 200, creadas: 200, sinCambios: 0, difieren: 0, sobrescritas: 0, conflictos: 0 });
     assert.deepEqual(r.conflictos, []);
@@ -143,10 +143,10 @@ try {
 
     // segunda corrida: nada se duplica
     const otra = await escribirBase(prisma, plan);
-    assert.deepEqual(otra.categorias, { enElPlan: 8, creadas: 0, existentes: 8 });
+    assert.deepEqual(otra.categorias, { enElPlan: 7, creadas: 0, existentes: 7 });
     assert.deepEqual([otra.autores.creados, otra.autores.sinCambios, otra.autores.difieren], [0, plan.autores.length, 0]);
     assert.deepEqual([otra.imagenes.creadas, otra.imagenes.sinCambios, otra.imagenes.difieren], [0, 200, 0]);
-    assert.deepEqual([await prisma.categoria.count(), await prisma.autor.count(), await prisma.imagen.count()], [8, plan.autores.length, 200]);
+    assert.deepEqual([await prisma.categoria.count(), await prisma.autor.count(), await prisma.imagen.count()], [7, plan.autores.length, 200]);
   });
 
   await ta("D-categorías-autores-imágenes: una clave de imagen de otro wpId es conflicto: no se pisa y sus artículos quedan fallidos", async () => {

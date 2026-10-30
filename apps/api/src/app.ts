@@ -18,6 +18,7 @@ import { crearRutasAdminRevision } from "./admin/revision.js";
 import { crearRutasAdminSitio } from "./admin/sitio.js";
 import { crearRutasAdminUsuarios } from "./admin/usuarios.js";
 import { crearManejadorMedia } from "./media.js";
+import { destinoCategoriaWp, cargarMapeo } from "@evaristo/compartido/taxonomia";
 import { crearManejadorRedirecciones } from "./redirecciones.js";
 import { cabecerasDelPanel, cabecerasDelSitio, confiarEnProxy } from "./seguridad.js";
 
@@ -164,19 +165,23 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
   app.use(express.static(dirCliente));
 
   // (4b) Redirecciones 301 de las URLs viejas de WordPress. Después de los estáticos (los archivos no consultan la base) y antes del SSR.
+  // Las /category/<slug>/ de WordPress se resuelven con el mapeo de taxonomías (cada una tiene su `destino`), sin consultar la base.
+  const mapeoTaxonomias = cargarMapeo();
   app.use(
-    crearManejadorRedirecciones((candidatos) =>
-      prisma.redireccion.findMany({
-        where: { origen: { in: candidatos } },
-        select: {
-          origen: true,
-          tipo: true,
-          codigo: true,
-          destino: true,
-          articulo: { select: { slug: true, estado: true, publicadoEn: true } },
-          autor: { select: { slug: true, soloTexto: true } },
-        },
-      }),
+    crearManejadorRedirecciones(
+      (candidatos) =>
+        prisma.redireccion.findMany({
+          where: { origen: { in: candidatos } },
+          select: {
+            origen: true,
+            tipo: true,
+            codigo: true,
+            destino: true,
+            articulo: { select: { slug: true, estado: true, publicadoEn: true } },
+            autor: { select: { slug: true, soloTexto: true } },
+          },
+        }),
+      (ruta) => destinoCategoriaWp(ruta, mapeoTaxonomias),
     ),
   );
   const ssr: RequestHandler = async (req, res, next) => {

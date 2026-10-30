@@ -1,6 +1,8 @@
 # Plan: reorganización de secciones y categorías
 
-**Estado (27/10/2026):** propuesta. **No implementada.** Depende de la reunión con la editorial (dentro de 48 horas de esta fecha). Cuando la editorial responda, se confirma o se ajusta este plan, se registra como decisión numerada en `plan-implementacion.md` (la 78) y se implementa en la rama `fase7-secciones`.
+**Estado (30/10/2026):** aprobada por la editorial el 29/10/2026 y registrada como decisión 78 de `plan-implementacion.md`. Implementación en curso en la rama `fase7-secciones`: **pasos 1 a 6 hechos** (mapeo, `taxonomia.ts`, `test-taxonomia`, `armar.ts`, `SECCIONES`, `verificar.ts` y los tests de la migración con las cifras nuevas); `evaristo_cms_dev` ya está convertida (ver el paso 3); el sitio (menú, portada y `/novedades/` como archivo) y las redirecciones de `/category/` también; los tests con cifras fijas y la documentación también (paso 6); falta el paso 7 (merge a `main`, con el visto bueno de Mariano). Respuestas de la reunión, que ajustan el texto de abajo: Crítica se queda (identidad propia, arranca vacía); Textos va en el navbar (dentro de «Más») y no en la portada, y admite cuentos nuevos; la novedad dura **90 días** por defecto (no 60), ajustable; los 102 artículos de Novedades van a su formato o, sin formato, a **Textos con la novedad vencida** (no a Reseña, así que no hay «candidata Reseña» ni conflicto de prioridad con Ensayo y Crónica); menú con Novedades, Entrevista, Reseña, Ensayo y Crónica en el primer nivel (`SECCIONES_VISIBLES` = 4).
+
+**Desvío respecto de la sección 4:** `convertWpPost` no recibe la fecha del post, así que no fija `novedadHasta`. La taxonomía devuelve `novedad: true` y la fecha pasada (la de publicación) la pone el armado de la migración (`armar.ts`, paso 2).
 
 Reabre el modelo que la editorial cerró el 7/10/2026 (`especificaciones/especificacion-articulo.md`, secciones 2 y 13).
 
@@ -64,7 +66,7 @@ Lo relevado en el código el 27/10/2026. Donde dice «a verificar» no se leyó 
 | `src/lib/portada.ts` y `src/pages/novedades.astro` | `contarNovedades`/`notasNovedades` pasan de «vigentes» a «alguna vez novedad» (`novedadHasta` no nulo), con las vigentes primero. `esNovedad` ya compara con la fecha, así que la etiqueta solo se ve en las vigentes. La portada sigue usando solo las vigentes. Actualizar el comentario «Con 17 secciones…». |
 | `src/pages/novedades.astro` | Texto de la página: pasa a ser el archivo. |
 | `src/lib/secciones.ts` | No cambia: el menú sale de la base, en el orden del panel. |
-| Redirecciones de `/category/<x>/` de WordPress | **No existen todavía** (`urls.ts` las deja para la fase 7). Se arma una tabla WordPress → destino: formatos e históricas a `/seccion/…`, temas a `/categoria/…`, Novedades a `/novedades/`, México a la portada. Se agrega un campo `destino` al mapeo. |
+| Redirecciones de `/category/<x>/` de WordPress | **Hecho (paso 5).** Cada taxonomía del mapeo tiene un campo `destino` (formatos e históricas a `/seccion/…`, temas a `/categoria/…`, Novedades a `/novedades/`, México, Uncategorized y Artículos a la portada; las «Reseñas Seda/Rastros» a Asia/Rastros y las «Reseñas Historietas/Fantástico» a su tema). `destinoCategoriaWp` (en `taxonomia.ts`) interpreta `/category/<slug>/`, con `/page/N/` y `/feed/`; el manejador de la API (`redirecciones.ts`) lo aplica con 301 antes de consultar la base. Las 26 categorías de WordPress (planas, sin padres; `category_base` vacío) están cubiertas y un test lo exige. |
 
 ### API y panel
 
@@ -94,6 +96,7 @@ Antes: comprobar la base 3308 (`Test-NetConnection 127.0.0.1 -Port 3308`). Nada 
 1. **Mapeo y taxonomía.** Cambios en `mapeo-taxonomias.json` y `taxonomia.ts` (sección 4), con `test-taxonomia` reescrito primero. Criterio: pasan los tests y `run-corpus` da el reparto esperado (sección 6).
 2. **Migración de la muestra.** `test-armar` y la migración de los 35 artículos a `evaristo_cms_test`, con cifras nuevas. Corre sin tocar la real.
 3. **Siembra de secciones.** `SECCIONES` nuevas; rehacer `evaristo_cms_dev` (las secciones tienen artículos con `Restrict`, así que no se pueden borrar en el lugar). Se vacía y se vuelve a migrar la muestra con `--base-dev`.
+   **Hecho el 30/10/2026, de otra forma:** `migrar:escribir` solo escribe en `evaristo_cms` y `evaristo_cms_test` (no existe `--base-dev` para él y `evaristo_migracion` no tiene permisos sobre la dev), y vaciar la dev habría borrado el usuario, la sesión y la configuración del sitio. Se convirtió **en el lugar**, con un script descartable (fuera del repo) que reaplica a cada artículo de la muestra la sección, las categorías y la volanta que calcula `armar` (la misma lógica de la migración), sube las secciones nuevas (Textos) y borra las viejas ya vacías (10 secciones y 3 categorías). Los 3 artículos de prueba del panel (sin `wpId`) pasan a Textos con su tema como categoría si estaban en un tema. Antes se respaldó la base con `mysqldump --result-file`. Resultado: 9 secciones (Entrevista 2, Reseña 1, Ensayo 5, Crónica 0, Crítica 0, Rastros 4, Asia 17, Textos 7, `sin-asignar` 2), 12 categorías, 38 artículos, 1 usuario, 1 sesión y la configuración intactos.
 4. **Sitio.** Menú (`Header.astro`, `rutas.ts`), Novedades como archivo y comentarios de la portada. Se mira en el navegador con datos reales de dev.
 5. **Redirecciones de `/category/`.** Tabla de destinos y su test (extiende `test:redirecciones`).
 6. **Tests y documentación.** Batería completa (`test:fase3` y las suites `*-base` contra dev) y los `.md` de la sección 4. Registrar la decisión 78.
@@ -117,7 +120,9 @@ Estimación a partir de la corrida del 13/10/2026 (2.637 artículos), a confirma
 | **Textos** | **~942** (los que ganaban por tema y no tienen formato) |
 | `sin-asignar` | ~8 (Uncategorized y «Artículos»), o ~103 si Novedades no se confirma |
 
-Los 942 de Textos conservan su tema como categoría, así que tienen volanta. Hoy 1.609 artículos no tienen ninguna; el número baja en la misma medida (a confirmar en el paso 1).
+**Resultado real (30/10/2026, mapeo nuevo sobre las 2.637, categorías leídas de la 3307):** Entrevista 469, Asia 414, Reseña 348, Rastros 245, Ensayo 81, Crónica 35, Crítica 0, **Textos 1.037**, `sin-asignar` 8. De los 102 con Novedades, 96 quedan en Textos y 6 conservan su formato. 261 artículos tenían más de una sección candidata (las perdedoras se descartan). 972 quedan sin categoría. No hay taxonomías sin mapear. `run-corpus` no se pudo usar porque sus dos generadores (`consultar-categorias.ts`, `extraer-autores-por-post.ts`) ya no existen en el repo; el reparto salió de una consulta de solo lectura y un script descartable.
+
+Los ~942 de Textos (estimación original) conservan su tema como categoría, así que tienen volanta. Hoy 1.609 artículos no tienen ninguna; el número baja en la misma medida (a confirmar en el paso 1).
 
 ## 7. Riesgos y consecuencias
 

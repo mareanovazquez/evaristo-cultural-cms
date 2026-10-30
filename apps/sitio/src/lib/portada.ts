@@ -6,10 +6,13 @@ import { prisma } from "./prisma";
 //  - Carrusel: las 3 notas más nuevas.
 //  - Banda de cuatro columnas: las 3 siguientes (la cuarta celda es la presentación de «Últimas publicaciones»).
 //  - Bloques de sección: las secciones con publicaciones más recientes, cada una con sus 2 notas más nuevas que no estén ya arriba.
-//    Una sección sin notas para mostrar no aparece. (Con 17 secciones no caben todas: la portada muestra las más activas.)
+//    Una sección sin notas para mostrar no aparece. (No caben todas: la portada muestra las más activas.) Textos, el comodín de lo que no
+//    tiene formato (decisión 78), no tiene bloque: sus notas pueden salir arriba por ser las más nuevas, pero la sección no se muestra.
 // Un artículo se ve solo si está PUBLICADO y su fecha ya llegó (los programados aparecen en su fecha).
 
 export const SECCIONES_EN_PORTADA = 6;
+/** Secciones que no tienen bloque en la portada. */
+export const SECCIONES_SIN_BLOQUE = ["textos"];
 /** Notas de «Novedades» en la portada (un bloque más, si hay). Con novedades, las secciones se reducen en una para que los bloques queden de a pares. */
 export const NOVEDADES_EN_PORTADA = 2;
 export const NOTAS_POR_BLOQUE = 2;
@@ -85,7 +88,7 @@ export async function datosDePortada() {
   // Las secciones con la publicación más reciente (sin la interna), de la más a la menos activa.
   const grupos = await prisma.articulo.groupBy({
     by: ["seccionId"],
-    where: { ...visibles(), seccion: { interna: false } },
+    where: { ...visibles(), seccion: { interna: false, slug: { notIn: SECCIONES_SIN_BLOQUE } } },
     _max: { publicadoEn: true },
     orderBy: { _max: { publicadoEn: "desc" } },
     take: SECCIONES_EN_PORTADA * 2,
@@ -101,9 +104,23 @@ export async function datosDePortada() {
   return { carrusel, banda, bloques, novedades };
 }
 
-/** Las notas que cuentan como novedad (su fecha `novedadHasta` no pasó), de la más nueva a la más vieja: la página «Novedades». */
-export const contarNovedades = (): Promise<number> => prisma.articulo.count({ where: vigentes() });
-export const notasNovedades = (pagina: number) => prisma.articulo.findMany({ where: vigentes(), orderBy: [{ publicadoEn: "desc" }, { id: "desc" }], skip: (pagina - 1) * NOTAS_POR_PAGINA, take: NOTAS_POR_PAGINA, select: seleccion });
+/**
+ * La página «Novedades» es el archivo de todo lo que alguna vez fue novedad (`novedadHasta` no nulo): primero las vigentes y después las vencidas,
+ * cada grupo de la más nueva a la más vieja. Las vigentes llevan la etiqueta de novedad; las vencidas no.
+ */
+const alguna = () => ({ ...visibles(), novedadHasta: { not: null } });
+const vencidas = () => ({ ...visibles(), novedadHasta: { not: null, lte: new Date() } });
+const ordenNovedades = [{ publicadoEn: "desc" as const }, { id: "desc" as const }];
+export const contarNovedades = (): Promise<number> => prisma.articulo.count({ where: alguna() });
+export async function notasNovedades(pagina: number) {
+  const saltear = (pagina - 1) * NOTAS_POR_PAGINA;
+  const cuantasVigentes = await prisma.articulo.count({ where: vigentes() });
+  const deVigentes = saltear < cuantasVigentes ? await prisma.articulo.findMany({ where: vigentes(), orderBy: ordenNovedades, skip: saltear, take: NOTAS_POR_PAGINA, select: seleccion }) : [];
+  const faltan = NOTAS_POR_PAGINA - deVigentes.length;
+  if (faltan <= 0) return deVigentes;
+  const deVencidas = await prisma.articulo.findMany({ where: vencidas(), orderBy: ordenNovedades, skip: Math.max(0, saltear - cuantasVigentes), take: faltan, select: seleccion });
+  return [...deVigentes, ...deVencidas];
+}
 
 /** Todas las notas publicadas, de la más nueva a la más vieja (la página «Últimas publicaciones»). */
 export const contarUltimas = (): Promise<number> => prisma.articulo.count({ where: visibles() });

@@ -234,7 +234,7 @@ try {
       assert.deepEqual(r.informe.destino, { host: "127.0.0.1", puerto: 3308, base: "evaristo_cms_test" });
       assert.equal(r.informe.servidor.soloLectura, 0);
       const fila = (t: string) => r.informe.tablas.find((x) => x.tabla === t)!;
-      assert.deepEqual([fila("articulos").insertadas, fila("categorias").insertadas, fila("imagenes").insertadas, fila("redirecciones").insertadas], [35, 8, 200, 58]);
+      assert.deepEqual([fila("articulos").insertadas, fila("categorias").insertadas, fila("imagenes").insertadas, fila("redirecciones").insertadas], [35, 7, 200, 58]);
       assert.deepEqual(readdirSync(carpeta).sort(), [`${nombreDeInformeEscritura("2026-10-18T10:20:30.456Z")}.json`, `${nombreDeInformeEscritura("2026-10-18T10:20:30.456Z")}.md`]);
       assert.equal(nombreDeInformeEscritura("2026-10-18T10:20:30.456Z"), "2026-10-18T102030Z-escribir");
       for (const archivo of readdirSync(carpeta)) {

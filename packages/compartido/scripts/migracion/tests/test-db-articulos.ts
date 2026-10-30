@@ -132,7 +132,7 @@ try {
     assert.equal(despues.redirecciones, sumar(otros.map((x) => x.redirecciones.length)) + delAutor);
     for (const rd of fallar.redirecciones) assert.equal(await prisma.redireccion.findUnique({ where: { origen: rd.origen } }), null);
     // la categoría y el autor, que se escriben antes y fuera de la transacción del artículo, siguen ahí
-    assert.equal(despues.categorias, 8);
+    assert.equal(despues.categorias, 7);
     assert.equal(despues.autores, plan.autores.length);
   });
 
@@ -204,13 +204,13 @@ try {
     // conteos por tabla contra el plan
     const c = await conteos();
     assert.deepEqual(c, {
-      articulos: 35, categorias: 8, autores: plan.autores.length, imagenes: 200,
+      articulos: 35, categorias: 7, autores: plan.autores.length, imagenes: 200,
       articulosCategorias: sumar(plan.articulos.map((a) => new Set(a.categorias).size)), articulosAutores: sumar(plan.articulos.map((a) => a.autores.length)),
       galeria: 0, fichas: 0, redirecciones: 58,
     });
     assert.equal(await prisma.articulo.count({ where: { estado: "PUBLICADO" } }), 34);
     assert.equal(await prisma.articulo.count({ where: { estado: "BORRADOR" } }), 1);
-    assert.equal(await prisma.seccion.count(), 18);
+    assert.equal(await prisma.seccion.count(), 9);
     for (const tipo of ["ARTICULO", "SLUG_ANTERIOR", "AUTOR"] as const) {
       assert.equal(await prisma.redireccion.count({ where: { tipo } }), plan.redirecciones.filter((x) => x.tipo === tipo).length, tipo);
     }

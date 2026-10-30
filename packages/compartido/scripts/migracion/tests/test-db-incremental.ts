@@ -125,7 +125,7 @@ try {
     const de35 = await escribirPlan(prisma, completo, SIN_ABORTAR);
     assert.deepEqual(de35.conteos, { escritos: 35, sinCambios: 0, difieren: 0, sobrescritos: 0, fallidos: 0 });
     const esperado = await contenido(prisma);
-    assert.deepEqual(esperado.conteos, { articulos: 35, categorias: 8, autores: completo.autores.length, imagenes: 200, redirecciones: 58, articulosCategorias: esperado.conteos.articulosCategorias, articulosAutores: 35, galeria: 0, secciones: 18 });
+    assert.deepEqual(esperado.conteos, { articulos: 35, categorias: 7, autores: completo.autores.length, imagenes: 200, redirecciones: 58, articulosCategorias: esperado.conteos.articulosCategorias, articulosAutores: 35, galeria: 0, secciones: 9 });
 
     const texto = JSON.stringify(esperado.articulos);
     assert.ok(texto.includes('"imagenWpId":') && !texto.includes('"imagenId"'), "la comparación normaliza los imagenId del cuerpo (dependen del orden de escritura)");

@@ -163,7 +163,7 @@ await ta("T17: bloqueantes: intercalación incorrecta (con la real de cada colum
   // sección faltante y categoría sin nombre
   const plan = armar(sintetica([post({ id: 400 })]), {});
   assert.deepEqual(bloqueantesDelPlan({ ...plan, seccionesFaltantes: ["ensayo"] }).map((p) => p.codigo), ["seccion_faltante"]);
-  const mapeo = { ...base.mapeo, taxonomiasWp: { ...base.mapeo.taxonomiasWp, "tema-nuevo": { nombre: "Tema nuevo", accion: "categoria" as const, categorias: ["categoria-fantasma"] } } };
+  const mapeo = { ...base.mapeo, taxonomiasWp: { ...base.mapeo.taxonomiasWp, "tema-nuevo": { nombre: "Tema nuevo", accion: "categoria" as const, categorias: ["categoria-fantasma"], destino: "/" } } };
   const sinNombre = armar(sintetica([post({ id: 41 })], { mapeo, terminos: [{ taxonomia: "category", id: 41, nombre: "Tema nuevo", slug: "tema-nuevo" }] }));
   assert.deepEqual(bloqueantesDelPlan(sinNombre).map((p) => p.codigo), ["categoria_sin_nombre_en_el_mapeo"]);
 });

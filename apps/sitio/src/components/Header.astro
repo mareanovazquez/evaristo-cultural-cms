@@ -34,6 +34,9 @@ const actual = (href: string) => (ruta === href || ruta.startsWith(href) ? "page
 
     <nav class="menu-principal" aria-label="Secciones">
       <ul class="menu">
+        <li>
+          <a href="/novedades/" aria-current={actual("/novedades/")}>Novedades</a>
+        </li>
         {
           visibles.map((s) => (
             <li>
@@ -47,7 +50,6 @@ const actual = (href: string) => (ruta === href || ruta.startsWith(href) ? "page
               Más <svg class="icon icon-chev" aria-hidden="true"><use href="#i-chevron-down" /></svg>
             </summary>
             <div class="mas-panel">
-              <a href="/novedades/" aria-current={actual("/novedades/")}>Novedades</a>
               {resto.map((s) => <a href={urlSeccion(s.slug)} aria-current={actual(urlSeccion(s.slug))}>{s.nombre}</a>)}
               <a href={URL_AUTORES} aria-current={actual(URL_AUTORES)}>Autores</a>
             </div>

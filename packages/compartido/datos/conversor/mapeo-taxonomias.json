@@ -1,30 +1,20 @@
 {
-  "version": 1,
+  "version": 2,
   "urlViejaPlantilla": "https://evaristocultural.com.ar/?p={id}",
   "seccionSinAsignar": { "slug": "sin-asignar", "nombre": "Sin asignar" },
   "secciones": [
+    { "slug": "entrevista", "nombre": "Entrevista" },
     { "slug": "resena", "nombre": "Reseña" },
     { "slug": "ensayo", "nombre": "Ensayo" },
     { "slug": "cronica", "nombre": "Crónica" },
     { "slug": "critica", "nombre": "Crítica" },
-    { "slug": "entrevista", "nombre": "Entrevista" },
     { "slug": "rastros", "nombre": "Rastros" },
     { "slug": "asia", "nombre": "Asia" },
-    { "slug": "poesia", "nombre": "Poesía" },
-    { "slug": "teatro", "nombre": "Teatro" },
-    { "slug": "musica", "nombre": "Música" },
-    { "slug": "historieta", "nombre": "Historieta" },
-    { "slug": "tv-y-cine", "nombre": "TV & Cine" },
-    { "slug": "fantastico", "nombre": "Fantástico" },
-    { "slug": "arte", "nombre": "Arte" },
-    { "slug": "infantojuvenil", "nombre": "Infantojuvenil" },
-    { "slug": "libro-ilustrado", "nombre": "Libro Ilustrado" },
-    { "slug": "literatura", "nombre": "Literatura" }
+    { "slug": "textos", "nombre": "Textos" }
   ],
-  "prioridadSecciones": [
-    "rastros", "asia", "entrevista", "resena", "ensayo", "cronica",
-    "poesia", "teatro", "musica", "historieta", "tv-y-cine", "fantastico", "arte", "infantojuvenil", "libro-ilustrado", "literatura"
-  ],
+  "seccionSinFormato": "textos",
+  "prioridadSecciones": ["rastros", "asia", "entrevista", "resena", "ensayo", "cronica"],
+  "prioridadCategorias": ["poesia", "teatro", "musica", "historieta", "tv-y-cine", "fantastico", "arte", "infantojuvenil", "libro-ilustrado", "literatura"],
   "entrevista": {
     "seccion": "entrevista",
     "patronTitulo": "^entrevista(?![a-záéíóúüñ0-9])",
@@ -54,13 +44,6 @@
     }
   },
   "categorias": [
-    { "slug": "resena", "nombre": "Reseña" },
-    { "slug": "ensayo", "nombre": "Ensayo" },
-    { "slug": "cronica", "nombre": "Crónica" },
-    { "slug": "critica", "nombre": "Crítica" },
-    { "slug": "entrevista", "nombre": "Entrevista" },
-    { "slug": "rastros", "nombre": "Rastros" },
-    { "slug": "asia", "nombre": "Asia" },
     { "slug": "poesia", "nombre": "Poesía" },
     { "slug": "teatro", "nombre": "Teatro" },
     { "slug": "musica", "nombre": "Música" },
@@ -75,38 +58,38 @@
     { "slug": "encuentro-internacional-literatura-fantastica", "nombre": "Encuentro Internacional Literatura Fantástica" }
   ],
   "taxonomiasWp": {
-    "resena": { "nombre": "Reseñas", "accion": "seccion", "seccion": "resena" },
-    "ensayo": { "nombre": "Ensayo", "accion": "seccion", "seccion": "ensayo" },
-    "cronica": { "nombre": "Crónica", "accion": "seccion", "seccion": "cronica" },
-    "rastros": { "nombre": "Rastros", "accion": "seccion", "seccion": "rastros" },
-    "seda": { "nombre": "Seda", "accion": "seccion", "seccion": "asia" },
-    "poesia": { "nombre": "Poesia", "accion": "seccion", "seccion": "poesia" },
-    "teatro": { "nombre": "Teatro", "accion": "seccion", "seccion": "teatro" },
-    "musica": { "nombre": "Música", "accion": "seccion", "seccion": "musica" },
-    "historieta": { "nombre": "Historieta", "accion": "seccion", "seccion": "historieta" },
-    "tv-cine": { "nombre": "TV & CINE", "accion": "seccion", "seccion": "tv-y-cine" },
-    "series-tv": { "nombre": "Series TV", "accion": "seccion", "seccion": "tv-y-cine" },
-    "fantastico": { "nombre": "Fantástico", "accion": "seccion", "seccion": "fantastico" },
-    "arte": { "nombre": "Arte", "accion": "seccion", "seccion": "arte" },
-    "infantojuvenil": { "nombre": "Infantojuvenil", "accion": "seccion", "seccion": "infantojuvenil" },
-    "libro-ilustrado": { "nombre": "Libro Ilustrado", "accion": "seccion", "seccion": "libro-ilustrado" },
-    "literatura": { "nombre": "Literatura", "accion": "seccion", "seccion": "literatura" },
-    "resenas-seda": { "nombre": "Reseñas Seda", "accion": "seccion", "seccion": "resena", "tambienSecciones": ["asia"] },
-    "resenas-rastros": { "nombre": "Reseñas Rastros", "accion": "seccion", "seccion": "resena", "tambienSecciones": ["rastros"] },
-    "resenas-historietas": { "nombre": "Reseñas Historietas", "accion": "seccion", "seccion": "resena", "categorias": ["historieta"] },
-    "resenas-fantastico": { "nombre": "Reseñas Fantástico", "accion": "seccion", "seccion": "resena", "categorias": ["fantastico"] },
-    "poesia-rumana": { "nombre": "Poesía rumana", "accion": "categoria", "categorias": ["poesia-rumana"] },
-    "encuentro-internacional-literatura-fantastica": { "nombre": "Encuentro Internacional Literatura Fantástica", "accion": "categoria", "categorias": ["encuentro-internacional-literatura-fantastica"] },
-    "mexico": { "nombre": "México", "accion": "descartar" },
-    "novedades": { "nombre": "Novedades", "accion": "descartar", "registrarIdsEn": "novedades-ids" },
-    "uncategorized": { "nombre": "Uncategorized", "accion": "descartar" },
-    "articulos": { "nombre": "Artículos", "accion": "descartar" }
+    "resena": { "nombre": "Reseñas", "destino": "/seccion/resena/", "accion": "seccion", "seccion": "resena" },
+    "ensayo": { "nombre": "Ensayo", "destino": "/seccion/ensayo/", "accion": "seccion", "seccion": "ensayo" },
+    "cronica": { "nombre": "Crónica", "destino": "/seccion/cronica/", "accion": "seccion", "seccion": "cronica" },
+    "rastros": { "nombre": "Rastros", "destino": "/seccion/rastros/", "accion": "seccion", "seccion": "rastros" },
+    "seda": { "nombre": "Seda", "destino": "/seccion/asia/", "accion": "seccion", "seccion": "asia" },
+    "poesia": { "nombre": "Poesia", "destino": "/categoria/poesia/", "accion": "categoria", "categorias": ["poesia"] },
+    "teatro": { "nombre": "Teatro", "destino": "/categoria/teatro/", "accion": "categoria", "categorias": ["teatro"] },
+    "musica": { "nombre": "Música", "destino": "/categoria/musica/", "accion": "categoria", "categorias": ["musica"] },
+    "historieta": { "nombre": "Historieta", "destino": "/categoria/historieta/", "accion": "categoria", "categorias": ["historieta"] },
+    "tv-cine": { "nombre": "TV & CINE", "destino": "/categoria/tv-y-cine/", "accion": "categoria", "categorias": ["tv-y-cine"] },
+    "series-tv": { "nombre": "Series TV", "destino": "/categoria/tv-y-cine/", "accion": "categoria", "categorias": ["tv-y-cine"] },
+    "fantastico": { "nombre": "Fantástico", "destino": "/categoria/fantastico/", "accion": "categoria", "categorias": ["fantastico"] },
+    "arte": { "nombre": "Arte", "destino": "/categoria/arte/", "accion": "categoria", "categorias": ["arte"] },
+    "infantojuvenil": { "nombre": "Infantojuvenil", "destino": "/categoria/infantojuvenil/", "accion": "categoria", "categorias": ["infantojuvenil"] },
+    "libro-ilustrado": { "nombre": "Libro Ilustrado", "destino": "/categoria/libro-ilustrado/", "accion": "categoria", "categorias": ["libro-ilustrado"] },
+    "literatura": { "nombre": "Literatura", "destino": "/categoria/literatura/", "accion": "categoria", "categorias": ["literatura"] },
+    "resenas-seda": { "nombre": "Reseñas Seda", "destino": "/seccion/asia/", "accion": "seccion", "seccion": "resena", "tambienSecciones": ["asia"] },
+    "resenas-rastros": { "nombre": "Reseñas Rastros", "destino": "/seccion/rastros/", "accion": "seccion", "seccion": "resena", "tambienSecciones": ["rastros"] },
+    "resenas-historietas": { "nombre": "Reseñas Historietas", "destino": "/categoria/historieta/", "accion": "seccion", "seccion": "resena", "categorias": ["historieta"] },
+    "resenas-fantastico": { "nombre": "Reseñas Fantástico", "destino": "/categoria/fantastico/", "accion": "seccion", "seccion": "resena", "categorias": ["fantastico"] },
+    "poesia-rumana": { "nombre": "Poesía rumana", "destino": "/categoria/poesia-rumana/", "accion": "categoria", "categorias": ["poesia-rumana"] },
+    "encuentro-internacional-literatura-fantastica": { "nombre": "Encuentro Internacional Literatura Fantástica", "destino": "/categoria/encuentro-internacional-literatura-fantastica/", "accion": "categoria", "categorias": ["encuentro-internacional-literatura-fantastica"] },
+    "mexico": { "nombre": "México", "destino": "/", "accion": "descartar" },
+    "novedades": { "nombre": "Novedades", "destino": "/novedades/", "accion": "categoria", "novedad": true, "registrarIdsEn": "novedades-ids" },
+    "uncategorized": { "nombre": "Uncategorized", "destino": "/", "accion": "descartar" },
+    "articulos": { "nombre": "Artículos", "destino": "/", "accion": "descartar" }
   },
   "excepcionesPorId": {
     "21482": {
-      "seccion": "fantastico",
-      "categorias": ["encuentro-internacional-literatura-fantastica"],
-      "motivo": "Única categoría original: Encuentro Internacional Literatura Fantástica; decisión editorial."
+      "seccion": "textos",
+      "categorias": ["fantastico", "encuentro-internacional-literatura-fantastica"],
+      "motivo": "Única categoría original: Encuentro Internacional Literatura Fantástica; decisión editorial. Fantástico pasa de sección a categoría (decisión 78)."
     }
   }
 }

@@ -71,7 +71,7 @@ Propuesta de contenido:
 
 **Con la dueña de la editorial (a llevar a la reunión)**
 
-1. **Secciones de la portada.** Hay 5 secciones (reseña, ensayo, crítica, entrevista, crónica). ¿Cuáles van arriba (2) y cuáles abajo? Criterio propuesto: arriba, las que más se publican.
+1. **Secciones de la portada.** Hay 5 secciones (reseña, ensayo, crítica, entrevista, crónica; con la decisión 78 son 8, y Textos no tiene bloque). ¿Cuáles van arriba (2) y cuáles abajo? Criterio propuesto: arriba, las que más se publican.
 2. **Qué pasa con la quinta sección.** Con 2 arriba y 3 abajo, una queda sola. Opciones:
    - a) la tercera ocupa el ancho completo;
    - b) sumamos una sexta sección;
