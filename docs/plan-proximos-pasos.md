@@ -4,7 +4,7 @@
 
 ## Dónde quedamos (30/10/2026)
 
-**Resuelto en estos días** (el detalle y las decisiones están en `plan-implementacion.md`, `plan-reorganizacion-secciones.md` y `estado-fase4.md`):
+**Resuelto en estos días** (el detalle y las decisiones están en `plan-implementacion.md`, `historico/plan-reorganizacion-secciones.md` y `estado-fase4.md`):
 
 - **Reorganización de secciones y categorías (decisión 78): hecha, mergeada a `main` y subida a `origin`** (`main...origin/main`, sin «ahead», al 30/10/2026). Aprobada por la editorial el 29/10. De 17 secciones a 8 (Entrevista, Reseña, Ensayo, Crónica, Crítica, Rastros, Asia y **Textos** como comodín) más `sin-asignar` interna; los 10 temas más Poesía rumana y el Encuentro son **categorías** y no repiten secciones; **Novedades** marca el artículo (`novedadHasta`) y `/novedades/` es el archivo. Menú: Novedades, Entrevista, Reseña, Ensayo y Crónica en el primer nivel; Crítica, Rastros, Asia, Textos y Autores en «Más» (`SECCIONES_VISIBLES` = 4). Textos no tiene bloque en la portada. Las 26 `/category/<slug>/` de WordPress redirigen con 301 (campo `destino` del mapeo). Resultado sobre las 2.637: Entrevista 469, Asia 414, Reseña 348, Rastros 245, Ensayo 81, Crónica 35, Crítica 0, **Textos 1.037**, `sin-asignar` 8.
 - **`evaristo_cms_dev` convertida en el lugar** (con respaldo previo): 9 secciones, 12 categorías, 35 artículos (todos migrados; se borraron los 3 de prueba del panel). Conserva el usuario, la sesión y la configuración del sitio.
