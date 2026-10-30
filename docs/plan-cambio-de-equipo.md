@@ -1,17 +1,21 @@
 # Plan: pasar el trabajo a otro equipo
 
-**Documento temporal.** Se escribió el 30/10/2026 con un inventario real de este equipo (Samsung Galaxy Book 3, Windows 11). **Borrarlo** (con `git rm`, sacando su fila del índice de `CLAUDE.md`) cuando el cambio esté hecho y verificado.
+**Documento temporal.** Se escribió el 30/10/2026 con un inventario real de este equipo (Samsung Galaxy Book 3, Windows 11 Home). **El cambio se hace la semana del 2/11/2026.** **Borrarlo** (con `git rm`, sacando su fila del índice de `CLAUDE.md`) cuando el cambio esté hecho y verificado.
 
 **Regla de oro:** este equipo **no se toca ni se vende** hasta que el equipo nuevo haya pasado la verificación de la Fase C **y** haya dos copias verificadas de lo que no está en git. Hasta entonces, este equipo es la fuente de verdad.
 
-## 1. A definir antes de empezar
+## 1. Decisiones y datos (30/10/2026)
 
-El plan asume Windows 11 y la misma estructura de carpetas. Hay que confirmar:
+**Resuelto**
 
-1. **¿Qué equipo es el nuevo y qué sistema operativo tiene?** (`pendientes.md` ya mencionaba «pasar a la Lenovo» y el README trae una nota para Windows 11: si es ese equipo, es probable que sea Windows 11, pero hay que confirmarlo.) Si no es Windows, ver la sección 9.
-2. **¿Cómo se llama el usuario de Windows en el equipo nuevo?** Si es `Usuario`, todas las rutas absolutas siguen valiendo. Si no, hay que cambiar unas pocas (sección 10).
-3. **¿Para cuándo se entrega este equipo?** Decide el orden con la descarga de WordPress (sección 8).
-4. **¿Con qué se mueven los datos?** Lo recomendado: un **disco externo** (~1 GB; mejor si se cifra con BitLocker To Go, porque lleva el dump de WordPress con datos personales de los usuarios).
+- **Equipo nuevo:** Intel Core i5-12450HX (8 núcleos, 12 hilos), 24 GB de RAM DDR5, SSD NVMe de 512 GB, NVIDIA GeForce RTX 4050, pantalla de 15,6" a 144 Hz, **Windows 11 Home**. Sobra para el proyecto (no usa la GPU). El disco de 512 GB alcanza: hacen falta ~10 GB para traer lo de acá y ~10 GB para la descarga de WordPress.
+- **Cuándo:** el cambio se hace **la semana del 2/11/2026**. Todo lo que sigue del proyecto (incluida la descarga de WordPress) se continúa **en el equipo nuevo**.
+- **Orden con la descarga de WordPress:** primero el cambio de equipo y **después la descarga, directo en el equipo nuevo** (sección 8). Hay margen: el plazo es el 28/11.
+
+**Pendiente (se resuelve al llegar al equipo nuevo)**
+
+1. **Nombre del usuario de Windows.** Si es `Usuario`, todas las rutas absolutas siguen valiendo; si no, hay unas pocas que cambiar (sección 10). Conviene crear el usuario con ese nombre si se puede, pero no es obligatorio.
+2. **Con qué se mueven los datos:** un **disco externo** (~1 GB). Ojo: este equipo y el nuevo son **Windows 11 Home**, que **no puede crear unidades BitLocker To Go** (solo desbloquearlas). Como el paquete lleva el dump de WordPress con datos personales, hay que protegerlo de otra forma: comprimir el dump con **7-Zip y clave (AES-256)** o usar **VeraCrypt**. Instalar cualquiera es decisión tuya. Alternativa sin instalar nada: llevar el dump por cable de red o por una unidad que no se preste a nadie, y borrarlo del disco externo al terminar.
 
 ## 2. Qué hay en este equipo y cómo se lleva
 
@@ -185,7 +189,7 @@ No está cubierto al detalle. Cambia casi todo lo operativo: los comandos de Pow
 
 | Riesgo | Qué hacer |
 |---|---|
-| Datos personales de WordPress en el disco externo | Disco cifrado (BitLocker To Go), y borrarlo del disco externo y de este equipo al final. |
+| Datos personales de WordPress en el disco externo | Windows 11 Home no crea unidades BitLocker To Go: proteger el dump con 7-Zip (clave, AES-256) o VeraCrypt, y borrarlo del disco externo y de este equipo al final. |
 | El usuario de Windows cambia y se rompen rutas | Hay **3 rutas absolutas en el código** (`scripts/render/vista-previa-35.ts`, y `scripts/migracion/corrida-en-seco.ts` en dos constantes), más `.env`, `glosario-comandos-bases.md`, `guia-descarga-wordpress.md` y la línea 12 de `CLAUDE.md`. Ver «Cosas de código» abajo. |
 | MySQL con otra intercalación o `lower_case_table_names` | Crear las bases con `utf8mb4_es_0900_ai_ci` antes de restaurar; correr `db:verificar`; no tocar `lower_case_table_names`. |
 | MariaDB no arranca tras copiar | Se apagó con `shutdown` y se borró `mysqld.pid`; si aun así falla, instalar el `.zip` (`mariadb-11.8.9-winx64.zip`, ya está en la carpeta) y reimportar el dump a una base `evaristo_lectura`. |

@@ -39,6 +39,7 @@
 
 ## Al retomar (15 minutos)
 
+0. **La semana del 2/11/2026 se cambia de equipo** (Samsung Galaxy Book 3 → equipo nuevo con Windows 11 Home). **Antes de cualquier otra tarea, seguir `docs/plan-cambio-de-equipo.md`**; la descarga de WordPress y todo lo demás se continúan en el equipo nuevo. Este equipo no se toca ni se vende hasta cerrar la Fase C de ese plan.
 1. `git status -sb`: tiene que decir `main...origin/main` sin «ahead» ni «behind».
 2. `Test-NetConnection 127.0.0.1 -Port 3308` (siempre). El 3307 (WordPress) solo si se lee WordPress. Si están caídas, las levanta Mariano (`glosario-comandos-bases.md`).
 3. `npm run build`, `npm run typecheck`, `npm run test:pantalla`, `npm run test:conversor` y `npm run test:migracion` para saber que arrancamos en verde.
