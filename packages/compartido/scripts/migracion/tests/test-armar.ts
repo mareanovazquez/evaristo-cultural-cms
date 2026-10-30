@@ -27,11 +27,11 @@ t("T01: los 35 desde el snapshot: estados, slugs, secciones y categorías a crea
   assert.ok(plan.articulos.every((a) => a.slug !== ""), "ningún slug vacío");
   assert.ok(plan.articulos.every((a) => typeof a.seccion === "string" && a.seccion !== ""), "todos con sección");
   assert.deepEqual(cuenta(plan.articulos, (a) => a.seccion), {
-    asia: 17, ensayo: 4, rastros: 3, literatura: 3, musica: 2, "sin-asignar": 2, entrevista: 1, resena: 1, poesia: 1, teatro: 1,
+    asia: 17, textos: 7, ensayo: 4, rastros: 3, "sin-asignar": 2, entrevista: 1, resena: 1,
   });
   assert.deepEqual(plan.seccionesFaltantes, []);
-  assert.equal(plan.categoriasACrear.length, 8);
-  assert.deepEqual(plan.categoriasACrear.map((c) => c.slug).sort(), ["ensayo", "entrevista", "fantastico", "historieta", "literatura", "poesia", "resena", "tv-y-cine"]);
+  assert.equal(plan.categoriasACrear.length, 7);
+  assert.deepEqual(plan.categoriasACrear.map((c) => c.slug).sort(), ["fantastico", "historieta", "literatura", "musica", "poesia", "teatro", "tv-y-cine"]);
   assert.ok(plan.categoriasACrear.every((c) => c.nombre !== null));
 });
 
@@ -46,7 +46,8 @@ if (!existsSync(BASELINE)) {
     for (const b of base.articulos) {
       const a = articulo(b.wpId);
       assert.ok(a, `falta el ${b.wpId}`);
-      for (const k of ["slug", "estado", "seccion", "categorias", "categoriaPrincipal", "autores", "redirecciones", "publicadoEn"] as const) {
+      // seccion, categorias y categoriaPrincipal no se comparan: cambiaron por la decisión 78 (el baseline es anterior)
+      for (const k of ["slug", "estado", "autores", "redirecciones", "publicadoEn"] as const) {
         assert.deepEqual(a[k], b[k], `${b.wpId}.${k}`);
       }
       for (const k of ["cuerpo", "titulo", "validador", "migracion"] as const) {
@@ -207,14 +208,14 @@ t("T11: las 7 cuentas de solo texto no tienen bio ni redirección de autor; los 
   assert.ok(conPagina.some((a) => a.bio !== null), "las personas con bio la conservan");
 });
 
-t("T12: categorías a crear: las 8 con su nombre del mapeo; las existentes no se repiten; sin nombre es bloqueante", () => {
+t("T12: categorías a crear: las 7 con su nombre del mapeo; las existentes no se repiten; sin nombre es bloqueante", () => {
   assert.deepEqual(plan.categoriasACrear.map((c) => [c.slug, c.nombre]).sort(), [
-    ["ensayo", "Ensayo"], ["entrevista", "Entrevista"], ["fantastico", "Fantástico"], ["historieta", "Historieta"],
-    ["literatura", "Literatura"], ["poesia", "Poesía"], ["resena", "Reseña"], ["tv-y-cine", "TV & Cine"],
+    ["fantastico", "Fantástico"], ["historieta", "Historieta"], ["literatura", "Literatura"], ["musica", "Música"],
+    ["poesia", "Poesía"], ["teatro", "Teatro"], ["tv-y-cine", "TV & Cine"],
   ]);
   assert.deepEqual(plan.problemas.filter((x) => x.bloqueante), []);
-  const algunas = armar(entradaDesdeSnapshot({ categoriasExistentes: ["entrevista", "resena", "tv-y-cine"] }));
-  assert.deepEqual(algunas.categoriasACrear.map((c) => c.slug).sort(), ["ensayo", "fantastico", "historieta", "literatura", "poesia"]);
+  const algunas = armar(entradaDesdeSnapshot({ categoriasExistentes: ["musica", "teatro", "tv-y-cine"] }));
+  assert.deepEqual(algunas.categoriasACrear.map((c) => c.slug).sort(), ["fantastico", "historieta", "literatura", "poesia"]);
   const todas = armar(entradaDesdeSnapshot({ categoriasExistentes: plan.categoriasACrear.map((c) => c.slug) }));
   assert.deepEqual(todas.categoriasACrear, []);
   // una categoría que el mapeo no nombra
@@ -223,6 +224,23 @@ t("T12: categorías a crear: las 8 con su nombre del mapeo; las existentes no se
   const sin = armar(sintetica([post({ id: 41 })], { mapeo, terminos }));
   assert.deepEqual(sin.categoriasACrear, [{ slug: "categoria-fantasma", nombre: null, articulos: [41] }]);
   assert.deepEqual(sin.problemas, [{ wpId: null, codigo: "categoria_sin_nombre_en_el_mapeo", detalle: { slug: "categoria-fantasma", articulos: [41] }, bloqueante: true }]);
+});
+
+t("T12b: Novedades de WordPress: sale con la novedad vencida (su fecha de publicación) y la sección que le toca; sin la marca, null", () => {
+  // en el snapshot el id del término es el del post
+  const terminos: TerminoSnapshot[] = [
+    { taxonomia: "category", id: 51, nombre: "Novedades", slug: "novedades" },
+    { taxonomia: "category", id: 52, nombre: "Novedades", slug: "novedades" },
+    { taxonomia: "category", id: 52, nombre: "Reseñas", slug: "resena" },
+    { taxonomia: "category", id: 53, nombre: "Poesia", slug: "poesia" },
+  ];
+  const p = armar(sintetica([post({ id: 51 }), post({ id: 52 }), post({ id: 53 })], { terminos }));
+  const de = (id: number) => p.articulos.find((a) => a.wpId === id)!;
+  assert.deepEqual([de(51).seccion, de(51).novedadHasta], ["textos", de(51).publicadoEn]); // solo Novedades: Textos
+  assert.deepEqual([de(52).seccion, de(52).novedadHasta], ["resena", de(52).publicadoEn]); // con formato: lo conserva
+  assert.ok(de(51).novedadHasta !== null && new Date(de(51).novedadHasta!) < new Date("2026-10-30T00:00:00Z"), "vencida");
+  assert.deepEqual([de(53).seccion, de(53).categorias, de(53).novedadHasta], ["textos", ["poesia"], null]); // sin la marca
+  assert.equal(p.articulos.filter((a) => a.novedadHasta === null).length, 1);
 });
 
 t("T05 (armado): 19899 -> millie-jackson-i-cry (guiones colapsados), título sin U+200E y aviso u200e_removido", () => {

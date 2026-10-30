@@ -37,7 +37,7 @@ async function baseActual(prisma: PrismaClient): Promise<string> {
 }
 
 /**
- * Vacía todas las tablas salvo _prisma_migrations (con DELETE, no TRUNCATE) y siembra las 18 secciones desde SECCIONES
+ * Vacía todas las tablas salvo _prisma_migrations (con DELETE, no TRUNCATE) y siembra las 9 secciones desde SECCIONES
  * (src/secciones.ts, la misma lista que usa db:sembrar). ANTES de cada DELETE comprueba que DATABASE() sea evaristo_cms_test; si no, aborta.
  */
 export async function vaciarYSembrarPruebas(prisma: PrismaClient): Promise<void> {

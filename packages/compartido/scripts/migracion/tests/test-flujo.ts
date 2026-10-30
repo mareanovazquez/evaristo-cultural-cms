@@ -27,7 +27,7 @@ const conexion = await abrirPruebas();
 const { prisma } = conexion;
 const CARPETA_INFORMES = mkdtempSync(join(tmpdir(), "flujo-escribir-"));
 const ID_CORTO = 12526;   // ensayo, sin imágenes de cuerpo: 1 artículo, 1 autor (278), 1 categoría, 3 redirecciones (artículo, slug anterior y autor)
-const ID_EDITADO = 1555;  // un artículo con una sola categoría
+const ID_EDITADO = 12526;  // un artículo con una sola categoría (Literatura)
 const AUTOR_EDITADO = 278;
 
 /** Todo lo que el flujo y este test imprimen: al final se revisa que no haya claves, correos ni bios. */
@@ -50,7 +50,7 @@ async function totales() {
     galeria: await prisma.galeriaItem.count(),
   };
 }
-const COMPLETA = { articulos: 35, autores: 25, categorias: 8, imagenes: 200, redirecciones: 58, articulosCategorias: 12, articulosAutores: 35, galeria: 0 };
+const COMPLETA = { articulos: 35, autores: 25, categorias: 7, imagenes: 200, redirecciones: 58, articulosCategorias: 13, articulosAutores: 35, galeria: 0 };
 
 /** conteos e instantes de actualización de todo lo que tiene: lo que "sin cambios" y "no se escribió nada" tienen que dejar igual */
 async function foto() {

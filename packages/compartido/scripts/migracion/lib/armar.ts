@@ -393,7 +393,8 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
       cuerpo, schemaVersion: 1, textoPlano: textoPlanoDe(cuerpo),
       publicadoEn: utcDe(p.fechaGmt),
       postDateLocal: p.fecha, postDateGmt: p.fechaGmt,
-      novedadHasta: r.novedadHasta,
+      // Los que tenían la marca de Novedades en WordPress salen con la novedad ya vencida (su fecha de publicación): quedan en el archivo de /novedades/ y se encuentran en la revisión manual.
+      novedadHasta: r.taxonomia?.novedad ? utcDe(p.fechaGmt) : r.novedadHasta,
       seccion: r.seccion as string, categorias: r.categorias, categoriaPrincipal: r.categoriaPrincipal,
       categoriasWp: cats.map((c) => c.slug),
       autores: [{ wpUserId, orden: 0 }],
