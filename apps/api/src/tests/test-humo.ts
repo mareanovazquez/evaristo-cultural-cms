@@ -152,7 +152,7 @@ try {
     console.log("Panel: omitido porque no está compilado (npm run build:panel); no es parte del sitio público.");
   }
 
-  // 9) Enlaces internos y imágenes de lo recorrido: todo resuelve, incluidas las 17 secciones del menú
+  // 9) Enlaces internos y imágenes de lo recorrido: todo resuelve, incluidas todas las secciones del menú
   const paginas = [portada, autores, ...(await Promise.all(publicados.slice(0, 12).map((a) => pedir(canonica(a.slug, a.publicadoEn!)))))];
   const enlaces = new Set<string>();
   const imagenes = new Set<string>();
@@ -178,7 +178,8 @@ try {
   console.log(`Artículos: ${publicados.length} publicados con 200 y ${noPublicados.length} no publicado(s) con la página 404 del sitio.`);
   console.log(`Enlaces internos de ${paginas.length} páginas: ${resueltos} resuelven. Imágenes de /media: ${imgOk} de ${imagenes.size} con 200.`);
   const secciones = [...enlaces].filter((e) => e.startsWith("/seccion/")).length;
-  if (secciones < 17) problemas.push(`el menú enlaza ${secciones} secciones, se esperaban 17`);
+  const esperadas = await prisma.seccion.count({ where: { interna: false } }); // las que haya en la base (17 en la muestra anterior a la decisión 78, 8 después)
+  if (secciones < esperadas) problemas.push(`el menú enlaza ${secciones} secciones, se esperaban ${esperadas}`);
   console.log(`Menú: ${secciones} secciones enlazadas, todas con página.`);
   if (problemas.length) fallar(`${problemas.length} problemas:\n  - ${problemas.slice(0, 40).join("\n  - ")}`);
   console.log("\nOK: el sitio responde bien de punta a punta.");

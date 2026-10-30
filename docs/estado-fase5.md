@@ -16,11 +16,11 @@ La portada (`/`) se arma sola con lo publicado: el editor no maqueta. De arriba 
 6. **Más bloques de sección** (hasta 4 más, de a dos columnas).
 7. **Footer** (fijo en `Footer.astro`; cerrado hasta el visto bueno de Roxana Artal; decisión 75 de `plan-implementacion.md`).
 
-**Reglas.** Las secciones que se muestran son **las 6 con la publicación más reciente** (sin «Sin asignar»); cada bloque muestra sus 2 notas más nuevas **que no estén ya en el carrusel ni en la banda**, así no se repite nada; una sección sin notas para mostrar no aparece; un artículo programado aparece recién en su fecha y un borrador nunca. En celular todo va en una columna, en el mismo orden.
+**Reglas.** Las secciones que se muestran son **las 6 con la publicación más reciente** (sin «Sin asignar» y sin **Textos**, el comodín de lo que no tiene formato: decisión 78, `SECCIONES_SIN_BLOQUE` en `portada.ts`); cada bloque muestra sus 2 notas más nuevas **que no estén ya en el carrusel ni en la banda**, así no se repite nada; una sección sin notas para mostrar no aparece; un artículo programado aparece recién en su fecha y un borrador nunca. En celular todo va en una columna, en el mismo orden.
 
 ## Qué se decidió por defecto (para que ella lo corrija)
 
-- **Qué secciones van en la portada.** La especificación pensaba en 5 secciones fijas; con 17 no caben. Se eligió un criterio automático (las 6 más activas) para tener algo que mostrar. Puede ser fijo (que la editorial elija cuáles y en qué orden) o seguir siendo automático.
+- **Qué secciones van en la portada.** La especificación pensaba en 5 secciones fijas; con las 8 de la decisión 78 (7 sin contar Textos) tampoco caben todas. Se eligió un criterio automático (las 6 más activas) para tener algo que mostrar. Puede ser fijo (que la editorial elija cuáles y en qué orden) o seguir siendo automático.
 - **Cuántas notas por bloque y cuántos bloques:** 2 notas por sección y 6 secciones (`SECCIONES_EN_PORTADA` y `NOTAS_POR_BLOQUE` en `apps/sitio/src/lib/portada.ts`).
 - **La fecha** va sola (sin hora ni reloj), como proponía la especificación.
 - **El «destacado en portada»** (elegir a mano qué nota va en el carrusel) **no está**: el carrusel toma siempre las 3 más nuevas. La especificación proponía dejarlo para una segunda etapa.

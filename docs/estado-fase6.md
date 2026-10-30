@@ -14,22 +14,22 @@ Actualizado el 23/10/2026. Primera versión hecha con valores por defecto, para 
 
 ## Novedades
 
-- **Qué es:** una nota con el campo `novedadHasta` (fecha) vigente: el panel lo pone en «Novedad hasta» y vale **hasta el final de ese día** (decisión 15: no es una sección ni una categoría; los migrados no tienen fecha).
+- **Qué es:** una nota con el campo `novedadHasta` (fecha) vigente: el panel lo pone en «Novedad hasta» y vale **hasta el final de ese día** (decisión 15: no es una sección ni una categoría). Una novedad nueva dura 90 días por defecto, ajustable (decisión 78). Los 102 migrados de la categoría Novedades de WordPress llevan una fecha ya vencida: no cuentan como novedad pero sí figuran en el archivo.
 - **Dónde se ve:**
   - **Etiqueta «Novedad»** (oscura, junto a la de la sección) en las tarjetas de todos los listados y relacionados, en los resultados del buscador y sobre el título de la nota.
-  - **Página `/novedades/`**: las vigentes y publicadas, de la más nueva a la más vieja, de a 12; vacía, lo explica.
-  - **Menú:** «Novedades» arriba del desplegable «Más» y en el panel del celular; y en el pie.
+  - **Página `/novedades/`**: el **archivo** de todo lo que alguna vez fue novedad (decisión 78): primero las vigentes y después las vencidas, cada grupo de la más nueva a la más vieja, de a 12; solo las publicadas. La etiqueta «Novedad» se ve solo en las vigentes. Vacía, lo explica.
+  - **Menú:** «Novedades» en el primer nivel, antes de las secciones (decisión 78), y en el panel del celular; y en el pie.
   - **Portada:** un bloque «Novedades» (las 2 más nuevas que no estén ya en el hero ni en la banda) que va primero entre los bloques de sección; si hay novedades, se muestran 5 secciones en vez de 6 para que los bloques queden de a pares. Una novedad recién publicada está en el hero o en la banda (lleva la etiqueta), y el bloque muestra las que no.
-- **Test:** `test:novedades`.
+- **Test:** `test:novedades` (incluye la paginación del archivo al cruzar de vigentes a vencidas).
 
 ## A confirmar con la editorial
 
-1. ¿«Novedades» en el menú principal (hoy, dentro de «Más») o más visible? ¿Les gusta que el bloque de la portada vaya primero?
+1. ~~¿«Novedades» en el menú principal?~~ Resuelto el 29/10/2026: va en el primer nivel. Sigue abierto: ¿les gusta que el bloque de la portada vaya primero?
 2. ¿La etiqueta «Novedad» en todas las tarjetas, o solo en algunas pantallas?
-3. En WordPress «Novedades» era una sección de reseñas de libros recién salidos: las 95 notas que solo tenían esa categoría están en `sin-asignar` (fase 7). ¿Se marcan como novedad al migrar (con qué fecha) o no? Hoy el modelo las deja sin fecha.
+3. ~~Novedades de WordPress.~~ Resuelto el 29/10/2026 (decisión 78): migran con la novedad vencida (su fecha de publicación), en su formato o en Textos, y quedan en el archivo `/novedades/`.
 4. ¿Les sirve el buscador como está (autor, título, texto)? ¿Quieren filtros por sección o por año?
 
 ## Para la fase 7
 
 - Aplicar la migración `busqueda_fulltext` a la base real, regenerar el texto plano de los artículos que lo necesiten y revisar el rendimiento de la búsqueda con los 2.637 artículos (el texto de algunos pasa de 100 KB).
-- Redirección de la dirección vieja `/category/novedades/` (WordPress) hacia `/novedades/`.
+- ~~Redirección de `/category/novedades/` hacia `/novedades/`~~: hecha (paso 5 de la decisión 78, junto con las demás `/category/…`).
