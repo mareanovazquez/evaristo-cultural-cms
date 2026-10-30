@@ -10,6 +10,7 @@
     "./schema": "./src/schema/validate.ts",
     "./render": "./src/render/render.ts",
     "./urls": "./src/urls.ts",
+    "./taxonomia": "./src/conversor/taxonomia.ts",
     "./permisos": "./src/permisos.ts",
     "./sitio": "./src/sitio.ts",
     "./bio": "./src/bio.ts",

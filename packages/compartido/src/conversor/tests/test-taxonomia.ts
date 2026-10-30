@@ -3,7 +3,7 @@
 // sin formato pero con tema o marca de Novedades -> Textos; sin ninguna señal -> sin-asignar.
 import assert from 'node:assert/strict'
 import { convertWpPost } from '../convert.ts'
-import { cargarMapeo, categoriaPrincipal, esEntrevista, resolverTaxonomia, validarCategoriaPrincipal, validarMapeo } from '../taxonomia.ts'
+import { cargarMapeo, categoriaPrincipal, destinoCategoriaWp, esEntrevista, resolverTaxonomia, validarCategoriaPrincipal, validarMapeo } from '../taxonomia.ts'
 
 const m = cargarMapeo()
 let ok = 0
@@ -177,6 +177,24 @@ t('categoría principal en convertWpPost y sin taxonomía', () => {
   assert.equal(convertWpPost(p, { taxonomia: { id: 1, slugs: ['seda'], mapeo: m } }).categoriaPrincipal, null)
   assert.equal(convertWpPost(p).categoriaPrincipal, null)
 })
+t('destino de las /category/ de WordPress: todas las taxonomías mapeadas tienen uno que existe', () => {
+  const secciones = new Set(m.secciones.map((s) => s.slug)), categorias = new Set(m.categorias.map((c) => c.slug))
+  for (const [slug, t] of Object.entries(m.taxonomiasWp)) {
+    const d = /^\/(?:(seccion|categoria)\/([^/]+)\/)?$/.exec(t.destino) ?? (t.destino === '/novedades/' ? ['', 'novedades'] : null)
+    assert.ok(d, `${slug}: destino "${t.destino}"`)
+    if (d[1] === 'seccion') assert.ok(secciones.has(d[2]!), `${slug} -> sección ${d[2]}`)
+    if (d[1] === 'categoria') assert.ok(categorias.has(d[2]!), `${slug} -> categoría ${d[2]}`)
+  }
+  // las 26 categorías que tenía WordPress (relevadas en la 3307 el 30/10/2026), cada una con su destino
+  const wp = ['arte', 'articulos', 'cronica', 'encuentro-internacional-literatura-fantastica', 'ensayo', 'fantastico', 'historieta', 'infantojuvenil', 'libro-ilustrado', 'literatura', 'mexico', 'musica', 'novedades', 'poesia', 'poesia-rumana', 'rastros', 'resena', 'resenas-fantastico', 'resenas-historietas', 'resenas-rastros', 'resenas-seda', 'seda', 'series-tv', 'teatro', 'tv-cine', 'uncategorized']
+  for (const slug of wp) assert.ok(destinoCategoriaWp(`/category/${slug}/`, m), `/category/${slug}/ sin destino`)
+  assert.deepEqual(Object.keys(m.taxonomiasWp).sort(), [...wp].sort())
+})
+t('destinoCategoriaWp: formas de la URL y lo que no es una categoría', () => {
+  assert.equal(destinoCategoriaWp('/category/seda/', m), '/seccion/asia/')
+  for (const r of ['/category/seda', '/category/seda/page/3/', '/category/seda/feed/', '/category/seda/feed/rss2/']) assert.equal(destinoCategoriaWp(r, m), '/seccion/asia/', r)
+  for (const r of ['/', '/category/', '/category//', '/category/nada/', '/category/constructor/', '/category/toString/', '/category/seda/x/', '/category/seda/page/', '/category/%E0%A4%A/', '/Category/seda/', '/seccion/asia/']) assert.equal(destinoCategoriaWp(r, m), undefined, r)
+})
 t('mapeo inválido se rechaza', () => {
   const sinEnt = structuredClone(m); sinEnt.entrevista.seccion = 'inexistente'
   assert.throws(() => validarMapeo(sinEnt), /entrevista/)
@@ -192,6 +210,10 @@ t('mapeo inválido se rechaza', () => {
   assert.throws(() => validarMapeo(comodinEnPrioridad), /sin formato/)
   const prioCat = structuredClone(m); prioCat.prioridadCategorias.push('inexistente')
   assert.throws(() => validarMapeo(prioCat), /prioridadCategorias/)
+  for (const [destino, motivo] of [['/seccion/inexistente/', /sección desconocida/], ['/categoria/inexistente/', /categoría desconocida/], ['//evil.com/', /inválido/], ['https://x.org/', /inválido/], ['/otra/', /inválido/]] as const) {
+    const malDestino = structuredClone(m); malDestino.taxonomiasWp.seda!.destino = destino
+    assert.throws(() => validarMapeo(malDestino), motivo, destino)
+  }
 })
 t('convertWpPost: sección y categorías; novedadHasta sigue null (la fecha la pone el armado); sin taxonomía, seccion null', () => {
   const p = { titulo: 'Un título', contenido_crudo: '<p>hola</p>' }

@@ -219,7 +219,7 @@ t("T12: categorías a crear: las 7 con su nombre del mapeo; las existentes no se
   const todas = armar(entradaDesdeSnapshot({ categoriasExistentes: plan.categoriasACrear.map((c) => c.slug) }));
   assert.deepEqual(todas.categoriasACrear, []);
   // una categoría que el mapeo no nombra
-  const mapeo = { ...base.mapeo, taxonomiasWp: { ...base.mapeo.taxonomiasWp, "tema-nuevo": { nombre: "Tema nuevo", accion: "categoria" as const, categorias: ["categoria-fantasma"] } } };
+  const mapeo = { ...base.mapeo, taxonomiasWp: { ...base.mapeo.taxonomiasWp, "tema-nuevo": { nombre: "Tema nuevo", accion: "categoria" as const, categorias: ["categoria-fantasma"], destino: "/" } } };
   const terminos: TerminoSnapshot[] = [{ taxonomia: "category", id: 41, nombre: "Tema nuevo", slug: "tema-nuevo" }];
   const sin = armar(sintetica([post({ id: 41 })], { mapeo, terminos }));
   assert.deepEqual(sin.categoriasACrear, [{ slug: "categoria-fantasma", nombre: null, articulos: [41] }]);

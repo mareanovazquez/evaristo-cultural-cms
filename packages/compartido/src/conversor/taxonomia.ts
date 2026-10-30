@@ -16,6 +16,8 @@ export interface TaxonomiaWp {
   tambienSecciones?: string[]
   /** Marca al artículo como novedad (vencida, en la migración); sin otra señal, va a la sección sin formato. */
   novedad?: boolean
+  /** A dónde va la URL vieja `/category/<slug de WordPress>/`: una sección, una categoría, /novedades/ o la portada ("/"). */
+  destino: string
   /** Si está, los ids de los artículos con esta taxonomía se registran en out/<valor>.csv. */
   registrarIdsEn?: string
 }
@@ -87,6 +89,10 @@ export function validarMapeo(m: MapeoTaxonomias): void {
     if (t.accion === 'seccion') {
       if (!t.seccion || !m.prioridadSecciones.includes(t.seccion)) errores.push(`${slug}: sección "${t.seccion}" ausente de la prioridad`)
     }
+    const destino = /^\/(?:(seccion|categoria)\/([^/]+)\/)?$/.exec(t.destino ?? '') ?? (t.destino === '/novedades/' ? ['', 'novedades'] : null)
+    if (!destino) errores.push(`${slug}: destino "${t.destino}" inválido (/seccion/<slug>/, /categoria/<slug>/, /novedades/ o /)`)
+    else if (destino[1] === 'seccion' && !secciones.has(destino[2]!)) errores.push(`${slug}: el destino apunta a la sección desconocida "${destino[2]}"`)
+    else if (destino[1] === 'categoria' && !categorias.has(destino[2]!)) errores.push(`${slug}: el destino apunta a la categoría desconocida "${destino[2]}"`)
     for (const c of t.categorias ?? []) if (!categorias.has(c)) errores.push(`${slug}: categoría desconocida "${c}"`)
     for (const c of t.tambienSecciones ?? []) if (!m.prioridadSecciones.includes(c)) errores.push(`${slug}: tambienSecciones desconocida "${c}"`)
   }
@@ -105,6 +111,18 @@ export function cargarMapeo(ruta = fileURLToPath(new URL('../../datos/conversor/
 
 export function urlVieja(m: MapeoTaxonomias, id: number): string {
   return m.urlViejaPlantilla.replace('{id}', String(id))
+}
+
+/**
+ * Destino de una URL vieja de categoría de WordPress: `/category/<slug>/`, con `/page/N/` o `/feed/` (y sus variantes) al final.
+ * undefined si la ruta no es de una categoría del mapeo. `ruta` es el path del pedido (sin consulta), con los %XX como lleguen.
+ */
+export function destinoCategoriaWp(ruta: string, m: MapeoTaxonomias): string | undefined {
+  const partes = /^\/category\/([^/]+)(?:\/(?:page\/\d+|feed(?:\/(?:atom|rss2?|rdf))?))?\/?$/.exec(ruta)
+  if (!partes) return undefined
+  let slug: string
+  try { slug = decodeURIComponent(partes[1]!) } catch { return undefined }
+  return Object.hasOwn(m.taxonomiasWp, slug) ? m.taxonomiasWp[slug]!.destino : undefined
 }
 
 /** ¿Es una entrevista? Manda el mapeo por id; si no, el patrón sobre los primeros tramos del título. */
