@@ -51,7 +51,7 @@
 
 ## Orden sugerido
 
-1. **Primera descarga de WordPress hecha el 31/10/2026** (paquete con todo `uploads` y base completa, verificados en la Lenovo y en `backup2`; ver `guia-descarga-wordpress.md`, «Descarga hecha»). WordPress sigue en línea: lo que se publique después no está en esa copia, así que **hay que repetir la base y los archivos nuevos antes del 28/11/2026**, que sigue siendo la fecha límite. Para eso se conserva la clave de la Lenovo en hPanel. Falta extraer los originales del paquete y verificarlos contra la base.
+1. **Descarga de WordPress hecha el 31/10/2026 y definitiva** (paquete con todo `uploads` y base completa, verificados en la Lenovo y en `backup2`; ver `guia-descarga-wordpress.md`, «Descarga hecha»). Mariano confirmó el 31/10/2026 que no se va a publicar nada nuevo en WordPress, así que no hace falta repetirla ni volver a exportar antes de migrar. La clave de la Lenovo se quita de hPanel después de verificar los originales. Falta extraerlos del paquete y compararlos con la base. El 28/11/2026 ya no es un riesgo para los datos, pero si el plan de Hostinger no se renueva, el sitio público puede quedar fuera de línea.
 2. **El 90 días por defecto** (punto 1 de «Lo que falta de la decisión 78»), que es chico y deja cerrada la reorganización.
 3. **Fase 7, etapa 1:** lo técnico que no depende de la descarga.
 4. **Si hay tiempo o llegan los contenidos:** «Quiénes somos» y «Contacto» y lo que salga de mirar el sitio en el navegador.
