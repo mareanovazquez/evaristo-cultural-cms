@@ -101,7 +101,7 @@ En este orden (de lo que más condiciona a lo que menos):
 
 ### Decisiones para plantear (de a una)
 
-1. **Hosting y correo** (cuándo se decide y con quién): condiciona el lanzamiento.
+1. **Hosting y correo** (cuándo se decide y con quién): condiciona el lanzamiento. Al 31/10/2026, Mariano y Roxana están hablando de abrir un hosting propio para que la propiedad quede en la editorial; todavía no está decidido.
 2. **Cómo convertir la real** (en el lugar o re-migrando los 35): ver Etapa 3.
 3. **Cómo resolver las 45 colisiones de nombres de imagen** (renombrar al importar o colación binaria): ver Etapa 1, punto 1.
 4. **Variantes de tamaño de las imágenes:** hacerlas al migrar (conviene, para el hero y las tarjetas) o después.

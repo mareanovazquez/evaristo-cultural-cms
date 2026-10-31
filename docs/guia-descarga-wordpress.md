@@ -20,7 +20,7 @@ Espacio: el disco `C:` tiene ~250 GB libres (30/10/2026); sobra. Se necesitan un
 **Estado al 30/10/2026: sin responder.** Son lo primero que hay que cerrar al retomar; sin estas respuestas no se puede empezar a bajar. Anotá cada respuesta acá mismo, con la fecha.
 
 1. ☐ **¿El plan de Hostinger se renueva, y tenés acceso a hPanel?** ¿Quién es el dueño del plan? Si no se renueva, esta descarga es la última oportunidad y hay que hacerla **antes del 28/11/2026**.
-   - Respuesta: _______________
+   - Respuesta (31/10/2026, parcial): el plan es de otra persona y Mariano cree que lo va a renovar, sin confirmar. **La fecha límite del 28/11/2026 sigue en pie.** Falta saber si hay acceso a hPanel.
 2. ☐ **¿Instalamos WinSCP o usamos `scp`?** Este equipo tiene `ssh`, `scp` y `sftp` (OpenSSH), pero **no tiene `rsync` ni WinSCP**. WinSCP (gratis) **reanuda** una descarga cortada sin volver a bajar lo ya bajado; `scp` no reanuda. Instalar software es decisión tuya.
    - Respuesta: _______________
 3. ☐ **¿Dónde va el segundo respaldo?** Otro disco físico o un servicio. El hosting desaparece el 28/11 y la descarga pasa a ser la única copia, así que tiene que haber dos. (El disco `C:` tiene ~250 GB libres, el espacio de la descarga no es problema; la pregunta es la copia en *otro* lugar.)
