@@ -10,7 +10,7 @@ Estado: informe del paso 1b de `prueba-inicial.md`. Fuente: dump de la base `u72
 4. **Las notas al pie son pocas y regulares.** Solo el 7% de los artículos (182 a 189) las tiene, casi todas con restos de Word y LibreOffice. Cerca de 100 se convierten de forma automática.
 5. **El contenido real choca con la especificación en seis puntos** (sección 11): imágenes dentro del cuerpo, videos, secciones y categorías, etiquetas, fichas técnicas y bios.
 6. **Hay 424 autores con artículos**, 200 con bio cargada en el perfil de WordPress, y varios autores institucionales.
-7. **Las imágenes están en una carpeta plana** (`wp-content/uploads`, sin año ni mes): 10.975 archivos, casi todos JPG.
+7. **Las imágenes están en una carpeta plana** (`wp-content/uploads`, sin año ni mes): 10.975 adjuntos, casi todos JPG. En disco hay 143.609 archivos, porque se suman las miniaturas (medido el 31/10/2026).
 
 ## 2. Tamaño y época
 

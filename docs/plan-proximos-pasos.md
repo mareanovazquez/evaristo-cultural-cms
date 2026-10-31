@@ -51,7 +51,7 @@
 
 ## Orden sugerido
 
-1. **Primero la descarga de WordPress** (fase 7, etapa 0): es lo único con fecha límite (**28/11/2026**, quedan 29 días al 30/10) y tarda horas. La guía y el script de verificación **ya existen** (`docs/guia-descarga-wordpress.md`, `npm run verificar:descarga`; 30/10/2026): falta que Mariano confirme los datos del hosting y empiece a bajar en segundo plano mientras se sigue.
+1. **Primera descarga de WordPress hecha el 31/10/2026** (paquete con todo `uploads` y base completa, verificados en la Lenovo y en `backup2`; ver `guia-descarga-wordpress.md`, «Descarga hecha»). WordPress sigue en línea: lo que se publique después no está en esa copia, así que **hay que repetir la base y los archivos nuevos antes del 28/11/2026**, que sigue siendo la fecha límite. Para eso se conserva la clave de la Lenovo en hPanel. Falta extraer los originales del paquete y verificarlos contra la base.
 2. **El 90 días por defecto** (punto 1 de «Lo que falta de la decisión 78»), que es chico y deja cerrada la reorganización.
 3. **Fase 7, etapa 1:** lo técnico que no depende de la descarga.
 4. **Si hay tiempo o llegan los contenidos:** «Quiénes somos» y «Contacto» y lo que salga de mirar el sitio en el navegador.

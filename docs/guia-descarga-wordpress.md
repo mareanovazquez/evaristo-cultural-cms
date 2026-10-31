@@ -22,9 +22,9 @@ Espacio: el disco `C:` tiene ~250 GB libres (30/10/2026); sobra. Se necesitan un
 1. ☐ **¿El plan de Hostinger se renueva, y tenés acceso a hPanel?** ¿Quién es el dueño del plan? Si no se renueva, esta descarga es la última oportunidad y hay que hacerla **antes del 28/11/2026**.
    - Respuesta (31/10/2026, parcial): el plan es de otra persona y Mariano cree que lo va a renovar, sin confirmar. **La fecha límite del 28/11/2026 sigue en pie.** Falta saber si hay acceso a hPanel.
 2. ☐ **¿Instalamos WinSCP o usamos `scp`?** Este equipo tiene `ssh`, `scp` y `sftp` (OpenSSH), pero **no tiene `rsync` ni WinSCP**. WinSCP (gratis) **reanuda** una descarga cortada sin volver a bajar lo ya bajado; `scp` no reanuda. Instalar software es decisión tuya.
-   - Respuesta: _______________
+   - Respuesta (31/10/2026): WinSCP.
 3. ☐ **¿Dónde va el segundo respaldo?** Otro disco físico o un servicio. El hosting desaparece el 28/11 y la descarga pasa a ser la única copia, así que tiene que haber dos. (El disco `C:` tiene ~250 GB libres, el espacio de la descarga no es problema; la pregunta es la copia en *otro* lugar.)
-   - Respuesta: _______________
+   - Respuesta (31/10/2026): el pendrive `backup2`.
 
 Además, al conectarte por primera vez hay que confirmar con hPanel (no son preguntas para mí, son datos que se leen ahí):
 
@@ -40,6 +40,37 @@ C:\Users\marea\Documents\Proyectos Frontend\CMS-EVARISTO(ASSETS)\wordpress-2026-
     lista-servidor.tsv
     wordpress.sql
 ```
+
+## Medición real en el servidor (31/10/2026)
+
+**Corrige a las cifras de arriba.** Los 10.975 eran adjuntos de la base, no archivos en disco. En `uploads` hay **143.609 archivos y 7,54 GB**: 132.208 con forma de miniatura (4,87 GB) y 11.401 del resto (2,66 GB). La carpeta raíz tiene 142.973; el resto está en `avatars` (611), `wpallimport` (20), `wp-cerber-…` (3) y `wp-rollback` (2). **3.519 nombres no están en UTF-8** (por ejemplo, con la «ó» en otra codificación), así que no se pueden bajar sueltos a Windows sin riesgo. Los 9 `.php` son relleno de complementos (8 vacíos y uno de 26 bytes). La Lenovo entra por SSH con su clave `id_ed25519`, autorizada en hPanel (quitarla al terminar).
+
+## Descarga hecha el 31/10/2026
+
+**Esto reemplaza a los pasos 3 a 6 de abajo**, que quedan como referencia del plan anterior. No se bajaron archivos sueltos: por los nombres que no están en UTF-8 y los que solo difieren en mayúsculas, se armó un único paquete sin comprimir que conserva todo tal cual. No hizo falta WinSCP.
+
+Carpeta: `CMS-EVARISTO(ASSETS)\wordpress-2026-10-31\`, en la Lenovo y en el pendrive `backup2`, con los cinco archivos idénticos en los dos lugares:
+
+| Archivo | Tamaño | Contenido | SHA-256 |
+|---|---|---|---|
+| `uploads-completo.tar` | 7.643.535.360 bytes | Todo `uploads`: 143.610 archivos (los 143.609 de la lista más un `nohup.out` vacío que quedó por error y ya se borró del servidor) | `0F1078F864ED4F54B07F952A56FDE41C17609F53594B4AC62BB36E29C7E2AC98` |
+| `wordpress.sql` | 248.028.653 bytes | Base completa, **50 tablas** (el dump del 5/10 tenía 10), por phpMyAdmin, 22:04 UTC. Datos personales. | `994D0711E3D4E5F136489523F47377BA1DF5B8C5D40B95EECB62CC08FFB20B92` |
+| `lista-completa.tsv` | 5.743.622 bytes | 143.609 líneas: tamaño y nombre, como referencia | `7470018D9AF8B3AC4FF6FD0B0E7744359318C199181277754AC01F6BBF12FCB4` |
+| `uploads-completo.sha256` y `wordpress.sha256` | 87 y 81 bytes | Los hashes | |
+
+Cómo se hizo, por si hay que repetirlo:
+
+```bash
+# En el servidor: lista y paquete, en ~/descarga (fuera de public_html). Un comando por línea, sin cortarlos.
+cd /home/u728005081/domains/evaristocultural.com.ar/public_html/wp-content/uploads
+find . -type f -printf '%s\t%P\n' | LC_ALL=C sort > ~/descarga/lista-completa.tsv
+nice -n 10 tar --format=gnu -cf ~/descarga/uploads-completo.tar .
+sha256sum ~/descarga/uploads-completo.tar
+```
+
+La base se exporta por phpMyAdmin, con el método personalizado y todas las tablas: `wp db export` termina con código 255 sin mensaje en este servidor. El paquete se baja con el `sftp` de Windows, que retoma con `get -a` (unos 40 MB/s, 3 minutos). Se comprueba con `Get-FileHash` contra el hash del servidor.
+
+**Queda por hacer:** extraer los originales del paquete resolviendo los nombres que no son UTF-8 y los que chocan, y recién ahí verificarlos contra la base con `verificar:descarga`. Sin esa extracción, los nombres contra `_wp_attached_file` **no están comprobados**.
 
 ## Las dos trampas (por qué los pasos son como son)
 
