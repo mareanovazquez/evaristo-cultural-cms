@@ -39,22 +39,23 @@
 
 ## Al retomar (15 minutos)
 
-0. **El cambio de equipo se hizo el 30/10/2026:** se trabaja en la Lenovo y **lo que sigue es la descarga de WordPress** (`guia-descarga-wordpress.md`). Antes de arrancar, mirar en `plan-cambio-de-equipo.md` qué quedó de la Fase C. El Galaxy no se toca ni se vende hasta cerrarla.
+0. **El cambio de equipo y la descarga están hechos:** se trabaja en la Lenovo y **lo que sigue es la Etapa 0b** (extraer y verificar los originales, más abajo). El Galaxy no se toca ni se vende hasta hacer la Fase D de `plan-cambio-de-equipo.md`.
 1. `git status -sb`: tiene que decir `main...origin/main` sin «ahead» ni «behind».
 2. `Test-NetConnection 127.0.0.1 -Port 3308` (siempre). El 3307 (WordPress) solo si se lee WordPress. Si están caídas, las levanta Mariano (`glosario-comandos-bases.md`).
 3. `npm run build`, `npm run typecheck`, `npm run test:pantalla`, `npm run test:conversor` y `npm run test:migracion` para saber que arrancamos en verde.
 4. **Lo que necesito de Mariano** (se puede traer en el chat, sin contraseñas):
-   - **Las tres preguntas abiertas están en `guia-descarga-wordpress.md`, sección «Antes de empezar: preguntas abiertas»; empezar por ahí.** En resumen: si el plan de Hostinger **se renueva** y quién es el dueño del plan; **dónde se va a alojar** el sitio nuevo (fase 1, todavía sin decidir) y si ya hay un servicio de correo.
-   - **Lugar y espacio en disco** para los `uploads` (unos 8 GB de descarga, más los derivados que se generen: conviene tener 25 GB libres).
-   - Cómo se conecta por SSH al hosting (qué cliente usa). **Las credenciales no pasan por el chat ni por un documento.**
+   - Que levante la **3307** para cargar el dump (Etapa 0b, paso 1).
+   - Si el titular confirmó que **renueva el plan de Hostinger** (si no, el sitio público puede quedar fuera de línea el 28/11/2026).
+   - **Dónde se va a alojar** el sitio nuevo (hosting propio, en conversación con Roxana) y si ya hay un servicio de correo. **Las credenciales no pasan por el chat ni por un documento.**
    - Si ya miró el menú, el topbar y el banner en el navegador y qué ajustó.
 
 ## Orden sugerido
 
 1. **Descarga de WordPress hecha el 31/10/2026 y definitiva** (paquete con todo `uploads` y base completa, verificados en la Lenovo y en `backup2`; ver `guia-descarga-wordpress.md`, «Descarga hecha»). Mariano confirmó el 31/10/2026 que no se va a publicar nada nuevo en WordPress, así que no hace falta repetirla ni volver a exportar antes de migrar. La clave de la Lenovo se quita de hPanel después de verificar los originales. Falta extraerlos del paquete y compararlos con la base. El 28/11/2026 ya no es un riesgo para los datos, pero si el plan de Hostinger no se renueva, el sitio público puede quedar fuera de línea.
-2. **El 90 días por defecto** (punto 1 de «Lo que falta de la decisión 78»), que es chico y deja cerrada la reorganización.
-3. **Fase 7, etapa 1:** lo técnico que no depende de la descarga.
-4. **Si hay tiempo o llegan los contenidos:** «Quiénes somos» y «Contacto» y lo que salga de mirar el sitio en el navegador.
+2. **Extraer y verificar los originales** (Etapa 0b): es lo que confirma que la descarga alcanza para migrar.
+3. **El 90 días por defecto** (punto 1 de «Lo que falta de la decisión 78»), que es chico y deja cerrada la reorganización.
+4. **Fase 7, etapas 1 a 3:** adaptar el código, ensayar en una copia y hacer la migración real, en ese orden.
+5. **Si hay tiempo o llegan los contenidos:** «Quiénes somos» y «Contacto» y lo que salga de mirar el sitio en el navegador.
 
 ---
 
@@ -62,21 +63,44 @@
 
 Lista completa en `plan-implementacion.md` (sección 10) y `pendientes.md` (sección 6). La migración **real** no empieza hasta tener el dump nuevo y los `uploads`; mientras, se avanza en lo que no depende de eso. **Mariano la hace otro día** (dicho el 30/10/2026): la descarga de la etapa 0 sigue teniendo fecha límite aunque la migración no.
 
-### Etapa 0: descarga de WordPress (Mariano, **antes del 28/11/2026**)
+### Etapa 0: descarga de WordPress (hecha el 31/10/2026)
 
-- **Bajar `wp-content/uploads` completo** (unos 7,9 GB, carpeta plana, ~10.975 archivos) por SSH y **volver a exportar la base** (`mysqldump`) justo antes de migrar. El plan de Hostinger vence el 28/11: confirmar si se renueva.
-- **Guía y verificación listas (30/10/2026):** `docs/guia-descarga-wordpress.md` (paso a paso) y `npm run verificar:descarga` (compara la carpeta bajada con la base de WordPress y con una lista hecha en el servidor: faltantes, nombres alterados, tamaños cero o distintos, sobrantes; solo lectura; 16 pruebas en `test:migracion`).
-- **Dos trampas conocidas:** (1) el `tar` de Windows altera los nombres con tildes y símbolos. En este equipo hay `ssh`, `scp` y `sftp` (OpenSSH) pero **no hay `rsync` ni WinSCP**: la guía recomienda instalar WinSCP (reanuda) o usar `scp`. **Verificar los nombres contra `_wp_attached_file`** de la base nueva, sensible a mayúsculas. (2) **39 grupos de imágenes (78 archivos) solo difieren en las mayúsculas** (`TAPA.jpg` / `tapa.jpg`): en Windows uno pisa al otro. La guía los aparta en el servidor en un `colisiones.tar`.
-- Guardar el dump y los `uploads` fuera del repositorio (`CMS-EVARISTO(ASSETS)`), y **respaldar** todo en un segundo lugar.
+- **Bajado y definitivo:** `uploads-completo.tar` (143.609 archivos, 7,54 GB) y `wordpress.sql` (50 tablas), en `CMS-EVARISTO(ASSETS)\wordpress-2026-10-31\` y en `backup2`, con los SHA-256 comprobados. No se repite, porque no se publica nada nuevo en WordPress.
+- **Detalle:** `docs/guia-descarga-wordpress.md`, sección «Descarga hecha el 31/10/2026».
+- **Limpieza:** `~/descarga` ya se borró del servidor. La clave SSH de la Lenovo se quita de hPanel al terminar la Etapa 0b.
+
+### Etapa 0b: extraer y verificar los originales (Claude, con Mariano en los pasos 1 y 4)
+
+**Por qué:** la migración busca cada imagen por su `_wp_attached_file`, pero en el paquete no todos los nombres coinciden. Cruce hecho el 31/10/2026 entre `lista-completa.tsv` y el dump, solo por nombre:
+
+| Adjuntos | Qué pasa | Cómo se resuelve |
+|---|---|---|
+| 10.682 | El nombre coincide exacto | Se extrae tal cual. |
+| 249 | El nombre en disco está en la codificación vieja CP850 (`rese¤a.jpg` es `reseña.jpg`) | Se decodifica y coincide. |
+| 39 | **Pares que solo difieren en las mayúsculas: la base tiene los dos, pero en disco hay un solo archivo** | Ver paso 4. |
+| 5 | El archivo tiene una cola en la extensión (`.jpg0`, `.png000`) | Se quita la cola. |
+| **10.975** | **Total: todos tienen un archivo candidato** | Falta comprobar el contenido. |
+
+**Corrige lo anterior:** no hay 78 archivos que choquen en una carpeta de Windows, sino 39 archivos que usan dos adjuntos cada uno. `escanear0006.jpg` y `mankell.jpg` no faltan: están como `Escanear0006.jpg` y `Mankell.jpg`. Los 132.208 archivos con forma de miniatura no se extraen: la migración no los usa y quedan en el paquete.
+
+**Pasos:**
+
+1. **Cargar el dump aparte.** Mariano levanta la 3307. Se crea `evaristo_lectura_nueva` y se carga `wordpress.sql`, como indica la guía (paso 6c). **`evaristo_lectura` no se toca.** Comprobar que tiene los 10.975 adjuntos y los 2.637 publicados.
+2. **Hacer el extractor.** Script nuevo en `packages/compartido/scripts/migracion` (`extraer-originales`), de solo lectura sobre el paquete, sin dependencias nuevas y con pruebas. Lee el `.tar` en bytes, porque el `tar` de Windows altera los nombres, y compara cada nombre con los adjuntos en este orden: exacto, CP850, sin la cola de la extensión y sin distinguir mayúsculas.
+3. **Extraer.** Destino: `CMS-EVARISTO(ASSETS)\wordpress-2026-10-31\originales\`, con cada archivo nombrado como su `_wp_attached_file`. Genera `mapa-originales.csv` (clave, nombre en el paquete, tipo de coincidencia, tamaño y SHA-256). Un adjunto sin archivo detiene el resultado como error; no se adivina.
+4. **Decidir los 39 pares con Mariano.** Comparar el archivo con los metadatos de cada adjunto (`_wp_attachment_metadata`: ancho, alto, tamaño) y mirar los casos dudosos. Si el archivo corresponde a uno solo, el otro adjunto perdió su imagen y su artículo va a la revisión manual. Contar antes cuántos artículos usan cada adjunto.
+5. **Verificar.** Correr `npm run verificar:descarga` con `--uploads=<originales>` y `--base=evaristo_lectura_nueva`, adaptándolo si hace falta. También comprobar que cada imagen abre y que coincide con sus metadatos. **Criterio de cierre:** 10.975 adjuntos resueltos, sin error, salvo los pares decididos en el paso 4.
+6. **Respaldar y cerrar.** Copiar `originales\` y `mapa-originales.csv` a `backup2`, comprobar los hashes y quitar la clave de la Lenovo de hPanel. El paquete `.tar` se conserva siempre: es la copia fiel.
+7. **Fijarse en lo que no es un adjunto.** Sin contar las miniaturas, en `uploads` hay unos 430 archivos que ningún adjunto pide. Mirar además la carpeta `avatars` (611 archivos), por si sirve para las fotos de los autores. Todo eso queda en el paquete.
 
 ### Etapa 1: lo técnico que no depende de la descarga (Claude)
 
 En este orden (de lo que más condiciona a lo que menos):
 
-1. **Resolver las colisiones de nombres de imagen (descubierto el 30/10/2026).** En la base de WordPress hay **45 grupos de claves** (`_wp_attached_file`) que el CMS no distingue: 39 solo por mayúsculas (`TAPA.jpg` / `tapa.jpg`; 78 archivos) y 6 por una tilde (`Perón.jpg` / `peron.jpg`). `imagenes.clave` es única y su colación (`utf8mb4_es_0900_ai_ci`) no distingue mayúsculas ni tildes, así que la segunda fila de cada grupo **falla al insertarse** y la migración con `--todos` no puede completarse. Opciones: renombrar los colisionantes al importar (con sufijo estable) guardando la correspondencia y actualizando las referencias de los artículos, o cambiar la colación de `imagenes.clave` a binaria (migración de esquema, con su prueba). Además, en Windows los 78 de mayúsculas no caben en una carpeta: están en `colisiones.tar`. Decidir con Mariano antes de `--todos`.
+1. **Resolver las colisiones de nombres de imagen (descubierto el 30/10/2026).** En la base de WordPress hay **unos 45 grupos de claves** (`_wp_attached_file`) que el CMS no distingue: 39 solo por mayúsculas (`TAPA.jpg` / `tapa.jpg`) y unos 6 por una tilde (`Perón.jpg` / `peron.jpg`). Un conteo aproximado con el dump del 31/10 dio 46 grupos: **recontarlos con la colación real**. `imagenes.clave` es única y su colación (`utf8mb4_es_0900_ai_ci`) no distingue mayúsculas ni tildes, así que la segunda fila de cada grupo **falla al insertarse** y la migración con `--todos` no puede completarse. Opciones: renombrar los colisionantes al importar (con sufijo estable) guardando la correspondencia y actualizando las referencias de los artículos, o cambiar la colación de `imagenes.clave` a binaria (migración de esquema, con su prueba). Depende del paso 4 de la Etapa 0b. Decidir con Mariano antes de `--todos`.
 2. **`--todos`** en `migrar` y `migrar:escribir` (hoy rechazado) y la **consulta de colisiones de slug en lote** (hoy una por artículo; no escala a 2.637). Con su política de errores y pruebas.
 3. **Procesamiento de imágenes:** hoy el script mide JPEG, PNG y GIF sin librerías; otro formato da `imagen_sin_medir`, y falta la orientación EXIF 5 a 8. Con `sharp` (ya aprobado en `apps/api`; en `packages/compartido` sería una dependencia nueva: **preguntar antes**, versión exacta y fecha). Revisar de paso las variantes de tamaño (las fotos migradas son chicas: la mediana mide 700 px).
-4. **Arreglos de datos conocidos:** el 4265 (dos anclas por nota al pie), los enlaces internos de texto (28 a artículos y 28 a `uploads`; falta averiguar qué pasó con 26), el 5360 (cuatro íconos de Word con ruta relativa) y los originales faltantes `escanear0006.jpg` y `mankell.jpg`. Contar cuántos artículos empiezan con «Por …» (firmas dentro del cuerpo).
+4. **Arreglos de datos conocidos:** el 4265 (dos anclas por nota al pie), los enlaces internos de texto (28 a artículos y 28 a `uploads`; falta averiguar qué pasó con 26), y el 5360 (cuatro íconos de Word con ruta relativa). Contar cuántos artículos empiezan con «Por …» (firmas dentro del cuerpo).
 5. **Redirecciones que faltan:** `/tag/…`, `/feed/`, `/?p=ID`, `/wp-content/uploads/…` y las páginas fijas (las `/category/…` ya están, decisión 78); confirmar con el corpus completo que la fecha UTC de `publicadoEn` reproduce las URLs viejas (en la muestra, 33 de 34). Caché en memoria si la carga lo pide.
 6. **Permiso** de `evaristo_migracion` sobre `evaristo_cms_test` (dejarlo o revocarlo).
 7. **Buscador con los 2.637:** probar el rendimiento (algunos textos pasan de 100 KB).
@@ -84,7 +108,7 @@ En este orden (de lo que más condiciona a lo que menos):
 
 ### Etapa 2: ensayo general en una copia (Claude y Mariano)
 
-- Restaurar un respaldo de `evaristo_cms` en una base de ensayo, **aplicar las nueve migraciones**, **convertir sus secciones y categorías al modelo nuevo** (ver Etapa 3) y correr la migración completa con el dump y los `uploads` nuevos: medir tiempo, errores y avisos. Es el único modo de saber qué va a pasar antes de tocar la real.
+- Restaurar un respaldo de `evaristo_cms` en una base de ensayo, **aplicar las nueve migraciones**, **convertir sus secciones y categorías al modelo nuevo** (ver Etapa 3) y correr la migración completa con el dump del 31/10 y los originales extraídos: medir tiempo, errores y avisos. Es el único modo de saber qué va a pasar antes de tocar la real.
 - Revisar los resultados con la herramienta «Revisión» del panel (avisos, imágenes sin texto alternativo, `sin-asignar`, Textos, borradores).
 
 ### Etapa 3: la migración real
@@ -103,7 +127,7 @@ En este orden (de lo que más condiciona a lo que menos):
 
 1. **Hosting y correo** (cuándo se decide y con quién): condiciona el lanzamiento. Al 31/10/2026, Mariano y Roxana están hablando de abrir un hosting propio para que la propiedad quede en la editorial; todavía no está decidido.
 2. **Cómo convertir la real** (en el lugar o re-migrando los 35): ver Etapa 3.
-3. **Cómo resolver las 45 colisiones de nombres de imagen** (renombrar al importar o colación binaria): ver Etapa 1, punto 1.
+3. **Qué hacer con los 39 pares que comparten un archivo** (Etapa 0b, paso 4) y **cómo resolver las colisiones de nombres de imagen** (renombrar al importar o colación binaria; Etapa 1, punto 1).
 4. **Variantes de tamaño de las imágenes:** hacerlas al migrar (conviene, para el hero y las tarjetas) o después.
 5. **Borradores migrados y privado 19300:** publicar, eliminar o dejar.
 6. **Páginas fijas de WordPress** (Quiénes somos, Contacto, etc.): se migran, se reescriben o se redirigen.

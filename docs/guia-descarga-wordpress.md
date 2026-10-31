@@ -70,7 +70,9 @@ sha256sum ~/descarga/uploads-completo.tar
 
 La base se exporta por phpMyAdmin, con el método personalizado y todas las tablas: `wp db export` termina con código 255 sin mensaje en este servidor. El paquete se baja con el `sftp` de Windows, que retoma con `get -a` (unos 40 MB/s, 3 minutos). Se comprueba con `Get-FileHash` contra el hash del servidor.
 
-**Queda por hacer:** extraer los originales del paquete resolviendo los nombres que no son UTF-8 y los que chocan, y recién ahí verificarlos contra la base con `verificar:descarga`. Sin esa extracción, los nombres contra `_wp_attached_file` **no están comprobados**.
+**Queda por hacer:** extraer los originales del paquete y verificarlos contra la base: `plan-proximos-pasos.md`, Etapa 0b. Hasta entonces, el cruce con `_wp_attached_file` se hizo solo por nombre, no por contenido.
+
+**Corrige a «Las dos trampas»:** en disco no hay archivos que solo difieran en las mayúsculas. Son 39 pares de adjuntos que comparten un único archivo, y los nombres raros están en CP850.
 
 ## Las dos trampas (por qué los pasos son como son)
 
