@@ -47,6 +47,14 @@ export interface EntradaArmar {
    */
   mediciones?: ReadonlyMap<string, Medicion>;
   /**
+   * Clave en el CMS de los adjuntos renombrados (decisión 81: pares de claves que el CMS no distingue; id del adjunto -> clave, de
+   * `mapa-originales.csv`). Esa clave es la de la fila de `imagenes`, la de `/media/` y el nombre del archivo que se mide; el nombre de WordPress
+   * queda en `nombreOriginal`. Los demás adjuntos usan su `_wp_attached_file`. Sin mapa (la muestra), no hay ninguno.
+   */
+  clavesCms?: ReadonlyMap<number, string>;
+  /** Adjuntos cuyo original es su miniatura más grande (decisión 79): con fila, llevan el aviso `original_reducido`. */
+  originalesReducidos?: ReadonlySet<number>;
+  /**
    * Artículos que lib/validar.ts decidió dejar afuera (longitudes, fecha, colisiones...). armar() los saltea para que redirecciones,
    * autores, categorías e imágenes del plan queden coherentes con los artículos que sí migran. Sus problemas los registra quien valida.
    */
@@ -220,6 +228,11 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
   const mediciones = entrada.mediciones;
   const clavePorAdjunto = new Map<number, string>([...entrada.adjuntoPorClave].map(([c, id]) => [id, c] as const));
   for (const a of entrada.adjuntos) if (a.clave !== null) clavePorAdjunto.set(a.id, a.clave);
+  // clavePorAdjunto queda con la clave del CMS (la que se mide y la de la fila); el nombre de WordPress se conserva aparte (decisión 81).
+  const claveWpPorAdjunto = new Map(clavePorAdjunto);
+  for (const [id, clave] of entrada.clavesCms ?? []) clavePorAdjunto.set(id, clave);
+  const nombreOriginalDe = (adjuntoId: number, claveCms: string) => (claveWpPorAdjunto.get(adjuntoId) ?? claveCms).split("/").pop()!;
+  const reducidos = entrada.originalesReducidos ?? new Set<number>();
   const motivosExtra = new Map(entrada.extras.map((e) => [e.id, e.casos]));
   const metaDe = (id: number, k: string) => entrada.meta.filter((f) => f.postId === id && f.k === k).map((f) => ({ metaId: f.metaId, valor: f.v }));
 
@@ -278,7 +291,11 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
         const adj = typeof src === "string" ? adjuntoDeUrl(src, adjuntoPorClave) : null;
         if (!adj || typeof src !== "string") return attrs;
         const res = resolverImagen(clavePorAdjunto.get(adj.id) ?? null, mediciones);
-        if (res.codigo === "con_fila") { filasDelCuerpo.set(adj.id, res.clave); return { ...attrs, src: srcDeClave(res.clave), imagenWpId: adj.id }; }
+        if (res.codigo === "con_fila") {
+          filasDelCuerpo.set(adj.id, res.clave);
+          if (reducidos.has(adj.id) && !avisados.has(src)) { avisados.add(src); avisosMigracion.push({ code: "original_reducido", detalle: { contexto: "cuerpo", src, adjuntoWpId: adj.id, clave: res.clave } }); }
+          return { ...attrs, src: srcDeClave(res.clave), imagenWpId: adj.id };
+        }
         if (!avisados.has(src)) {
           avisados.add(src);
           avisosMigracion.push({ code: res.codigo, detalle: { contexto: "cuerpo", src, adjuntoWpId: adj.id, clave: res.clave, ...(res.codigo === "imagen_sin_medir" ? { motivo: res.motivo } : {}) } });
@@ -343,10 +360,11 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
     // sin encabezado, alt y crédito quedan null en las columnas y viajan dentro del aviso.
     let encabezadoSinFila = false;
     if (mediciones && adjuntoEncabezado) {
-      const res = resolverImagen(adjuntoEncabezado.clave, mediciones);
+      const res = resolverImagen(clavePorAdjunto.get(adjuntoEncabezado.id) ?? null, mediciones);
       if (res.codigo === "con_fila") {
         const md = res.medicion;
-        imagenEncabezado = { wpId: adjuntoEncabezado.id, clave: res.clave, nombreOriginal: res.clave.split("/").pop()!, tipoMime: md.mime, ancho: md.ancho, alto: md.alto, bytes: md.bytes, hash: md.sha256 };
+        imagenEncabezado = { wpId: adjuntoEncabezado.id, clave: res.clave, nombreOriginal: nombreOriginalDe(adjuntoEncabezado.id, res.clave), tipoMime: md.mime, ancho: md.ancho, alto: md.alto, bytes: md.bytes, hash: md.sha256 };
+        if (reducidos.has(adjuntoEncabezado.id)) avisosMigracion.push({ code: "original_reducido", detalle: { contexto: "encabezado", adjuntoWpId: adjuntoEncabezado.id, clave: res.clave } });
       } else {
         imagenEncabezado = null;
         encabezadoSinFila = true;
@@ -457,7 +475,7 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
       const res = resolverImagen(e.claveAdjunto, mediciones);
       if (res.codigo === "con_fila") {
         const md = res.medicion;
-        imagenes.push({ wpId: e.adjuntoId, clave: res.clave, nombreOriginal: res.clave.split("/").pop()!, tipoMime: md.mime, ancho: md.ancho, alto: md.alto, bytes: md.bytes, hash: md.sha256, usos: e.origen, articulos: e.articulos });
+        imagenes.push({ wpId: e.adjuntoId, clave: res.clave, nombreOriginal: nombreOriginalDe(e.adjuntoId, res.clave), tipoMime: md.mime, ancho: md.ancho, alto: md.alto, bytes: md.bytes, hash: md.sha256, usos: e.origen, articulos: e.articulos });
       } else {
         imagenesSinFila.push({ adjuntoWpId: e.adjuntoId, clave: res.clave, codigo: res.codigo, ...(res.codigo === "imagen_sin_medir" ? { motivo: res.motivo } : {}), usos: e.origen, articulos: e.articulos });
       }

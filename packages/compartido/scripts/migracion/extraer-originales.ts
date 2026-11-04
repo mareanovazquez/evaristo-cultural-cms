@@ -1,28 +1,26 @@
 // Extrae los originales del paquete de `uploads` (fase 7, etapa 0b). SOLO LECTURA sobre el paquete y sobre la base de WordPress de la 3307
-// (127.0.0.1, sesión READ ONLY, solo SELECT). No escribe en ninguna base. Ver lib/extraer-originales.ts para el criterio de emparejamiento y para
-// cómo se resuelven los archivos que comparten dos adjuntos.
+// (127.0.0.1, sesión READ ONLY, solo SELECT). No escribe en ninguna base. Ver lib/extraer-originales.ts para el criterio de emparejamiento, cómo
+// se resuelven los archivos que comparten dos adjuntos (decisión 79) y los nombres del CMS (decisión 81, lib/claves-cms.ts).
 //
-// Uso: npm run extraer:originales -- --paquete=<uploads-completo.tar> --base=<base de WordPress> [--prefijo=wp_]
-//        [--destino=<carpeta> [--reemplazos=<carpeta>] [--mapa=<archivo.csv>]]
+// Uso: npm run extraer:originales -- --paquete=<uploads-completo.tar> --base=<base de WordPress> [--prefijo=wp_] [--destino=<carpeta> [--mapa=<archivo.csv>]]
 //   Sin --destino: solo cruza el paquete con la base e informa (no escribe nada salvo el informe en out/descarga/).
-//   Con --destino: además extrae cada original con el nombre de su `_wp_attached_file`; las miniaturas que reemplazan originales perdidos van a
-//   --reemplazos (por defecto, `reemplazos` junto al destino), y el mapa a --mapa (por defecto, `mapa-originales.csv` junto al destino).
-//   Las carpetas tienen que estar vacías o no existir y el mapa no tiene que existir: no se pisa nada.
-// Si algún adjunto no tiene archivo, tiene más de un candidato, su nombre no sirve en Windows o un archivo compartido no se puede resolver, no se
-// extrae nada. Sale con 0 si todo está bien; con 1 si hay errores; con 2 si los argumentos son inválidos.
+//   Con --destino: además extrae un archivo por adjunto, nombrado con su clave en el CMS (la de WordPress salvo los renombrados), y escribe el mapa
+//   (por defecto, `mapa-originales.csv` junto a la carpeta). La carpeta tiene que estar vacía o no existir y el mapa no tiene que existir.
+// Si algún adjunto no tiene archivo, tiene más de un candidato, un archivo compartido no se puede resolver o un nombre final no sirve o choca,
+// no se extrae nada. Sale con 0 si todo está bien; con 1 si hay errores; con 2 si los argumentos son inválidos.
 import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { abrirWordPress, leerAdjuntos } from "./lib/adjuntos-wp.ts";
 import {
-  abrirTar, emparejar, indexarTar, mapaCsv, nombreLegible, parsearArgumentos, planificar, resolverCompartidos,
+  abrirTar, armarEscrituras, emparejar, indexarTar, mapaCsv, nombreLegible, parsearArgumentos, planificar, resolverCompartidos,
   type Coincidencia, type EntradaTar, type FilaMapa, type Medida,
 } from "./lib/extraer-originales.ts";
 import { dimensiones, tipoPorContenido } from "./lib/imagenes.ts";
 import { esDerivadaPorNombre, type AdjuntoWp } from "./lib/verificar-descarga.ts";
 
-const USO = "Uso: extraer-originales.ts --paquete=<uploads-completo.tar> --base=<base de WordPress> [--prefijo=wp_] [--destino=<carpeta> [--reemplazos=<carpeta>] [--mapa=<archivo.csv>]]";
+const USO = "Uso: extraer-originales.ts --paquete=<uploads-completo.tar> --base=<base de WordPress> [--prefijo=wp_] [--destino=<carpeta> [--mapa=<archivo.csv>]]";
 
 const miles = (n: number) => n.toLocaleString("es-AR");
 const gb = (b: number) => `${(b / 1024 ** 3).toFixed(2)} GB`;
@@ -34,11 +32,9 @@ async function principal(): Promise<number> {
   if (typeof args === "string") { console.error(`Error en los argumentos: ${args}\n${USO}`); return 2; }
   if (!existsSync(args.paquete) || !statSync(args.paquete).isFile()) { console.error(`Error en los argumentos: no se puede leer el paquete ${args.paquete}\n${USO}`); return 2; }
   const destino = args.destino === null ? null : resolve(args.destino);
-  const carpetaReemplazos = destino === null ? null : resolve(args.reemplazos ?? join(dirname(destino), "reemplazos"));
   const rutaMapa = destino === null ? null : resolve(args.mapa ?? join(dirname(destino), "mapa-originales.csv"));
   if (destino !== null) {
-    if (resolve(destino).toLowerCase() === carpetaReemplazos!.toLowerCase()) { console.error("Error en los argumentos: --destino y --reemplazos tienen que ser carpetas distintas"); return 2; }
-    for (const c of [destino, carpetaReemplazos!]) if (!carpetaLibre(c)) { console.error(`Error en los argumentos: ${c} existe y no es una carpeta vacía (no se pisa nada)`); return 2; }
+    if (!carpetaLibre(destino)) { console.error(`Error en los argumentos: ${destino} existe y no es una carpeta vacía (no se pisa nada)`); return 2; }
     if (existsSync(rutaMapa!)) { console.error(`Error en los argumentos: el mapa ${rutaMapa} ya existe (no se pisa)`); return 2; }
   }
 
@@ -64,17 +60,20 @@ async function principal(): Promise<number> {
     console.log(`  FALTANTES: ${miles(emp.faltantes.length)}`); if (emp.faltantes.length) console.log(muestra(emp.faltantes.map((a) => `${a.id}: ${a.clave}`)));
     console.log(`  AMBIGUOS: ${miles(emp.ambiguos.length)}`); if (emp.ambiguos.length) console.log(muestra(emp.ambiguos.map((a) => `${a.id}: ${a.clave} (${a.nivel}): ${a.candidatos.join(" | ")}`)));
 
-    // Archivos compartidos: dueño por medidas; los demás, con su miniatura proporcional más grande.
+    // Archivos compartidos (decisión 79): dueño por medidas; los demás, con su miniatura proporcional más grande.
     const grupos = plan.compartidos.map((a) => ({ archivo: a.nombreDestino, nombreEnPaquete: nombreLegible(a.entrada), ids: a.adjuntos.map((x) => x.id) }));
     const medir = (e: EntradaTar): Medida | null => { const b = tar.leer(e.inicio, e.bytes); return dimensiones(b, tipoPorContenido(b)); };
     const porNombre = new Map(indice.archivos.map((e) => [nombreLegible(e).normalize("NFC"), e] as const));
     const res = resolverCompartidos(plan, new Map(adjuntos.map((a) => [a.id, a])), medir, (n) => porNombre.get(n));
-    console.log(`\n== Archivos a extraer: ${miles(plan.archivos.length)} (${gb(plan.archivos.reduce((s, a) => s + a.entrada.bytes, 0))}) ==`);
+    // Nombres del CMS (decisión 81) y comprobación de los nombres finales.
+    const esc = armarEscrituras(plan, res);
+    console.log(`\n== Archivos a extraer: ${miles(esc.escrituras.length)} (${gb(esc.escrituras.reduce((s, e) => s + e.entrada.bytes, 0))}) ==`);
     console.log(`  compartidos por dos adjuntos: ${miles(grupos.length)}; resueltos con la miniatura del que perdió el original: ${miles(res.reemplazos.length)}`);
-    if (res.reemplazos.length) console.log(muestra(res.reemplazos.map((x) => `${x.id} «${x.clave}» (${x.original.ancho}×${x.original.alto}) → ${x.miniatura} (${x.medida.ancho}×${x.medida.alto}); el archivo es de ${x.dueno.id} «${x.dueno.clave}»`), 5));
+    if (res.reemplazos.length) console.log(muestra(res.reemplazos.map((x) => `${x.id} «${x.clave}» (${x.original.ancho}×${x.original.alto}) → ${x.miniatura} (${x.medida.ancho}×${x.medida.alto}); el archivo es de ${x.dueno.id} «${x.dueno.clave}»`), 3));
     console.log(`  SIN RESOLVER: ${miles(res.sinResolver.length)}`); if (res.sinResolver.length) console.log(muestra(res.sinResolver.map((x) => `${x.archivo} (${x.ids.join(", ")}): ${x.motivo}`)));
-    console.log(`  NOMBRES QUE NO SIRVEN EN WINDOWS: ${miles(plan.nombresInvalidos.length)}`); if (plan.nombresInvalidos.length) console.log(muestra(plan.nombresInvalidos.map((x) => `${x.id}: «${x.clave}» ${x.motivo}`)));
-    console.log(`  CHOCAN EN EL DESTINO (mismo nombre salvo mayúsculas): ${miles(plan.chocanEnDestino.length)}`); if (plan.chocanEnDestino.length) console.log(muestra(plan.chocanEnDestino.map((l) => l.join(" | "))));
+    console.log(`  claves que el CMS no distingue: ${miles(esc.grupos.length)} grupos; renombrados con -wp<id>: ${miles(esc.renombradas.size)}`);
+    if (esc.renombradas.size) console.log(muestra([...esc.renombradas].map(([id, c]) => `${id} → ${c}`), 5));
+    console.log(`  ERRORES EN LOS NOMBRES FINALES: ${miles(esc.errores.length)}`); if (esc.errores.length) console.log(muestra(esc.errores));
 
     // Lo que queda en el paquete y ningún adjunto pide como original (se informa; no se extrae).
     const usadas = new Set(plan.archivos.map((a) => a.entrada));
@@ -87,17 +86,17 @@ async function principal(): Promise<number> {
     }
     console.log(`\n== En el paquete y sin adjunto (se quedan ahí) ==\n  miniaturas: ${miles(sobrantes.derivadas)}; otros: ${miles(sobrantes.otros.length)}`);
 
-    const errores = emp.faltantes.length + emp.ambiguos.length + plan.nombresInvalidos.length + plan.chocanEnDestino.length + res.sinResolver.length;
+    const errores = emp.faltantes.length + emp.ambiguos.length + res.sinResolver.length + esc.errores.length;
     const informe = {
-      generadoEn: new Date().toISOString(), paquete: args.paquete, base: args.base, destino, carpetaReemplazos, mapa: rutaMapa,
+      generadoEn: new Date().toISOString(), paquete: args.paquete, base: args.base, destino, mapa: rutaMapa,
       adjuntos: adjuntos.length, archivosEnPaquete: indice.archivos.length, otrosTipos: indice.otros,
       porCoincidencia: Object.fromEntries((["exacto", "cp850", "cola", "mayusculas"] as const).map((n) => [n, porNivel(n)])),
       noExactos: emp.emparejados.filter((e) => e.coincidencia !== "exacto").map((e) => ({ id: e.id, clave: e.clave, nombreEnPaquete: e.nombreEnPaquete, coincidencia: e.coincidencia })),
-      faltantes: emp.faltantes, ambiguos: emp.ambiguos, nombresInvalidos: plan.nombresInvalidos, chocanEnDestino: plan.chocanEnDestino,
-      compartidos: grupos, sinResolver: res.sinResolver,
+      faltantes: emp.faltantes, ambiguos: emp.ambiguos, compartidos: grupos, sinResolver: res.sinResolver,
       reemplazos: res.reemplazos.map((x) => ({ id: x.id, clave: x.clave, miniatura: x.miniatura, medida: x.medida, original: x.original, dueno: x.dueno })),
+      clavesCms: { grupos: esc.grupos, renombradas: Object.fromEntries(esc.renombradas), errores: esc.errores },
       sobrantes,
-      extraidos: null as null | { originales: number; reemplazos: number; bytes: number },
+      extraidos: null as null | { archivos: number; bytes: number },
     };
 
     if (errores === 0 && destino !== null) {
@@ -105,27 +104,18 @@ async function principal(): Promise<number> {
       mkdirSync(destino, { recursive: true });
       const filas: FilaMapa[] = [];
       let bytes = 0, hechos = 0;
-      const escribir = (carpeta: string, nombre: string, e: EntradaTar) => {
-        const datos = tar.leer(e.inicio, e.bytes);
-        writeFileSync(join(carpeta, nombre), datos, { flag: "wx" }); // wx: falla si ya existe, nunca pisa
+      for (const e of esc.escrituras) {
+        const datos = tar.leer(e.entrada.inicio, e.entrada.bytes);
+        writeFileSync(join(destino, e.nombre), datos, { flag: "wx" }); // wx: falla si ya existe, nunca pisa
         bytes += datos.length;
-        return { bytes: datos.length, sha256: createHash("sha256").update(datos).digest("hex") };
-      };
-      const reemplazoDe = new Map(res.reemplazos.map((x) => [x.dueno.id, x.clave]));
-      for (const a of plan.archivos) {
-        const x = a.adjuntos[0]!, h = escribir(destino, a.nombreDestino, a.entrada);
-        filas.push({ id: x.id, clave: x.clave, nombreEnPaquete: x.nombreEnPaquete, coincidencia: x.coincidencia, carpeta: "originales", archivo: a.nombreDestino, comparteCon: reemplazoDe.get(x.id) ?? "", ...h });
-        if (++hechos % 1000 === 0) console.log(`  ${miles(hechos)} de ${miles(plan.archivos.length)}`);
+        const sha256 = createHash("sha256").update(datos).digest("hex");
+        for (const f of e.filas) filas.push({ ...f, claveCms: e.nombre, bytes: datos.length, sha256 });
+        if (++hechos % 1000 === 0) console.log(`  ${miles(hechos)} de ${miles(esc.escrituras.length)}`);
       }
-      if (res.reemplazos.length) mkdirSync(carpetaReemplazos!, { recursive: true });
-      for (const x of res.reemplazos) {
-        const h = escribir(carpetaReemplazos!, x.nombreDestino, x.entrada);
-        filas.push({ id: x.id, clave: x.clave, nombreEnPaquete: x.miniatura, coincidencia: "miniatura", carpeta: "reemplazos", archivo: x.nombreDestino, comparteCon: x.dueno.clave, ...h });
-      }
+      if (filas.length !== adjuntos.length) throw new Error(`el mapa tendría ${filas.length} filas y hay ${adjuntos.length} adjuntos`);
       writeFileSync(rutaMapa!, mapaCsv(filas), { encoding: "utf8", flag: "wx" });
-      informe.extraidos = { originales: hechos, reemplazos: res.reemplazos.length, bytes };
-      console.log(`  ${miles(hechos)} originales y ${miles(res.reemplazos.length)} reemplazos (${gb(bytes)}); ${miles(filas.length)} filas en ${rutaMapa}`);
-      if (filas.length !== adjuntos.length) throw new Error(`el mapa tiene ${filas.length} filas y hay ${adjuntos.length} adjuntos`);
+      informe.extraidos = { archivos: hechos, bytes };
+      console.log(`  ${miles(hechos)} archivos (${gb(bytes)}); ${miles(filas.length)} filas en ${rutaMapa}`);
     }
 
     const carpetaSalida = fileURLToPath(new URL("../../out/descarga/", import.meta.url));

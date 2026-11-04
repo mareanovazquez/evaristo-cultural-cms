@@ -7,6 +7,7 @@
 //    Detecta descargas cortadas y nombres alterados sin depender de la base.
 import { readdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { claveComparable } from "./claves-cms.ts";
 
 export interface AdjuntoWp {
   id: number;
@@ -76,17 +77,8 @@ function crearBuscador(archivos: readonly ArchivoEnDisco[]) {
 /** `mayusculas`: solo difieren en la capitalización (chocan en Windows y en el CMS). `tildes`: difieren también en un acento (chocan solo en el CMS). */
 export interface GrupoDeColision { claves: string[]; ids: number[]; tipo: "mayusculas" | "tildes" }
 
-/** La clave como la compara `imagenes.clave` (colación utf8mb4_es_0900_ai_ci): sin mayúsculas y sin acentos, pero la ñ sigue siendo una letra distinta de la n. */
-const claveDelCms = (s: string) => {
-  const d = s.normalize("NFD");
-  let salida = "";
-  for (let i = 0; i < d.length; i++) {
-    const c = d[i]!;
-    if (/\p{M}/u.test(c) && !(c === "\u0303" && /[nN]/.test(d[i - 1] ?? ""))) continue;
-    salida += c;
-  }
-  return salida.normalize("NFC").toLowerCase();
-};
+/** La clave como la compara `imagenes.clave` (ver lib/claves-cms.ts). */
+const claveDelCms = claveComparable;
 
 /**
  * Grupos de adjuntos cuyas claves el CMS no distingue entre sí: `TAPA.jpg` y `tapa.jpg`, o `Perón.jpg` y `peron.jpg`. En el servidor (Linux) conviven; en la

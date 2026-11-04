@@ -26,6 +26,7 @@ const ETIQUETAS: Record<string, string> = {
   bio_con_correo: "Bio con un correo electrónico",
   original_faltante: "Imagen cuyo original falta",
   imagen_sin_medir: "Imagen sin medidas",
+  original_reducido: "Imagen cuyo original se perdió (se usó una versión más chica)",
   origen_privado: "Era privado en WordPress",
   fecha_borrador: "Borrador sin fecha de WordPress",
   u200e_removido: "Se quitó una marca invisible del texto",

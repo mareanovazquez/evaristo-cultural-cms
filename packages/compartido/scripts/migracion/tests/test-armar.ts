@@ -299,6 +299,38 @@ t("T07: 2462 y 22546 de punta a punta: sin encabezado, aviso original_faltante y
   assert.equal((sm.avisosMigracion!.migracion[0]!.detalle as { motivo: string }).motivo, "formato no soportado: image/webp");
 });
 
+t("T20: claves del CMS (decisión 81) y original reducido (decisión 79): fila, src y medición con la clave nueva; nombreOriginal de WordPress", () => {
+  const avisoDe = (a: { avisosMigracion: { migracion: Array<{ code: string; detalle?: unknown }> } | null }, code: string) => a.avisosMigracion?.migracion.filter((x) => x.code === code) ?? [];
+  const medida = (archivo: string, ancho: number): Medicion => ({ estado: "medida", archivo, diferenciaDeNombre: null, bytes: 99, sha256: "e".repeat(64), mime: "image/jpeg", ancho, alto: ancho });
+  const adj = (id: number, clave: string) => ({ id, tipoPost: "attachment", mime: "image/jpeg", guid: `http://x/wp-content/uploads/${clave}`, clave, alt: "", ancho: 10, alto: 10, bytes: null });
+  const entrada = sintetica([
+    post({ id: 800, contenido: '<p>Uno</p><img src="http://x/wp-content/uploads/Tapa-libro-217x300.jpg" alt="Tapa">' }),
+    post({ id: 801, contenido: '<p>Dos</p><img src="http://x/wp-content/uploads/tapa-libro.jpg" alt="Otra">' }),
+  ], {
+    meta: [meta(1, 800, "_thumbnail_id", "270"), meta(2, 801, "_thumbnail_id", "175")],
+    adjuntos: [adj(270, "Tapa-libro.jpg"), adj(175, "tapa-libro.jpg")],
+    adjuntoPorClave: [["Tapa-libro.jpg", 270], ["tapa-libro.jpg", 175]],
+    clavesCms: new Map([[270, "Tapa-libro-wp270.jpg"]]),
+    originalesReducidos: new Set([270]),
+    // Las mediciones son de la carpeta con los nombres del CMS: no hay ninguna con la clave vieja «Tapa-libro.jpg»
+    mediciones: new Map<string, Medicion>([["Tapa-libro-wp270.jpg", medida("Tapa-libro-wp270.jpg", 742)], ["tapa-libro.jpg", medida("tapa-libro.jpg", 625)]]),
+  });
+  const p = armar(entrada);
+  assert.deepEqual(p.problemas, []);
+  assert.deepEqual(p.imagenes.map((i) => [i.wpId, i.clave, i.nombreOriginal, i.ancho]).sort(), [[175, "tapa-libro.jpg", "tapa-libro.jpg", 625], [270, "Tapa-libro-wp270.jpg", "Tapa-libro.jpg", 742]]);
+  const a800 = p.articulos.find((x) => x.wpId === 800)!, a801 = p.articulos.find((x) => x.wpId === 801)!;
+  assert.deepEqual([a800.imagenEncabezado!.clave, a800.imagenEncabezado!.nombreOriginal], ["Tapa-libro-wp270.jpg", "Tapa-libro.jpg"]);
+  const srcs = (a: typeof a800) => JSON.stringify(a.cuerpo).match(/\/media\/[^"]+/g);
+  assert.deepEqual(srcs(a800), ["/media/Tapa-libro-wp270.jpg"]);
+  assert.deepEqual(srcs(a801), ["/media/tapa-libro.jpg"]);
+  assert.deepEqual(avisoDe(a800, "original_reducido").map((x) => (x.detalle as { contexto: string }).contexto), ["cuerpo", "encabezado"]);
+  assert.deepEqual(avisoDe(a801, "original_reducido"), [], "el dueño del archivo no lleva aviso");
+  // sin mapa (la muestra): todo igual que antes, con la clave de WordPress
+  const sinMapa = armar({ ...entrada, clavesCms: undefined, originalesReducidos: undefined, mediciones: new Map<string, Medicion>([["Tapa-libro.jpg", medida("Tapa-libro.jpg", 742)], ["tapa-libro.jpg", medida("tapa-libro.jpg", 625)]]) });
+  assert.deepEqual(sinMapa.imagenes.map((i) => i.clave).sort(), ["Tapa-libro.jpg", "tapa-libro.jpg"]);
+  assert.equal(sinMapa.articulos.flatMap((x) => avisoDe(x, "original_reducido")).length, 0);
+});
+
 const aviso = (a: { avisosMigracion: { migracion: Array<{ code: string; detalle?: unknown }> } | null }, code: string) => a.avisosMigracion?.migracion.filter((x) => x.code === code) ?? [];
 
 t("T18: fecha_borrador: el 22546 (2023-06-29), un borrador con fecha válida no, un privado con ceros sí", () => {

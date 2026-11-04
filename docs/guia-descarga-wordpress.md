@@ -70,7 +70,7 @@ sha256sum ~/descarga/uploads-completo.tar
 
 La base se exporta por phpMyAdmin, con el método personalizado y todas las tablas: `wp db export` termina con código 255 sin mensaje en este servidor. El paquete se baja con el `sftp` de Windows, que retoma con `get -a` (unos 40 MB/s, 3 minutos). Se comprueba con `Get-FileHash` contra el hash del servidor.
 
-**Originales extraídos y verificados el 4/11/2026** con `npm run extraer:originales` (lee el `.tar` en bytes; no usar el `tar` de Windows): `originales\`, `reemplazos\` y `mapa-originales.csv` junto al paquete. Detalle y cifras: `plan-proximos-pasos.md`, Etapa 0b; los 39 pares, decisión 79.
+**Originales extraídos y verificados el 4/11/2026** con `npm run extraer:originales` (lee el `.tar` en bytes; no usar el `tar` de Windows): `originales\` (con la clave del CMS de cada adjunto) y `mapa-originales.csv` junto al paquete. Detalle y cifras: `plan-proximos-pasos.md`, Etapa 0b; los 39 pares, decisión 79; los nombres, decisión 81.
 
 **Corrige a «Las dos trampas»:** en disco no hay archivos que solo difieran en las mayúsculas. Son 39 pares de adjuntos que comparten un único archivo, y los nombres raros están en CP850.
 

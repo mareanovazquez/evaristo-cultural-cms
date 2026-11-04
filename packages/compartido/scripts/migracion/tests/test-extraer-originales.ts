@@ -4,10 +4,11 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  abrirTar, decodificarCp850, decodificarUtf8, emparejar, esProporcional, indexarTar, mapaCsv, motivoNombreInvalido, parsearArgumentos, planificar, resolverCompartidos,
+  abrirTar, armarEscrituras, decodificarCp850, decodificarUtf8, emparejar, esProporcional, indexarTar, leerMapaCsv, mapaCsv, motivoNombreInvalido, parsearArgumentos, planificar, resolverCompartidos,
   type DatosAdjunto, type EntradaTar, type LectorTar, type Medida,
 } from "../lib/extraer-originales.ts";
 import { tamanosDeMetadatos } from "../lib/verificar-descarga.ts";
+import { asignarClavesCms, claveComparable, claveConSufijo } from "../lib/claves-cms.ts";
 
 let ok = 0;
 const t = (name: string, fn: () => void) => { fn(); ok++; console.log("ok", name); };
@@ -131,19 +132,57 @@ t("emparejar: dos candidatos en un nivel es ambiguo, no se adivina", () => {
   assert.deepEqual(r.ambiguos, [{ id: 1, clave: "Tapa.jpg", nivel: "mayusculas", candidatos: ["TAPA.jpg", "tapa.jpg"] }]);
 });
 
-t("planificar: el archivo compartido se escribe una vez con la clave exacta; nombres inválidos y choques en el destino", () => {
-  const m = ent("Mankell.jpg", 1024), x = ent("x.jpg", 0), y = ent("X.JPG", 2048), z = ent("con.jpg", 4096);
+t("planificar: el archivo compartido se escribe una vez con la clave del mejor emparejado, en el orden del paquete", () => {
+  const m = ent("Mankell.jpg", 1024), x = ent("x.jpg", 0), y = ent("X.JPG", 2048);
   const plan = planificar([
     { id: 7, clave: "mankell.jpg", entrada: m, nombreEnPaquete: "Mankell.jpg", coincidencia: "mayusculas" },
     { id: 6, clave: "Mankell.jpg", entrada: m, nombreEnPaquete: "Mankell.jpg", coincidencia: "exacto" },
     { id: 1, clave: "x.jpg", entrada: x, nombreEnPaquete: "x.jpg", coincidencia: "exacto" },
     { id: 2, clave: "X.JPG", entrada: y, nombreEnPaquete: "X.JPG", coincidencia: "exacto" },
-    { id: 3, clave: "con.jpg", entrada: z, nombreEnPaquete: "con.jpg", coincidencia: "exacto" },
   ]);
-  assert.deepEqual(plan.archivos.map((a) => a.nombreDestino), ["x.jpg", "Mankell.jpg", "X.JPG", "con.jpg"], "ordenados por posición en el paquete");
+  assert.deepEqual(plan.archivos.map((a) => a.nombreDestino), ["x.jpg", "Mankell.jpg", "X.JPG"], "ordenados por posición en el paquete");
   assert.deepEqual(plan.compartidos.map((a) => [a.nombreDestino, a.adjuntos.map((e) => e.id)]), [["Mankell.jpg", [6, 7]]]);
-  assert.deepEqual(plan.chocanEnDestino, [["x.jpg", "X.JPG"]]);
-  assert.deepEqual(plan.nombresInvalidos.map((n) => n.clave), ["con.jpg"]);
+});
+
+t("claves del CMS: el grupo que el CMS no distingue conserva una clave y el resto lleva -wp<id>", () => {
+  assert.equal(claveComparable("Perón.JPG"), "peron.jpg");
+  assert.notEqual(claveComparable("caña.jpg"), claveComparable("cana.jpg"), "la ñ no es una n");
+  assert.equal(claveConSufijo("Tapa-libro.jpg", 270), "Tapa-libro-wp270.jpg");
+  assert.equal(claveConSufijo("2020/05/a.b.png", 3), "2020/05/a.b-wp3.png");
+  assert.equal(claveConSufijo("sin-extension", 9), "sin-extension-wp9");
+  const r = asignarClavesCms([{ id: 3472, clave: "Perón.jpg" }, { id: 4074, clave: "peron.jpg" }, { id: 270, clave: "Tapa.jpg" }, { id: 175, clave: "tapa.jpg" }, { id: 1, clave: "sola.jpg" }]);
+  assert.deepEqual([...r.renombradas].sort(), [[270, "Tapa-wp270.jpg"], [4074, "peron-wp4074.jpg"]], "por defecto conserva el de id más bajo");
+  assert.deepEqual(r.errores, []);
+  const conDueno = asignarClavesCms([{ id: 270, clave: "Tapa.jpg" }, { id: 175, clave: "tapa.jpg" }, { id: 472, clave: "portada.jpg" }, { id: 341, clave: "Portada.jpg" }], (ids) => ids.includes(472) ? 472 : 175);
+  assert.deepEqual([...conDueno.renombradas].sort(), [[270, "Tapa-wp270.jpg"], [341, "Portada-wp341.jpg"]], "conserva el que elige quien llama");
+  // la clave nueva no puede chocar con otra que ya existe
+  assert.match(asignarClavesCms([{ id: 1, clave: "a.jpg" }, { id: 2, clave: "A.jpg" }, { id: 3, clave: "a-wp2.jpg" }]).errores[0]!, /choca/);
+});
+
+t("armarEscrituras: el dueño conserva la clave, el reemplazo va renombrado a la misma carpeta, y los nombres finales se comprueban", () => {
+  const archivo = ent("Tapa.jpg", 0), mini = ent("Tapa-742x1024.jpg", 1024), peron = ent("Perón.jpg", 2048), peron2 = ent("peron.jpg", 3072);
+  const plan = planificar([
+    { id: 270, clave: "Tapa.jpg", entrada: archivo, nombreEnPaquete: "Tapa.jpg", coincidencia: "exacto" },
+    { id: 175, clave: "tapa.jpg", entrada: archivo, nombreEnPaquete: "Tapa.jpg", coincidencia: "mayusculas" },
+    { id: 3472, clave: "Perón.jpg", entrada: peron, nombreEnPaquete: "Perón.jpg", coincidencia: "exacto" },
+    { id: 4074, clave: "peron.jpg", entrada: peron2, nombreEnPaquete: "peron.jpg", coincidencia: "exacto" },
+  ]);
+  const medidas = new Map<EntradaTar, Medida>([[archivo, { ancho: 625, alto: 1073 }], [mini, { ancho: 742, alto: 1024 }]]);
+  const res = resolverCompartidos(plan, new Map<number, DatosAdjunto>([[270, { ancho: 1881, alto: 2596, tamanos: [{ archivo: "Tapa-742x1024.jpg", ancho: 742, alto: 1024 }] }], [175, { ancho: 625, alto: 1073 }]]),
+    (e) => medidas.get(e) ?? null, (n) => (n === "Tapa-742x1024.jpg" ? mini : undefined));
+  const esc = armarEscrituras(plan, res);
+  assert.deepEqual(esc.errores, []);
+  assert.deepEqual(esc.escrituras.map((e) => [e.nombre, e.filas.map((f) => [f.id, f.coincidencia, f.comparteCon])]), [
+    ["tapa.jpg", [[175, "mayusculas", "Tapa.jpg"]]],
+    ["Tapa-wp270.jpg", [[270, "miniatura", "tapa.jpg"]]],
+    ["Perón.jpg", [[3472, "exacto", ""]]],
+    ["peron-wp4074.jpg", [[4074, "exacto", ""]]],
+  ], "el dueño (175) conserva aunque su id no sea el más bajo del grupo... y en los de tildes, el de id más bajo");
+  // nombres finales inválidos o que chocan
+  const malo = planificar([{ id: 5, clave: "con.jpg", entrada: ent("con.jpg"), nombreEnPaquete: "con.jpg", coincidencia: "exacto" }]);
+  assert.match(armarEscrituras(malo, { reemplazos: [], sinResolver: [] }).errores[0]!, /reservado/);
+  const sinResolver = planificar([{ id: 1, clave: "A.jpg", entrada: archivo, nombreEnPaquete: "A.jpg", coincidencia: "exacto" }, { id: 2, clave: "a.jpg", entrada: archivo, nombreEnPaquete: "A.jpg", coincidencia: "mayusculas" }]);
+  assert.match(armarEscrituras(sinResolver, { reemplazos: [], sinResolver: [] }).errores.join(" "), /sigue compartido/);
 });
 
 t("motivoNombreInvalido", () => {
@@ -205,20 +244,23 @@ t("esProporcional y tamanosDeMetadatos", () => {
   assert.deepEqual(tamanosDeMetadatos(meta, "2020/05/Tapa-libro.jpg").map((x) => x.archivo), ["2020/05/Tapa-libro-217x300.jpg", "2020/05/Tapa-libro-742x1024.jpg"]);
 });
 
-t("mapaCsv: BOM, cabecera, orden por id y comillas", () => {
+t("mapaCsv y leerMapaCsv: BOM, cabecera, orden por id, comillas y vuelta", () => {
   const csv = mapaCsv([
-    { id: 9, clave: "b,c.jpg", nombreEnPaquete: "b,c.jpg", coincidencia: "exacto", carpeta: "originales", archivo: "b,c.jpg", comparteCon: "", bytes: 3, sha256: "ff" },
-    { id: 2, clave: "A\"x.jpg", nombreEnPaquete: "A\"x-30x30.jpg", coincidencia: "miniatura", carpeta: "reemplazos", archivo: "A\"x.jpg", comparteCon: "a\"x.jpg", bytes: 1, sha256: "aa" },
+    { id: 9, clave: "b,c.jpg", claveCms: "b,c.jpg", nombreEnPaquete: "b,c.jpg", coincidencia: "exacto", comparteCon: "", bytes: 3, sha256: "ff" },
+    { id: 2, clave: "A\"x.jpg", claveCms: "A\"x-wp2.jpg", nombreEnPaquete: "A\"x-30x30.jpg", coincidencia: "miniatura", comparteCon: "a\"x.jpg", bytes: 1, sha256: "aa" },
   ]);
-  assert.ok(csv.startsWith("\uFEFFid_adjunto,clave,nombre_en_paquete,coincidencia,carpeta,archivo_extraido,comparte_archivo_con,bytes,sha256\r\n"));
-  assert.deepEqual(csv.slice(1).trimEnd().split("\r\n").slice(1), ['2,"A""x.jpg","A""x-30x30.jpg",miniatura,reemplazos,"A""x.jpg","a""x.jpg",1,aa', '9,"b,c.jpg","b,c.jpg",exacto,originales,"b,c.jpg",,3,ff']);
+  assert.ok(csv.startsWith("\uFEFFid_adjunto,clave,clave_cms,nombre_en_paquete,coincidencia,comparte_archivo_con,bytes,sha256\r\n"));
+  assert.deepEqual(csv.slice(1).trimEnd().split("\r\n").slice(1), ['2,"A""x.jpg","A""x-wp2.jpg","A""x-30x30.jpg",miniatura,"a""x.jpg",1,aa', '9,"b,c.jpg","b,c.jpg","b,c.jpg",exacto,,3,ff']);
+  assert.deepEqual([...leerMapaCsv(csv)], [[2, { clave: "A\"x.jpg", claveCms: "A\"x-wp2.jpg", coincidencia: "miniatura" }], [9, { clave: "b,c.jpg", claveCms: "b,c.jpg", coincidencia: "exacto" }]]);
+  assert.throws(() => leerMapaCsv("id,otra\r\n1,2\r\n"), /cabecera/);
+  assert.throws(() => leerMapaCsv(csv + csv.split("\r\n")[1] + "\r\n"), /dos veces/);
 });
 
 t("argumentos: válidos y errores", () => {
-  assert.deepEqual(parsearArgumentos(["--paquete=p.tar", "--base=b"]), { paquete: "p.tar", base: "b", prefijo: "wp_", destino: null, reemplazos: null, mapa: null });
-  assert.deepEqual(parsearArgumentos(["--paquete=p.tar", "--base=b", "--destino=C:\\o", "--reemplazos=C:\\r", "--mapa=m.csv", "--prefijo=x_"]), { paquete: "p.tar", base: "b", prefijo: "x_", destino: "C:\\o", reemplazos: "C:\\r", mapa: "m.csv" });
+  assert.deepEqual(parsearArgumentos(["--paquete=p.tar", "--base=b"]), { paquete: "p.tar", base: "b", prefijo: "wp_", destino: null, mapa: null });
+  assert.deepEqual(parsearArgumentos(["--paquete=p.tar", "--base=b", "--destino=C:\\o", "--mapa=m.csv", "--prefijo=x_"]), { paquete: "p.tar", base: "b", prefijo: "x_", destino: "C:\\o", mapa: "m.csv" });
   for (const [args, motivo] of [
-    [[], /falta --paquete/], [["--paquete=p"], /falta --base/], [["--paquete=p", "--base=a;b"], /--base/], [["--paquete=p", "--base=b", "--mapa=m"], /solo tienen sentido/], [["--paquete=p", "--base=b", "--reemplazos=r"], /solo tienen sentido/],
+    [[], /falta --paquete/], [["--paquete=p"], /falta --base/], [["--paquete=p", "--base=a;b"], /--base/], [["--paquete=p", "--base=b", "--mapa=m"], /solo tiene sentido/], [["--paquete=p", "--base=b", "--reemplazos=r"], /desconocido/],
     [["--paquete=p", "--base=b", "--otro"], /desconocido/], [["--paquete="], /necesita un valor/],
   ] as const) assert.match(parsearArgumentos(args) as string, motivo, args.join(" "));
 });

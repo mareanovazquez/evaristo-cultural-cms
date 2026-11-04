@@ -9,6 +9,7 @@
 // Dos candidatos en un mismo nivel es un error (ambiguo): no se adivina. Un adjunto sin candidato es un error (faltante).
 // Los archivos que quedan compartidos por dos adjuntos se resuelven con `resolverCompartidos` (más abajo).
 import { closeSync, fstatSync, openSync, readSync } from "node:fs";
+import { asignarClavesCms, claveComparable, type AdjuntoConClave, type ResultadoClavesCms } from "./claves-cms.ts";
 
 // ---------------------------------------------------------------- CP850
 
@@ -173,10 +174,6 @@ export interface PlanExtraccion {
   archivos: ArchivoAExtraer[];
   /** Archivos del paquete que usan dos adjuntos o más (los pares que solo difieren en mayúsculas): se escriben una vez, con la clave del mejor emparejado. */
   compartidos: ArchivoAExtraer[];
-  /** Claves que no pueden ser un nombre de archivo en Windows. */
-  nombresInvalidos: Array<{ id: number; clave: string; motivo: string }>;
-  /** Dos archivos distintos irían al mismo nombre en una carpeta de Windows (no distingue mayúsculas). */
-  chocanEnDestino: string[][];
 }
 
 const RESERVADOS = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i;
@@ -193,17 +190,13 @@ export function motivoNombreInvalido(clave: string): string | null {
 export function planificar(emparejados: readonly Emparejado[]): PlanExtraccion {
   const porEntrada = new Map<EntradaTar, Emparejado[]>();
   for (const e of emparejados) { const l = porEntrada.get(e.entrada); if (l) l.push(e); else porEntrada.set(e.entrada, [e]); }
-  const plan: PlanExtraccion = { archivos: [], compartidos: [], nombresInvalidos: [], chocanEnDestino: [] };
+  const plan: PlanExtraccion = { archivos: [], compartidos: [] };
   for (const [entrada, lista] of porEntrada) {
     lista.sort((x, y) => NIVELES.indexOf(x.coincidencia) - NIVELES.indexOf(y.coincidencia) || x.id - y.id);
     const a: ArchivoAExtraer = { nombreDestino: nfc(lista[0]!.clave), entrada, adjuntos: lista };
     plan.archivos.push(a);
     if (lista.length > 1) plan.compartidos.push(a);
   }
-  for (const a of plan.archivos) { const m = motivoNombreInvalido(a.nombreDestino); if (m) plan.nombresInvalidos.push({ id: a.adjuntos[0]!.id, clave: a.nombreDestino, motivo: m }); }
-  const porMinusculas = new Map<string, string[]>();
-  for (const a of plan.archivos) { const k = a.nombreDestino.toLowerCase(), l = porMinusculas.get(k); if (l) l.push(a.nombreDestino); else porMinusculas.set(k, [a.nombreDestino]); }
-  plan.chocanEnDestino = [...porMinusculas.values()].filter((l) => l.length > 1);
   plan.archivos.sort((x, y) => x.entrada.inicio - y.entrada.inicio); // lectura en orden: el paquete se recorre de punta a punta una vez
   return plan;
 }
@@ -268,37 +261,97 @@ export function resolverCompartidos(
     a.adjuntos = [dueno];
     r.reemplazos.push(...propios);
   }
-  for (const x of r.reemplazos) { const mot = motivoNombreInvalido(x.nombreDestino); if (mot) r.sinResolver.push({ archivo: x.nombreDestino, ids: [x.id], motivo: mot }); }
-  const vistos = new Map<string, string>();
-  for (const x of r.reemplazos) {
-    const k = x.nombreDestino.toLowerCase(), otro = vistos.get(k);
-    if (otro !== undefined) r.sinResolver.push({ archivo: x.nombreDestino, ids: [x.id], motivo: `choca en la carpeta de reemplazos con «${otro}»` }); else vistos.set(k, x.nombreDestino);
-  }
   return r;
+}
+
+// ---------------------------------------------------------------- escrituras con la clave del CMS (decisión 81)
+//
+// Todo va a una sola carpeta, con el nombre de la clave que el adjunto tiene en el CMS (lib/claves-cms.ts): así esa carpeta sirve tal cual de
+// carpeta de imágenes del CMS. En los pares que el CMS no distingue, conserva la clave el dueño del archivo compartido (decisión 79) o, si no lo
+// hay (los de tildes), el de id más bajo; el otro lleva el sufijo `-wp<id>`. Los nombres finales se comprueban acá: válidos en Windows y sin
+// choques ni por mayúsculas ni por tildes.
+
+export interface FilaDeEscritura { id: number; clave: string; nombreEnPaquete: string; coincidencia: Coincidencia | "miniatura"; comparteCon: string }
+export interface Escritura { nombre: string; entrada: EntradaTar; filas: FilaDeEscritura[] }
+export interface PlanEscrituras {
+  escrituras: Escritura[];
+  /** id -> clave en el CMS, solo de los renombrados. */
+  renombradas: ReadonlyMap<number, string>;
+  grupos: ResultadoClavesCms["grupos"];
+  errores: string[];
+}
+
+export function armarEscrituras(plan: PlanExtraccion, res: ResolucionCompartidos): PlanEscrituras {
+  const duenos = new Set(res.reemplazos.map((x) => x.dueno.id));
+  const todos: AdjuntoConClave[] = [...plan.archivos.flatMap((a) => a.adjuntos.map((x) => ({ id: x.id, clave: x.clave }))), ...res.reemplazos.map((x) => ({ id: x.id, clave: x.clave }))];
+  const cms = asignarClavesCms(todos, (ids) => ids.find((i) => duenos.has(i)) ?? Math.min(...ids));
+  const claveCms = (id: number, clave: string) => cms.renombradas.get(id) ?? nfc(clave);
+  const reemplazoDe = new Map(res.reemplazos.map((x) => [x.dueno.id, x.clave]));
+  const errores = [...cms.errores];
+  const escrituras: Escritura[] = [];
+  for (const a of plan.archivos) {
+    if (a.adjuntos.length !== 1) { errores.push(`el archivo «${a.nombreDestino}» sigue compartido por ${a.adjuntos.map((x) => x.id).join(", ")}`); continue; }
+    const x = a.adjuntos[0]!;
+    escrituras.push({ nombre: claveCms(x.id, x.clave), entrada: a.entrada, filas: [{ id: x.id, clave: x.clave, nombreEnPaquete: x.nombreEnPaquete, coincidencia: x.coincidencia, comparteCon: reemplazoDe.get(x.id) ?? "" }] });
+  }
+  for (const x of res.reemplazos) {
+    escrituras.push({ nombre: claveCms(x.id, x.clave), entrada: x.entrada, filas: [{ id: x.id, clave: x.clave, nombreEnPaquete: x.miniatura, coincidencia: "miniatura", comparteCon: x.dueno.clave }] });
+  }
+  for (const e of escrituras) { const m = motivoNombreInvalido(e.nombre); if (m) errores.push(`«${e.nombre}» (adjunto ${e.filas[0]!.id}) ${m}`); }
+  const vistos = new Map<string, string>();
+  for (const e of escrituras) {
+    const k = claveComparable(e.nombre), otro = vistos.get(k);
+    if (otro !== undefined) errores.push(`«${e.nombre}» choca con «${otro}» (el CMS no los distingue)`); else vistos.set(k, e.nombre);
+  }
+  escrituras.sort((x, y) => x.entrada.inicio - y.entrada.inicio);
+  return { escrituras, renombradas: cms.renombradas, grupos: cms.grupos, errores };
 }
 
 // ---------------------------------------------------------------- mapa
 
-export interface FilaMapa {
-  id: number; clave: string; nombreEnPaquete: string; coincidencia: Coincidencia | "miniatura";
-  /** `originales` o `reemplazos` (la miniatura que reemplaza un original perdido). */
-  carpeta: "originales" | "reemplazos"; archivo: string; comparteCon: string; bytes: number; sha256: string;
+export interface FilaMapa extends FilaDeEscritura { claveCms: string; bytes: number; sha256: string }
+
+const CABECERA_MAPA = ["id_adjunto", "clave", "clave_cms", "nombre_en_paquete", "coincidencia", "comparte_archivo_con", "bytes", "sha256"] as const;
+const celda = (v: string | number) => { const s = String(v); return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+/** `mapa-originales.csv`: una fila por adjunto, ordenada por id. `clave_cms` es el nombre del archivo en la carpeta. Con BOM para Excel. */
+export function mapaCsv(filas: readonly FilaMapa[]): string {
+  const cuerpo = [...filas].sort((a, b) => a.id - b.id).map((f) => [f.id, f.clave, f.claveCms, f.nombreEnPaquete, f.coincidencia, f.comparteCon, f.bytes, f.sha256].map(celda).join(","));
+  return "﻿" + [CABECERA_MAPA.join(","), ...cuerpo].join("\r\n") + "\r\n";
 }
 
-const celda = (v: string | number) => { const s = String(v); return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-/** `mapa-originales.csv`: una fila por adjunto, ordenada por id. Con BOM para que Excel lea bien las tildes. */
-export function mapaCsv(filas: readonly FilaMapa[]): string {
-  const cab = ["id_adjunto", "clave", "nombre_en_paquete", "coincidencia", "carpeta", "archivo_extraido", "comparte_archivo_con", "bytes", "sha256"];
-  const cuerpo = [...filas].sort((a, b) => a.id - b.id).map((f) => [f.id, f.clave, f.nombreEnPaquete, f.coincidencia, f.carpeta, f.archivo, f.comparteCon, f.bytes, f.sha256].map(celda).join(","));
-  return "﻿" + [cab.join(","), ...cuerpo].join("\r\n") + "\r\n";
+/** Lo que la migración necesita del mapa: la clave en el CMS de cada adjunto y si su original es una miniatura (decisión 79). */
+export interface EntradaMapa { clave: string; claveCms: string; coincidencia: string }
+
+/** Lee `mapa-originales.csv` (id de adjunto -> entrada). Falla si la cabecera no es la esperada o una fila está mal. */
+export function leerMapaCsv(texto: string): Map<number, EntradaMapa> {
+  const lineas = texto.replace(/^﻿/, "").split(/\r?\n/).filter((l) => l !== "");
+  const filas = lineas.map((l) => {
+    const c: string[] = []; let s = "", q = false;
+    for (let i = 0; i < l.length; i++) {
+      const ch = l[i]!;
+      if (q) { if (ch === '"') { if (l[i + 1] === '"') { s += '"'; i++; } else q = false; } else s += ch; }
+      else if (ch === '"') q = true; else if (ch === ",") { c.push(s); s = ""; } else s += ch;
+    }
+    c.push(s);
+    return c;
+  });
+  if (filas[0]?.join(",") !== CABECERA_MAPA.join(",")) throw new Error(`el mapa no tiene la cabecera esperada (${CABECERA_MAPA.join(",")})`);
+  const r = new Map<number, EntradaMapa>();
+  for (const [n, f] of filas.slice(1).entries()) {
+    const id = Number(f[0]);
+    if (f.length !== CABECERA_MAPA.length || !Number.isInteger(id) || id <= 0 || !f[1] || !f[2]) throw new Error(`fila ${n + 2} del mapa inválida`);
+    if (r.has(id)) throw new Error(`el adjunto ${id} está dos veces en el mapa`);
+    r.set(id, { clave: f[1], claveCms: f[2], coincidencia: f[4]! });
+  }
+  return r;
 }
 
 // ---------------------------------------------------------------- argumentos
 
-export interface Argumentos { paquete: string; base: string; prefijo: string; destino: string | null; reemplazos: string | null; mapa: string | null }
+export interface Argumentos { paquete: string; base: string; prefijo: string; destino: string | null; mapa: string | null }
 
 export function parsearArgumentos(argv: readonly string[]): Argumentos | string {
-  let paquete: string | null = null, base: string | null = null, prefijo = "wp_", destino: string | null = null, reemplazos: string | null = null, mapa: string | null = null;
+  let paquete: string | null = null, base: string | null = null, prefijo = "wp_", destino: string | null = null, mapa: string | null = null;
   for (const a of argv) {
     const [clave, ...resto] = a.split("=");
     const valor = resto.length ? resto.join("=") : null;
@@ -308,12 +361,11 @@ export function parsearArgumentos(argv: readonly string[]): Argumentos | string 
       case "--prefijo": if (!valor || !/^[A-Za-z0-9_]+$/.test(valor)) return "--prefijo: solo letras, números y guion bajo"; prefijo = valor; break;
       case "--destino": if (!valor) return "--destino necesita un valor"; destino = valor; break;
       case "--mapa": if (!valor) return "--mapa necesita un valor"; mapa = valor; break;
-      case "--reemplazos": if (!valor) return "--reemplazos necesita un valor"; reemplazos = valor; break;
       default: return `argumento desconocido: ${a}`;
     }
   }
   if (paquete === null) return "falta --paquete=<uploads-completo.tar>";
   if (base === null) return "falta --base=<base de WordPress en la 3307> (no hay valor por defecto: tiene que ser la del mismo día que el paquete)";
-  if ((mapa !== null || reemplazos !== null) && destino === null) return "--mapa y --reemplazos solo tienen sentido con --destino";
-  return { paquete, base, prefijo, destino, reemplazos, mapa };
+  if (mapa !== null && destino === null) return "--mapa solo tiene sentido con --destino";
+  return { paquete, base, prefijo, destino, mapa };
 }
