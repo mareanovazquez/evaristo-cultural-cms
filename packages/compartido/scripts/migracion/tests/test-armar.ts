@@ -333,6 +333,21 @@ t("T20: claves del CMS (decisión 81) y original reducido (decisión 79): fila, 
 
 const aviso = (a: { avisosMigracion: { migracion: Array<{ code: string; detalle?: unknown }> } | null }, code: string) => a.avisosMigracion?.migracion.filter((x) => x.code === code) ?? [];
 
+t("T21: decisión 82: un publicado sin título lleva «Artículo a titular <id>» y el aviso titulo_provisorio; un borrador sin título no se toca", () => {
+  const p = armar(sintetica([
+    post({ id: 5562, titulo: "", nombre: "5562" }),
+    post({ id: 5563, titulo: "  ‎ ", nombre: "5563" }),
+    post({ id: 5564, estado: "draft", titulo: "", nombre: "", fechaGmt: "0000-00-00 00:00:00" }),
+    post({ id: 5565, titulo: "Con título" }),
+  ]));
+  const de = (id: number) => p.articulos.find((x) => x.wpId === id)!;
+  assert.deepEqual([de(5562).titulo, de(5562).estado], ["Artículo a titular 5562", "PUBLICADO"]);
+  assert.deepEqual(aviso(de(5562), "titulo_provisorio"), [{ code: "titulo_provisorio", detalle: { titulo: "Artículo a titular 5562" } }]);
+  assert.equal(de(5563).titulo, "Artículo a titular 5563", "solo espacios o marcas invisibles también cuenta como sin título");
+  assert.deepEqual([de(5564).titulo, de(5564).estado, aviso(de(5564), "titulo_provisorio").length], ["", "BORRADOR", 0], "el borrador queda vacío: lo excluye la validación");
+  assert.deepEqual([de(5565).titulo, aviso(de(5565), "titulo_provisorio").length], ["Con título", 0]);
+});
+
 t("T18: fecha_borrador: el 22546 (2023-06-29), un borrador con fecha válida no, un privado con ceros sí", () => {
   assert.deepEqual(aviso(articulo(22546), "fecha_borrador"), [{ code: "fecha_borrador", detalle: { postDate: "2023-06-29 23:38:10" } }]);
   assert.ok(articulo(22546).publicadoEn === null);

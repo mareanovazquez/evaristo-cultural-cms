@@ -285,7 +285,7 @@ try {
     // los errores de argumentos siguen saliendo con 2 y su propio mensaje
     for (const [args, texto] of [
       [["--muestra", "--escribir"], /necesita --esperar-articulos/], [["--muestra", "--escribir", "--esperar-articulos=35", "--sobrescribir"], /necesita --esperar-sobrescribir/],
-      [["--todos"], /--todos: no implementado/],
+      [["--todos"], /--originales=<carpeta> es obligatorio/],
     ] as const) { const r = correr(...args); assert.equal(r.status, 2); assert.match(r.stderr, texto); }
   });
 

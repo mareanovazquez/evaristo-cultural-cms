@@ -28,7 +28,7 @@ export interface DependenciasFlujo {
   /** Muestra la pregunta y devuelve lo que la persona tipeó. */
   readonly leerLinea: (pregunta: string) => Promise<string>;
   /** Las conexiones de SOLO LECTURA con las que se arma el plan. */
-  readonly abrirLectura: () => Promise<ConexionesVerificadas>;
+  readonly abrirLectura: (baseWordPress?: string) => Promise<ConexionesVerificadas>;
   /** La conexión de escritura (con las credenciales de migración). */
   readonly abrirEscritura: (destino: unknown, credenciales: Credenciales) => Promise<ConexionEscritura>;
   readonly idsMuestra: readonly number[];
@@ -49,7 +49,7 @@ export function dependenciasReales(): DependenciasFlujo {
       const terminal = createInterface({ input: process.stdin, output: process.stdout });
       try { return await terminal.question(pregunta); } finally { terminal.close(); }
     },
-    abrirLectura: () => abrirConexionesVerificadas(),
+    abrirLectura: (baseWordPress?: string) => abrirConexionesVerificadas(undefined, baseWordPress),
     abrirEscritura: (destino: unknown, credenciales: Credenciales) => abrirConexionEscritura(destino, credenciales),
     idsMuestra: cargarDatosVersionados().ids,
     carpetaInformes: fileURLToPath(new URL("../../../out/migracion", import.meta.url)),
@@ -93,7 +93,7 @@ export async function correrFlujoEscribir(argv: readonly string[], env: Readonly
   }
 
   // El plan se arma con las conexiones de SOLO LECTURA (WordPress y el CMS), como en la simulación
-  const lectura = await deps.abrirLectura();
+  const lectura = await deps.abrirLectura(opciones.wordpress);
   let resultadoPlan;
   try {
     resultadoPlan = await simular({ ...opciones, modo: "simular" }, lectura, { destinoPermitido: destino });

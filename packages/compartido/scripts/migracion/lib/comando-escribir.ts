@@ -10,7 +10,7 @@ import type { Informe } from "./informe.ts";
 import { ocultarCorreos } from "./utilidades.ts";
 
 export const USO = [
-  "Uso: migrar-escribir.ts (--muestra | --ids=a,b) --esperar-articulos=N --originales=<carpeta> [--abortar-al-primer-error]",
+  "Uso: migrar-escribir.ts (--muestra | --ids=a,b | --todos) --esperar-articulos=N --originales=<carpeta> [--wordpress=<base>] [--abortar-al-primer-error]",
   "                        [--sobrescribir --esperar-sobrescribir=N]   (N = total de filas que se reescribirían: artículos + autores + imágenes)",
 ].join("\n");
 

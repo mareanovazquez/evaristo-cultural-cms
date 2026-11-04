@@ -3,13 +3,14 @@
 // No crea ningún cliente por su cuenta: abre las conexiones con abrirConexiones() de leer-wordpress.ts (sesiones READ ONLY, solo SELECT).
 import { DESTINO_REAL, guardaDestino } from "./destinos.ts";
 import type { DestinoUrl } from "./destinos.ts";
-import { abrirConexiones } from "./leer-wordpress.ts";
+import { abrirConexiones, BASE_WORDPRESS_POR_DEFECTO, BASES_WORDPRESS } from "./leer-wordpress.ts";
 import type { Conexiones, Consulta, Fila } from "./leer-wordpress.ts";
 import { num, str } from "./utilidades.ts";
 
 export { DESTINO_REAL, guardaDestino };
 export type { DestinoUrl };
-export const ORIGEN_WORDPRESS = Object.freeze({ host: "127.0.0.1", puerto: 3307, base: "evaristo_lectura" });
+export const ORIGEN_WORDPRESS = Object.freeze({ host: "127.0.0.1", puerto: 3307, base: BASE_WORDPRESS_POR_DEFECTO });
+export { BASES_WORDPRESS };
 /** Versión mayor.menor que tiene que informar el servidor del CMS. */
 export const VERSION_CMS = "8.4";
 
@@ -32,9 +33,9 @@ export function verificarServidorCms(s: DestinoServidor): DestinoServidor {
   return s;
 }
 
-/** WordPress tiene que ser 127.0.0.1:3307, base evaristo_lectura. */
-export function verificarServidorWordPress(s: DestinoServidor): DestinoServidor {
-  if (s.puerto !== ORIGEN_WORDPRESS.puerto || s.base !== ORIGEN_WORDPRESS.base) {
+/** WordPress tiene que ser 127.0.0.1:3307 y la base pedida (evaristo_lectura por defecto; solo una de BASES_WORDPRESS). */
+export function verificarServidorWordPress(s: DestinoServidor, base: string = ORIGEN_WORDPRESS.base): DestinoServidor {
+  if (!BASES_WORDPRESS.includes(base) || s.puerto !== ORIGEN_WORDPRESS.puerto || s.base !== base) {
     throw new Error(`El servidor de WordPress no es el esperado (@@port = ${s.puerto}, DATABASE() = ${s.base || "NULL"}): la corrida se niega a seguir.`);
   }
   return s;
@@ -50,12 +51,12 @@ export interface ConexionesVerificadas extends Conexiones {
  * Abre las dos conexiones de solo lectura y verifica los destinos. El orden importa: primero la guarda sobre DATABASE_URL (sin abrir nada),
  * después abrirConexiones() (que comprueba que las sesiones estén en READ ONLY) y por último lo que dicen los servidores.
  */
-export async function abrirConexionesVerificadas(databaseUrl: string | undefined = process.env["DATABASE_URL"]): Promise<ConexionesVerificadas> {
+export async function abrirConexionesVerificadas(databaseUrl: string | undefined = process.env["DATABASE_URL"], baseWordPress: string = ORIGEN_WORDPRESS.base): Promise<ConexionesVerificadas> {
   const destino = guardaDestino(databaseUrl);
-  const conexiones = await abrirConexiones();
+  const conexiones = await abrirConexiones(baseWordPress);
   try {
     const servidorCms = verificarServidorCms(await leerDestinoServidor(conexiones.bd));
-    const servidorWordPress = verificarServidorWordPress(await leerDestinoServidor(conexiones.wp));
+    const servidorWordPress = verificarServidorWordPress(await leerDestinoServidor(conexiones.wp), baseWordPress);
     return { ...conexiones, destino, servidorCms, servidorWordPress };
   } catch (e) {
     await conexiones.cerrar();
@@ -77,17 +78,20 @@ export interface OpcionesCli {
   abortarAlPrimerError: boolean;
   sobrescribir: boolean;
   originales: string | null;
+  /** Base de WordPress que se lee (--wordpress=<base>, una de BASES_WORDPRESS). Sin la opción, ORIGEN_WORDPRESS.base. */
+  wordpress?: string;
 }
 
 export class ErrorDeArgumentos extends Error {}
 
-/** Lo que este tramo todavía no implementa. */
-export const NO_IMPLEMENTADO: readonly string[] = ["--todos"];
+/** Lo que este tramo todavía no implementa (--todos se habilitó el 4/11/2026). */
+export const NO_IMPLEMENTADO: readonly string[] = [];
 
 /**
  * Interpreta los argumentos. `idsMuestra` son los 35 ids de la muestra, en el orden en que se arman.
  * Exactamente uno de --ids=a,b | --muestra | --todos; --simular (por defecto) o --escribir con --esperar-articulos=N;
- * --abortar-al-primer-error; --sobrescribir (solo con --escribir, y con --esperar-sobrescribir=N); --originales=<carpeta>.
+ * --abortar-al-primer-error; --sobrescribir (solo con --escribir, y con --esperar-sobrescribir=N); --originales=<carpeta>; --wordpress=<base>
+ * (solo una de BASES_WORDPRESS).
  * Todo lo demás se rechaza. Que --escribir se acepte al parsear no la habilita: la decisión es de confirmaciones.ts.
  */
 export function parsearArgumentos(argv: readonly string[], idsMuestra: readonly number[]): OpcionesCli {
@@ -98,7 +102,7 @@ export function parsearArgumentos(argv: readonly string[], idsMuestra: readonly 
     return v === "" ? rechazar(`${nombre} necesita un valor (${nombre}=...)`) : v;
   };
   let ids: string | null = null, muestra = false, todos = false, simular = false, escribir = false, esperar: string | null = null, esperarSobre: string | null = null;
-  let abortar = false, sobrescribir = false, originales: string | null = null;
+  let abortar = false, sobrescribir = false, originales: string | null = null, wordpress: string | null = null;
   for (const arg of argv) {
     const nombre = arg.includes("=") ? arg.slice(0, arg.indexOf("=")) : arg;
     if (!arg.startsWith("--")) rechazar(`argumento desconocido: ${arg}`);
@@ -117,6 +121,7 @@ export function parsearArgumentos(argv: readonly string[], idsMuestra: readonly 
       case "--abortar-al-primer-error": sinValor(nombre); abortar = true; break;
       case "--sobrescribir": sinValor(nombre); sobrescribir = true; break;
       case "--originales": if (!conValor) rechazar("--originales necesita un valor (--originales=<carpeta>)"); originales = valor(arg, nombre); break;
+      case "--wordpress": if (!conValor) rechazar("--wordpress necesita un valor (--wordpress=<base>)"); wordpress = valor(arg, nombre); if (!BASES_WORDPRESS.includes(wordpress)) rechazar(`--wordpress: solo ${BASES_WORDPRESS.join(" o ")}`); break;
       default: rechazar(`argumento desconocido: ${arg}`);
     }
   }
@@ -154,5 +159,5 @@ export function parsearArgumentos(argv: readonly string[], idsMuestra: readonly 
   const pedidosSinImplementar = todos ? NO_IMPLEMENTADO : [];
   if (pedidosSinImplementar.length) rechazar(`${pedidosSinImplementar.join(" y ")}: no implementado en este tramo`);
 
-  return { alcance, modo: escribir ? "escribir" : "simular", esperarArticulos, esperarSobrescribir, abortarAlPrimerError: abortar, sobrescribir, originales };
+  return { alcance, modo: escribir ? "escribir" : "simular", esperarArticulos, esperarSobrescribir, abortarAlPrimerError: abortar, sobrescribir, originales, ...(wordpress !== null ? { wordpress } : {}) };
 }

@@ -276,7 +276,11 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
     }
     const esBorrador = estado === "BORRADOR";
     const slug = slugFinal(esBorrador, m.id, slugDecodificado).slug;
-    const tituloEntrada = quitarU200E(tituloWp);
+    // Decisión 82: un publicado sin título en WordPress (el 5562 y el 5602) migra con un título provisorio y un aviso para titularlo; un borrador
+    // sin título no se toca y la validación lo deja afuera (titulo_vacio).
+    const sinTitulo = !esBorrador && quitarU200E(tituloWp).trim() === "";
+    const tituloEntrada = sinTitulo ? `Artículo a titular ${m.id}` : quitarU200E(tituloWp);
+    if (sinTitulo) avisosMigracion.push({ code: "titulo_provisorio", detalle: { titulo: tituloEntrada } });
 
     const r = convertir({ titulo: tituloEntrada, contenido_crudo: m.contenido_crudo }, { autor: nombreAutor || null, taxonomia: { id: m.id, slugs: cats.map((c) => c.slug), mapeo } });
 

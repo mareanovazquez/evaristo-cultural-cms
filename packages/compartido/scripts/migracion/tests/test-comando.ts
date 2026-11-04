@@ -30,11 +30,13 @@ const BUENOS = ["--muestra", "--esperar-articulos=35", "--originales=carpeta"];
 
 const rechazo = (d: ReturnType<typeof evaluarComando>) => { assert.equal(d.ok, false); return d as Extract<typeof d, { ok: false }>; };
 
-t("T23: los argumentos del comando: exige alcance, N de artículos y carpeta; rechaza --simular, --todos y cualquier opción de destino", () => {
+t("T23: los argumentos del comando: exige alcance, N de artículos y carpeta; acepta --todos; rechaza --simular y cualquier opción de destino", () => {
   const ev = (argv: string[]) => evaluarComando(argv, { DATABASE_URL_MIGRACION: URL_MIGRACION }, IDS, true);
   assert.equal(ev(BUENOS).ok, true);
   assert.equal(ev(["--ids=22546", "--esperar-articulos=1", "--originales=c", "--abortar-al-primer-error"]).ok, true);
   assert.equal(ev([...BUENOS, "--escribir"]).ok, true, "--escribir explícito se acepta (es redundante)");
+  const todos = ev(["--todos", "--esperar-articulos=2686", "--originales=c", "--wordpress=evaristo_lectura_nueva"]);
+  assert.ok(todos.ok && todos.opciones.alcance.tipo === "todos" && todos.opciones.esperarArticulos === 2686 && todos.opciones.wordpress === "evaristo_lectura_nueva", "--todos se acepta desde el 4/11/2026");
   const d = ev([...BUENOS, "--sobrescribir", "--esperar-sobrescribir=3"]);
   assert.ok(d.ok && d.opciones.modo === "escribir" && d.opciones.sobrescribir && d.opciones.esperarSobrescribir === 3 && d.opciones.esperarArticulos === 35);
   for (const [argv, texto] of [
@@ -42,7 +44,7 @@ t("T23: los argumentos del comando: exige alcance, N de artículos y carpeta; re
     [["--muestra", "--originales=c"], /necesita --esperar-articulos/],
     [["--muestra", "--esperar-articulos=35"], /--originales=<carpeta> es obligatorio/],
     [[...BUENOS, "--simular"], /no acepta --simular/],
-    [["--todos", "--esperar-articulos=35", "--originales=c"], /--todos: no implementado/],
+    [["--todos", "--originales=c"], /necesita --esperar-articulos/],
     [[...BUENOS, "--sobrescribir"], /necesita --esperar-sobrescribir/],
     [[...BUENOS, "--esperar-sobrescribir=1"], /solo se usa con --sobrescribir/],
     [["--ids=1,2", "--esperar-articulos=2", "--originales=c"], /ids que no son de la muestra/],
@@ -121,7 +123,7 @@ t("T23: el comando en un proceso hijo, con el interruptor en false: las combinac
     }
     // los errores de argumentos salen con 2 y su propio mensaje
     for (const [args, texto] of [
-      [["--muestra", "--escribir"], /necesita --esperar-articulos/], [["--todos", "--esperar-articulos=35", "--originales=c"], /--todos: no implementado/],
+      [["--muestra", "--escribir"], /necesita --esperar-articulos/], [["--todos", "--esperar-articulos=0", "--originales=c"], /entero positivo/],
       [["--muestra", "--esperar-articulos=35", "--originales=c", "--simular"], /no acepta --simular/], [["--esperar-articulos=1", "--originales=c"], /exactamente uno de/],
     ] as const) {
       const r = correr(env, ...args);

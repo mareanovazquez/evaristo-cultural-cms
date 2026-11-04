@@ -3,16 +3,23 @@
 import { cargarDatosVersionados } from "./entrada-snapshot.ts";
 import type { EntradaArmar } from "./armar.ts";
 import {
-  detalleAdjuntos, leerAdjuntosPorClave, leerBios, leerCategoriasCms, leerMeta, leerOpciones, leerPosts, leerSeccionesCms, leerTerminos, leerUsuarios,
+  detalleAdjuntos, leerAdjuntosPorClave, leerBios, leerIdsAMigrar, leerCategoriasCms, leerMeta, leerOpciones, leerPosts, leerSeccionesCms, leerTerminos, leerUsuarios,
 } from "./leer-wordpress.ts";
 import type { Consulta } from "./leer-wordpress.ts";
+import type { Alcance } from "./conexiones.ts";
 import type { AdjuntoSnapshot, TerminoSnapshot } from "./snapshot-tipos.ts";
 import { num, str } from "./utilidades.ts";
 
-/** Con `soloIds` lee de WordPress únicamente esos artículos de la muestra (un subconjunto no arrastra los demás). */
-export async function entradaEnVivo(wp: Consulta, bd: Consulta, soloIds?: readonly number[]): Promise<EntradaArmar> {
+/**
+ * Alcance «muestra» (por defecto): los 35 de la muestra, 30 con el título y el cuerpo de la fixture versionada. «ids»: solo esos de la muestra
+ * (un subconjunto no arrastra los demás). «todos» (fase 7): todos los artículos a migrar de WordPress (leerIdsAMigrar), todo leído en vivo,
+ * sin la fixture ni los extras de la muestra: la fuente es el dump definitivo.
+ */
+export async function entradaEnVivo(wp: Consulta, bd: Consulta, alcance: Alcance = { tipo: "muestra" }): Promise<EntradaArmar> {
   const datos = cargarDatosVersionados();
-  const ids = soloIds ? datos.ids.filter((id) => soloIds.includes(id)) : datos.ids;
+  const todos = alcance.tipo === "todos";
+  const ids = todos ? (await leerIdsAMigrar(wp)).map((f) => num(f["id"])) : alcance.tipo === "ids" ? datos.ids.filter((id) => alcance.ids.includes(id)) : datos.ids;
+  if (!ids.length) throw new Error("No hay artículos para migrar en WordPress");
 
   const opciones = await leerOpciones(wp);
   const opcion = (k: string) => str(opciones.find((o) => o["k"] === k)?.["v"]);
@@ -51,7 +58,7 @@ export async function entradaEnVivo(wp: Consulta, bd: Consulta, soloIds?: readon
   const adjuntoPorClave = (await leerAdjuntosPorClave(wp)).map((f) => [str(f["clave"]), num(f["id"])] as const);
 
   return {
-    ids, fixture: datos.fixture, extras: datos.extras, posts, meta, terminos, usuarios, adjuntos, adjuntoPorClave,
+    ids, fixture: todos ? [] : datos.fixture, extras: todos ? [] : datos.extras, posts, meta, terminos, usuarios, adjuntos, adjuntoPorClave,
     opciones: { gmt_offset: opcion("gmt_offset"), permalink_structure: opcion("permalink_structure"), timezone_string: opcion("timezone_string") },
     cuentas: datos.cuentas, mapeo: datos.mapeo,
     seccionesExistentes: (await leerSeccionesCms(bd)).map((f) => str(f["slug"])),

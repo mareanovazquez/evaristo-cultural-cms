@@ -29,12 +29,12 @@ try {
 } catch (e) {
   if (!(e instanceof ErrorDeArgumentos)) throw e;
   console.error(`Error en los argumentos: ${e.message}`);
-  console.error("Uso: migrar.ts (--muestra | --ids=a,b) [--simular] --originales=<carpeta> [--abortar-al-primer-error]");
-  console.error("     migrar.ts (--muestra | --ids=a,b) --escribir --esperar-articulos=N [--sobrescribir --esperar-sobrescribir=N] --originales=<carpeta>   (hoy se niega)");
+  console.error("Uso: migrar.ts (--muestra | --ids=a,b | --todos) [--simular] --originales=<carpeta> [--wordpress=<base>] [--abortar-al-primer-error]");
+  console.error("     migrar.ts (--muestra | --ids=a,b | --todos) --escribir ...   (se niega: la escritura es migrar-escribir.ts)");
   process.exit(2);
 }
 
-const conexiones = await abrirConexionesVerificadas();
+const conexiones = await abrirConexionesVerificadas(undefined, opciones.wordpress);
 try {
   const { informe, preparado } = await simular(opciones, conexiones);
   const rutas = escribirInforme(CARPETA_INFORMES, informe);

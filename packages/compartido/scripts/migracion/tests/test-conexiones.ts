@@ -79,6 +79,10 @@ await ta("T13: tras conectar se comprueba @@port, DATABASE(), @@read_only y la v
   assert.doesNotThrow(() => verificarServidorWordPress({ puerto: 3307, base: "evaristo_lectura", readOnly: 0, version: "10.11.2-MariaDB" }));
   assert.throws(() => verificarServidorWordPress({ puerto: 3308, base: "evaristo_lectura", readOnly: 0, version: "x" }), /WordPress no es el esperado/);
   assert.throws(() => verificarServidorWordPress({ puerto: 3307, base: "evaristo_cms", readOnly: 0, version: "x" }), /WordPress no es el esperado/);
+  // con --wordpress: la base pedida tiene que ser la del servidor y una de las permitidas
+  assert.doesNotThrow(() => verificarServidorWordPress({ puerto: 3307, base: "evaristo_lectura_nueva", readOnly: 0, version: "x" }, "evaristo_lectura_nueva"));
+  assert.throws(() => verificarServidorWordPress({ puerto: 3307, base: "evaristo_lectura", readOnly: 0, version: "x" }, "evaristo_lectura_nueva"), /WordPress no es el esperado/);
+  assert.throws(() => verificarServidorWordPress({ puerto: 3307, base: "otra", readOnly: 0, version: "x" }, "otra"), /WordPress no es el esperado/, "una base fuera de la lista no se acepta aunque coincida");
 });
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -152,17 +156,24 @@ t("T14: argumentos desconocidos, repetidos o con valor de más", () => {
   falla(["--muestra", "--abortar-al-primer-error=1"], /no lleva valor/);
 });
 
-t("T14: --escribir se acepta al parsear (no lo habilita: eso lo decide confirmaciones.ts) y --todos se rechaza", () => {
+t("T14: --escribir se acepta al parsear (no lo habilita: eso lo decide confirmaciones.ts); --todos y --wordpress (fase 7)", () => {
   assert.deepEqual(parsear("--muestra", "--escribir", "--esperar-articulos=35"), {
     alcance: { tipo: "muestra" }, modo: "escribir", esperarArticulos: 35, esperarSobrescribir: null, abortarAlPrimerError: false, sobrescribir: false, originales: null,
   });
   const o = parsear("--ids=22546", "--escribir", "--esperar-articulos=1", "--sobrescribir", "--esperar-sobrescribir=0", "--abortar-al-primer-error", "--originales=x");
   assert.deepEqual([o.modo, o.esperarArticulos, o.sobrescribir, o.esperarSobrescribir, o.abortarAlPrimerError], ["escribir", 1, true, 0, true]);
-  falla(["--todos"], /--todos: no implementado en este tramo/);
-  falla(["--todos", "--simular"], /no implementado en este tramo/);
-  falla(["--todos", "--escribir", "--esperar-articulos=3"], /--todos: no implementado en este tramo/);
-  // el error de combinación gana al de "no implementado" (se dice primero lo que está mal escrito)
+  // --todos (habilitado el 4/11/2026): simula por defecto; para escribir exige --esperar-articulos como los demás
+  assert.deepEqual(parsear("--todos").alcance, { tipo: "todos" });
+  assert.equal(parsear("--todos", "--simular").modo, "simular");
+  assert.deepEqual([parsear("--todos", "--escribir", "--esperar-articulos=2686").modo, parsear("--todos", "--escribir", "--esperar-articulos=2686").esperarArticulos], ["escribir", 2686]);
+  falla(["--todos", "--escribir"], /necesita --esperar-articulos/);
   falla(["--todos", "--esperar-articulos=3"], /solo se usa con --escribir/);
+  // --wordpress: solo las bases permitidas; sin la opción, el campo no aparece (se usa evaristo_lectura)
+  assert.equal(parsear("--todos", "--wordpress=evaristo_lectura_nueva").wordpress, "evaristo_lectura_nueva");
+  assert.equal("wordpress" in parsear("--muestra"), false);
+  falla(["--todos", "--wordpress=evaristo_cms"], /--wordpress: solo evaristo_lectura o evaristo_lectura_nueva/);
+  falla(["--todos", "--wordpress"], /necesita un valor/);
+  falla(["--todos", "--wordpress=evaristo_lectura", "--wordpress=evaristo_lectura_nueva"], /repetido/);
 });
 
 console.log(`${ok} pruebas de conexiones ok`);

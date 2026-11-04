@@ -33,7 +33,7 @@ function clienteSimulado(existentes: Record<string, string[]> = {}) {
         return Array.from({ length: p.length / 2 }, (_, k) => { const c = clave(String(p[2 * k + 1])); if (!claves.has(c)) claves.set(c, claves.size + 1); return { i: p[2 * k] as number, g: claves.get(c)! }; });
       }
       if (/information_schema\.COLUMNS/.test(texto)) return [["articulos", "slug"], ["redirecciones", "origen"], ["imagenes", "clave"]].map(([tabla, columna]) => ({ tabla, columna, colacion: COLACION }));
-      if (/FROM articulos WHERE slug|FROM autores WHERE/.test(texto)) return [];
+      if (/JOIN articulos a ON a.slug|JOIN autores a ON/.test(texto)) return [];
       const m = texto.match(/SELECT (\w+) AS clave FROM (\w+) WHERE/);
       if (m) return (existentes[m[2]!] ?? []).filter((v) => p.map(String).includes(v)).map((v) => ({ clave: v }));
       if (/FROM `wp_users`/.test(texto)) return entrada.cuentas.map((c) => ({ id: c.wpUserId, login: c.user_login, nombre: c.nombre }));
@@ -118,7 +118,12 @@ await ta("T16: --ids limita la simulación; un bloqueante queda en el informe si
   assert.deepEqual(mal.informe.bloqueantes.map((b) => b.codigo), ["destino_no_permitido"]);
   await assert.rejects(() => simular({ ...opciones, originales: null }, { wp: bd.consulta, bd: bd.consulta, destino: { ...DESTINO_REAL }, servidorCms, servidorWordPress }), /--originales/);
   await assert.rejects(() => simular({ ...opciones, modo: "escribir" }, { wp: bd.consulta, bd: bd.consulta, destino: { ...DESTINO_REAL }, servidorCms, servidorWordPress }), /solo corre en modo simular/);
-  await assert.rejects(() => simular({ ...opciones, alcance: { tipo: "todos" } }, { wp: bd.consulta, bd: bd.consulta, destino: { ...DESTINO_REAL }, servidorCms, servidorWordPress }), /no implementado/);
+  // --todos (fase 7): el alcance llega tal cual a la lectura de la entrada
+  let alcancePedido: unknown = null;
+  await simular({ ...opciones, alcance: { tipo: "todos" } }, { wp: clienteSimulado().consulta, bd: clienteSimulado().consulta, destino: { ...DESTINO_REAL }, servidorCms, servidorWordPress }, {
+    leerEntrada: async (_wp, _bd, alcance) => { alcancePedido = alcance; return entradaDesdeSnapshot(); }, largos: leerLargosSchema(), medir: medirFalso,
+  });
+  assert.deepEqual(alcancePedido, { tipo: "todos" });
 });
 
 // ---------------------------------------------------------------------------------------------------------------

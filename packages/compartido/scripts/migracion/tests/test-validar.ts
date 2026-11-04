@@ -35,8 +35,13 @@ function baseSimulada(opciones: { existentes?: Existente[]; colacion?: Record<st
         return { i: p[2 * k] as number, g: claves.get(c)! };
       });
     }
-    if (/FROM articulos WHERE slug/.test(texto)) return (opciones.existentes ?? []).filter((e) => clave(e.slug) === clave(String(p[0]))).map((e) => ({ ...e }));
-    if (/FROM autores/.test(texto)) return [];
+    // En lote: VALUES ROW(i, slug) JOIN articulos; devuelve las filas existentes con el índice del slug pedido
+    if (/JOIN articulos a ON a.slug/.test(texto)) {
+      const filas: Fila[] = [];
+      for (let k = 0; k < p.length; k += 2) for (const e of opciones.existentes ?? []) if (clave(e.slug) === clave(String(p[k + 1]))) filas.push({ i: p[k] as number, ...e });
+      return filas;
+    }
+    if (/JOIN autores a ON/.test(texto)) return [];
     if (/information_schema\.COLUMNS/.test(texto)) {
       return Object.entries(colacion).filter(([, c]) => c !== null).map(([k, c]) => ({ tabla: k.split(".")[0], columna: k.split(".")[1], colacion: c }));
     }
@@ -83,7 +88,7 @@ t("T17: longitudes, slug o título vacío, publicado sin fecha y cuerpo inválid
     post({ id: 106, nombre: "" }),                                      // publicado sin slug
     post({ id: 107 }),                                                  // cuerpo inválido (con el conversor de prueba)
     post({ id: 108, fechaGmt: "0000-00-00 00:00:00" }),                 // publicado sin fecha
-    post({ id: 109, titulo: "" }),                                      // título vacío
+    post({ id: 109, estado: "draft", titulo: "" }),                     // borrador con título vacío (un publicado lleva uno provisorio: decisión 82, T21 de test-armar)
     post({ id: 110 }),                                                  // sin problemas
     post({ id: 111, estado: "draft", nombre: "", fechaGmt: "0000-00-00 00:00:00" }),  // borrador sin slug ni fecha: es válido (borrador-111)
   ];
@@ -139,6 +144,21 @@ await ta("T17: contra las filas existentes (menos la propia por wpId) y borrador
   const choque = await validarColisiones(armar(sintetica([post({ id: 310, nombre: "borrador-305" }), post({ id: 305, estado: "draft", nombre: "", fechaGmt: "0000-00-00 00:00:00" })])), baseSimulada().bd);
   assert.deepEqual(codigos(choque.problemas), ["305:borrador_choca_con_slug_real"]);
   assert.deepEqual(await gruposIgualesEnBd(baseSimulada().bd, ["solo uno"]), [], "con un solo valor no hay nada que agrupar ni consultar");
+});
+
+await ta("T17: colisiones en lote (--todos): 1.200 artículos en 3 consultas de a 500, cada choque atribuido a su artículo", async () => {
+  // Choques en el primer lote, justo en el borde del segundo (índice 500) y en el último; la propia fila no cuenta
+  const existentes: Existente[] = [
+    { id: 1, slug: "nota-1000", wpId: null }, { id: 2, slug: "NOTA-1500", wpId: 77 }, { id: 3, slug: "nota-2199", wpId: 5 }, { id: 4, slug: "nota-1700", wpId: 1700 },
+  ];
+  const { bd, sql } = baseSimulada({ existentes });
+  const plan = armar(sintetica(Array.from({ length: 1200 }, (_, k) => post({ id: 1000 + k, nombre: `nota-${1000 + k}` }))));
+  assert.equal(plan.articulos.length, 1200);
+  const r = await validarColisiones(plan, bd);
+  assert.deepEqual(codigos(r.problemas), ["1000:slug_choca_con_articulo_existente", "1500:slug_choca_con_articulo_existente", "2199:slug_choca_con_articulo_existente"]);
+  assert.deepEqual(r.problemas.find((x) => x.wpId === 1500)!.detalle, { slug: "nota-1500", existentes: [{ id: 2, slug: "NOTA-1500", wpId: 77 }] });
+  assert.equal(sql.filter((s) => /JOIN articulos a ON/.test(s)).length, 3, "una consulta por lote, no una por artículo");
+  assert.equal(sql.filter((s) => /JOIN autores a ON/.test(s)).length, 1, "los autores también en lote");
 });
 
 await ta("T17: bloqueantes: intercalación incorrecta (con la real de cada columna), cuentas, sección faltante, categoría sin nombre y destino", async () => {

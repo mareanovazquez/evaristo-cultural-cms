@@ -7,7 +7,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import type { CuentaSoloTexto, Plan, Problema } from "./armar.ts";
-import { COLACION, leerArticulosPorSlug, leerAutoresPorSlugOWpUserId } from "./leer-wordpress.ts";
+import { COLACION, leerArticulosPorSlugs, leerAutoresPorSlugsOWpUserIds } from "./leer-wordpress.ts";
 import type { Consulta, Fila } from "./leer-wordpress.ts";
 import { num, str } from "./utilidades.ts";
 
@@ -158,10 +158,12 @@ export async function validarColisiones(plan: Plan, bd: Consulta): Promise<Resul
     }
   }
 
-  // (b) contra lo que ya hay en articulos (menos la propia fila)
-  for (const a of arts) {
-    if (excluidos.has(a.wpId)) continue;
-    const ajenas = (await leerArticulosPorSlug(bd, a.slug)).filter((f) => f["wpId"] === null || f["wpId"] === undefined || num(f["wpId"]) !== a.wpId);
+  // (b) contra lo que ya hay en articulos (menos la propia fila), en lote: una consulta cada TAMANO_LOTE artículos
+  const pendientes = arts.filter((a) => !excluidos.has(a.wpId));
+  const existentesPorIndice = new Map<number, Fila[]>();
+  for (const f of await leerArticulosPorSlugs(bd, pendientes.map((a) => a.slug))) { const i = num(f["i"]); existentesPorIndice.set(i, [...(existentesPorIndice.get(i) ?? []), f]); }
+  for (const [i, a] of pendientes.entries()) {
+    const ajenas = (existentesPorIndice.get(i) ?? []).filter((f) => f["wpId"] === null || f["wpId"] === undefined || num(f["wpId"]) !== a.wpId);
     if (ajenas.length) excluir(a.wpId, a.estado === "BORRADOR" ? "borrador_choca_con_slug_real" : "slug_choca_con_articulo_existente", {
       slug: a.slug, existentes: ajenas.map((f) => ({ id: num(f["id"]), slug: str(f["slug"]), wpId: f["wpId"] === null || f["wpId"] === undefined ? null : num(f["wpId"]) })),
     });
@@ -174,8 +176,10 @@ export async function validarColisiones(plan: Plan, bd: Consulta): Promise<Resul
   await dentroDelPlan("autores.slug", plan.autores.map((x) => x.slug));
   await dentroDelPlan("redirecciones.origen", plan.redirecciones.map((r) => r.origen));
   await dentroDelPlan("imagenes.clave", plan.imagenes.map((i) => i.clave));
-  for (const au of plan.autores) {
-    const ajenos = (await leerAutoresPorSlugOWpUserId(bd, au.slug, au.wpUserId)).filter((f) => f["wpUserId"] === null || f["wpUserId"] === undefined || num(f["wpUserId"]) !== au.wpUserId);
+  const autoresPorIndice = new Map<number, Fila[]>();
+  for (const f of await leerAutoresPorSlugsOWpUserIds(bd, plan.autores)) { const i = num(f["i"]); autoresPorIndice.set(i, [...(autoresPorIndice.get(i) ?? []), f]); }
+  for (const [i, au] of plan.autores.entries()) {
+    const ajenos = (autoresPorIndice.get(i) ?? []).filter((f) => f["wpUserId"] === null || f["wpUserId"] === undefined || num(f["wpUserId"]) !== au.wpUserId);
     if (ajenos.length) conflictos.push({ tabla: "autores", clave: au.slug, detalle: { wpUserId: au.wpUserId, existentes: ajenos.map((f) => ({ id: num(f["id"]), slug: str(f["slug"]), wpUserId: f["wpUserId"] === null || f["wpUserId"] === undefined ? null : num(f["wpUserId"]) })) } });
   }
   return { problemas, conflictos };

@@ -1,4 +1,4 @@
-// Lectura de WordPress (127.0.0.1:3307, evaristo_lectura) y de la base del CMS (DATABASE_URL, puerto 3308).
+// Lectura de WordPress (127.0.0.1:3307, evaristo_lectura o, con --wordpress, evaristo_lectura_nueva) y de la base del CMS (DATABASE_URL, puerto 3308).
 // SOLO LECTURA: las dos conexiones abren la sesión con SET SESSION TRANSACTION READ ONLY y todas las consultas pasan por
 // `consultar()`, que rechaza todo lo que no sea un único SELECT. Este módulo no arma registros ni decide nada de negocio:
 // solo ejecuta las consultas y devuelve las filas con los mismos nombres de campo de siempre.
@@ -19,9 +19,14 @@ export const T = (tabla: string) => `\`${PREFIJO}${tabla}\``;
 // ---------------------------------------------------------------------------------------------------------------
 // Conexiones de solo lectura
 // ---------------------------------------------------------------------------------------------------------------
-function clienteWordPress(): PrismaClient {
+/** Bases de WordPress que se pueden leer (3307): la de las pruebas y la muestra, y el dump definitivo del 31/10/2026. */
+export const BASES_WORDPRESS: readonly string[] = ["evaristo_lectura", "evaristo_lectura_nueva"];
+export const BASE_WORDPRESS_POR_DEFECTO = "evaristo_lectura";
+
+function clienteWordPress(base: string = BASE_WORDPRESS_POR_DEFECTO): PrismaClient {
+  if (!BASES_WORDPRESS.includes(base)) throw new Error(`Base de WordPress no permitida: ${base}`);
   return new PrismaClient({
-    adapter: new PrismaMariaDb({ host: "127.0.0.1", port: 3307, user: "root", database: "evaristo_lectura", connectionLimit: 2, initSql: SOLO_LECTURA }),
+    adapter: new PrismaMariaDb({ host: "127.0.0.1", port: 3307, user: "root", database: base, connectionLimit: 2, initSql: SOLO_LECTURA }),
   });
 }
 
@@ -73,8 +78,8 @@ export async function abrirSoloCms(): Promise<{ bd: Consulta; cerrar: () => Prom
 }
 
 /** Abre solo la conexión de lectura a WordPress (sesión READ ONLY verificada). Para los tests del flujo, que leen el CMS de otra base. */
-export async function abrirSoloWordPress(): Promise<{ wp: Consulta; cerrar: () => Promise<void> }> {
-  const clienteWp = clienteWordPress();
+export async function abrirSoloWordPress(base: string = BASE_WORDPRESS_POR_DEFECTO): Promise<{ wp: Consulta; cerrar: () => Promise<void> }> {
+  const clienteWp = clienteWordPress(base);
   const wp: Consulta = (sql, ...p) => consultar(clienteWp, sql, ...p);
   const [{ ro }] = (await wp("SELECT @@session.transaction_read_only AS ro")) as [Fila];
   if (num(ro) !== 1) { await clienteWp.$disconnect(); throw new Error("La sesión no está en solo lectura: se aborta"); }
@@ -82,8 +87,8 @@ export async function abrirSoloWordPress(): Promise<{ wp: Consulta; cerrar: () =
 }
 
 /** Abre las dos conexiones de solo lectura y comprueba que las sesiones lo estén; si no, aborta. */
-export async function abrirConexiones(): Promise<Conexiones> {
-  const clienteWp = clienteWordPress();
+export async function abrirConexiones(baseWordPress: string = BASE_WORDPRESS_POR_DEFECTO): Promise<Conexiones> {
+  const clienteWp = clienteWordPress(baseWordPress);
   const cms = clienteCms();
   const wp: Consulta = (sql, ...p) => consultar(clienteWp, sql, ...p);
   const bd: Consulta = (sql, ...p) => consultar(cms, sql, ...p);
@@ -99,6 +104,9 @@ export async function abrirConexiones(): Promise<Conexiones> {
 export const leerOpciones = (wp: Consulta) =>
   wp(`SELECT option_name AS k, option_value AS v FROM ${T("options")} WHERE option_name IN ('permalink_structure','gmt_offset','timezone_string')`);
 
+/** Ids de todos los artículos que se migran (--todos): post_type=post en los estados que tienen sentido; la papelera y los autoguardados no. */
+export const leerIdsAMigrar = (wp: Consulta) =>
+  wp(`SELECT ID AS id FROM ${T("posts")} WHERE post_type = 'post' AND post_status IN ('publish','draft','private','future','pending') ORDER BY ID`);
 export const leerPosts = (wp: Consulta, ids: number[]) => wp(
   `SELECT ID AS id, post_type AS tipo, post_status AS estado, post_author AS autor, post_name AS nombre, post_title AS titulo, post_content AS contenido,
           DATE_FORMAT(post_date, '%Y-%m-%d %H:%i:%s') AS fecha, DATE_FORMAT(post_date_gmt, '%Y-%m-%d %H:%i:%s') AS fechaGmt
@@ -185,6 +193,36 @@ export const leerArticulosPorSlug = (bd: Consulta, slug: string) => bd(`SELECT i
 export const leerArticulosPorWpId = (bd: Consulta, wpId: number) => bd("SELECT id FROM articulos WHERE wpId = ?", wpId);
 export const leerAutoresPorSlugOWpUserId = (bd: Consulta, slug: string, wpUserId: number) =>
   bd(`SELECT id, slug, wpUserId FROM autores WHERE slug = ? COLLATE ${COLACION} OR wpUserId = ?`, slug, wpUserId);
+
+/** De a cuántos valores van las consultas en lote (cada uno usa 2 o 3 parámetros; el límite de MySQL es 65.535). */
+export const TAMANO_LOTE = 500;
+
+/**
+ * En lote: los artículos del CMS cuyo slug es igual (con la intercalación del CMS) a alguno de `slugs`. Cada fila trae `i`, el índice en `slugs`.
+ * Una consulta por cada TAMANO_LOTE slugs, con una tabla de valores (VALUES ROW): no crea tablas.
+ */
+export async function leerArticulosPorSlugs(bd: Consulta, slugs: readonly string[]): Promise<Fila[]> {
+  const filas: Fila[] = [];
+  for (let desde = 0; desde < slugs.length; desde += TAMANO_LOTE) {
+    const lote = slugs.slice(desde, desde + TAMANO_LOTE);
+    const sql = `SELECT t.i AS i, a.id AS id, a.slug AS slug, a.wpId AS wpId FROM (VALUES ${lote.map(() => "ROW(?, ?)").join(",")}) AS t(i, s)
+      JOIN articulos a ON a.slug = t.s COLLATE ${COLACION}`;
+    filas.push(...await bd(sql, ...lote.flatMap((s, k) => [desde + k, s])));
+  }
+  return filas;
+}
+
+/** En lote: los autores del CMS con el mismo slug (intercalación del CMS) o el mismo wpUserId que alguno de `pares`. Cada fila trae `i`. */
+export async function leerAutoresPorSlugsOWpUserIds(bd: Consulta, pares: ReadonlyArray<{ slug: string; wpUserId: number }>): Promise<Fila[]> {
+  const filas: Fila[] = [];
+  for (let desde = 0; desde < pares.length; desde += TAMANO_LOTE) {
+    const lote = pares.slice(desde, desde + TAMANO_LOTE);
+    const sql = `SELECT t.i AS i, a.id AS id, a.slug AS slug, a.wpUserId AS wpUserId FROM (VALUES ${lote.map(() => "ROW(?, ?, ?)").join(",")}) AS t(i, s, w)
+      JOIN autores a ON a.slug = t.s COLLATE ${COLACION} OR a.wpUserId = t.w`;
+    filas.push(...await bd(sql, ...lote.flatMap((p, k) => [desde + k, p.slug, p.wpUserId])));
+  }
+  return filas;
+}
 export const leerSeccionesCms = (bd: Consulta) => bd("SELECT slug FROM secciones");
 export const leerCategoriasCms = (bd: Consulta) => bd("SELECT slug FROM categorias");
 
