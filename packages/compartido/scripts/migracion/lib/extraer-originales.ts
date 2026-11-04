@@ -9,6 +9,7 @@
 // Dos candidatos en un mismo nivel es un error (ambiguo): no se adivina. Un adjunto sin candidato es un error (faltante).
 // Los archivos que quedan compartidos por dos adjuntos se resuelven con `resolverCompartidos` (más abajo).
 import { closeSync, fstatSync, openSync, readSync } from "node:fs";
+import { deflateSync } from "node:zlib";
 import { asignarClavesCms, claveComparable, type AdjuntoConClave, type ResultadoClavesCms } from "./claves-cms.ts";
 
 // ---------------------------------------------------------------- CP850
@@ -272,7 +273,11 @@ export function resolverCompartidos(
 // choques ni por mayúsculas ni por tildes.
 
 export interface FilaDeEscritura { id: number; clave: string; nombreEnPaquete: string; coincidencia: Coincidencia | "miniatura"; comparteCon: string }
-export interface Escritura { nombre: string; entrada: EntradaTar; filas: FilaDeEscritura[] }
+export interface Escritura {
+  nombre: string; entrada: EntradaTar; filas: FilaDeEscritura[];
+  /** El original es un BMP: se escribe convertido a PNG (`/media/` no sirve BMP), con el nombre terminado en .png. */
+  convertirBmp?: boolean;
+}
 export interface PlanEscrituras {
   escrituras: Escritura[];
   /** id -> clave en el CMS, solo de los renombrados. */
@@ -305,6 +310,68 @@ export function armarEscrituras(plan: PlanExtraccion, res: ResolucionCompartidos
   }
   escrituras.sort((x, y) => x.entrada.inicio - y.entrada.inicio);
   return { escrituras, renombradas: cms.renombradas, grupos: cms.grupos, errores };
+}
+
+// ---------------------------------------------------------------- BMP a PNG (Etapa 1, punto 3)
+//
+// Hay 8 adjuntos que son BMP (uno con extensión .jpg): no se pueden medir sin librería y `/media/` no los sirve. Todos son BMP de 24 bits sin
+// compresión, así que se convierten a PNG acá, sin dependencias (PNG = zlib + CRC-32). El nombre en el CMS pasa a terminar en .png y queda en el
+// mapa (clave_cms), como cualquier renombrado: la migración no necesita saber nada más. Otro tipo de BMP es un error: no se adivina.
+
+export const esBmp = (b: Uint8Array) => b.length >= 2 && b[0] === 0x42 && b[1] === 0x4d;
+
+const TABLA_CRC = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+function crc32(b: Uint8Array): number {
+  let c = 0xffffffff;
+  for (const x of b) c = TABLA_CRC[(c ^ x) & 0xff]! ^ (c >>> 8);
+  return (c ^ 0xffffffff) >>> 0;
+}
+const FIRMA_PNG = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const trozoPng = (tipo: string, datos: Buffer) => {
+  const t = Buffer.from(tipo, "latin1"), largo = Buffer.alloc(4), crc = Buffer.alloc(4);
+  largo.writeUInt32BE(datos.length);
+  crc.writeUInt32BE(crc32(Buffer.concat([t, datos])));
+  return Buffer.concat([largo, t, datos, crc]);
+};
+
+/** Un BMP de 24 bits sin compresión (BITMAPINFOHEADER o posterior, de abajo arriba o de arriba abajo) convertido a PNG RGB de 8 bits. */
+export function bmpAPng(b: Buffer): Buffer {
+  if (!esBmp(b) || b.length < 54) throw new Error("no es un BMP");
+  const inicio = b.readUInt32LE(10), cabecera = b.readUInt32LE(14), ancho = b.readInt32LE(18), altoFirmado = b.readInt32LE(22);
+  const planos = b.readUInt16LE(26), bits = b.readUInt16LE(28), compresion = b.readUInt32LE(30);
+  if (cabecera < 40 || planos !== 1 || bits !== 24 || compresion !== 0 || ancho <= 0 || altoFirmado === 0) {
+    throw new Error(`BMP no soportado (cabecera ${cabecera}, ${bits} bits, compresión ${compresion}): solo 24 bits sin compresión`);
+  }
+  const alto = Math.abs(altoFirmado), deAbajoArriba = altoFirmado > 0, paso = Math.ceil((ancho * 3) / 4) * 4;
+  if (inicio + paso * alto > b.length) throw new Error("BMP cortado: faltan píxeles");
+  const fila = ancho * 3 + 1, crudo = Buffer.alloc(fila * alto);
+  for (let y = 0; y < alto; y++) {
+    const o = inicio + (deAbajoArriba ? alto - 1 - y : y) * paso, d = y * fila; // crudo[d] = 0: sin filtro PNG
+    for (let x = 0; x < ancho; x++) { crudo[d + 1 + x * 3] = b[o + x * 3 + 2]!; crudo[d + 2 + x * 3] = b[o + x * 3 + 1]!; crudo[d + 3 + x * 3] = b[o + x * 3]!; }
+  }
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(ancho, 0); ihdr.writeUInt32BE(alto, 4); ihdr[8] = 8; ihdr[9] = 2; // 8 bits, RGB
+  return Buffer.concat([FIRMA_PNG, trozoPng("IHDR", ihdr), trozoPng("IDAT", deflateSync(crudo, { level: 9 })), trozoPng("IEND", Buffer.alloc(0))]);
+}
+
+/**
+ * Marca para convertir las escrituras cuyo contenido es BMP y les cambia el nombre a .png (`072-2.bmp` -> `072-2.png`, `cosecha-roja1.jpg` ->
+ * `cosecha-roja1.png`). Devuelve los cambios y los errores: un nombre nuevo que choca con otro (el CMS no los distingue) no se adivina.
+ */
+export function marcarBmps(escrituras: Escritura[], esBmpEntrada: (e: EntradaTar) => boolean): { convertidas: Array<{ de: string; a: string }>; errores: string[] } {
+  const r = { convertidas: [] as Array<{ de: string; a: string }>, errores: [] as string[] };
+  const usados = new Map(escrituras.map((e) => [claveComparable(e.nombre), e]));
+  for (const e of escrituras) {
+    if (!esBmpEntrada(e.entrada)) continue;
+    const nuevo = e.nombre.replace(/\.[^./]*$/, "") + ".png", otro = usados.get(claveComparable(nuevo));
+    if (otro && otro !== e) { r.errores.push(`«${e.nombre}» es un BMP y como «${nuevo}» choca con «${otro.nombre}»`); continue; }
+    usados.delete(claveComparable(e.nombre));
+    usados.set(claveComparable(nuevo), e);
+    r.convertidas.push({ de: e.nombre, a: nuevo });
+    e.nombre = nuevo;
+    e.convertirBmp = true;
+  }
+  return r;
 }
 
 // ---------------------------------------------------------------- fotos de autor (decisión 80)

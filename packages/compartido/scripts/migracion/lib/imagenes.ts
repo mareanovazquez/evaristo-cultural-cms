@@ -46,6 +46,35 @@ export function dimensiones(b: Buffer, mime: string | null): { ancho: number; al
   return medida && medida.ancho > 0 && medida.alto > 0 ? medida : null;
 }
 
+/**
+ * La orientación EXIF (1 a 8) de un JPEG, o null si no la declara. Lee el segmento APP1 «Exif» y el IFD0; no necesita librerías.
+ * 5 a 8 significan que la imagen va girada 90° (el ancho y el alto se intercambian al mostrarla).
+ */
+export function orientacionExif(b: Buffer): number | null {
+  if (b.length < 4 || b[0] !== 0xff || b[1] !== 0xd8) return null;
+  let i = 2;
+  while (i + 4 <= b.length && b[i] === 0xff) {
+    const marcador = b[i + 1]!, largo = b.readUInt16BE(i + 2);
+    if (marcador === 0xda || marcador === 0xd9) return null; // empiezan los datos de la imagen: no hay EXIF antes
+    if (marcador === 0xe1 && i + 10 <= b.length && b.subarray(i + 4, i + 10).toString("latin1") === "Exif\0\0") {
+      const t = i + 10, fin = i + 2 + largo;
+      if (t + 8 > fin || fin > b.length) return null;
+      const le = b.subarray(t, t + 2).toString("latin1") === "II";
+      const u16 = (o: number) => (le ? b.readUInt16LE(o) : b.readUInt16BE(o)), u32 = (o: number) => (le ? b.readUInt32LE(o) : b.readUInt32BE(o));
+      const ifd = t + u32(t + 4);
+      if (ifd + 2 > fin) return null;
+      const n = u16(ifd);
+      for (let k = 0; k < n && ifd + 2 + k * 12 + 12 <= fin; k++) {
+        const e = ifd + 2 + k * 12;
+        if (u16(e) === 0x0112) { const v = u16(e + 8); return v >= 1 && v <= 8 ? v : null; }
+      }
+      return null;
+    }
+    i += 2 + largo;
+  }
+  return null;
+}
+
 // ---------------------------------------------------------------------------------------------------------------
 // Medición de los originales
 // ---------------------------------------------------------------------------------------------------------------
@@ -91,7 +120,9 @@ export function crearMedidor(carpeta: string): (clave: string) => Medicion {
         let b: Buffer;
         try { b = readFileSync(dir); } catch { return sinArchivo({ estado: "ilegible", archivo: real, diferenciaDeNombre, motivo: "no se pudo leer el archivo" }); }
         const mime = tipoPorContenido(b);
-        const d = mime !== null && MIMES_SOPORTADOS.includes(mime) ? dimensiones(b, mime) : null;
+        const medida = mime !== null && MIMES_SOPORTADOS.includes(mime) ? dimensiones(b, mime) : null;
+        // Orientación EXIF 5 a 8 (la foto va girada 90°): el navegador la muestra derecha, así que el ancho y el alto que importan son los girados
+        const d = medida && mime === "image/jpeg" && (orientacionExif(b) ?? 1) >= 5 ? { ancho: medida.alto, alto: medida.ancho } : medida;
         const base = { archivo: real, diferenciaDeNombre, bytes: b.length, sha256: createHash("sha256").update(b).digest("hex"), mime, ancho: d?.ancho ?? null, alto: d?.alto ?? null };
         if (d) return { estado: "medida", ...base };
         const motivo = mime === null ? "tipo de contenido no reconocido" : MIMES_SOPORTADOS.includes(mime) ? `no se pudieron leer las dimensiones de ${mime}` : `formato no soportado: ${mime}`;

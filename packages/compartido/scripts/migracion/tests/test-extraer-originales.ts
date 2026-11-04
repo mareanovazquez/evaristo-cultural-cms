@@ -2,9 +2,10 @@
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
+import { inflateSync } from "node:zlib";
 import { join } from "node:path";
 import {
-  abrirTar, armarEscrituras, decodificarCp850, decodificarUtf8, emparejar, esProporcional, indexarTar, leerMapaAvataresCsv, leerMapaCsv, mapaAvataresCsv, mapaCsv, planAvatares, motivoNombreInvalido, parsearArgumentos, planificar, resolverCompartidos,
+  abrirTar, armarEscrituras, bmpAPng, decodificarCp850, decodificarUtf8, emparejar, esProporcional, indexarTar, leerMapaAvataresCsv, leerMapaCsv, mapaAvataresCsv, mapaCsv, marcarBmps, planAvatares, motivoNombreInvalido, parsearArgumentos, planificar, resolverCompartidos,
   type DatosAdjunto, type EntradaTar, type LectorTar, type Medida,
 } from "../lib/extraer-originales.ts";
 import { tamanosDeMetadatos } from "../lib/verificar-descarga.ts";
@@ -280,6 +281,43 @@ t("planAvatares y mapa de avatares: un bpfull por usuario, como avatar-<id>.<ext
   assert.ok(csv.startsWith("﻿wp_user_id,clave_cms,nombre_en_paquete,bytes,sha256\r\n77,"));
   assert.deepEqual([...leerMapaAvataresCsv(csv)], [[77, "avatar-77.jpg"], [404, "avatar-404.jpg"]]);
   assert.throws(() => leerMapaAvataresCsv(mapaCsv([])), /cabecera/);
+});
+
+t("bmpAPng: BMP de 24 bits (de abajo arriba y de arriba abajo, con relleno de fila) a PNG con los mismos píxeles; otros BMP, error", () => {
+  // 3 × 2 píxeles: fila de arriba rojo, verde, azul; fila de abajo blanco, negro, gris. Cada fila ocupa 9 bytes + 3 de relleno.
+  const arriba = [[255, 0, 0], [0, 255, 0], [0, 0, 255]], abajo = [[255, 255, 255], [0, 0, 0], [128, 128, 128]];
+  const bmp = (deAbajoArriba: boolean, bits = 24) => {
+    const fila = (px: number[][]) => Buffer.concat([Buffer.from(px.flatMap(([r, g, b]) => [b!, g!, r!])), Buffer.alloc(3)]);
+    const pixeles = Buffer.concat(deAbajoArriba ? [fila(abajo), fila(arriba)] : [fila(arriba), fila(abajo)]);
+    const h = Buffer.alloc(54);
+    h.write("BM", 0, "latin1"); h.writeUInt32LE(54 + pixeles.length, 2); h.writeUInt32LE(54, 10); h.writeUInt32LE(40, 14);
+    h.writeInt32LE(3, 18); h.writeInt32LE(deAbajoArriba ? 2 : -2, 22); h.writeUInt16LE(1, 26); h.writeUInt16LE(bits, 28); h.writeUInt32LE(0, 30);
+    return Buffer.concat([h, pixeles]);
+  };
+  for (const deAbajoArriba of [true, false]) {
+    const png = bmpAPng(bmp(deAbajoArriba));
+    assert.ok(png.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])));
+    assert.deepEqual([png.readUInt32BE(16), png.readUInt32BE(20), png[24], png[25]], [3, 2, 8, 2], "IHDR: 3 × 2, 8 bits, RGB");
+    // los datos de IDAT, descomprimidos: una fila por línea, con el byte de filtro 0 adelante
+    let i = 8, idat = Buffer.alloc(0);
+    while (i < png.length) { const largo = png.readUInt32BE(i), tipo = png.subarray(i + 4, i + 8).toString("latin1"); if (tipo === "IDAT") idat = Buffer.concat([idat, png.subarray(i + 8, i + 8 + largo)]); i += 12 + largo; }
+    assert.deepEqual([...inflateSync(idat)], [0, ...arriba.flat(), 0, ...abajo.flat()], deAbajoArriba ? "de abajo arriba" : "de arriba abajo");
+  }
+  assert.throws(() => bmpAPng(bmp(true, 8)), /no soportado/);
+  assert.throws(() => bmpAPng(bmp(true).subarray(0, 60)), /cortado/);
+  assert.throws(() => bmpAPng(Buffer.from("no es un bmp, es texto largo ".repeat(3))), /no es un BMP/);
+});
+
+t("marcarBmps: los BMP pasan a .png (aunque tengan otra extensión); un nombre nuevo que choca es error", () => {
+  const esc = (nombre: string, inicio: number) => ({ nombre, entrada: ent(nombre, inicio), filas: [] });
+  const lista = [esc("072-2.bmp", 0), esc("cosecha-roja1.jpg", 512), esc("normal.jpg", 1024)];
+  const r = marcarBmps(lista, (e) => e.inicio !== 1024);
+  assert.deepEqual(r.convertidas, [{ de: "072-2.bmp", a: "072-2.png" }, { de: "cosecha-roja1.jpg", a: "cosecha-roja1.png" }]);
+  assert.deepEqual(lista.map((e) => [e.nombre, (e as { convertirBmp?: boolean }).convertirBmp ?? false]), [["072-2.png", true], ["cosecha-roja1.png", true], ["normal.jpg", false]]);
+  assert.deepEqual(r.errores, []);
+  const choque = [esc("foto.bmp", 0), esc("Foto.PNG", 512)];
+  assert.match(marcarBmps(choque, (e) => e.inicio === 0).errores[0]!, /choca con «Foto\.PNG»/);
+  assert.equal(choque[0]!.nombre, "foto.bmp", "el que choca no se cambia");
 });
 
 console.log(`${ok} pruebas de la extracción de originales ok`);

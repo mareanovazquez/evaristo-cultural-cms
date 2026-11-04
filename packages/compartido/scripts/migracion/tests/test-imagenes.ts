@@ -9,7 +9,7 @@ import { convertWpPost } from "../../../src/conversor/convert.ts";
 import { armar } from "../lib/armar.ts";
 import type { EntradaArmar } from "../lib/armar.ts";
 import { entradaDesdeSnapshot } from "../lib/entrada-snapshot.ts";
-import { crearMedidor, medirImagenes, nodosImagen, resolverImagen, srcDeClave, verificarEnlacesCuerpo } from "../lib/imagenes.ts";
+import { crearMedidor, medirImagenes, nodosImagen, orientacionExif, resolverImagen, srcDeClave, verificarEnlacesCuerpo } from "../lib/imagenes.ts";
 import type { Medicion } from "../lib/imagenes.ts";
 import type { AdjuntoSnapshot, MetaSnapshot, PostSnapshot } from "../lib/snapshot-tipos.ts";
 
@@ -224,6 +224,31 @@ try {
     assert.equal(p.problemas[0]!.codigo, "imagen_cuerpo_inconsistente");
     assert.match(String(p.problemas[0]!.detalle), /ya trae imagenId/);
     assert.equal(p.problemas[0]!.bloqueante, false);
+  });
+
+  t("orientación EXIF: 5 a 8 intercambian ancho y alto al medir; 1 a 4, sin EXIF o mal armado no", () => {
+    // JPEG mínimo: SOI, APP1 «Exif» con la orientación en el IFD0 (big o little endian), SOF0 de 30 × 20 y EOI
+    const jpeg = (orientacion: number | null, le = false) => {
+      const u16 = (v: number) => { const b = Buffer.alloc(2); le ? b.writeUInt16LE(v) : b.writeUInt16BE(v); return b; };
+      const u32 = (v: number) => { const b = Buffer.alloc(4); le ? b.writeUInt32LE(v) : b.writeUInt32BE(v); return b; };
+      const tiff = Buffer.concat([Buffer.from(le ? "II" : "MM", "latin1"), u16(42), u32(8), u16(1), u16(0x0112), u16(3), u32(1), u16(orientacion ?? 1), u16(0), u32(0)]);
+      const app1Datos = Buffer.concat([Buffer.from("Exif\0\0", "latin1"), tiff]);
+      const app1 = orientacion === null ? Buffer.alloc(0) : Buffer.concat([Buffer.from([0xff, 0xe1]), Buffer.from([(app1Datos.length + 2) >> 8, (app1Datos.length + 2) & 0xff]), app1Datos]);
+      const sof = Buffer.from([0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 20, 0x00, 30, 0x01, 0x01, 0x11, 0x00]);
+      return Buffer.concat([Buffer.from([0xff, 0xd8]), app1, sof, Buffer.from([0xff, 0xd9])]);
+    };
+    assert.equal(orientacionExif(jpeg(6)), 6);
+    assert.equal(orientacionExif(jpeg(8, true)), 8);
+    assert.equal(orientacionExif(jpeg(null)), null);
+    assert.equal(orientacionExif(Buffer.from("no es un jpeg")), null);
+    assert.equal(orientacionExif(jpeg(6).subarray(0, 20)), null, "cortado: no rompe");
+    const dir = join(carpeta, "exif");
+    mkdirSync(dir);
+    for (const [n, o] of [["o1.jpg", 1], ["o3.jpg", 3], ["o5.jpg", 5], ["o6.jpg", 6], ["o8.jpg", 8], ["sin.jpg", null]] as const) writeFileSync(join(dir, n), jpeg(o));
+    const medir = crearMedidor(dir);
+    const medida = (n: string) => { const m = medir(n); return [m.ancho, m.alto]; };
+    assert.deepEqual(["o1.jpg", "o3.jpg", "sin.jpg"].map(medida), [[30, 20], [30, 20], [30, 20]]);
+    assert.deepEqual(["o5.jpg", "o6.jpg", "o8.jpg"].map(medida), [[20, 30], [20, 30], [20, 30]], "giradas 90°: ancho y alto intercambiados");
   });
 } finally {
   rmSync(carpeta, { recursive: true, force: true });

@@ -15,7 +15,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { abrirWordPress, leerAdjuntos } from "./lib/adjuntos-wp.ts";
 import {
-  abrirTar, armarEscrituras, emparejar, indexarTar, mapaAvataresCsv, mapaCsv, nombreLegible, parsearArgumentos, planAvatares, planificar, resolverCompartidos,
+  abrirTar, armarEscrituras, bmpAPng, emparejar, esBmp, marcarBmps, indexarTar, mapaAvataresCsv, mapaCsv, nombreLegible, parsearArgumentos, planAvatares, planificar, resolverCompartidos,
   type Coincidencia, type EntradaTar, type FilaMapa, type FilaMapaAvatar, type Medida,
 } from "./lib/extraer-originales.ts";
 import { dimensiones, tipoPorContenido } from "./lib/imagenes.ts";
@@ -77,6 +77,10 @@ async function principal(): Promise<number> {
     console.log(`  claves que el CMS no distingue: ${miles(esc.grupos.length)} grupos; renombrados con -wp<id>: ${miles(esc.renombradas.size)}`);
     if (esc.renombradas.size) console.log(muestra([...esc.renombradas].map(([id, c]) => `${id} → ${c}`), 5));
     console.log(`  ERRORES EN LOS NOMBRES FINALES: ${miles(esc.errores.length)}`); if (esc.errores.length) console.log(muestra(esc.errores));
+    // BMP a PNG (Etapa 1, punto 3): se miran los dos primeros bytes de cada original; los BMP pasan a .png.
+    const bmps = marcarBmps(esc.escrituras, (e) => esBmp(tar.leer(e.inicio, Math.min(2, e.bytes))));
+    console.log(`  BMP convertidos a PNG: ${miles(bmps.convertidas.length)}${bmps.convertidas.length ? ` (${bmps.convertidas.map((c) => `${c.de} → ${c.a}`).join(", ")})` : ""}; ERRORES: ${miles(bmps.errores.length)}`);
+    if (bmps.errores.length) console.log(muestra(bmps.errores));
     // Fotos de autor (decisión 80): el avatar grande de cada usuario, como avatar-<id>.<ext>, en la misma carpeta.
     const av = planAvatares(indice.archivos, esc.escrituras.map((e) => e.nombre));
     console.log(`\n== Fotos de autor (avatares de BuddyPress) ==\n  ${miles(av.avatares.length)} usuarios con foto; ERRORES: ${miles(av.errores.length)}`);
@@ -93,7 +97,7 @@ async function principal(): Promise<number> {
     }
     console.log(`\n== En el paquete y sin adjunto (se quedan ahí) ==\n  miniaturas: ${miles(sobrantes.derivadas)}; otros: ${miles(sobrantes.otros.length)}`);
 
-    const errores = emp.faltantes.length + emp.ambiguos.length + res.sinResolver.length + esc.errores.length + av.errores.length;
+    const errores = emp.faltantes.length + emp.ambiguos.length + res.sinResolver.length + esc.errores.length + bmps.errores.length + av.errores.length;
     const informe = {
       generadoEn: new Date().toISOString(), paquete: args.paquete, base: args.base, destino, mapa: rutaMapa,
       adjuntos: adjuntos.length, archivosEnPaquete: indice.archivos.length, otrosTipos: indice.otros,
@@ -102,6 +106,7 @@ async function principal(): Promise<number> {
       faltantes: emp.faltantes, ambiguos: emp.ambiguos, compartidos: grupos, sinResolver: res.sinResolver,
       reemplazos: res.reemplazos.map((x) => ({ id: x.id, clave: x.clave, miniatura: x.miniatura, medida: x.medida, original: x.original, dueno: x.dueno })),
       clavesCms: { grupos: esc.grupos, renombradas: Object.fromEntries(esc.renombradas), errores: esc.errores },
+      bmpConvertidos: bmps.convertidas, erroresBmp: bmps.errores,
       avatares: { usuarios: av.avatares.map((a) => ({ wpUserId: a.wpUserId, nombre: a.nombre, nombreEnPaquete: a.nombreEnPaquete })), errores: av.errores },
       sobrantes,
       extraidos: null as null | { archivos: number; avatares: number; bytes: number },
@@ -113,7 +118,8 @@ async function principal(): Promise<number> {
       const filas: FilaMapa[] = [];
       let bytes = 0, hechos = 0;
       for (const e of esc.escrituras) {
-        const datos = tar.leer(e.entrada.inicio, e.entrada.bytes);
+        const crudo = tar.leer(e.entrada.inicio, e.entrada.bytes);
+        const datos = e.convertirBmp ? bmpAPng(crudo) : crudo;
         writeFileSync(join(destino, e.nombre), datos, { flag: "wx" }); // wx: falla si ya existe, nunca pisa
         bytes += datos.length;
         const sha256 = createHash("sha256").update(datos).digest("hex");
