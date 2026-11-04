@@ -174,6 +174,11 @@ t("T14: --escribir se acepta al parsear (no lo habilita: eso lo decide confirmac
   falla(["--todos", "--wordpress=evaristo_cms"], /--wordpress: solo evaristo_lectura o evaristo_lectura_nueva/);
   falla(["--todos", "--wordpress"], /necesita un valor/);
   falla(["--todos", "--wordpress=evaristo_lectura", "--wordpress=evaristo_lectura_nueva"], /repetido/);
+  // --mapa: opcional; sin la opción, el campo no aparece
+  assert.equal(parsear("--todos", "--mapa=C:\\a b\\mapa-originales.csv").mapa, "C:\\a b\\mapa-originales.csv");
+  assert.equal("mapa" in parsear("--todos"), false);
+  falla(["--todos", "--mapa"], /--mapa necesita un valor/);
+  falla(["--todos", "--mapa="], /necesita un valor/);
 });
 
 console.log(`${ok} pruebas de conexiones ok`);

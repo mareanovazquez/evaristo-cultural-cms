@@ -11,6 +11,9 @@ import type { Informe } from "./informe.ts";
 import { leerCuentas } from "./leer-wordpress.ts";
 import type { Consulta } from "./leer-wordpress.ts";
 import { prepararPlan } from "./preparar.ts";
+import { leerMapaCsv } from "./extraer-originales.ts";
+import { clavesDesdeMapa } from "./mapa-originales.ts";
+import { readFileSync } from "node:fs";
 import type { OpcionesPreparar, Preparado } from "./preparar.ts";
 import { leerLargosSchema, cuentasDeFilas } from "./validar.ts";
 
@@ -20,6 +23,8 @@ export interface DependenciasSimular {
   largos?: ReadonlyMap<string, number>;
   medir?: OpcionesPreparar["medir"];
   ahora?: () => Date;
+  /** Para los tests: cómo se lee el archivo del mapa. */
+  leerArchivo?: (ruta: string) => string;
   /** El destino que valida el plan. Por defecto DESTINO_REAL; el flujo de escritura pasa el destino de su corrida. */
   destinoPermitido?: OpcionesPreparar["destinoPermitido"];
 }
@@ -36,6 +41,13 @@ export async function simular(
   const entrada = await (deps.leerEntrada ?? entradaEnVivo)(wp, bd, opciones.alcance);
   const ids = opciones.alcance.tipo === "ids" ? entrada.ids.filter((id) => (opciones.alcance as { ids: number[] }).ids.includes(id)) : entrada.ids;
   entrada.ids = ids;
+  // Con --mapa: las claves del CMS y los originales reducidos (decisiones 79 y 81). Si el mapa no es de esta base de WordPress, no se sigue.
+  if (opciones.mapa) {
+    const delMapa = clavesDesdeMapa(leerMapaCsv((deps.leerArchivo ?? ((r: string) => readFileSync(r, "utf8")))(opciones.mapa)), entrada.adjuntoPorClave);
+    if (delMapa.errores.length) throw new Error(`El mapa ${opciones.mapa} no corresponde a esta base de WordPress (${delMapa.errores.length} adjuntos; el primero: ${delMapa.errores[0]})`);
+    entrada.clavesCms = delMapa.clavesCms;
+    entrada.originalesReducidos = delMapa.originalesReducidos;
+  }
 
   const filasCuentasWp = cuentasDeFilas(await leerCuentas(wp, entrada.cuentas.map((c) => c.wpUserId)));
   const preparado = await prepararPlan({

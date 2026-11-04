@@ -13,6 +13,7 @@ import type { Medicion } from "../lib/imagenes.ts";
 import { COLACION, SOLO_LECTURA, consultar, validarSoloSelect } from "../lib/leer-wordpress.ts";
 import type { Consulta, Fila } from "../lib/leer-wordpress.ts";
 import { simular } from "../lib/simular.ts";
+import { mapaCsv } from "../lib/extraer-originales.ts";
 import { grafo } from "./grafo-imports.ts";
 import { leerLargosSchema } from "../lib/validar.ts";
 
@@ -124,6 +125,26 @@ await ta("T16: --ids limita la simulación; un bloqueante queda en el informe si
     leerEntrada: async (_wp, _bd, alcance) => { alcancePedido = alcance; return entradaDesdeSnapshot(); }, largos: leerLargosSchema(), medir: medirFalso,
   });
   assert.deepEqual(alcancePedido, { tipo: "todos" });
+});
+
+await ta("--mapa: las claves del CMS y los originales reducidos llegan al plan; un mapa de otra base frena la simulación", async () => {
+  const conexiones = () => ({ wp: clienteSimulado().consulta, bd: clienteSimulado().consulta, destino: { ...DESTINO_REAL }, servidorCms, servidorWordPress });
+  const deps = { leerEntrada: async () => entradaDesdeSnapshot(), largos: leerLargosSchema(), medir: medirFalso };
+  // sin mapa: una imagen cualquiera del plan, con su clave de WordPress
+  const sinMapa = (await simular(opciones, conexiones(), deps)).preparado.plan;
+  const elegida = sinMapa.imagenes.find((i) => i.usos.includes("encabezado"))!;
+  const nueva = elegida.clave.replace(/(\.[^.]+)$/, `-wp${elegida.wpId}$1`);
+  // un mapa de toda la base del snapshot, con esa imagen renombrada y marcada como miniatura
+  const filas = entrada.adjuntoPorClave.map(([c, id]) => ({ id, clave: c, claveCms: id === elegida.wpId ? nueva : c, nombreEnPaquete: c, coincidencia: (id === elegida.wpId ? "miniatura" : "exacto") as "miniatura" | "exacto", comparteCon: "", bytes: 1, sha256: "0" }));
+  const leidos: string[] = [];
+  const conMapa = await simular({ ...opciones, mapa: "C:\\x\\mapa-originales.csv" }, conexiones(), { ...deps, leerArchivo: (r) => { leidos.push(r); return mapaCsv(filas); } });
+  assert.deepEqual(leidos, ["C:\\x\\mapa-originales.csv"]);
+  const fila = conMapa.preparado.plan.imagenes.find((i) => i.wpId === elegida.wpId)!;
+  assert.deepEqual([fila.clave, fila.nombreOriginal], [nueva, elegida.nombreOriginal], "la fila usa la clave del CMS y conserva el nombre de WordPress");
+  assert.ok(conMapa.preparado.plan.articulos.some((a) => a.avisosMigracion?.migracion.some((x) => x.code === "original_reducido" && (x.detalle as { adjuntoWpId: number }).adjuntoWpId === elegida.wpId)), "aviso original_reducido");
+  // un mapa al que le falta un adjunto (o que tiene otra clave) no es de esta base: no se sigue
+  await assert.rejects(() => simular({ ...opciones, mapa: "m.csv" }, conexiones(), { ...deps, leerArchivo: () => mapaCsv(filas.slice(1)) }), /no corresponde a esta base de WordPress/);
+  await assert.rejects(() => simular({ ...opciones, mapa: "m.csv" }, conexiones(), { ...deps, leerArchivo: () => mapaCsv(filas.map((f, k) => (k === 0 ? { ...f, clave: "otra.jpg" } : f))) }), /no corresponde a esta base de WordPress/);
 });
 
 // ---------------------------------------------------------------------------------------------------------------

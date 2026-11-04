@@ -25,6 +25,8 @@ export interface OpcionesVerificacion {
   /** No comparar los conteos globales de la base: solo lo relacionado con los artículos pedidos. */
   soloEstos: boolean;
   originales: string;
+  /** mapa-originales.csv, si la carga se hizo con --mapa (el plan esperado se arma igual). */
+  mapa?: string;
   /** El plan esperado ya armado (los tests con base lo arman del snapshot, sin WordPress ni originales). Si falta, se arma con simular(). */
   plan?: Plan;
 }
@@ -64,7 +66,7 @@ export async function verificarEscritura(o: OpcionesVerificacion): Promise<Resul
 
   // el plan esperado: simulación de solo lectura (las colisiones se miran contra la propia base verificada)
     const { preparado } = await simular(
-      { alcance: { tipo: "ids", ids: [...o.ids] }, modo: "simular", esperarArticulos: null, esperarSobrescribir: null, abortarAlPrimerError: false, sobrescribir: false, originales: o.originales },
+      { alcance: { tipo: "ids", ids: [...o.ids] }, modo: "simular", esperarArticulos: null, esperarSobrescribir: null, abortarAlPrimerError: false, sobrescribir: false, originales: o.originales, ...(o.mapa ? { mapa: o.mapa } : {}) },
       { wp, bd, destino: o.destino, servidorCms, servidorWordPress },
       { destinoPermitido: o.destino },
     );

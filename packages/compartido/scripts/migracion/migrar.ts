@@ -4,7 +4,7 @@
 //
 // Uso: npm run migrar -w @evaristo/compartido -- --muestra --simular --originales=<carpeta de originales>
 // Informe: packages/compartido/out/migracion/<fecha>-simular.json y .md (ignorados por git)
-import { readdirSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import { cargarDatosVersionados } from "./lib/entrada-snapshot.ts";
@@ -26,10 +26,11 @@ try {
   }
   if (opciones.originales === null) throw new ErrorDeArgumentos("--originales=<carpeta> es obligatorio para medir las imágenes");
   try { readdirSync(opciones.originales); } catch { throw new ErrorDeArgumentos(`--originales: no se puede leer la carpeta ${opciones.originales}`); }
+  if (opciones.mapa !== undefined && !existsSync(opciones.mapa)) throw new ErrorDeArgumentos(`--mapa: no existe el archivo ${opciones.mapa}`);
 } catch (e) {
   if (!(e instanceof ErrorDeArgumentos)) throw e;
   console.error(`Error en los argumentos: ${e.message}`);
-  console.error("Uso: migrar.ts (--muestra | --ids=a,b | --todos) [--simular] --originales=<carpeta> [--wordpress=<base>] [--abortar-al-primer-error]");
+  console.error("Uso: migrar.ts (--muestra | --ids=a,b | --todos) [--simular] --originales=<carpeta> [--wordpress=<base>] [--mapa=<mapa-originales.csv>] [--abortar-al-primer-error]");
   console.error("     migrar.ts (--muestra | --ids=a,b | --todos) --escribir ...   (se niega: la escritura es migrar-escribir.ts)");
   process.exit(2);
 }

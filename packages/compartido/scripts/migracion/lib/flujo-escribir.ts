@@ -5,7 +5,7 @@
 // construye dependenciasReales(), y las registra en un WeakSet que no se exporta: un objeto armado desde afuera no puede hacerse pasar por real.
 // Si las dependencias NO son reales, el flujo se niega, antes de leer credenciales y de conectar, salvo que el destino sea DESTINO_PRUEBAS
 // (comparación por identidad de objeto): con dependencias inyectadas nunca puede llegar al destino real ni a un destino que no sea constante.
-import { readdirSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 import { fileURLToPath } from "node:url";
 import { abrirConexionesVerificadas } from "./conexiones.ts";
@@ -89,6 +89,10 @@ export async function correrFlujoEscribir(argv: readonly string[], env: Readonly
   const { opciones, credenciales } = decision;
   try { readdirSync(opciones.originales!); } catch {
     error(`Error en los argumentos: --originales: no se puede leer la carpeta ${opciones.originales}`);
+    return 2;
+  }
+  if (opciones.mapa !== undefined && !existsSync(opciones.mapa)) {
+    error(`Error en los argumentos: --mapa: no existe el archivo ${opciones.mapa}`);
     return 2;
   }
 
