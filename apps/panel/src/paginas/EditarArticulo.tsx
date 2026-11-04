@@ -32,6 +32,14 @@ interface Exito {
 
 const vacioANull = (v: string | null): string | null => (v && v.trim() ? v : null);
 
+/** Cuánto dura una novedad nueva si no se elige otra fecha (decisión 78). */
+const DIAS_NOVEDAD = 90;
+
+/** novedadHasta propuesta al marcar «Es novedad»: el final del día, dentro de DIAS_NOVEDAD días, en la hora local. */
+function novedadPorDefecto(hoy: Date = new Date()): string {
+  return new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + DIAS_NOVEDAD, 23, 59, 59).toISOString();
+}
+
 /** novedadHasta guardada (ISO) -> valor de <input type="date"> en la hora local. */
 function fechaParaCampo(iso: string | null): string {
   if (!iso) return "";
@@ -709,16 +717,26 @@ function Formulario({ articulo, catalogos: catalogosBase, recargar, exito: exito
               <input type="checkbox" checked={campos.conCapital} onChange={(e) => poner({ conCapital: e.target.checked })} />
               Letra capital en el primer párrafo
             </label>
-            <div className="campo">
-              <label htmlFor="novedad-hasta">Novedad hasta</label>
-              <input
-                id="novedad-hasta"
-                type="date"
-                value={fechaParaCampo(campos.novedadHasta)}
-                onChange={(e) => poner({ novedadHasta: e.target.value ? fechaDesdeCampo(e.target.value) : null })}
-              />
-              <p className="ayuda">Si la completás, el artículo se marca como novedad hasta ese día.</p>
-            </div>
+            <label className="casilla">
+              <input type="checkbox" checked={campos.novedadHasta !== null} onChange={(e) => poner({ novedadHasta: e.target.checked ? novedadPorDefecto() : null })} />
+              Es novedad
+            </label>
+            {campos.novedadHasta !== null && (
+              <div className="campo">
+                <label htmlFor="novedad-hasta">Novedad hasta</label>
+                <input
+                  id="novedad-hasta"
+                  type="date"
+                  value={fechaParaCampo(campos.novedadHasta)}
+                  onChange={(e) => poner({ novedadHasta: e.target.value ? fechaDesdeCampo(e.target.value) : null })}
+                />
+                <p className="ayuda">
+                  {new Date(campos.novedadHasta) < new Date()
+                    ? 'Ya venció: no lleva la etiqueta «Novedad», pero sigue en el archivo de novedades. Si desmarcás la casilla, sale también del archivo.'
+                    : `Lleva la etiqueta «Novedad» hasta ese día (se propone ${DIAS_NOVEDAD} días; se puede cambiar). Después sigue publicado en su sección y en el archivo de novedades.`}
+                </p>
+              </div>
+            )}
             <div className="campo">
               <label htmlFor="slug">Dirección del artículo</label>
               {esBorrador ? (

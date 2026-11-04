@@ -14,7 +14,7 @@ Actualizado el 23/10/2026. Primera versión hecha con valores por defecto, para 
 
 ## Novedades
 
-- **Qué es:** una nota con el campo `novedadHasta` (fecha) vigente: el panel lo pone en «Novedad hasta» y vale **hasta el final de ese día** (decisión 15: no es una sección ni una categoría). Una novedad nueva dura 90 días por defecto, ajustable (decisión 78). Los 102 migrados de la categoría Novedades de WordPress llevan una fecha ya vencida: no cuentan como novedad pero sí figuran en el archivo.
+- **Qué es:** una nota con el campo `novedadHasta` (fecha) vigente: el panel lo pone en «Novedad hasta» y vale **hasta el final de ese día** (decisión 15: no es una sección ni una categoría). Una novedad nueva dura 90 días por defecto, ajustable (decisión 78): en el panel se marca con la casilla «Es novedad», que propone hoy + 90 días (hecho el 4/11/2026). Pueden convivir varias vigentes; cada una vence en su fecha y una nueva no reemplaza a la anterior (confirmado con Mariano el 4/11/2026). Al vencer, el artículo sigue publicado y en el archivo; solo pierde la etiqueta y el lugar en el bloque de la portada. Los 102 migrados de la categoría Novedades de WordPress llevan una fecha ya vencida: no cuentan como novedad pero sí figuran en el archivo.
 - **Dónde se ve:**
   - **Etiqueta «Novedad»** (oscura, junto a la de la sección) en las tarjetas de todos los listados y relacionados, en los resultados del buscador y sobre el título de la nota.
   - **Página `/novedades/`**: el **archivo** de todo lo que alguna vez fue novedad (decisión 78): primero las vigentes y después las vencidas, cada grupo de la más nueva a la más vieja, de a 12; solo las publicadas. La etiqueta «Novedad» se ve solo en las vigentes. Vacía, lo explica.

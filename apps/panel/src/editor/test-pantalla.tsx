@@ -34,6 +34,7 @@ let cuerpoServido: unknown = cuerpoOriginal
 let publicadoEnServido: string | null = null
 let galeriaServida: Array<{ imagenId: number; alt: string | null; epigrafe: string | null }> = []
 let fichaServida: Record<string, unknown> | null = null
+let novedadServida: string | null = null
 const articulo = (estado: string) => ({
   id: 7,
   wpId: 123,
@@ -61,7 +62,7 @@ const articulo = (estado: string) => ({
     galeria: galeriaServida,
     ficha: fichaServida,
     conCapital: false,
-    novedadHasta: null,
+    novedadHasta: novedadServida,
     slug: estado === 'BORRADOR' ? 'borrador-abc' : 'una-nota',
   },
   imagenEncabezado: { id: 5, clave: 'foto.jpg', nombreOriginal: 'foto.jpg' },
@@ -2682,6 +2683,51 @@ await t('El artículo muestra quién lo creó, quién lo editó y quién lo publ
   await act(async () => r2.unmount())
   conCambiosSinPublicar = false
   estadoArticulo = 'BORRADOR'
+})
+
+await t('novedad: al marcarla propone 90 días (ajustable), al desmarcarla se vacía, y una vencida lo explica', async () => {
+  const casilla = () => Array.from(document.querySelectorAll<HTMLInputElement>('input[type=checkbox]')).find((c) => c.closest('label')?.textContent?.trim() === 'Es novedad')
+  const fecha = () => document.getElementById('novedad-hasta') as HTMLInputElement | null
+  const dos = (n: number) => String(n).padStart(2, '0')
+  novedadServida = null
+  estadoArticulo = 'BORRADOR'
+  const r = await montar('/articulos/7')
+  await hasta(() => !!casilla(), 'la casilla «Es novedad»')
+  assert.equal(casilla()!.checked, false)
+  assert.equal(fecha(), null, 'sin novedad no se muestra la fecha')
+
+  await clic(casilla()!)
+  const hoy = new Date()
+  const en90 = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 90, 23, 59, 59)
+  assert.equal(casilla()!.checked, true)
+  assert.equal(fecha()!.value, `${en90.getFullYear()}-${dos(en90.getMonth() + 1)}-${dos(en90.getDate())}`, 'propone hoy + 90 días')
+  assert.ok(document.querySelector('.edicion-lateral')!.textContent!.includes('se propone 90 días'))
+  guardados.length = 0
+  await clic(boton('Guardar')!)
+  await hasta(() => guardados.length === 1, 'el guardado con la novedad')
+  assert.equal((guardados[0]! as { datos: J }).datos['novedadHasta'], en90.toISOString(), 'se guarda el final de ese día')
+
+  await escribir(fecha()!, '2027-03-15')
+  guardados.length = 0
+  await clic(boton('Guardar')!)
+  await hasta(() => guardados.length === 1, 'el guardado con la fecha cambiada')
+  assert.equal((guardados[0]! as { datos: J }).datos['novedadHasta'], new Date(2027, 2, 15, 23, 59, 59).toISOString(), 'la fecha se puede cambiar')
+
+  await clic(casilla()!)
+  assert.equal(fecha(), null)
+  guardados.length = 0
+  await clic(boton('Guardar')!)
+  await hasta(() => guardados.length === 1, 'el guardado sin novedad')
+  assert.equal((guardados[0]! as { datos: J }).datos['novedadHasta'], null, 'al desmarcar se vacía')
+  await act(async () => r.unmount())
+
+  novedadServida = '2020-05-01T02:59:59.000Z'
+  const r2 = await montar('/articulos/7')
+  await hasta(() => !!casilla(), 'la casilla de una novedad vencida')
+  assert.equal(casilla()!.checked, true, 'una vencida sigue marcada (está en el archivo)')
+  assert.ok(document.querySelector('.edicion-lateral')!.textContent!.includes('Ya venció'))
+  await act(async () => r2.unmount())
+  novedadServida = null
 })
 
 console.log(`\n${ok} pruebas de la pantalla ok`)

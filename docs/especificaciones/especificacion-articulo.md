@@ -229,7 +229,7 @@ Son 424 autores con artículos. Las bios, fotos y redes se completan desde el pa
 5. **Conserva los slugs de autor** de WordPress (`/author/nombre`) y arma redirecciones 301 hacia las nuevas páginas de autor.
 6. **Autores que no son personas** (caso 8.5): las cuentas institucionales y las cuatro adicionales (372 artículos en total) se crean como autores de solo texto.
 
-Las fotos y las redes no están en WordPress (el perfil solo guarda un campo obsoleto de Google+, vacío en todos los usuarios), así que se cargan a mano. Quedan para la revisión posterior a la importación: las 9 firmas que no coinciden con el autor de WordPress, las 2 firmas dentro de cuentas institucionales y los 51 títulos con el autor adelante.
+Las redes no están en WordPress (el perfil solo guarda un campo obsoleto de Google+, vacío en todos los usuarios), así que se cargan a mano. **Las fotos sí están** (decisión 80, 4/11/2026): son avatares de BuddyPress en `uploads/avatars/<id de usuario>/` (300 × 300), de 197 autores con artículos publicados. La migración las importa como foto del autor, si es persona, con el texto alternativo pendiente; las demás fotos se cargan a mano. Quedan para la revisión posterior a la importación: las 9 firmas que no coinciden con el autor de WordPress, las 2 firmas dentro de cuentas institucionales y los 51 títulos con el autor adelante.
 
 ### 13.2 Validación de lo migrado
 
