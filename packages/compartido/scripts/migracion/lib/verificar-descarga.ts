@@ -14,6 +14,11 @@ export interface AdjuntoWp {
   clave: string;
   /** `filesize` de `_wp_attachment_metadata`, si WordPress lo declara (no todas las versiones lo guardan). */
   bytesDeclarados: number | null;
+  /** Ancho y alto del original según `_wp_attachment_metadata` (los lee `leerAdjuntos`; sirven para decidir los pares que comparten archivo). */
+  ancho?: number | null;
+  alto?: number | null;
+  /** Las derivadas que declara `_wp_attachment_metadata`, con su medida (las lee `leerAdjuntos`). */
+  tamanos?: TamanoDeclarado[];
   /** Rutas de las derivadas (miniaturas y tamaños) que WordPress declara en `_wp_attachment_metadata`. */
   derivadas: string[];
 }
@@ -103,7 +108,7 @@ export function colisionesDeNombres(adjuntos: readonly AdjuntoWp[]): GrupoDeColi
   }));
 }
 
-const esDerivadaPorNombre = (ruta: string) => /-(?:\d+x\d+|scaled|e\d+)\.[A-Za-z0-9]+$/.test(ruta);
+export const esDerivadaPorNombre =(ruta: string) => /-(?:\d+x\d+|scaled|e\d+)\.[A-Za-z0-9]+$/.test(ruta);
 
 export interface ResultadoContraBase {
   adjuntos: number;
@@ -223,6 +228,19 @@ export function derivadasDeMetadatos(serializado: string, clave: string): string
   const salida: string[] = [];
   for (const m of serializado.matchAll(/s:4:"file";s:\d+:"([^"]+)"/g)) salida.push(`${dir}${m[1]!.split("/").pop()}`);
   return salida.filter((r) => r !== clave);
+}
+
+export interface TamanoDeclarado { archivo: string; ancho: number; alto: number }
+
+/** Las derivadas que declara `_wp_attachment_metadata` (en `sizes`), con ancho y alto, junto a la carpeta del original. */
+export function tamanosDeMetadatos(serializado: string, clave: string): TamanoDeclarado[] {
+  const dir = dirname(clave) === "." ? "" : `${dirname(clave)}/`;
+  const salida: TamanoDeclarado[] = [];
+  for (const m of serializado.matchAll(/s:4:"file";s:\d+:"([^"]+)";s:5:"width";i:(\d+);s:6:"height";i:(\d+);/g)) {
+    const archivo = `${dir}${m[1]!.split("/").pop()}`;
+    if (archivo !== clave) salida.push({ archivo, ancho: Number(m[2]), alto: Number(m[3]) });
+  }
+  return salida;
 }
 
 // Argumentos del comando (ver scripts/migracion/verificar-descarga.ts).

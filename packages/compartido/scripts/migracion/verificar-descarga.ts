@@ -11,38 +11,13 @@
 // El informe completo queda en out/descarga/<fecha>-verificacion.json (ignorado por git).
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { PrismaMariaDb } from "@prisma/adapter-mariadb";
-import { PrismaClient } from "../../src/generated/prisma/client.js";
-import { consultar, metadatosAdjunto, SOLO_LECTURA, type Consulta, type Fila } from "./lib/leer-wordpress.ts";
-import { num, str } from "./lib/utilidades.ts";
+import { abrirWordPress, leerAdjuntos } from "./lib/adjuntos-wp.ts";
 import {
-  compararConBase, compararConServidor, derivadasDeMetadatos, leerListaDeRutas, leerListaDelServidor, listarCarpeta, parsearArgumentos,
-  type AdjuntoWp, type ResultadoContraBase, type ResultadoContraServidor,
+  compararConBase, compararConServidor, leerListaDeRutas, leerListaDelServidor, listarCarpeta, parsearArgumentos,
+  type ResultadoContraBase, type ResultadoContraServidor,
 } from "./lib/verificar-descarga.ts";
 
 const USO = "Uso: verificar-descarga.ts --uploads=<carpeta> [--lista-servidor=<archivo>] [--apartados=<archivo>] [--base=evaristo_lectura] [--prefijo=wp_] [--sin-base]";
-
-/** Los adjuntos de WordPress con su `_wp_attached_file`, el tamaño declarado y las derivadas que declara. */
-async function leerAdjuntos(wp: Consulta, prefijo: string): Promise<AdjuntoWp[]> {
-  const filas: Fila[] = await wp(`SELECT post_id AS id, meta_key AS k, meta_value AS v FROM \`${prefijo}postmeta\` WHERE meta_key IN ('_wp_attached_file','_wp_attachment_metadata')`);
-  const claves = new Map<number, string>(), metas = new Map<number, string>();
-  for (const f of filas) (str(f["k"]) === "_wp_attached_file" ? claves : metas).set(num(f["id"]), str(f["v"]));
-  const adjuntos: AdjuntoWp[] = [];
-  for (const [id, clave] of claves) {
-    if (!clave.trim()) continue;
-    const meta = metas.get(id);
-    adjuntos.push({ id, clave, bytesDeclarados: meta ? metadatosAdjunto(meta).bytes : null, derivadas: meta ? derivadasDeMetadatos(meta, clave) : [] });
-  }
-  return adjuntos.sort((a, b) => a.id - b.id);
-}
-
-async function abrirWordPress(base: string): Promise<{ wp: Consulta; cerrar: () => Promise<void> }> {
-  const cliente = new PrismaClient({ adapter: new PrismaMariaDb({ host: "127.0.0.1", port: 3307, user: "root", database: base, connectionLimit: 2, initSql: SOLO_LECTURA }) });
-  const wp: Consulta = (sql, ...p) => consultar(cliente, sql, ...p);
-  const [{ ro }] = (await wp("SELECT @@session.transaction_read_only AS ro")) as [Fila];
-  if (num(ro) !== 1) { await cliente.$disconnect(); throw new Error("La sesión no está en solo lectura: se aborta"); }
-  return { wp, cerrar: () => cliente.$disconnect() };
-}
 
 const miles = (n: number) => n.toLocaleString("es-AR");
 const gb = (b: number) => `${(b / 1024 ** 3).toFixed(2)} GB`;

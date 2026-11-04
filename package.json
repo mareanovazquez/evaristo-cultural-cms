@@ -17,6 +17,7 @@
     "db:generate": "npm run db:generate --workspace=@evaristo/compartido",
     "db:migrate": "npm run db:migrate --workspace=@evaristo/compartido",
     "verificar:descarga": "npm run verificar:descarga --workspace=@evaristo/compartido --",
+    "extraer:originales": "npm run extraer:originales --workspace=@evaristo/compartido --",
     "test:migracion": "npm run test:migracion --workspace=@evaristo/compartido",
     "test:conversor": "npm run test:conversor --workspace=@evaristo/compartido",
     "test:media": "npm run test:media --workspace=@evaristo/api",

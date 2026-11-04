@@ -39,12 +39,12 @@
 
 ## Al retomar (15 minutos)
 
-0. **El cambio de equipo y la descarga están hechos:** se trabaja en la Lenovo y **lo que sigue es la Etapa 0b** (extraer y verificar los originales, más abajo). El Galaxy no se toca ni se vende hasta hacer la Fase D de `plan-cambio-de-equipo.md`.
+0. **El cambio de equipo y la descarga están hechos:** se trabaja en la Lenovo. **Etapa 0b: los originales están extraídos y verificados (4/11/2026); falta el paso 6** (copiarlos a `backup2` y quitar la clave de hPanel, con Mariano) y mirar lo que no es adjunto (paso 7). El Galaxy no se toca ni se vende hasta hacer la Fase D de `plan-cambio-de-equipo.md`.
 1. `git status -sb`: tiene que decir `main...origin/main` sin «ahead» ni «behind».
 2. `Test-NetConnection 127.0.0.1 -Port 3308` (siempre). El 3307 (WordPress) solo si se lee WordPress. Si están caídas, las levanta Mariano (`glosario-comandos-bases.md`).
 3. `npm run build`, `npm run typecheck`, `npm run test:pantalla`, `npm run test:conversor` y `npm run test:migracion` para saber que arrancamos en verde.
 4. **Lo que necesito de Mariano** (se puede traer en el chat, sin contraseñas):
-   - Que levante la **3307** para cargar el dump (Etapa 0b, paso 1).
+   - Que conecte **`backup2`** para copiar `originales\`, `reemplazos\` y `mapa-originales.csv` (Etapa 0b, paso 6), y que quite la clave de la Lenovo de hPanel.
    - Si el titular confirmó que **renueva el plan de Hostinger** (si no, el sitio público puede quedar fuera de línea el 28/11/2026).
    - **Dónde se va a alojar** el sitio nuevo (hosting propio, en conversación con Roxana) y si ya hay un servicio de correo. **Las credenciales no pasan por el chat ni por un documento.**
    - Si ya miró el menú, el topbar y el banner en el navegador y qué ajustó.
@@ -52,7 +52,7 @@
 ## Orden sugerido
 
 1. **Descarga de WordPress hecha el 31/10/2026 y definitiva** (paquete con todo `uploads` y base completa, verificados en la Lenovo y en `backup2`; ver `guia-descarga-wordpress.md`, «Descarga hecha»). Mariano confirmó el 31/10/2026 que no se va a publicar nada nuevo en WordPress, así que no hace falta repetirla ni volver a exportar antes de migrar. La clave de la Lenovo se quita de hPanel después de verificar los originales. Falta extraerlos del paquete y compararlos con la base. El 28/11/2026 ya no es un riesgo para los datos, pero si el plan de Hostinger no se renueva, el sitio público puede quedar fuera de línea.
-2. **Extraer y verificar los originales** (Etapa 0b): es lo que confirma que la descarga alcanza para migrar.
+2. **Extraer y verificar los originales** (Etapa 0b): **hecho el 4/11/2026**, la descarga alcanza para migrar (todos los adjuntos tienen archivo; 39 con su miniatura, decisión 79). Falta respaldarlos en `backup2` (paso 6).
 3. **El 90 días por defecto** (punto 1 de «Lo que falta de la decisión 78»), que es chico y deja cerrada la reorganización.
 4. **Fase 7, etapas 1 a 3:** adaptar el código, ensayar en una copia y hacer la migración real, en ese orden.
 5. **Si hay tiempo o llegan los contenidos:** «Quiénes somos» y «Contacto» y lo que salga de mirar el sitio en el navegador.
@@ -69,7 +69,7 @@ Lista completa en `plan-implementacion.md` (sección 10) y `pendientes.md` (secc
 - **Detalle:** `docs/guia-descarga-wordpress.md`, sección «Descarga hecha el 31/10/2026».
 - **Limpieza:** `~/descarga` ya se borró del servidor. La clave SSH de la Lenovo se quita de hPanel al terminar la Etapa 0b.
 
-### Etapa 0b: extraer y verificar los originales (Claude, con Mariano en los pasos 1 y 4)
+### Etapa 0b: extraer y verificar los originales (pasos 1 a 5 hechos el 4/11/2026)
 
 **Por qué:** la migración busca cada imagen por su `_wp_attached_file`, pero en el paquete no todos los nombres coinciden. Cruce hecho el 31/10/2026 entre `lista-completa.tsv` y el dump, solo por nombre:
 
@@ -83,14 +83,15 @@ Lista completa en `plan-implementacion.md` (sección 10) y `pendientes.md` (secc
 
 **Corrige lo anterior:** no hay 78 archivos que choquen en una carpeta de Windows, sino 39 archivos que usan dos adjuntos cada uno. `escanear0006.jpg` y `mankell.jpg` no faltan: están como `Escanear0006.jpg` y `Mankell.jpg`. Los 132.208 archivos con forma de miniatura no se extraen: la migración no los usa y quedan en el paquete.
 
-**Pasos:**
+**Pasos (1 a 5 hechos el 4/11/2026; faltan el 6, que necesita a Mariano, y el 7):**
 
-1. **Cargar el dump aparte.** Mariano levanta la 3307. Se crea `evaristo_lectura_nueva` y se carga `wordpress.sql`, como indica la guía (paso 6c). **`evaristo_lectura` no se toca.** Comprobar que tiene los 10.975 adjuntos y los 2.637 publicados.
-2. **Hacer el extractor.** Script nuevo en `packages/compartido/scripts/migracion` (`extraer-originales`), de solo lectura sobre el paquete, sin dependencias nuevas y con pruebas. Lee el `.tar` en bytes, porque el `tar` de Windows altera los nombres, y compara cada nombre con los adjuntos en este orden: exacto, CP850, sin la cola de la extensión y sin distinguir mayúsculas.
-3. **Extraer.** Destino: `CMS-EVARISTO(ASSETS)\wordpress-2026-10-31\originales\`, con cada archivo nombrado como su `_wp_attached_file`. Genera `mapa-originales.csv` (clave, nombre en el paquete, tipo de coincidencia, tamaño y SHA-256). Un adjunto sin archivo detiene el resultado como error; no se adivina.
-4. **Decidir los 39 pares con Mariano.** Comparar el archivo con los metadatos de cada adjunto (`_wp_attachment_metadata`: ancho, alto, tamaño) y mirar los casos dudosos. Si el archivo corresponde a uno solo, el otro adjunto perdió su imagen y su artículo va a la revisión manual. Contar antes cuántos artículos usan cada adjunto.
-5. **Verificar.** Correr `npm run verificar:descarga` con `--uploads=<originales>` y `--base=evaristo_lectura_nueva`, adaptándolo si hace falta. También comprobar que cada imagen abre y que coincide con sus metadatos. **Criterio de cierre:** 10.975 adjuntos resueltos, sin error, salvo los pares decididos en el paso 4.
-6. **Respaldar y cerrar.** Copiar `originales\` y `mapa-originales.csv` a `backup2`, comprobar los hashes y quitar la clave de la Lenovo de hPanel. El paquete `.tar` se conserva siempre: es la copia fiel.
+1. ✅ **Cargar el dump aparte.** `evaristo_lectura_nueva` en la 3307 (SHA-256 del dump comprobado; no trae `USE` ni `CREATE DATABASE`; carga en 20 s, sin errores): 50 tablas, 2.637 publicados, 48 borradores, 1 privado y 10.975 adjuntos con 10.975 claves distintas. `evaristo_lectura` no se tocó.
+2. ✅ **Extractor:** `npm run extraer:originales -- --paquete=<tar> --base=evaristo_lectura_nueva [--destino=<carpeta>]` (`scripts/migracion/extraer-originales.ts` y `lib/extraer-originales.ts`; 14 pruebas en `test-extraer-originales.ts`, dentro de `test:migracion`). Sin dependencias nuevas. Lee el `.tar` en bytes (GNU con nombres largos `L`, pax y ustar; comprueba la suma de control de cada encabezado), y empareja en el orden exacto, CP850, cola y mayúsculas; dos candidatos en un nivel es error. Sin `--destino` solo informa. No pisa nada: las carpetas tienen que estar vacías y el mapa no tiene que existir. La lectura de los adjuntos pasó a `lib/adjuntos-wp.ts`, compartida con `verificar:descarga`.
+3. ✅ **Extraído** a `CMS-EVARISTO(ASSETS)\wordpress-2026-10-31\`: `originales\` (10.936 archivos, 2,53 GB, cada uno con el nombre de su `_wp_attached_file`), `reemplazos\` (39 miniaturas, ver paso 4) y `mapa-originales.csv` (10.975 filas: id, clave, nombre en el paquete, coincidencia, carpeta, archivo, con quién comparte, bytes y SHA-256). Cifras: 10.643 exactos, 249 CP850, 5 con cola, 39 dueños por mayúsculas y 39 miniaturas. Sin faltantes ni ambiguos.
+4. ✅ **Los 39 pares: decisión 79** (`plan-implementacion.md`). En los 39 el archivo es del adjunto en minúscula (coinciden sus medidas); los de mayúscula usan su miniatura proporcional más grande, en `reemplazos\`.
+5. ✅ **Verificado:** `verificar:descarga` sobre `originales\` da 0 faltantes, 0 vacíos y 0 tamaños distintos; solo marca los 39 de mayúscula, que están en `reemplazos\`. El mapa contra el disco: 10.975 archivos, todos con su tamaño y su SHA-256, sin sobrantes. Medidas contra `_wp_attachment_metadata`: 10.901 coinciden; 39 son las miniaturas (más chicas, como se decidió); 25 no declaran medidas; 8 son BMP (uno, `cosecha-roja1.jpg`, es un BMP con extensión `.jpg`), que el medidor sin dependencias no lee; y 2 no son imágenes (un PDF y un DOCX). Esos 10 van a la Etapa 1, punto 3.
+   - **Ojo al copiar:** hay archivos cuya ruta pasa de 260 caracteres (por ejemplo, uno de La Vanguardia de ~200 caracteres de nombre). El Explorador y PowerShell 5.1 fallan con ellos; Node, `robocopy` y la mayoría de las herramientas modernas no. Comprobar la copia con hashes.
+6. **Respaldar y cerrar.** Copiar `originales\`, `reemplazos\` y `mapa-originales.csv` a `backup2`, comprobar los hashes contra el mapa y quitar la clave de la Lenovo de hPanel. El paquete `.tar` se conserva siempre: es la copia fiel.
 7. **Fijarse en lo que no es un adjunto.** Sin contar las miniaturas, en `uploads` hay unos 430 archivos que ningún adjunto pide. Mirar además la carpeta `avatars` (611 archivos), por si sirve para las fotos de los autores. Todo eso queda en el paquete.
 
 ### Etapa 1: lo técnico que no depende de la descarga (Claude)
