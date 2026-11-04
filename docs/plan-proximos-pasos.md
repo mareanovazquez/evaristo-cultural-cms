@@ -2,6 +2,28 @@
 
 **Documento temporal.** Se escribió el 23/10/2026 y se reescribió el 30/10/2026 al cerrar la reorganización de secciones, para arrancar sin releer todo. **Borrarlo** (con `git rm`, sacando su fila del índice de `CLAUDE.md`) cuando la fase 7 esté en marcha y lo duradero esté en `estado-fase7.md` (a crear) y en `pendientes.md`.
 
+## Dónde quedamos (4/11/2026, pausa a mitad de la Etapa 1)
+
+**Para retomar mañana, empezar por acá.** Todo lo de este día está commiteado en `main` (5 commits sin subir al empezar la pausa: `ceab152` a `0ac16df`, más el de esta nota si Mariano lo pide); **el push lo hace Mariano**.
+
+**Hecho el 4/11/2026:**
+- **Etapa 0b completa**, salvo quitar la clave SSH de la Lenovo de hPanel (Mariano). Originales extraídos con `npm run extraer:originales` a `CMS-EVARISTO(ASSETS)\wordpress-2026-10-31\originales\` (11.174 archivos: 10.975 originales con la clave del CMS y 199 fotos de autor `avatar-<id>.<ext>`), más `mapa-originales.csv` y `mapa-avatares.csv`. Copia idéntica (comparada archivo por archivo con SHA-256) en `backup2` (`E:\Proyectos frontend\CMS-EVARISTO(ASSETS)\wordpress-2026-10-31\`). El dump del 31/10 está cargado en `evaristo_lectura_nueva` (3307).
+- **Decisiones nuevas de Mariano:** 79 (39 pares que comparten archivo: el de mayúscula usa su miniatura), 80 (fotos de autor desde los avatares, texto alternativo pendiente), 81 (claves de imagen que el CMS no distingue: una lleva `-wp<id>`), 82 (los 2 publicados sin título migran como «Artículo a titular <id>»; los borradores sin título quedan afuera) y 83 (variantes de tamaño a pedido en la API).
+- **Novedades:** casilla «Es novedad» en el panel que propone 90 días (decisión 78 cerrada en el código).
+- **Etapa 1, puntos 1, 2, 3b y 3 (salvo variantes) hechos:** `--todos`, `--wordpress`, `--mapa`, `--avatares`, colisiones en lote, BMP a PNG y orientación EXIF.
+- **Simulación completa (solo lectura, 25 s), comando para repetirla:**
+  `npm run migrar -w @evaristo/compartido -- --todos --wordpress=evaristo_lectura_nueva --originales=<...\originales> --mapa=<...\mapa-originales.csv> --avatares=<...\mapa-avatares.csv>`
+  Resultado: 2.654 artículos (2.637 publicados y 17 borradores; 32 borradores afuera), 9.857 imágenes con fila, 0 faltantes, 0 sin medir, 194 autores con foto, 3.085 redirecciones. Único bloqueante, esperado: falta la sección `textos` en la real (modelo viejo; se resuelve en la Etapa 3).
+- **Pruebas al cerrar:** `test:migracion` 132, `test:migracion-db` 44, `test:migracion-flujo` 7, `test:pantalla` 93, typecheck limpio.
+
+**Lo que sigue (Mariano elige el orden):**
+1. **Variantes de tamaño (decisión 83):** a pedido en la API (`/media/<clave>?w=N`, con `sharp` ya instalado en `apps/api`), caché en disco y `srcset` en el sitio. Trabajo aparte: API, sitio y pruebas.
+2. **Etapa 1, punto 4:** arreglos de datos conocidos (el 4265, los enlaces internos de texto, el 5360 y las firmas «Por …» en el cuerpo).
+3. **Etapa 1, punto 5:** redirecciones que faltan (`/tag/`, `/feed/`, `/?p=ID`, `/wp-content/uploads/` y páginas fijas).
+4. Después: puntos 6 a 8 de la Etapa 1, el ensayo en una copia (Etapa 2; medir ahí cuánto tarda la escritura, que todavía consulta fila por fila) y la decisión de cómo convertir la real (Etapa 3).
+
+**Antes de seguir:** levantar la 3307 (`CMS-EVARISTO(ASSETS)\iniciar-mariadb.cmd`) y la 3308 (`Start-Service MySQL84` en PowerShell como administrador) y comprobarlas con `Test-NetConnection`.
+
 ## Dónde quedamos (30/10/2026)
 
 **Resuelto en estos días** (el detalle y las decisiones están en `plan-implementacion.md`, `historico/plan-reorganizacion-secciones.md` y `estado-fase4.md`):
@@ -39,7 +61,7 @@
 
 ## Al retomar (15 minutos)
 
-0. **El cambio de equipo y la descarga están hechos:** se trabaja en la Lenovo. **Etapa 0b: los originales están extraídos y verificados (4/11/2026); del paso 6 solo falta quitar la clave de la Lenovo de hPanel** (Mariano; la copia a `backup2` está hecha y verificada). El paso 7 también está hecho (decisión 80: fotos de autor). El Galaxy no se toca ni se vende hasta hacer la Fase D de `plan-cambio-de-equipo.md`.
+0. **Leer primero «Dónde quedamos (4/11/2026)», arriba.** **El cambio de equipo y la descarga están hechos:** se trabaja en la Lenovo. **Etapa 0b: los originales están extraídos y verificados (4/11/2026); del paso 6 solo falta quitar la clave de la Lenovo de hPanel** (Mariano; la copia a `backup2` está hecha y verificada). El paso 7 también está hecho (decisión 80: fotos de autor). El Galaxy no se toca ni se vende hasta hacer la Fase D de `plan-cambio-de-equipo.md`.
 1. `git status -sb`: tiene que decir `main...origin/main` sin «ahead» ni «behind».
 2. `Test-NetConnection 127.0.0.1 -Port 3308` (siempre). El 3307 (WordPress) solo si se lee WordPress. Si están caídas, las levanta Mariano (`glosario-comandos-bases.md`).
 3. `npm run build`, `npm run typecheck`, `npm run test:pantalla`, `npm run test:conversor` y `npm run test:migracion` para saber que arrancamos en verde.
