@@ -17,11 +17,11 @@ import { codigoDeSalida, formatearVerificacion, verificarEscritura } from "./lib
 
 config({ path: fileURLToPath(new URL("../../../../.env", import.meta.url)), quiet: true });
 
-const USO = "Uso: verificar-escritura.ts (--id=N | --ids=a,b,c | --muestra) [--solo-estos] [--originales=<carpeta>] [--mapa=<mapa-originales.csv>]";
+const USO = "Uso: verificar-escritura.ts (--id=N | --ids=a,b,c | --muestra) [--solo-estos] [--originales=<carpeta>] [--mapa=<mapa-originales.csv>] [--avatares=<mapa-avatares.csv>]";
 const idsMuestra = cargarDatosVersionados().ids;
 
-function argumentos(argv: readonly string[]): { ids: number[]; soloEstos: boolean; originales: string; mapa: string | null } | string {
-  let ids: number[] | null = null, soloEstos = false, originales: string | null = null, mapa: string | null = null;
+function argumentos(argv: readonly string[]): { ids: number[]; soloEstos: boolean; originales: string; mapa: string | null; avatares: string | null } | string {
+  let ids: number[] | null = null, soloEstos = false, originales: string | null = null, mapa: string | null = null, avatares: string | null = null;
   const vistos = new Set<string>();
   for (const arg of argv) {
     const nombre = arg.includes("=") ? arg.slice(0, arg.indexOf("=")) : arg;
@@ -58,23 +58,28 @@ function argumentos(argv: readonly string[]): { ids: number[]; soloEstos: boolea
         if (valor === null || valor === "") return "--mapa necesita un valor (--mapa=<mapa-originales.csv>)";
         mapa = valor;
         break;
+      case "--avatares":
+        if (valor === null || valor === "") return "--avatares necesita un valor (--avatares=<mapa-avatares.csv>)";
+        avatares = valor;
+        break;
       default: return `argumento desconocido: ${arg}`;
     }
   }
   if (ids === null) return "hay que indicar uno de --id, --ids o --muestra";
-  return { ids, soloEstos, mapa, originales: originales ?? fileURLToPath(new URL("../../../../../CMS-EVARISTO(ASSETS)/uploads-muestra/originales", import.meta.url)) };
+  return { ids, soloEstos, mapa, avatares, originales: originales ?? fileURLToPath(new URL("../../../../../CMS-EVARISTO(ASSETS)/uploads-muestra/originales", import.meta.url)) };
 }
 
 const args = argumentos(process.argv.slice(2));
 if (typeof args === "string") { console.error(`Error en los argumentos: ${args}\n${USO}`); process.exit(2); }
 if (!existsSync(args.originales)) { console.error(`Error en los argumentos: no se puede leer la carpeta de originales ${args.originales}\n${USO}`); process.exit(2); }
+if (args.avatares !== null && !existsSync(args.avatares)) { console.error(`Error en los argumentos: no existe el mapa de avatares ${args.avatares}\n${USO}`); process.exit(2); }
 if (args.mapa !== null && !existsSync(args.mapa)) { console.error(`Error en los argumentos: no existe el mapa ${args.mapa}\n${USO}`); process.exit(2); }
 
 const cms = await abrirSoloCms();
 let wp: Awaited<ReturnType<typeof abrirSoloWordPress>> | null = null;
 try {
   wp = await abrirSoloWordPress();
-  const r = await verificarEscritura({ bd: cms.bd, wp: wp.wp, destino: DESTINO_REAL, ids: args.ids, soloEstos: args.soloEstos, originales: args.originales, ...(args.mapa !== null ? { mapa: args.mapa } : {}) });
+  const r = await verificarEscritura({ bd: cms.bd, wp: wp.wp, destino: DESTINO_REAL, ids: args.ids, soloEstos: args.soloEstos, originales: args.originales, ...(args.mapa !== null ? { mapa: args.mapa } : {}), ...(args.avatares !== null ? { avatares: args.avatares } : {}) });
   for (const linea of formatearVerificacion(r, args.ids)) console.log(linea);
   process.exitCode = codigoDeSalida(r);
 } finally {

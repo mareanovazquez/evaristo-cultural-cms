@@ -186,6 +186,39 @@ try {
     assert.deepEqual([...r.fallidos.keys()].sort((a, b) => a - b), [...autor.articulosEnMuestra].sort((a, b) => a - b));
   });
 
+  await ta("D-fotos de autor (decisión 80): se crea la imagen sin wpId y se asigna; una foto cargada a mano no se pisa; repetir no cambia nada", async () => {
+    await vaciarYSembrarPruebas(prisma);
+    const { plan } = await planDePruebas(prisma);
+    const personas = plan.autores.filter((a) => !a.soloTexto);
+    const [uno, dos] = [personas[0]!, personas[1]!];
+    const foto = (wpUserId: number, hash: string) => ({ wpUserId, clave: `avatar-${wpUserId}.jpg`, nombreOriginal: `avatar-${wpUserId}.jpg`, tipoMime: "image/jpeg", ancho: 300, alto: 300, bytes: 1000, hash });
+    const conFotos = { ...plan, fotosAutor: [foto(uno.wpUserId, "1".repeat(64)), foto(dos.wpUserId, "2".repeat(64))] };
+    // el segundo autor ya existe con una foto cargada desde el panel
+    const manual = await prisma.imagen.create({ data: { clave: "subida-a-mano.jpg", nombreOriginal: "yo.jpg", tipoMime: "image/jpeg", ancho: 10, alto: 10, bytes: 10, hash: "f".repeat(64) } });
+    await prisma.autor.create({ data: { wpUserId: dos.wpUserId, slug: dos.slug, nombre: dos.nombre, soloTexto: false, fotoId: manual.id, fotoAlt: "Retrato" } });
+
+    const r = await escribirBase(prisma, conFotos);
+    assert.deepEqual(r.fotos, { enElPlan: 2, creadas: 2, asignadas: 1, sinCambios: 0, conOtraFoto: 1, difieren: 0, conflictos: 0 });
+    const a1 = (await prisma.autor.findUnique({ where: { wpUserId: uno.wpUserId }, include: { foto: true } }))!;
+    assert.deepEqual([a1.foto?.clave, a1.foto?.wpId, a1.fotoAlt], [`avatar-${uno.wpUserId}.jpg`, null, null], "foto asignada, sin wpId y con el texto alternativo pendiente");
+    const a2 = (await prisma.autor.findUnique({ where: { wpUserId: dos.wpUserId } }))!;
+    assert.deepEqual([a2.fotoId, a2.fotoAlt], [manual.id, "Retrato"], "la foto cargada a mano no se pisa");
+
+    // repetir: todo sin cambios y sin tocar actualizadoEn
+    const antes = a1.actualizadoEn.getTime();
+    const otra = await escribirBase(prisma, conFotos);
+    assert.deepEqual(otra.fotos, { enElPlan: 2, creadas: 0, asignadas: 0, sinCambios: 1, conOtraFoto: 1, difieren: 0, conflictos: 0 });
+    assert.equal((await prisma.autor.findUnique({ where: { wpUserId: uno.wpUserId } }))!.actualizadoEn.getTime(), antes);
+    assert.equal(await prisma.imagen.count({ where: { clave: { startsWith: "avatar-" } } }), 2);
+
+    // una imagen con esa clave que es de un adjunto de WordPress es conflicto: no se pisa ni se asigna
+    await vaciarYSembrarPruebas(prisma);
+    await prisma.imagen.create({ data: { clave: `avatar-${uno.wpUserId}.jpg`, nombreOriginal: "x.jpg", tipoMime: "image/jpeg", ancho: 1, alto: 1, bytes: 1, hash: "a".repeat(64), wpId: 777777 } });
+    const c = await escribirBase(prisma, { ...plan, fotosAutor: [foto(uno.wpUserId, "1".repeat(64))] });
+    assert.equal(c.fotos.conflictos, 1);
+    assert.equal((await prisma.autor.findUnique({ where: { wpUserId: uno.wpUserId } }))!.fotoId, null);
+  });
+
   console.log(`${cantidad()} pruebas con base (parte 1) ok`);
 } finally {
   await conexion.cerrar();

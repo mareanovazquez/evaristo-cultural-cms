@@ -333,6 +333,21 @@ t("T20: claves del CMS (decisión 81) y original reducido (decisión 79): fila, 
 
 const aviso = (a: { avisosMigracion: { migracion: Array<{ code: string; detalle?: unknown }> } | null }, code: string) => a.avisosMigracion?.migracion.filter((x) => x.code === code) ?? [];
 
+t("T22: decisión 80: foto para los autores que son personas, con la medición; las cuentas de solo texto no; sin medir queda sin foto", () => {
+  const cuenta = base.cuentas[0]!.wpUserId;
+  const medida = (archivo: string): Medicion => ({ estado: "medida", archivo, diferenciaDeNombre: null, bytes: 7, sha256: "9".repeat(64), mime: "image/jpeg", ancho: 300, alto: 300 });
+  const entrada = sintetica([post({ id: 900 }), post({ id: 901, autor: cuenta }), post({ id: 902, autor: 9002 })], {
+    usuarios: [usuario(9001), usuario(cuenta), usuario(9002)],
+    fotosAutor: new Map([[9001, "avatar-9001.jpg"], [cuenta, `avatar-${cuenta}.jpg`], [9002, "avatar-9002.jpg"]]),
+    mediciones: new Map<string, Medicion>([["avatar-9001.jpg", medida("avatar-9001.jpg")], [`avatar-${cuenta}.jpg`, medida(`avatar-${cuenta}.jpg`)],
+      ["avatar-9002.jpg", { estado: "ilegible", archivo: "avatar-9002.jpg", diferenciaDeNombre: null, bytes: 5, sha256: "d".repeat(64), mime: "image/bmp", ancho: null, alto: null, motivo: "formato no soportado: image/bmp" }]]),
+  });
+  const p = armar(entrada);
+  assert.deepEqual(p.fotosAutor, [{ wpUserId: 9001, clave: "avatar-9001.jpg", nombreOriginal: "avatar-9001.jpg", tipoMime: "image/jpeg", ancho: 300, alto: 300, bytes: 7, hash: "9".repeat(64) }]);
+  assert.deepEqual(p.fotosAutorSinFila, [{ wpUserId: 9002, clave: "avatar-9002.jpg", codigo: "imagen_sin_medir" }]);
+  assert.equal(armar({ ...entrada, fotosAutor: undefined }).fotosAutor, undefined, "sin mapa de avatares, el plan no trae fotos");
+});
+
 t("T21: decisión 82: un publicado sin título lleva «Artículo a titular <id>» y el aviso titulo_provisorio; un borrador sin título no se toca", () => {
   const p = armar(sintetica([
     post({ id: 5562, titulo: "", nombre: "5562" }),

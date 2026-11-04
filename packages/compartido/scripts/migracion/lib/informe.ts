@@ -26,6 +26,8 @@ export interface Informe {
     sinMedir: Array<{ adjuntoWpId: number; clave: string | null; motivo?: string; usos: string[]; articulos: number[] }>;
   };
   redirecciones: { total: number; porTipo: Record<string, number> };
+  /** Fotos de autor (decisión 80), solo con --avatares: cuántos autores llevan foto y cuáles no se pudieron medir. */
+  fotosAutor?: { conFoto: number; sinFila: Array<{ wpUserId: number; clave: string; codigo: string }> };
   intercalaciones: Preparado["validacion"]["intercalaciones"];
   bloqueantes: Preparado["validacion"]["bloqueantes"];
   problemasDeArticulo: Preparado["validacion"]["deArticulo"];
@@ -76,6 +78,7 @@ export function construirInforme(o: { generadoEn: string; opciones: OpcionesCli;
       sinMedir: plan.imagenesSinFila.filter((i) => i.codigo === "imagen_sin_medir").map(({ adjuntoWpId, clave, motivo, usos, articulos }) => ({ adjuntoWpId, clave, motivo, usos, articulos })),
     },
     redirecciones: { total: plan.redirecciones.length, porTipo: cuentaDe(plan.redirecciones.map((r) => r.tipo)) },
+    ...(plan.fotosAutor ? { fotosAutor: { conFoto: plan.fotosAutor.length, sinFila: plan.fotosAutorSinFila ?? [] } } : {}),
     intercalaciones: validacion.intercalaciones, bloqueantes: validacion.bloqueantes, problemasDeArticulo: validacion.deArticulo, conflictos: validacion.conflictos,
     avisosPorCodigo, biosConCorreo: [...bios.values()].sort((a, b) => a.wpUserId - b.wpUserId),
   };
@@ -97,6 +100,7 @@ export function informeAMarkdown(i: Informe): string {
   md.push(`- Redirecciones: ${j(i.redirecciones)}`);
   md.push(`- Imágenes: ${j({ referenciadas: i.imagenes.referenciadas, conFila: i.imagenes.conFila, bytesTotales: i.imagenes.bytesTotales, porMime: i.imagenes.porMime })}`);
   md.push(`- Originales faltantes: ${j(i.imagenes.originalesFaltantes)}; sin medir: ${j(i.imagenes.sinMedir)}`);
+  if (i.fotosAutor) md.push(`- Fotos de autor: ${j(i.fotosAutor)}`);
   md.push(`- Avisos por código (artículos / ocurrencias): ${j(i.avisosPorCodigo)}`);
   md.push(`- Bios con correo (el correo no se copia): ${j(i.biosConCorreo)}`, "");
   md.push("## Filas por tabla", "", "| tabla | en el plan | insertar | actualizar | omitir | ya existe (sin comparar) | clave natural |", "|---|---|---|---|---|---|---|");

@@ -27,6 +27,8 @@ export interface OpcionesVerificacion {
   originales: string;
   /** mapa-originales.csv, si la carga se hizo con --mapa (el plan esperado se arma igual). */
   mapa?: string;
+  /** mapa-avatares.csv, si la carga se hizo con --avatares. */
+  avatares?: string;
   /** El plan esperado ya armado (los tests con base lo arman del snapshot, sin WordPress ni originales). Si falta, se arma con simular(). */
   plan?: Plan;
 }
@@ -66,7 +68,7 @@ export async function verificarEscritura(o: OpcionesVerificacion): Promise<Resul
 
   // el plan esperado: simulación de solo lectura (las colisiones se miran contra la propia base verificada)
     const { preparado } = await simular(
-      { alcance: { tipo: "ids", ids: [...o.ids] }, modo: "simular", esperarArticulos: null, esperarSobrescribir: null, abortarAlPrimerError: false, sobrescribir: false, originales: o.originales, ...(o.mapa ? { mapa: o.mapa } : {}) },
+      { alcance: { tipo: "ids", ids: [...o.ids] }, modo: "simular", esperarArticulos: null, esperarSobrescribir: null, abortarAlPrimerError: false, sobrescribir: false, originales: o.originales, ...(o.mapa ? { mapa: o.mapa } : {}), ...(o.avatares ? { avatares: o.avatares } : {}) },
       { wp, bd, destino: o.destino, servidorCms, servidorWordPress },
       { destinoPermitido: o.destino },
     );
@@ -209,9 +211,17 @@ export async function verificarEscritura(o: OpcionesVerificacion): Promise<Resul
   }
 
   // (a)/(i) conteos globales
+  // (g) fotos de autor (decisión 80): la fila de imagenes (sin wpId) y el autor con foto (la del plan, o la que ya tenía: no se pisa)
+  for (const fa of plan.fotosAutor ?? []) {
+    const im = await uno("SELECT * FROM imagenes WHERE clave = ?", fa.clave);
+    chk(null, `(g) foto del autor ${fa.wpUserId}: fila igual a la del plan`, !!im && (im["wpId"] === null || im["wpId"] === undefined) && str(im["clave"]) === fa.clave && num(im["ancho"]) === fa.ancho && num(im["alto"]) === fa.alto && num(im["bytes"]) === fa.bytes && str(im["hash"]) === fa.hash);
+    const au = await uno("SELECT fotoId FROM autores WHERE wpUserId = ?", fa.wpUserId);
+    chk(null, `(g) foto del autor ${fa.wpUserId}: el autor tiene foto`, !!au && au["fotoId"] !== null && au["fotoId"] !== undefined);
+  }
+
   if (!o.soloEstos) {
     const esperado: Record<string, number> = {
-      articulos: o.ids.length, categorias: new Set(plan.articulos.flatMap((a) => a.categorias)).size, autores: plan.autores.length, imagenes: plan.imagenes.length, redirecciones: plan.redirecciones.length,
+      articulos: o.ids.length, categorias: new Set(plan.articulos.flatMap((a) => a.categorias)).size, autores: plan.autores.length, imagenes: plan.imagenes.length + (plan.fotosAutor?.length ?? 0), redirecciones: plan.redirecciones.length,
       articulos_categorias: plan.articulos.reduce((n, a) => n + a.categorias.length, 0), articulos_autores: plan.articulos.reduce((n, a) => n + a.autores.length, 0),
       articulos_galeria: 0, fichas_tecnicas: 0, usuarios: 0, pruebaconexion: 0,
     };

@@ -11,7 +11,7 @@ import type { Informe } from "./informe.ts";
 import { leerCuentas } from "./leer-wordpress.ts";
 import type { Consulta } from "./leer-wordpress.ts";
 import { prepararPlan } from "./preparar.ts";
-import { leerMapaCsv } from "./extraer-originales.ts";
+import { leerMapaAvataresCsv, leerMapaCsv } from "./extraer-originales.ts";
 import { clavesDesdeMapa } from "./mapa-originales.ts";
 import { readFileSync } from "node:fs";
 import type { OpcionesPreparar, Preparado } from "./preparar.ts";
@@ -48,6 +48,8 @@ export async function simular(
     entrada.clavesCms = delMapa.clavesCms;
     entrada.originalesReducidos = delMapa.originalesReducidos;
   }
+  // Con --avatares: las fotos de autor (decisión 80), por id de usuario
+  if (opciones.avatares) entrada.fotosAutor = leerMapaAvataresCsv((deps.leerArchivo ?? ((r: string) => readFileSync(r, "utf8")))(opciones.avatares));
 
   const filasCuentasWp = cuentasDeFilas(await leerCuentas(wp, entrada.cuentas.map((c) => c.wpUserId)));
   const preparado = await prepararPlan({

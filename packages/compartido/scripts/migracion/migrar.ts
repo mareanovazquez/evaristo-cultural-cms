@@ -27,10 +27,11 @@ try {
   if (opciones.originales === null) throw new ErrorDeArgumentos("--originales=<carpeta> es obligatorio para medir las imágenes");
   try { readdirSync(opciones.originales); } catch { throw new ErrorDeArgumentos(`--originales: no se puede leer la carpeta ${opciones.originales}`); }
   if (opciones.mapa !== undefined && !existsSync(opciones.mapa)) throw new ErrorDeArgumentos(`--mapa: no existe el archivo ${opciones.mapa}`);
+  if (opciones.avatares !== undefined && !existsSync(opciones.avatares)) throw new ErrorDeArgumentos(`--avatares: no existe el archivo ${opciones.avatares}`);
 } catch (e) {
   if (!(e instanceof ErrorDeArgumentos)) throw e;
   console.error(`Error en los argumentos: ${e.message}`);
-  console.error("Uso: migrar.ts (--muestra | --ids=a,b | --todos) [--simular] --originales=<carpeta> [--wordpress=<base>] [--mapa=<mapa-originales.csv>] [--abortar-al-primer-error]");
+  console.error("Uso: migrar.ts (--muestra | --ids=a,b | --todos) [--simular] --originales=<carpeta> [--wordpress=<base>] [--mapa=<mapa-originales.csv>] [--avatares=<mapa-avatares.csv>] [--abortar-al-primer-error]");
   console.error("     migrar.ts (--muestra | --ids=a,b | --todos) --escribir ...   (se niega: la escritura es migrar-escribir.ts)");
   process.exit(2);
 }
@@ -44,6 +45,7 @@ try {
   console.log(`Artículos: ${r.convertidos} convertidos, ${r.invalidos} inválidos, ${r.excluidos} excluidos; estados ${JSON.stringify(r.estados)}`);
   console.log(`Redirecciones: ${informe.redirecciones.total} ${JSON.stringify(informe.redirecciones.porTipo)} | categorías a crear: ${informe.categoriasACrear.length}`);
   console.log(`Imágenes: ${informe.imagenes.referenciadas} referenciadas, ${informe.imagenes.conFila} con fila (${informe.imagenes.bytesTotales} bytes), ${informe.imagenes.originalesFaltantes.length} original_faltante, ${informe.imagenes.sinMedir.length} imagen_sin_medir`);
+  if (informe.fotosAutor) console.log(`Fotos de autor: ${informe.fotosAutor.conFoto} autores con foto, ${informe.fotosAutor.sinFila.length} sin poder medir`);
   console.log(`Avisos: ${JSON.stringify(informe.avisosPorCodigo)}`);
   console.log(`Bios con correo (sin el correo): ${JSON.stringify(informe.biosConCorreo)}`);
   console.log(`Intercalación: ${informe.intercalaciones.map((c) => `${c.tabla}.${c.columna}=${c.real}`).join(", ")}`);

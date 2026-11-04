@@ -136,6 +136,11 @@ export interface ResultadoBase {
   categorias: { enElPlan: number; creadas: number; existentes: number };
   autores: { enElPlan: number; creados: number; sinCambios: number; difieren: number; sobrescritos: number; conflictos: number };
   imagenes: { enElPlan: number; creadas: number; sinCambios: number; difieren: number; sobrescritas: number; conflictos: number };
+  /**
+   * Fotos de autor (decisión 80). `creadas`: filas de imagenes nuevas; `asignadas`: autores que no tenían foto y ahora la tienen; `conOtraFoto`:
+   * el autor ya tenía otra (cargada desde el panel), que no se pisa; `difieren`: la imagen ya existía con otro contenido (no se pisa ni se asigna).
+   */
+  fotos: { enElPlan: number; creadas: number; asignadas: number; sinCambios: number; conOtraFoto: number; difieren: number; conflictos: number };
   difieren: FilaQueDifiere[];
   conflictos: ConflictoEscritura[];
   /** Artículos que no se escriben porque dependen de algo en conflicto (wpId -> motivo). */
@@ -163,6 +168,7 @@ export async function escribirBase(prisma: PrismaClient, plan: Plan, opciones: {
     categorias: { enElPlan: plan.categoriasACrear.length, creadas: 0, existentes: 0 },
     autores: { enElPlan: plan.autores.length, creados: 0, sinCambios: 0, difieren: 0, sobrescritos: 0, conflictos: 0 },
     imagenes: { enElPlan: plan.imagenes.length, creadas: 0, sinCambios: 0, difieren: 0, sobrescritas: 0, conflictos: 0 },
+    fotos: { enElPlan: plan.fotosAutor?.length ?? 0, creadas: 0, asignadas: 0, sinCambios: 0, conOtraFoto: 0, difieren: 0, conflictos: 0 },
     difieren: [], conflictos: [], fallidos: new Map(), idsCategorias: new Map(), idsAutores: new Map(), idsImagenes: new Map(),
   };
 
@@ -230,6 +236,26 @@ export async function escribirBase(prisma: PrismaClient, plan: Plan, opciones: {
       r.imagenes.sobrescritas++;
     } else r.imagenes.difieren++;
     r.difieren.push({ tabla: "imagenes", clave: String(i.wpId), campos, sobrescrita: reescribir });
+  }
+
+  // 4. fotos de autor (decisión 80): la fila de imagenes (sin wpId: no es un adjunto; su clave natural es la clave) y el fotoId del autor, solo si
+  //    el autor todavía no tiene foto. Una foto cargada desde el panel nunca se pisa; el texto alternativo queda pendiente (fotoAlt no se toca).
+  for (const f of plan.fotosAutor ?? []) {
+    const autorId = r.idsAutores.get(f.wpUserId);
+    if (autorId === undefined) continue; // el autor quedó en conflicto: ya se informó
+    const datos = { clave: f.clave, nombreOriginal: f.nombreOriginal, tipoMime: f.tipoMime, ancho: f.ancho, alto: f.alto, bytes: f.bytes, hash: f.hash };
+    let imagen = await prisma.imagen.findUnique({ where: { clave: f.clave } });
+    if (imagen && imagen.wpId !== null) {
+      r.fotos.conflictos++;
+      r.conflictos.push({ tabla: "imagenes", clave: f.clave, detalle: { fotoDeAutor: f.wpUserId, existente: { id: imagen.id, wpId: imagen.wpId } } });
+      continue;
+    }
+    if (!imagen) { imagen = await prisma.imagen.create({ data: datos }); r.fotos.creadas++; }
+    else if (camposDistintos(datos, imagen).length) { r.fotos.difieren++; r.difieren.push({ tabla: "imagenes", clave: f.clave, campos: camposDistintos(datos, imagen), sobrescrita: false }); continue; }
+    const autor = await prisma.autor.findUnique({ where: { id: autorId }, select: { fotoId: true } });
+    if (autor?.fotoId === null || autor?.fotoId === undefined) { await prisma.autor.update({ where: { id: autorId }, data: { fotoId: imagen.id } }); r.fotos.asignadas++; }
+    else if (autor.fotoId === imagen.id) r.fotos.sinCambios++;
+    else r.fotos.conOtraFoto++;
   }
   return r;
 }

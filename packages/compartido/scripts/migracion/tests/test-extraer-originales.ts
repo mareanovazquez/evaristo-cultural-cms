@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  abrirTar, armarEscrituras, decodificarCp850, decodificarUtf8, emparejar, esProporcional, indexarTar, leerMapaCsv, mapaCsv, motivoNombreInvalido, parsearArgumentos, planificar, resolverCompartidos,
+  abrirTar, armarEscrituras, decodificarCp850, decodificarUtf8, emparejar, esProporcional, indexarTar, leerMapaAvataresCsv, leerMapaCsv, mapaAvataresCsv, mapaCsv, planAvatares, motivoNombreInvalido, parsearArgumentos, planificar, resolverCompartidos,
   type DatosAdjunto, type EntradaTar, type LectorTar, type Medida,
 } from "../lib/extraer-originales.ts";
 import { tamanosDeMetadatos } from "../lib/verificar-descarga.ts";
@@ -263,6 +263,23 @@ t("argumentos: válidos y errores", () => {
     [[], /falta --paquete/], [["--paquete=p"], /falta --base/], [["--paquete=p", "--base=a;b"], /--base/], [["--paquete=p", "--base=b", "--mapa=m"], /solo tiene sentido/], [["--paquete=p", "--base=b", "--reemplazos=r"], /desconocido/],
     [["--paquete=p", "--base=b", "--otro"], /desconocido/], [["--paquete="], /necesita un valor/],
   ] as const) assert.match(parsearArgumentos(args) as string, motivo, args.join(" "));
+});
+
+t("planAvatares y mapa de avatares: un bpfull por usuario, como avatar-<id>.<ext>; sin choques; ida y vuelta del CSV", () => {
+  const r = planAvatares([
+    ent("avatars/404/5f10e74440865-bpfull.jpg"), ent("avatars/404/5f10e74448d51-bpthumb.jpg"), ent("avatars/404/.htaccess"),
+    ent("avatars/77/abc-bpfull.JPEG"), ent("avatars/9/x-bpfull.png"), ent("avatars/9/y-bpfull.png"),   // el 9 tiene dos: error
+    ent("avatars/290/yoshimura-akira.jpg"),                                                             // foto suelta: no es avatar
+    ent("otra/1/z-bpfull.jpg"),
+  ], ["tapa.jpg"]);
+  assert.deepEqual(r.avatares.map((a) => [a.wpUserId, a.nombre]), [[77, "avatar-77.jpg"], [404, "avatar-404.jpg"]]);
+  assert.equal(r.errores.length, 1);
+  assert.match(r.errores[0]!, /usuario 9 tiene 2/);
+  assert.match(planAvatares([ent("avatars/5/a-bpfull.jpg")], ["Avatar-5.JPG"]).errores[0]!, /choca/);
+  const csv = mapaAvataresCsv([{ wpUserId: 404, claveCms: "avatar-404.jpg", nombreEnPaquete: "avatars/404/a-bpfull.jpg", bytes: 3, sha256: "ab" }, { wpUserId: 77, claveCms: "avatar-77.jpg", nombreEnPaquete: "avatars/77/b-bpfull.JPEG", bytes: 1, sha256: "cd" }]);
+  assert.ok(csv.startsWith("﻿wp_user_id,clave_cms,nombre_en_paquete,bytes,sha256\r\n77,"));
+  assert.deepEqual([...leerMapaAvataresCsv(csv)], [[77, "avatar-77.jpg"], [404, "avatar-404.jpg"]]);
+  assert.throws(() => leerMapaAvataresCsv(mapaCsv([])), /cabecera/);
 });
 
 console.log(`${ok} pruebas de la extracción de originales ok`);

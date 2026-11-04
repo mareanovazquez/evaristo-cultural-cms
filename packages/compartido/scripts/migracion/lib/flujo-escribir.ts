@@ -95,6 +95,10 @@ export async function correrFlujoEscribir(argv: readonly string[], env: Readonly
     error(`Error en los argumentos: --mapa: no existe el archivo ${opciones.mapa}`);
     return 2;
   }
+  if (opciones.avatares !== undefined && !existsSync(opciones.avatares)) {
+    error(`Error en los argumentos: --avatares: no existe el archivo ${opciones.avatares}`);
+    return 2;
+  }
 
   // El plan se arma con las conexiones de SOLO LECTURA (WordPress y el CMS), como en la simulación
   const lectura = await deps.abrirLectura(opciones.wordpress);

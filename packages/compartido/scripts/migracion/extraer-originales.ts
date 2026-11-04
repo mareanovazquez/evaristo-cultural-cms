@@ -5,7 +5,8 @@
 // Uso: npm run extraer:originales -- --paquete=<uploads-completo.tar> --base=<base de WordPress> [--prefijo=wp_] [--destino=<carpeta> [--mapa=<archivo.csv>]]
 //   Sin --destino: solo cruza el paquete con la base e informa (no escribe nada salvo el informe en out/descarga/).
 //   Con --destino: además extrae un archivo por adjunto, nombrado con su clave en el CMS (la de WordPress salvo los renombrados), y escribe el mapa
-//   (por defecto, `mapa-originales.csv` junto a la carpeta). La carpeta tiene que estar vacía o no existir y el mapa no tiene que existir.
+//   (por defecto, `mapa-originales.csv` junto a la carpeta). También extrae las fotos de autor (decisión 80) como `avatar-<id de usuario>.<ext>`
+//   y escribe `mapa-avatares.csv` junto al mapa. La carpeta tiene que estar vacía o no existir y los mapas no tienen que existir.
 // Si algún adjunto no tiene archivo, tiene más de un candidato, un archivo compartido no se puede resolver o un nombre final no sirve o choca,
 // no se extrae nada. Sale con 0 si todo está bien; con 1 si hay errores; con 2 si los argumentos son inválidos.
 import { createHash } from "node:crypto";
@@ -14,8 +15,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { abrirWordPress, leerAdjuntos } from "./lib/adjuntos-wp.ts";
 import {
-  abrirTar, armarEscrituras, emparejar, indexarTar, mapaCsv, nombreLegible, parsearArgumentos, planificar, resolverCompartidos,
-  type Coincidencia, type EntradaTar, type FilaMapa, type Medida,
+  abrirTar, armarEscrituras, emparejar, indexarTar, mapaAvataresCsv, mapaCsv, nombreLegible, parsearArgumentos, planAvatares, planificar, resolverCompartidos,
+  type Coincidencia, type EntradaTar, type FilaMapa, type FilaMapaAvatar, type Medida,
 } from "./lib/extraer-originales.ts";
 import { dimensiones, tipoPorContenido } from "./lib/imagenes.ts";
 import { esDerivadaPorNombre, type AdjuntoWp } from "./lib/verificar-descarga.ts";
@@ -33,9 +34,11 @@ async function principal(): Promise<number> {
   if (!existsSync(args.paquete) || !statSync(args.paquete).isFile()) { console.error(`Error en los argumentos: no se puede leer el paquete ${args.paquete}\n${USO}`); return 2; }
   const destino = args.destino === null ? null : resolve(args.destino);
   const rutaMapa = destino === null ? null : resolve(args.mapa ?? join(dirname(destino), "mapa-originales.csv"));
+  const rutaAvatares = rutaMapa === null ? null : join(dirname(rutaMapa), "mapa-avatares.csv");
   if (destino !== null) {
     if (!carpetaLibre(destino)) { console.error(`Error en los argumentos: ${destino} existe y no es una carpeta vacía (no se pisa nada)`); return 2; }
     if (existsSync(rutaMapa!)) { console.error(`Error en los argumentos: el mapa ${rutaMapa} ya existe (no se pisa)`); return 2; }
+    if (existsSync(rutaAvatares!)) { console.error(`Error en los argumentos: el mapa ${rutaAvatares} ya existe (no se pisa)`); return 2; }
   }
 
   const { wp, cerrar } = await abrirWordPress(args.base).catch((e: unknown) => { throw new Error(`no se pudo leer WordPress en 127.0.0.1:3307/${args.base} (¿está arriba el 3307?): ${e instanceof Error ? e.message.split("\n")[0] : String(e)}`); });
@@ -74,6 +77,10 @@ async function principal(): Promise<number> {
     console.log(`  claves que el CMS no distingue: ${miles(esc.grupos.length)} grupos; renombrados con -wp<id>: ${miles(esc.renombradas.size)}`);
     if (esc.renombradas.size) console.log(muestra([...esc.renombradas].map(([id, c]) => `${id} → ${c}`), 5));
     console.log(`  ERRORES EN LOS NOMBRES FINALES: ${miles(esc.errores.length)}`); if (esc.errores.length) console.log(muestra(esc.errores));
+    // Fotos de autor (decisión 80): el avatar grande de cada usuario, como avatar-<id>.<ext>, en la misma carpeta.
+    const av = planAvatares(indice.archivos, esc.escrituras.map((e) => e.nombre));
+    console.log(`\n== Fotos de autor (avatares de BuddyPress) ==\n  ${miles(av.avatares.length)} usuarios con foto; ERRORES: ${miles(av.errores.length)}`);
+    if (av.errores.length) console.log(muestra(av.errores));
 
     // Lo que queda en el paquete y ningún adjunto pide como original (se informa; no se extrae).
     const usadas = new Set(plan.archivos.map((a) => a.entrada));
@@ -86,7 +93,7 @@ async function principal(): Promise<number> {
     }
     console.log(`\n== En el paquete y sin adjunto (se quedan ahí) ==\n  miniaturas: ${miles(sobrantes.derivadas)}; otros: ${miles(sobrantes.otros.length)}`);
 
-    const errores = emp.faltantes.length + emp.ambiguos.length + res.sinResolver.length + esc.errores.length;
+    const errores = emp.faltantes.length + emp.ambiguos.length + res.sinResolver.length + esc.errores.length + av.errores.length;
     const informe = {
       generadoEn: new Date().toISOString(), paquete: args.paquete, base: args.base, destino, mapa: rutaMapa,
       adjuntos: adjuntos.length, archivosEnPaquete: indice.archivos.length, otrosTipos: indice.otros,
@@ -95,8 +102,9 @@ async function principal(): Promise<number> {
       faltantes: emp.faltantes, ambiguos: emp.ambiguos, compartidos: grupos, sinResolver: res.sinResolver,
       reemplazos: res.reemplazos.map((x) => ({ id: x.id, clave: x.clave, miniatura: x.miniatura, medida: x.medida, original: x.original, dueno: x.dueno })),
       clavesCms: { grupos: esc.grupos, renombradas: Object.fromEntries(esc.renombradas), errores: esc.errores },
+      avatares: { usuarios: av.avatares.map((a) => ({ wpUserId: a.wpUserId, nombre: a.nombre, nombreEnPaquete: a.nombreEnPaquete })), errores: av.errores },
       sobrantes,
-      extraidos: null as null | { archivos: number; bytes: number },
+      extraidos: null as null | { archivos: number; avatares: number; bytes: number },
     };
 
     if (errores === 0 && destino !== null) {
@@ -114,8 +122,16 @@ async function principal(): Promise<number> {
       }
       if (filas.length !== adjuntos.length) throw new Error(`el mapa tendría ${filas.length} filas y hay ${adjuntos.length} adjuntos`);
       writeFileSync(rutaMapa!, mapaCsv(filas), { encoding: "utf8", flag: "wx" });
-      informe.extraidos = { archivos: hechos, bytes };
-      console.log(`  ${miles(hechos)} archivos (${gb(bytes)}); ${miles(filas.length)} filas en ${rutaMapa}`);
+      const filasAv: FilaMapaAvatar[] = [];
+      for (const a of av.avatares) {
+        const datos = tar.leer(a.entrada.inicio, a.entrada.bytes);
+        writeFileSync(join(destino, a.nombre), datos, { flag: "wx" });
+        bytes += datos.length;
+        filasAv.push({ wpUserId: a.wpUserId, claveCms: a.nombre, nombreEnPaquete: a.nombreEnPaquete, bytes: datos.length, sha256: createHash("sha256").update(datos).digest("hex") });
+      }
+      writeFileSync(rutaAvatares!, mapaAvataresCsv(filasAv), { encoding: "utf8", flag: "wx" });
+      informe.extraidos = { archivos: hechos, avatares: filasAv.length, bytes };
+      console.log(`  ${miles(hechos)} originales y ${miles(filasAv.length)} fotos de autor (${gb(bytes)}); ${miles(filas.length)} filas en ${rutaMapa} y ${miles(filasAv.length)} en ${rutaAvatares}`);
     }
 
     const carpetaSalida = fileURLToPath(new URL("../../out/descarga/", import.meta.url));

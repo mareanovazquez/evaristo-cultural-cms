@@ -307,6 +307,59 @@ export function armarEscrituras(plan: PlanExtraccion, res: ResolucionCompartidos
   return { escrituras, renombradas: cms.renombradas, grupos: cms.grupos, errores };
 }
 
+// ---------------------------------------------------------------- fotos de autor (decisión 80)
+//
+// BuddyPress guarda el avatar de cada usuario en `avatars/<id de usuario>/<único>-bpfull.<ext>` (300 × 300) y una miniatura `-bpthumb`. Se extrae
+// solo el `bpfull`, a la misma carpeta que los originales, como `avatar-<id de usuario>.<ext>`: así `/media/` lo sirve igual que cualquier imagen.
+
+export interface Avatar { wpUserId: number; nombre: string; nombreEnPaquete: string; entrada: EntradaTar }
+export interface PlanAvatares { avatares: Avatar[]; errores: string[] }
+
+const AVATAR = /^avatars\/(\d+)\/[^/]+-bpfull\.(jpe?g|png|gif|webp)$/i;
+
+/** Los avatares del paquete. `usados`: los nombres que ya van a la carpeta (los originales); un avatar no puede chocar con ninguno. */
+export function planAvatares(entradas: readonly EntradaTar[], usados: readonly string[]): PlanAvatares {
+  const porUsuario = new Map<number, EntradaTar[]>();
+  for (const e of entradas) {
+    const m = AVATAR.exec(nombreLegible(e).normalize("NFC"));
+    if (m) porUsuario.set(Number(m[1]), [...(porUsuario.get(Number(m[1])) ?? []), e]);
+  }
+  const r: PlanAvatares = { avatares: [], errores: [] };
+  const vistos = new Map(usados.map((n) => [claveComparable(n), n]));
+  for (const [wpUserId, lista] of [...porUsuario].sort((a, b) => a[0] - b[0])) {
+    if (lista.length > 1) { r.errores.push(`el usuario ${wpUserId} tiene ${lista.length} avatares bpfull: ${lista.map(nombreLegible).join(" | ")}`); continue; }
+    const e = lista[0]!, ext = AVATAR.exec(nombreLegible(e))![2]!.toLowerCase().replace("jpeg", "jpg");
+    const nombre = `avatar-${wpUserId}.${ext}`, otro = vistos.get(claveComparable(nombre));
+    if (otro !== undefined) { r.errores.push(`«${nombre}» choca con «${otro}»`); continue; }
+    vistos.set(claveComparable(nombre), nombre);
+    r.avatares.push({ wpUserId, nombre, nombreEnPaquete: nombreLegible(e), entrada: e });
+  }
+  return r;
+}
+
+export interface FilaMapaAvatar { wpUserId: number; claveCms: string; nombreEnPaquete: string; bytes: number; sha256: string }
+const CABECERA_AVATARES = ["wp_user_id", "clave_cms", "nombre_en_paquete", "bytes", "sha256"] as const;
+
+/** `mapa-avatares.csv`: una fila por usuario con avatar, ordenada por id. Con BOM para Excel. */
+export function mapaAvataresCsv(filas: readonly FilaMapaAvatar[]): string {
+  const cuerpo = [...filas].sort((a, b) => a.wpUserId - b.wpUserId).map((f) => [f.wpUserId, f.claveCms, f.nombreEnPaquete, f.bytes, f.sha256].map(celda).join(","));
+  return "﻿" + [CABECERA_AVATARES.join(","), ...cuerpo].join("\r\n") + "\r\n";
+}
+
+/** Lee `mapa-avatares.csv` (id de usuario -> clave en el CMS). Falla si la cabecera no es la esperada o una fila está mal. */
+export function leerMapaAvataresCsv(texto: string): Map<number, string> {
+  const filas = filasCsv(texto);
+  if (filas[0]?.join(",") !== CABECERA_AVATARES.join(",")) throw new Error(`el mapa de avatares no tiene la cabecera esperada (${CABECERA_AVATARES.join(",")})`);
+  const r = new Map<number, string>();
+  for (const [n, f] of filas.slice(1).entries()) {
+    const id = Number(f[0]);
+    if (f.length !== CABECERA_AVATARES.length || !Number.isInteger(id) || id <= 0 || !f[1]) throw new Error(`fila ${n + 2} del mapa de avatares inválida`);
+    if (r.has(id)) throw new Error(`el usuario ${id} está dos veces en el mapa de avatares`);
+    r.set(id, f[1]);
+  }
+  return r;
+}
+
 // ---------------------------------------------------------------- mapa
 
 export interface FilaMapa extends FilaDeEscritura { claveCms: string; bytes: number; sha256: string }
@@ -322,10 +375,10 @@ export function mapaCsv(filas: readonly FilaMapa[]): string {
 /** Lo que la migración necesita del mapa: la clave en el CMS de cada adjunto y si su original es una miniatura (decisión 79). */
 export interface EntradaMapa { clave: string; claveCms: string; coincidencia: string }
 
-/** Lee `mapa-originales.csv` (id de adjunto -> entrada). Falla si la cabecera no es la esperada o una fila está mal. */
-export function leerMapaCsv(texto: string): Map<number, EntradaMapa> {
-  const lineas = texto.replace(/^﻿/, "").split(/\r?\n/).filter((l) => l !== "");
-  const filas = lineas.map((l) => {
+/** Las filas de un CSV (sin BOM ni líneas vacías), con comillas dobles como en Excel. */
+function filasCsv(texto: string): string[][] {
+  const lineas = texto.replace(/^\uFEFF/, "").split(/\r?\n/).filter((l) => l !== "");
+  return lineas.map((l) => {
     const c: string[] = []; let s = "", q = false;
     for (let i = 0; i < l.length; i++) {
       const ch = l[i]!;
@@ -335,6 +388,11 @@ export function leerMapaCsv(texto: string): Map<number, EntradaMapa> {
     c.push(s);
     return c;
   });
+}
+
+/** Lee `mapa-originales.csv` (id de adjunto -> entrada). Falla si la cabecera no es la esperada o una fila está mal. */
+export function leerMapaCsv(texto: string): Map<number, EntradaMapa> {
+  const filas = filasCsv(texto);
   if (filas[0]?.join(",") !== CABECERA_MAPA.join(",")) throw new Error(`el mapa no tiene la cabecera esperada (${CABECERA_MAPA.join(",")})`);
   const r = new Map<number, EntradaMapa>();
   for (const [n, f] of filas.slice(1).entries()) {

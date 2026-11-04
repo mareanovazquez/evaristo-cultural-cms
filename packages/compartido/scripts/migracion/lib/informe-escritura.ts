@@ -21,6 +21,8 @@ export interface InformeEscritura {
   abortado: boolean;
   codigoDeSalida: number;
   tablas: FilaTabla[];
+  /** Fotos de autor (decisión 80): autores a los que se les asignó la foto y los que ya tenían otra (no se pisa). Solo si el plan trae fotos. */
+  fotosAutor?: { asignadas: number; conOtraFoto: number };
   /** Filas que ya existían y difieren del plan: solo los nombres de los campos. */
   difieren: Array<{ tabla: string; clave: string; campos: string[]; sobrescrita: boolean }>;
   conflictos: Array<{ tabla: string; clave: string; detalle: unknown }>;
@@ -59,6 +61,7 @@ export function construirInformeEscritura(o: {
       fila("categorias", b.categorias.enElPlan, { insertadas: b.categorias.creadas, sinCambios: b.categorias.existentes }),
       fila("autores", b.autores.enElPlan, { insertadas: b.autores.creados, sinCambios: b.autores.sinCambios, difieren: b.autores.difieren, sobrescritas: b.autores.sobrescritos, conflictos: b.autores.conflictos }),
       fila("imagenes", b.imagenes.enElPlan, { insertadas: b.imagenes.creadas, sinCambios: b.imagenes.sinCambios, difieren: b.imagenes.difieren, sobrescritas: b.imagenes.sobrescritas, conflictos: b.imagenes.conflictos }),
+      ...(b.fotos.enElPlan ? [fila("fotos de autor", b.fotos.enElPlan, { insertadas: b.fotos.creadas, sinCambios: b.fotos.sinCambios, difieren: b.fotos.difieren, conflictos: b.fotos.conflictos })] : []),
       fila("articulos", plan.articulos.length, { insertadas: r.conteos.escritos, sinCambios: r.conteos.sinCambios, difieren: r.conteos.difieren, sobrescritas: r.conteos.sobrescritos, fallidos: r.conteos.fallidos }),
       fila("redirecciones", plan.redirecciones.length, { insertadas: r.redirecciones.creadas, sinCambios: r.redirecciones.sinCambios, conflictos: r.redirecciones.conflictos }),
     ],
@@ -69,6 +72,7 @@ export function construirInformeEscritura(o: {
     conflictos: r.conflictos.map((c) => ({ tabla: c.tabla, clave: c.clave, detalle: c.detalle })),
     fallidos: r.articulos.filter((x) => x.resultado === "fallido").map((x) => ({ wpId: x.wpId, slug: x.slug, motivo: sinCorreos(x.motivo ?? "") })),
     idsSobrescritos: r.idsSobrescritos, avisosPorCodigo: avisos,
+    ...(b.fotos.enElPlan ? { fotosAutor: { asignadas: b.fotos.asignadas, conOtraFoto: b.fotos.conOtraFoto } } : {}),
   };
 }
 

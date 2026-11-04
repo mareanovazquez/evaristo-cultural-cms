@@ -34,7 +34,7 @@ export interface Preparado {
 export async function prepararPlan(o: OpcionesPreparar): Promise<Preparado> {
   // 1. sin mediciones: solo para saber qué imágenes referencia el plan
   const primera = armar(o.entrada);
-  const claves = primera.imagenesReferenciadas.map((i) => i.claveAdjunto).filter((c): c is string => c !== null);
+  const claves = [...primera.imagenesReferenciadas.map((i) => i.claveAdjunto).filter((c): c is string => c !== null), ...(o.entrada.fotosAutor?.values() ?? [])];
   const mediciones = (o.medir ?? medirImagenes)(o.carpetaOriginales, claves);
   // 2. con las mediciones: encabezados, filas de imagen y cuerpo enlazado
   const planCompleto = armar({ ...o.entrada, mediciones });

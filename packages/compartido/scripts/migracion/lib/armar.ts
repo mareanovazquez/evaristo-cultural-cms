@@ -55,6 +55,11 @@ export interface EntradaArmar {
   /** Adjuntos cuyo original es su miniatura más grande (decisión 79): con fila, llevan el aviso `original_reducido`. */
   originalesReducidos?: ReadonlySet<number>;
   /**
+   * Fotos de autor (decisión 80; `mapa-avatares.csv`): id de usuario de WordPress -> clave del archivo en la carpeta de originales. Solo se usan
+   * para los autores que son personas y cuya foto se midió. Sin mapa, ningún autor lleva foto.
+   */
+  fotosAutor?: ReadonlyMap<number, string>;
+  /**
    * Artículos que lib/validar.ts decidió dejar afuera (longitudes, fecha, colisiones...). armar() los saltea para que redirecciones,
    * autores, categorías e imágenes del plan queden coherentes con los artículos que sí migran. Sus problemas los registra quien valida.
    */
@@ -155,8 +160,15 @@ export interface Plan {
   /** Filas de imagenes a crear (vacío si no se pasaron mediciones). */
   imagenes: ImagenPlan[];
   imagenesSinFila: ImagenSinFila[];
+  /** Fotos de autor a crear y asignar (decisión 80): una imagen sin wpId (no es un adjunto) por autor que es persona. Vacío sin mediciones. */
+  fotosAutor?: FotoAutorPlan[];
+  /** Fotos de autor que no se pudieron medir: el autor migra sin foto. */
+  fotosAutorSinFila?: Array<{ wpUserId: number; clave: string; codigo: "original_faltante" | "imagen_sin_medir" }>;
   problemas: Problema[];
 }
+
+/** Una foto de autor: la fila de imagenes (clave natural: la clave, porque no tiene wpId) y el autor al que se le asigna. */
+export interface FotoAutorPlan { wpUserId: number; clave: string; nombreOriginal: string; tipoMime: string; ancho: number; alto: number; bytes: number; hash: string }
 
 /** Estado del CMS según post_status: publish → PUBLICADO; draft y el privado 19300 → BORRADOR; cualquier otro → DESCONOCIDO. */
 export function estadoCms(id: number, e: string): string {
@@ -486,5 +498,22 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
     }
   }
 
-  return { articulos: registros, autores: listaAutores, redirecciones, categoriasACrear, seccionesFaltantes, imagenesReferenciadas: [...distintas.values()], imagenes, imagenesSinFila, problemas };
+  // Fotos de autor (decisión 80): solo para los autores que son personas, con la foto medida
+  const fotosAutor: FotoAutorPlan[] = [], fotosAutorSinFila: NonNullable<Plan["fotosAutorSinFila"]> = [];
+  if (mediciones && entrada.fotosAutor) {
+    for (const a of listaAutores) {
+      const clave = a.soloTexto ? undefined : entrada.fotosAutor.get(a.wpUserId);
+      if (clave === undefined) continue;
+      const res = resolverImagen(clave, mediciones);
+      if (res.codigo === "con_fila") {
+        const md = res.medicion;
+        fotosAutor.push({ wpUserId: a.wpUserId, clave: res.clave, nombreOriginal: res.clave.split("/").pop()!, tipoMime: md.mime, ancho: md.ancho, alto: md.alto, bytes: md.bytes, hash: md.sha256 });
+      } else fotosAutorSinFila.push({ wpUserId: a.wpUserId, clave, codigo: res.codigo });
+    }
+  }
+
+  return {
+    articulos: registros, autores: listaAutores, redirecciones, categoriasACrear, seccionesFaltantes, imagenesReferenciadas: [...distintas.values()], imagenes, imagenesSinFila,
+    ...(entrada.fotosAutor ? { fotosAutor, fotosAutorSinFila } : {}), problemas,
+  };
 }
