@@ -21,6 +21,9 @@ html {
 }
 body {
   margin: 0;
+  /* Lo decorativo que se sale por los costados (la marca de la portada) se recorta sin barra horizontal. clip y no hidden: no crea
+     un contenedor de desplazamiento, así que el navbar sticky sigue funcionando. */
+  overflow-x: clip;
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans);

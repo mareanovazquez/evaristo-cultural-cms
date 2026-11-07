@@ -310,6 +310,38 @@
   padding: var(--space-8) 0;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
+  /* Contexto propio para que la marca de fondo (z-index -1) quede detrás de las tarjetas y no detrás de la página */
+  position: relative;
+  isolation: isolate;
+}
+/* Marca de fondo (7/11/2026, para que la portada se vea menos lavada): «EVARISTO CULTURAL» enorme, con la tipografía y los pesos del
+   wordmark, centrada detrás de la banda y cortada por los bordes de la pantalla (el body recorta con overflow-x: clip, sin barra de
+   desplazamiento). Colores muy suaves: es decoración, no texto para leer. Las tarjetas, con su fondo blanco, pasan por encima. */
+.banda-marca {
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  display: flex;
+  gap: 0.25em;
+  font-family: var(--font-marca);
+  font-size: clamp(110px, 20vw, 340px);
+  line-height: 0.8;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+.banda-marca b {
+  font-weight: 900;
+  color: var(--surface-2);
+}
+.banda-marca span {
+  font-weight: 600;
+  color: var(--accent-100);
 }
 @media (max-width: 1023px) {
   .portada-banda {
