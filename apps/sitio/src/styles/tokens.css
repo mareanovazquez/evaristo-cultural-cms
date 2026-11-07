@@ -29,6 +29,16 @@
   --focus: var(--accent-700);
   --peligro: #a8261d;
 
+  /* Encabezado (7/11/2026, para que el sitio se vea menos lavado): topbar verde con texto negro y navbar negro con texto blanco */
+  --topbar-bg: var(--accent-500);
+  --topbar-bg-hover: var(--accent-600);
+  --topbar-text: var(--text); /* 7,4:1 sobre accent-500; el blanco daría 2,2:1 */
+  --header-bg: var(--text);
+  --header-text: var(--bg); /* 16:1 */
+  --header-text-soft: var(--border-strong); /* «CULTURAL» de la marca: 6,5:1 sobre el negro */
+  --header-hover: #3a3536;
+  --header-focus: var(--accent-500); /* 7,4:1 sobre el negro */
+
   /* Tipografía */
   --font-serif: "Fraunces", Georgia, "Times New Roman", serif;
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;

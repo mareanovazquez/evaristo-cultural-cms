@@ -2,7 +2,8 @@
    Sale de referencias/maquetas/header-footer-autor.html (aprobada el 21/10/2026). */
 
 /* ---------- Marca (wordmark) ----------
-   Roboto en mayúsculas. EVARISTO en Black con el negro de la paleta; CULTURAL / EDITORIAL en SemiBold con border-strong. */
+   Roboto en mayúsculas. EVARISTO en Black con el negro de la paleta; CULTURAL / EDITORIAL en SemiBold con border-strong.
+   Dentro del navbar negro (7/11/2026), EVARISTO va en blanco (ver «Header»). */
 .logo {
   display: inline-flex;
   gap: 0.3em;
@@ -23,11 +24,12 @@
   color: var(--border-strong);
 }
 
-/* ---------- Topbar ---------- */
+/* ---------- Topbar ----------
+   Verde de la identidad con texto negro (7/11/2026; antes era negro con texto blanco). */
 .topbar {
   display: block;
-  background: var(--text);
-  color: var(--bg);
+  background: var(--topbar-bg);
+  color: var(--topbar-text);
   text-align: center;
   font-size: 14px;
   line-height: 1.4;
@@ -36,13 +38,17 @@
   text-decoration: none;
 }
 a.topbar:hover {
-  color: var(--bg);
-  background: #3a3536;
+  color: var(--topbar-text);
+  background: var(--topbar-bg-hover);
+}
+a.topbar:focus-visible {
+  outline: 2px solid var(--topbar-text);
+  outline-offset: -4px;
 }
 .topbar span {
   text-decoration: underline;
   text-underline-offset: 3px;
-  text-decoration-color: var(--accent-500);
+  text-decoration-color: currentColor;
 }
 /* Sin enlace es solo un mensaje: sin subrayado y sin el margen de un párrafo. */
 .topbar-sin-enlace {
@@ -52,11 +58,26 @@ a.topbar:hover {
   text-decoration: none;
 }
 
-/* ---------- Header ---------- */
+/* ---------- Header ----------
+   Navbar negro con texto blanco (7/11/2026; antes era del mismo blanco que la página). Los desplegables («Más» y el panel del celular)
+   siguen claros, como un cartel encima, y por eso vuelven al texto oscuro. */
 .header {
-  background: var(--bg);
-  border-bottom: 1px solid var(--border-soft);
+  background: var(--header-bg);
+  color: var(--header-text);
   position: relative;
+}
+.header .logo b {
+  color: var(--header-text);
+}
+.header .logo span {
+  color: var(--header-text-soft);
+}
+.header :focus-visible {
+  outline-color: var(--header-focus);
+}
+.header .mas-panel :focus-visible,
+.header .panel-movil :focus-visible {
+  outline-color: var(--focus);
 }
 .header-fila {
   display: flex;
@@ -85,7 +106,7 @@ a.topbar:hover {
   font-size: 15px;
   line-height: 1.2;
   font-weight: 500;
-  color: var(--text);
+  color: var(--header-text);
   text-decoration: none;
   border-radius: var(--radius);
   cursor: pointer;
@@ -96,8 +117,8 @@ a.topbar:hover {
 }
 .menu a:hover,
 .menu summary:hover {
-  background: var(--surface);
-  color: var(--text);
+  background: var(--header-hover);
+  color: var(--header-text);
 }
 .menu a[aria-current="page"] {
   box-shadow: inset 0 -2px 0 var(--accent-500);
@@ -107,7 +128,7 @@ a.topbar:hover {
   position: relative;
 }
 .mas[open] summary {
-  background: var(--surface);
+  background: var(--header-hover);
 }
 .mas[open] .icon-chev {
   transform: rotate(180deg);
@@ -134,6 +155,11 @@ a.topbar:hover {
 .mas-panel a {
   min-height: 40px;
   padding: 8px 12px;
+  color: var(--text);
+}
+.mas-panel a:hover {
+  background: var(--surface);
+  color: var(--text);
 }
 
 /* Celular: un botón abre un panel con todas las secciones (sin JavaScript) */
@@ -148,6 +174,7 @@ a.topbar:hover {
   width: 44px;
   height: 44px;
   border-radius: var(--radius);
+  color: var(--header-text);
   cursor: pointer;
   list-style: none;
 }
@@ -155,7 +182,7 @@ a.topbar:hover {
   display: none;
 }
 .menu-movil summary:hover {
-  background: var(--surface);
+  background: var(--header-hover);
 }
 .menu-movil .icon-x {
   display: none;
@@ -684,15 +711,15 @@ a.topbar:hover {
   justify-content: center;
   width: 44px;
   height: 44px;
-  color: var(--text);
+  color: var(--header-text);
   border-radius: var(--radius);
 }
 .buscar:hover,
 .buscar[aria-current="page"] {
-  background: var(--surface);
+  background: var(--header-hover);
 }
 .buscar:focus-visible {
-  outline: 2px solid var(--accent-700);
+  outline: 2px solid var(--header-focus);
   outline-offset: 2px;
 }
 .buscar .icon {
