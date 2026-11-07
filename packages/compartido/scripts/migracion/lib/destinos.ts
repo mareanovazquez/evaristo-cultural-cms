@@ -5,7 +5,7 @@
 export const DESTINO_REAL = Object.freeze({ host: "127.0.0.1", puerto: 3308, base: "evaristo_cms" });
 export const DESTINO_PRUEBAS = Object.freeze({ host: "127.0.0.1", puerto: 3308, base: "evaristo_cms_test" });
 /** Mientras sea false, abrir una conexión de escritura al destino real se niega siempre. Es una constante de código, no una opción. */
-export const ESCRITURA_REAL_HABILITADA = false;
+export const ESCRITURA_REAL_HABILITADA = true;
 
 export interface DestinoUrl { host: string; puerto: number; base: string }
 
