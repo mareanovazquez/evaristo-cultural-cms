@@ -7,7 +7,7 @@ const REGLAS: Array<[RegExp, string]> = [
   [/^Imagen con ruta relativa/, "Hay una imagen con una dirección que no sirve. Quitala y elegila de nuevo desde la biblioteca."],
   [/^imagenId|^altPendiente/, "Hay una imagen del texto mal vinculada a la biblioteca. Quitala y volvé a insertarla."],
   [/^Nota al pie vacía/, "Hay una nota al pie vacía. Escribí su texto o borrala."],
-  [/^Enlace con protocolo/, "Hay un enlace que no es válido. Solo se admiten direcciones que empiecen con http://, https:// o mailto:."],
+  [/^Enlace con protocolo/, "Hay un enlace que no es válido. Solo se admiten direcciones que empiecen con http://, https://, mailto: o / (una página de este sitio)."],
   [/^Video con/, "Hay un video que no es de YouTube ni de Vimeo, o cuyo enlace no es válido."],
   [/^Celda de tabla/, "La tabla tiene celdas combinadas o con contenido que no se admite. Usá una tabla simple."],
   [/^Nivel de título/, "Solo se admiten títulos de nivel 2, 3 y 4."],

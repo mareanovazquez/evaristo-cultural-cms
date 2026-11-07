@@ -300,7 +300,9 @@ t('enlace: http, https y mailto pasan; javascript: y similares se descartan', ()
   const enlace = (href: string) => html(doc(P(T('x', [{ type: 'link', attrs: { href } }]))))
   assert.equal(enlace('https://a.com'), '<p><a href="https://a.com">x</a></p>')
   assert.equal(enlace('mailto:a@b.com'), '<p><a href="mailto:a@b.com">x</a></p>')
-  for (const h of ['javascript:alert(1)', ' JaVaScRiPt:alert(1)', 'data:text/html,x', '/relativo', '']) {
+  // Una ruta del sitio vale desde el 7/11/2026 (los enlaces a otros artículos de la revista migran así); //host y /\host no.
+  assert.equal(enlace('/2017/09/01/nota/'), '<p><a href="/2017/09/01/nota/">x</a></p>')
+  for (const h of ['javascript:alert(1)', ' JaVaScRiPt:alert(1)', 'data:text/html,x', '//evil.com/a', '/\\evil.com', 'relativo', '/a\nb', '']) {
     assert.equal(enlace(h), '<p>x</p>', h)
   }
 })

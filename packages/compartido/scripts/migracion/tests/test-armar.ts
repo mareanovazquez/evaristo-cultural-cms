@@ -36,6 +36,11 @@ t("T01: los 35 desde el snapshot: estados, slugs, secciones y categorías a crea
 });
 
 // Baseline de la salida de 7eda10c: vive en out/ (ignorado por git), así que este test se saltea si no está.
+// Artículos cuyo cuerpo cambió a propósito después del baseline (notas al pie con anclas dobles de Word, 7/11/2026).
+const NOTAS_CORREGIDAS = new Set([4265]);
+// Firma «Por …» quitada porque repetía al autor (7/11/2026): el cuerpo pierde su primer párrafo y gana el aviso.
+const FIRMAS_QUITADAS = new Set([620]);
+const sinAvisosDeFirma = (lista: Array<{ code: string }>) => lista.filter((x) => !x.code.startsWith("firma_en_cuerpo"));
 const BASELINE = fileURLToPath(new URL("../../../out/baseline-armar/corrida-en-seco-ampliada.json", import.meta.url));
 if (!existsSync(BASELINE)) {
   console.log("SALTEADO: no hay baseline (out/baseline-armar/corrida-en-seco-ampliada.json); T02 no se ejecutó");
@@ -51,7 +56,10 @@ if (!existsSync(BASELINE)) {
         assert.deepEqual(a[k], b[k], `${b.wpId}.${k}`);
       }
       for (const k of ["cuerpo", "titulo", "validador", "migracion"] as const) {
-        assert.deepEqual(a.avisosMigracion?.[k] ?? [], b.avisosMigracion?.[k] ?? [], `${b.wpId}.avisos.${k}`);
+        // 4265: las anclas dobles de Word ya no se cuentan como notas repetidas (7/11/2026): solo desaparece nota_duplicada.
+        const esperado = (b.avisosMigracion?.[k] ?? []).filter((x: { code: string }) => !(NOTAS_CORREGIDAS.has(b.wpId) && x.code === "nota_duplicada"));
+        const actual = k === "migracion" ? sinAvisosDeFirma(a.avisosMigracion?.[k] ?? []) : (a.avisosMigracion?.[k] ?? []);
+        assert.deepEqual(actual, esperado, `${b.wpId}.avisos.${k}`);
       }
     }
     // única diferencia decidida: las cuentas de solo texto ya no tienen redirección /author/<slug>/ (el baseline las tiene)
@@ -66,8 +74,21 @@ if (!existsSync(BASELINE)) {
     let nodosEnlazados = 0;
     for (const b of base.articulos) {
       const a = medido.articulos.find((x) => x.wpId === b.wpId)!;
-      assert.deepEqual(sinEnlace(a.cuerpo), sinEnlace(b.cuerpo), `${b.wpId}.cuerpo (salvo imagenWpId y src)`);
-      assert.equal(a.textoPlano, b.textoPlano, `${b.wpId}.textoPlano`);
+      if (NOTAS_CORREGIDAS.has(b.wpId)) {
+        // El cuerpo cambia a propósito: las 13 marcas son notas (antes, 1 nota y las demás como texto «[n]»).
+        const notas = (d: unknown) => (JSON.stringify(d).match(/"type":"footnote"/g) ?? []).length;
+        assert.equal(notas(b.cuerpo), 1);
+        assert.equal(notas(a.cuerpo), 13, `${b.wpId}: 13 notas`);
+        assert.ok(!/KBS[8]/.test(a.textoPlano), `${b.wpId}: sin la marca «[8]» como texto`);
+      } else if (FIRMAS_QUITADAS.has(b.wpId)) {
+        const sinFirma = { ...b.cuerpo, content: b.cuerpo.content.slice(1) };
+        assert.match(JSON.stringify(b.cuerpo.content[0]), /"text":"Por /, `${b.wpId}: el baseline empieza con la firma`);
+        assert.deepEqual(sinEnlace(a.cuerpo), sinEnlace(sinFirma), `${b.wpId}.cuerpo sin la firma`);
+        assert.ok(a.avisosMigracion!.migracion.some((x) => x.code === "firma_en_cuerpo_quitada"), `${b.wpId}: aviso de la firma`);
+      } else {
+        assert.deepEqual(sinEnlace(a.cuerpo), sinEnlace(b.cuerpo), `${b.wpId}.cuerpo (salvo imagenWpId y src)`);
+        assert.equal(a.textoPlano, b.textoPlano, `${b.wpId}.textoPlano`);
+      }
       const antes = nodosImagen(b.cuerpo), despues = nodosImagen(a.cuerpo);
       assert.equal(antes.length, despues.length);
       despues.forEach((n, i) => {
@@ -89,7 +110,7 @@ if (!existsSync(BASELINE)) {
         assert.equal(a.imagenEncabezado?.clave, b.imagenEncabezado?.clave);
         assert.equal(a.encabezadoAlt, b.encabezadoAlt);
         assert.equal(a.encabezadoCredito, b.encabezadoCredito);
-        assert.deepEqual(a.avisosMigracion?.migracion ?? [], b.avisosMigracion?.migracion ?? []);
+        assert.deepEqual(sinAvisosDeFirma(a.avisosMigracion?.migracion ?? []), b.avisosMigracion?.migracion ?? []);
       }
     }
     assert.equal(nodosEnlazados, 172);
@@ -444,8 +465,9 @@ t("textoPlano: en los 35 del snapshot, las palabras del texto plano son las del 
 t("textoPlano: testigos 5296 (tablas), 720 (saltos de línea) y 4265 (epígrafes): antes 367, 80 y 5974 palabras; ahora las del cuerpo", () => {
   assert.equal(palabras(articulo(5296).textoPlano), 475);
   assert.equal(palabras(articulo(720).textoPlano), 83);
-  assert.equal(palabras(articulo(4265).textoPlano), 6232);
-  assert.equal(palabrasDelCuerpo(articulo(4265).cuerpo), 6232);
+  // 6232 hasta el 7/11/2026: los 12 «[n]» que quedaban como texto ya son notas (anclas dobles de Word).
+  assert.equal(palabras(articulo(4265).textoPlano), 6220);
+  assert.equal(palabrasDelCuerpo(articulo(4265).cuerpo), 6220);
 });
 
 console.log(`${ok} pruebas de armar ok`);

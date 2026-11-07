@@ -32,6 +32,48 @@ t('nota de Word _ftn', () => {
   assert.equal(r.doc.content!.length, 1)
   assert.match(txt(p.content!.find((n) => n.type === 'footnote')!.attrs!.content as DocNode), /Texto de la nota/)
 })
+// Notas al pie de los casos raros (7/11/2026): anclas dobles de Word (4265, 4633) y el texto de la nota en el párrafo siguiente (34, 4633).
+const notas = (d: DocNode): DocNode[] => {
+  const out: DocNode[] = []
+  const w = (n: DocNode) => { if (n.type === 'footnote') out.push(n); (n.content ?? []).forEach(w) }
+  w(d)
+  return out
+}
+const textoNota = (n: DocNode) => txt(n.attrs!.content as DocNode).trim()
+t('notas con anclas dobles de Word: el <a name> vacío se descarta y no queda «[n]» suelto', () => {
+  const r = conv(
+    '<p>Uno<a id="_ftnref1" name="_ftnref1"></a><a href="#_ftn1">[1]</a> y dos<a id="_ftnref2" name="_ftnref2"></a><a href="#_ftn2">[2]</a>.</p>' +
+      '<p class="nota_al_pie"><a id="_ftn1" name="_ftn1"></a><a href="#_ftnref1">[1]</a> Primera. <a id="_ftn2" name="_ftn2"></a><a href="#_ftnref2">[2]</a> Segunda.</p>',
+  )
+  assert.deepEqual(notas(r.doc).map(textoNota), ['Primera.', 'Segunda.'])
+  assert.equal(r.warnings.length, 0, JSON.stringify(r.warnings))
+  assert.doesNotMatch(txt(r.doc), /\[\d\]/)
+  assert.equal(r.stats['anclas_vacias_descartadas'], 4)
+})
+t('nota en el párrafo siguiente: con su número se toma (y se le saca); con otro número, no', () => {
+  const r = conv('<p>Texto<a href="#_edn3" name="_ednref3">[iii]</a>.</p><p><a href="#_ednref3" name="_edn3"></a></p><p>[iii] La nota tres.</p>')
+  assert.deepEqual(notas(r.doc).map(textoNota), ['La nota tres.'])
+  assert.equal(r.stats['nota_en_parrafo_siguiente'], 1)
+  // El ancla al final de la nota (como el 620): el párrafo de abajo es la nota siguiente y no se toca.
+  const otro = conv('<p>Texto<a href="#_ftn3" name="_ftnref3">[3]</a>.</p><p>[3] Ibíd.<br /><a href="#_ftnref3" name="_ftn3"></a></p><p>[4] Otra nota.</p>')
+  assert.equal(notas(otro.doc).length, 0)
+  assert.ok(otro.warnings.some((w) => w.code === 'nota_vacia'))
+  assert.match(txt(otro.doc), /\[3\] Ibíd\..*\[4\] Otra nota\./s)
+})
+t('nota en el párrafo siguiente sin número: solo dentro del contenedor de la nota', () => {
+  const r = conv('<p>Texto<a name="_ftnref1"></a><a href="#_ftn1">[1]</a>.</p><hr /><div id="ftn1">\n\n<a name="_ftn1"></a><a href="#_ftnref1">[1]</a>\n\nQuiles, <i>Filosofía</i>, p. 488.\n\n</div>')
+  assert.deepEqual(notas(r.doc).map(textoNota), ['Quiles, Filosofía, p. 488.'])
+  // Suelta en el cuerpo, el párrafo de abajo puede ser cualquier cosa: la nota queda vacía y el «[1]» se conserva como texto.
+  const suelta = conv('<p>Texto<a href="#_ftn1" name="_ftnref1">[1]</a>.</p><p><a href="#_ftnref1" name="_ftn1">[1]</a></p><p>Bibliografía</p>')
+  assert.equal(notas(suelta.doc).length, 0)
+  assert.ok(suelta.warnings.some((w) => w.code === 'nota_vacia'))
+  assert.match(txt(suelta.doc), /\[1\].*\[1\]Bibliografía/s)
+})
+t('nota en el párrafo siguiente: un número romano que no coincide no se toma', () => {
+  const r = conv('<p>Texto<a href="#_edn3" name="_ednref3">[iii]</a>.</p><p><a href="#_ednref3" name="_edn3"></a></p><p>[iv] Otra.</p>')
+  assert.equal(notas(r.doc).length, 0)
+  assert.match(txt(r.doc), /\[iv\] Otra\./)
+})
 t('nota con texto dentro del span', () => {
   const r = conv('<p>A<a href="#_ftn1" name="_ftnref1">[1]</a></p><div id="ftn1"><span><a href="#_ftnref1" name="_ftn1">[1]</a> Cuerpo</span></div>')
   const f = r.doc.content![0]!.content!.find((n) => n.type === 'footnote')!
@@ -95,11 +137,28 @@ t('imagen sin alt dentro de [caption] también sale pendiente', () => {
   assert.equal(c.doc.content![0]!.attrs!.altPendiente, true)
   assert.equal(c.doc.content![0]!.attrs!.epigrafe, 'Pie')
 })
-t('imagen con ruta relativa: aviso imagen_ruta_relativa', () => {
-  const r = conv('<p><img src="interior/image001.gif" alt="x"></p>')
-  assert.equal(r.warnings.some((w) => w.code === 'imagen_ruta_relativa'), true)
-  assert.notDeepEqual(validateArticleBody(r.doc as any, { modo: 'estricto' }), [])
-  assert.equal(validateArticleBodyDetallado(r.doc as any, { modo: 'migracion' }).avisos.length, 1)
+t('imagen con ruta relativa: se saca con el aviso imagen_ruta_relativa_quitada (el 5360) y el texto sigue', () => {
+  const r = conv('<p>Sílabas como <b><img src="interior/image001.gif" alt="x"></b> (lahu)</p>')
+  assert.equal(r.warnings.find((w) => w.code === 'imagen_ruta_relativa_quitada')?.ejemplos[0], 'interior/image001.gif')
+  assert.equal(r.assets.images.length, 0)
+  assert.match(txt(r.doc), /^Sílabas como\s+\(lahu\)$/)
+  assert.deepEqual(validateArticleBody(r.doc as any, { modo: 'estricto' }), [])
+  // El validador sigue avisando si una imagen con ruta relativa llega por otro camino.
+  const doc = { type: 'doc', content: [{ type: 'imagen', attrs: { src: 'interior/a.gif', alt: 'x' } }] }
+  assert.notDeepEqual(validateArticleBody(doc as any, { modo: 'estricto' }), [])
+  assert.equal(validateArticleBodyDetallado(doc as any, { modo: 'migracion' }).avisos.length, 1)
+})
+t('enlaces a otros artículos de la revista: ruta del sitio; los demás, igual', () => {
+  const r = conv(
+    '<p><a href="http://evaristocultural.com.ar/2017/09/01/si-el-psicoanalisis-cura/">a</a> ' +
+      '<a href="https://www.evaristocultural.com.ar/2016/07/29/esta-confusion-es-teatro/#x">b</a> ' +
+      'http://evaristocultural.com.ar/2017/01/31/la-profe/ ' +
+      '<a href="http://evaristocultural.com.ar/category/resenas/">c</a> <a href="https://otro.com/2017/09/01/x/">d</a></p>',
+  )
+  const hrefs = r.doc.content![0]!.content!.flatMap((n) => n.marks?.filter((m) => m.type === 'link').map((m) => m.attrs!.href) ?? [])
+  assert.deepEqual(hrefs, ['/2017/09/01/si-el-psicoanalisis-cura/', '/2016/07/29/esta-confusion-es-teatro/#x', '/2017/01/31/la-profe/', 'http://evaristocultural.com.ar/category/resenas/', 'https://otro.com/2017/09/01/x/'])
+  assert.equal(r.stats['enlaces_internos_a_ruta'], 3)
+  assert.equal(r.assets.internalLinks.length, 4)
 })
 t('javascript:, data: y //host fallan en ambos modos', () => {
   for (const src of ['javascript:alert(1)', 'data:image/png;base64,AAAA', '//evil.com/a.png']) {

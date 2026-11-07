@@ -8,7 +8,7 @@ import { reescribirImagenes, resolverImagen, srcDeClave, verificarEnlacesCuerpo 
 import type { Medicion } from "./enlaces-imagenes.ts";
 import type { AdjuntoSnapshot, MetaSnapshot, PostSnapshot, SnapshotWp, TerminoSnapshot, UsuarioSnapshot } from "./snapshot-tipos.ts";
 import {
-  adjuntoDeUrl, contarAltPendiente, contarInvisibles, contieneCorreo, decEntidades, decodificar, docDeTexto, quitarU200E, rutaUploads, slugFinal, textoPlanoDe,
+  adjuntoDeUrl, contarAltPendiente, contarInvisibles, contieneCorreo, decEntidades, decodificar, docDeTexto, firmaInicial, quitarU200E, rutaUploads, slugFinal, textoPlanoDe,
 } from "./utilidades.ts";
 
 // Estados: solo estos se migran con regla. El 19300 es el único artículo privado que se acepta (decisión tomada).
@@ -299,10 +299,13 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
     // Imágenes del cuerpo con fila: imagenWpId (clave natural; el ejecutor la cambia por imagenId) y src /media/<clave>.
     // Sin original o sin poder medir: el nodo queda como está y se avisa (una vez por src).
     const filasDelCuerpo = new Map<number, string>();
-    let cuerpo = r.doc;
+    // Firma «Por …» al principio del cuerpo: se quita si repite al autor; si no, queda con un aviso para la revisión manual.
+    const firma = firmaInicial(r.doc, nombreAutor);
+    if (firma.aviso) avisosMigracion.push(firma.aviso);
+    let cuerpo = firma.cuerpo;
     if (mediciones) {
       const avisados = new Set<string>();
-      cuerpo = reescribirImagenes(r.doc, (attrs) => {
+      cuerpo = reescribirImagenes(cuerpo, (attrs) => {
         const src = attrs["src"];
         const adj = typeof src === "string" ? adjuntoDeUrl(src, adjuntoPorClave) : null;
         if (!adj || typeof src !== "string") return attrs;

@@ -32,9 +32,13 @@ export interface ResultadoValidacion {
   avisos: string[]
 }
 
+// Enlaces: http(s), mailto: o una ruta de este sitio ("/2017/09/01/nota/", desde el 7/11/2026: así quedan los enlaces internos de los
+// artículos migrados). Se descartan javascript:, data:, "//host" y "/\host" (el navegador los toma como otro sitio).
 export function isAllowedUrl(url: string | unknown): boolean {
   if (typeof url !== 'string') return false
   const trimmed = url.trim().toLowerCase()
+  if ([...trimmed].some((ch) => ch.charCodeAt(0) < 32 || ch.charCodeAt(0) === 127)) return false
+  if (trimmed.startsWith('/')) return !trimmed.startsWith('//') && !trimmed.startsWith('/\\')
   return trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('mailto:')
 }
 

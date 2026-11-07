@@ -1,7 +1,7 @@
 // Pruebas puras de scripts/migracion/lib/utilidades.ts (sin base ni archivos).
 import assert from "node:assert/strict";
 import type { DocNode } from "../../../src/conversor/types.ts";
-import { aNFC, decodificarPostName, limpiarSlug, quitarU200E, slugBorrador, slugFinal, textoPlanoDe } from "../lib/utilidades.ts";
+import { aNFC, decodificarPostName, firmaInicial, limpiarSlug, quitarU200E, slugBorrador, slugFinal, textoPlanoDe } from "../lib/utilidades.ts";
 
 let ok = 0;
 const t = (name: string, fn: () => void) => { fn(); ok++; console.log("ok", name); };
@@ -110,5 +110,29 @@ t("textoPlanoDe: cuerpos vacíos o sin texto devuelven cadena vacía, también u
   assert.equal(textoPlanoDe({ type: "doc" }), "");
   const vacio = doc(...Array.from({ length: 20000 }, (_, i) => (i % 3 === 0 ? par() : i % 3 === 1 ? par(txt("  ")) : ({ type: "imagen", attrs: { src: "/media/a.jpg", alt: "x", epigrafe: "" } } as DocNode))));
   assert.equal(textoPlanoDe(vacio), "");
+});
+t("firmaInicial: se quita solo si repite exacto al autor (620, 4643); si agrega algo o es otra persona, queda con aviso", () => {
+  const p = (texto: string): DocNode => ({ type: "paragraph", content: [{ type: "text", text: texto }] });
+  const cuerpo = (...b: DocNode[]): DocNode => ({ type: "doc", content: b });
+  const cuerpoReal = p("El texto empieza acá.");
+  const exacta = firmaInicial(cuerpo(p("Por Riordan Roett"), cuerpoReal), "Riordan Roett");
+  assert.equal(exacta.aviso?.code, "firma_en_cuerpo_quitada");
+  assert.deepEqual(exacta.cuerpo, cuerpo(cuerpoReal));
+  // Tildes, mayúsculas, espacios y el punto final no importan; antes puede haber una imagen.
+  const img: DocNode = { type: "imagen", attrs: { src: "/media/a.jpg", alt: "" } };
+  const conImagen = firmaInicial(cuerpo(img, p("Por  Martín LO coco."), cuerpoReal), "Martin Lo Coco");
+  assert.equal(conImagen.aviso?.code, "firma_en_cuerpo_quitada");
+  assert.deepEqual(conImagen.cuerpo, cuerpo(img, cuerpoReal));
+  for (const [texto, autor] of [["Por Tzipi Livni, Canciller israelí", "Tzipi Livni"], ["Por Martín Lo Coco y Darío Durban", "Martin Lo Coco"], ["Por Miyazawa Kenji.", "revistaseda"], ["Por Alguien", ""]] as const) {
+    const r = firmaInicial(cuerpo(p(texto), cuerpoReal), autor);
+    assert.deepEqual(r.aviso, { code: "firma_en_cuerpo", detalle: { texto, autor } }, texto);
+    assert.equal(r.cuerpo.content!.length, 2, texto);
+  }
+  // No son firmas: un título en mayúsculas, «por» en minúscula, un párrafo largo, o la firma después del primer párrafo.
+  for (const b of [[p("POR QUÉ NO BESO BIEN"), cuerpoReal], [p("por la mañana"), cuerpoReal], [p("Por " + "x".repeat(130)), cuerpoReal], [cuerpoReal, p("Por Riordan Roett")]]) {
+    assert.equal(firmaInicial(cuerpo(...b), "Riordan Roett").aviso, null);
+  }
+  // Si la firma era todo el cuerpo, queda un párrafo vacío (el cuerpo nunca queda sin bloques).
+  assert.deepEqual(firmaInicial(cuerpo(p("Por Riordan Roett")), "Riordan Roett").cuerpo, cuerpo({ type: "paragraph" }));
 });
 console.log(`${ok} pruebas de utilidades ok`);

@@ -73,7 +73,7 @@ export function BioEditor({ inicial, alCambiar, sinCambios }: BioEditorProps) {
     if (!enlace.trim()) {
       editor.chain().focus().unsetLink().run()
     } else if (!isAllowedUrl(enlace.trim())) {
-      setErrorEnlace('Solo se admiten enlaces que empiecen con http://, https:// o mailto:.')
+      setErrorEnlace('Solo se admiten enlaces que empiecen con http://, https://, mailto: o / (una página de este sitio).')
       return
     } else {
       editor.chain().focus().extendMarkRange('link').setLink({ href: enlace.trim() }).run()

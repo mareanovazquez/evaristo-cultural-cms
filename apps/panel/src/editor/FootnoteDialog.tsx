@@ -105,7 +105,7 @@ export const FootnoteDialog: React.FC<FootnoteDialogProps> = ({
       if (isAllowedUrl(linkUrl)) {
         editor.chain().focus().extendMarkRange('link').setLink({ href: linkUrl }).run()
       } else {
-        alert('Solo se admiten enlaces http://, https:// o mailto:')
+        alert('Solo se admiten enlaces que empiecen con http://, https://, mailto: o / (una página de este sitio)')
       }
     } else {
       editor.chain().focus().unsetLink().run()

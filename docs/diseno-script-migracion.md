@@ -105,7 +105,7 @@ Del 19 y 20/10/2026 (numeración del plan):
 - `articulos_galeria` y `fichas_tecnicas` no tienen fuente en el conversor: quedan vacías.
 - Las pruebas de mutación sobre los tests encontraron huecos que se cerraron: T22 había dejado de proteger a `migrar-escribir.ts` (podía abrir su propia conexión), `export { REALES }` pasaba, la regla de correos del verificador no tenía prueba por comportamiento y la comprobación de la ficha técnica se había perdido.
 - **Texto plano:** la función vieja concatenaba nodos sin separador y dejaba afuera epígrafes y citas: 231 de 2.637 artículos tenían más de 1 % menos palabras que el cuerpo (casos testigo 5296 por tablas, 720 por saltos de línea y 4265 por epígrafes). Corregido en `eb1ac5e`.
-- **Notas al pie del 4265 (error del conversor):** cada nota tiene dos anclas (`name` y `href`) y el conversor las cuenta como dos; avisa `nota_duplicada` ×13 y no convierte ninguna. Los textos se conservan como texto plano.
+- **Notas al pie del 4265 (error del conversor):** cada nota tenía dos anclas (`name` y `href`) y el conversor las contaba como dos (`nota_duplicada` ×13, ninguna convertida). Corregido el 7/11/2026 (decisión 84): sale con 13 notas; T02 lo tiene como excepción (`NOTAS_CORREGIDAS`), igual que el 620 por su firma quitada (`FIRMAS_QUITADAS`).
 
 ## 7. Validaciones
 

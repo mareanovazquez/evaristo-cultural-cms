@@ -85,3 +85,40 @@ export const ocultarCorreos = (texto: string) => texto.replace(new RegExp(REGEX_
 
 /** ¿Hay una dirección de correo en el texto, o el marcador que la reemplazó en el snapshot? */
 export const contieneCorreo = (texto: string) => REGEX_CORREO.test(texto) || texto.includes(MARCADOR_CORREO_OMITIDO);
+
+// ---------------------------------------------------------------------------------------------------------------
+// Firmas «Por …» al principio del cuerpo (decidido con Mariano el 7/11/2026)
+// ---------------------------------------------------------------------------------------------------------------
+/** Largo máximo del párrafo para que cuente como firma (las encontradas tienen hasta 40 caracteres). */
+const MAX_FIRMA = 120;
+const normalNombre = (s: string) => s.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/\s+/g, " ").trim();
+const textoDeNodo = (n: DocNode): string => (n.text ?? "") + (n.content ?? []).map(textoDeNodo).join("");
+
+export interface FirmaInicial {
+  /** El cuerpo, sin la firma si se quitó. */
+  cuerpo: DocNode;
+  /** firma_en_cuerpo_quitada (repetía al autor) o firma_en_cuerpo (queda, para revisar); null si no hay firma. */
+  aviso: { code: "firma_en_cuerpo_quitada" | "firma_en_cuerpo"; detalle: { texto: string; autor: string } } | null;
+}
+
+/**
+ * Busca una firma «Por Nombre» en el primer párrafo con texto (antes de él solo puede haber imágenes o videos). Si dice exactamente el
+ * nombre del autor (sin importar tildes, mayúsculas ni el punto final) se quita, porque el sitio ya muestra al autor; si agrega algo
+ * (un cargo, un coautor) o nombra a otra persona (las cuentas de revistaseda), queda y se avisa para la revisión manual.
+ * «POR QUÉ…» en mayúsculas es un título, no una firma.
+ */
+export function firmaInicial(cuerpo: DocNode, autor: string): FirmaInicial {
+  const bloques = cuerpo.content ?? [];
+  const i = bloques.findIndex((b) => !["imagen", "video"].includes(b.type));
+  const b = bloques[i];
+  if (!b || b.type !== "paragraph") return { cuerpo, aviso: null };
+  const texto = textoDeNodo(b).trim();
+  if (texto.length > MAX_FIRMA || !/^Por\s+\p{Lu}/u.test(texto)) return { cuerpo, aviso: null };
+  const nombre = texto.replace(/^Por\s+/u, "").replace(/\.$/, "");
+  const detalle = { texto, autor };
+  if (autor.trim() && normalNombre(nombre) === normalNombre(autor)) {
+    const resto = bloques.filter((_, j) => j !== i);
+    return { cuerpo: { ...cuerpo, content: resto.length ? resto : [{ type: "paragraph" }] }, aviso: { code: "firma_en_cuerpo_quitada", detalle } };
+  }
+  return { cuerpo, aviso: { code: "firma_en_cuerpo", detalle } };
+}

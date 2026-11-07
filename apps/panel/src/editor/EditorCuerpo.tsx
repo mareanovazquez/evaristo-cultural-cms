@@ -196,7 +196,7 @@ export function EditorCuerpo({ contenido, onCambio, onEditor, onVentanaAbierta }
     } else if (isAllowedUrl(direccion)) {
       cadena().extendMarkRange('link').setLink({ href: direccion }).run()
     } else {
-      setErrorEnlace('Solo se admiten enlaces que empiecen con http://, https:// o mailto:')
+      setErrorEnlace('Solo se admiten enlaces que empiecen con http://, https://, mailto: o / (una página de este sitio)')
       return
     }
     setEnlaceAbierto(false)

@@ -181,6 +181,50 @@ function pruneEmpty(block: HNode | null | undefined) {
   }
 }
 
+const ROMANOS: Record<string, number> = { i: 1, v: 5, x: 10, l: 50, c: 100, d: 500, m: 1000 }
+function valorNumero(s: string): number {
+  if (/^\d+$/.test(s)) return Number(s)
+  const v = [...s.toLowerCase()].map((c) => ROMANOS[c] ?? 0)
+  return v.reduce((t, x, i) => t + (x < (v[i + 1] ?? 0) ? -x : x), 0)
+}
+
+/**
+ * El párrafo que sigue a `block` si puede ser el texto de la nota `key`: un <p> con texto y sin anclas de notas. Si empieza con un
+ * número entre corchetes («[4]», «[iii]»), tiene que ser el de la nota (si no, es otra nota y no se toca) y se le saca.
+ */
+function siguienteParrafoDeNota(block: HNode, key: string, contieneNota: (n: HNode) => boolean): HNode | null {
+  const hermanos = block.parentNode?.childNodes
+  if (!hermanos) return null
+  let i = hermanos.indexOf(block) + 1
+  while (i < hermanos.length && !isEl(hermanos[i]!) && !hasMeaning(hermanos[i]!)) i++
+  const p = hermanos[i]
+  if (!p || tag(p) !== 'p' || !hasMeaning(p) || contieneNota(p)) return null
+  let conAncla = false
+  walk(p, (x) => {
+    if (tag(x) === 'a' && classifyAnchor(x)) conAncla = true
+  })
+  if (conAncla) return null
+  let primero: HNode | null = null
+  walk(p, (x) => {
+    if (!primero && x.nodeName === '#text' && (x.value ?? '').trim()) primero = x
+  })
+  const texto = primero as HNode | null
+  const m = texto ? /^\s*\[\s*([ivxlcdm]+|\d+)\s*\]\s*/i.exec(texto.value ?? '') : null
+  // Sin número, solo si los dos párrafos están dentro de un contenedor propio de la nota (<div id="ftn1">, como en el 4633): suelto
+  // en el cuerpo puede ser cualquier cosa (en el 34 es el título «Notas:»).
+  if (!m && !/^(div|li|td|section|aside)$/.test(tag(block.parentNode!))) return null
+  if (m && texto) {
+    if (valorNumero(m[1]!) !== Number(/(\d+)$/.exec(key)?.[1])) return null
+    const original = texto.value ?? ''
+    texto.value = original.slice(m[0].length)
+    if (!hasMeaning(p)) {
+      texto.value = original
+      return null
+    }
+  }
+  return p
+}
+
 function footnotePass(root: HNode, ctx: Ctx) {
   const anchors: AnchorInfo[] = []
   walk(root, (n) => {
@@ -190,6 +234,24 @@ function footnotePass(root: HNode, ctx: Ctx) {
     }
   })
   if (anchors.length === 0) return
+
+  // Anclas dobles de Word: cada marca y cada nota pueden venir como un <a name> vacío seguido del <a href> con el «[n]» visible
+  // (el 4265 y el 4633). Si una clave tiene varias anclas del mismo papel y alguna se ve, las vacías se descartan: si no, la nota
+  // cuenta como repetida y no se convierte, o la marca vacía se lleva la nota y el «[n]» queda suelto como texto.
+  const porClave = new Map<string, AnchorInfo[]>()
+  for (const a of anchors) porClave.set(`${a.role}|${a.key}`, [...(porClave.get(`${a.role}|${a.key}`) ?? []), a])
+  const vacias = new Set<AnchorInfo>()
+  for (const lista of porClave.values()) {
+    if (lista.length > 1 && lista.some((a) => hasMeaning(a.el))) for (const a of lista) if (!hasMeaning(a.el)) vacias.add(a)
+  }
+  if (vacias.size > 0) {
+    for (const a of vacias) {
+      const padre = a.el.parentNode
+      if (padre?.childNodes) padre.childNodes.splice(padre.childNodes.indexOf(a.el), 1)
+    }
+    anchors.splice(0, anchors.length, ...anchors.filter((a) => !vacias.has(a)))
+    stat(ctx, 'anclas_vacias_descartadas', vacias.size)
+  }
 
   const group = (role: 'ref' | 'note') => {
     const m = new Map<string, AnchorInfo[]>()
@@ -226,6 +288,8 @@ function footnotePass(root: HNode, ctx: Ctx) {
     // juntando en cada nivel lo que sigue (el texto de la nota suele quedar
     // dentro del mismo <span>, o en hermanos de un contenedor).
     const content: HNode[] = []
+    // Lo que se sacó en cada nivel, para devolverlo si la nota sale vacía.
+    const sacado: Array<{ block: HNode; idx: number; taken: HNode[] }> = []
     let cur: HNode = a.el
     let block: HNode | null | undefined = cur.parentNode
     while (block?.childNodes) {
@@ -237,24 +301,41 @@ function footnotePass(root: HNode, ctx: Ctx) {
         i++
       }
       block.childNodes.splice(idx + 1, taken.length)
+      sacado.push({ block, idx, taken })
       content.push(...taken)
       if (BLOCKISH.has(tag(block)) || block.nodeName === '#document-fragment' || !block.parentNode) break
       cur = block
       block = block.parentNode
     }
-    const anchorParent = a.el.parentNode
-    if (anchorParent?.childNodes) anchorParent.childNodes.splice(anchorParent.childNodes.indexOf(a.el), 1)
-    pruneEmpty(anchorParent)
+
+    // El ancla sola en su párrafo y el texto de la nota en el párrafo siguiente (una línea en blanco entre los dos: el 34 y el 4633).
+    if (!content.some(hasMeaning) && block && tag(block) === 'p' && !(block.childNodes ?? []).some((n) => n !== a.el && hasMeaning(n))) {
+      const siguiente = siguienteParrafoDeNota(block, a.key, containsNoteAnchor)
+      if (siguiente) {
+        content.push(...(siguiente.childNodes ?? []))
+        const padre = siguiente.parentNode!
+        const idxSiguiente = padre.childNodes!.indexOf(siguiente)
+        padre.childNodes!.splice(idxSiguiente, 1)
+        sacado.push({ block: padre, idx: idxSiguiente - 1, taken: [siguiente] })
+        stat(ctx, 'nota_en_parrafo_siguiente')
+      }
+    }
 
     const pieces = collectPieces(content, [], ctx)
     const inline = pieces.flatMap((p) => ('inline' in p ? [p.inline] : []))
     if (pieces.some((p) => 'block' in p)) warn(ctx, 'nota_con_bloques', a.key)
     const nodes = finalizeInline(inline)
     if (nodes.length === 0) {
+      // Sin texto en el mismo bloque (por ejemplo, la nota sigue en el párrafo de abajo): todo vuelve a su lugar y el ancla queda
+      // como texto «[n]» (se desenvuelve al final), para la revisión manual.
+      for (const s of sacado.reverse()) s.block.childNodes!.splice(s.idx + 1, 0, ...s.taken)
       warn(ctx, 'nota_vacia', a.key)
       paired.delete(a.key)
       continue
     }
+    const anchorParent = a.el.parentNode
+    if (anchorParent?.childNodes) anchorParent.childNodes.splice(anchorParent.childNodes.indexOf(a.el), 1)
+    pruneEmpty(anchorParent)
     ctx.noteDocs.set(a.key, { type: 'doc', content: [{ type: 'paragraph', content: nodes }] })
   }
 
@@ -329,7 +410,16 @@ function normalizeHref(href: string | undefined, ctx: Ctx): string | null {
   if (/^https?:/i.test(abs)) {
     try {
       const host = new URL(abs).hostname.toLowerCase().replace(/^www\./, '')
-      if (ctx.siteHosts.includes(host) && !/\/wp-content\//.test(abs)) ctx.internalLinks.push(abs)
+      if (ctx.siteHosts.includes(host) && !/\/wp-content\//.test(abs)) {
+        ctx.internalLinks.push(abs)
+        // Enlace a otro artículo de la revista (/AAAA/MM/DD/slug/): queda como ruta del sitio, sin el dominio viejo ni el http
+        // (decidido con Mariano el 7/11/2026). Si la fecha de la URL no es la canónica, la redirección lo lleva igual.
+        const u = new URL(abs)
+        if (/^\/\d{4}\/\d{2}\/\d{2}\/[^/]+/.test(u.pathname)) {
+          stat(ctx, 'enlaces_internos_a_ruta')
+          return u.pathname + u.search + u.hash
+        }
+      }
     } catch {
       return null
     }
@@ -387,9 +477,14 @@ function imageNode(img: HNode, ctx: Ctx, linkedHref?: string | null, caption?: s
   }
   const linkedIsImage = linkedHref && /\.(jpe?g|png|gif|webp|bmp)(\?.*)?$/i.test(linkedHref)
   const url = linkedIsImage ? (linkedHref as string) : src
+  // Ruta relativa ("interior/image001.gif"): son íconos pegados desde Word que nunca se subieron (los 4 del 5360; no están en el
+  // paquete de uploads). Se sacan y queda el aviso para la revisión manual (decidido con Mariano el 7/11/2026).
+  if (isRelativeImageSrc(url)) {
+    warn(ctx, 'imagen_ruta_relativa_quitada', url)
+    return []
+  }
   ctx.images.push({ url, ...(url !== src ? { miniatura: src } : {}) })
   if (!alt) warn(ctx, 'imagen_sin_alt', src.split('/').pop()) // la imagen sale con altPendiente: true
-  if (isRelativeImageSrc(url)) warn(ctx, 'imagen_ruta_relativa', url)
   stat(ctx, 'imagenes')
   return [{ block: { type: 'imagen', attrs: { src: url, alt, decorativa: false, epigrafe: caption ?? '', ...(alt ? {} : { altPendiente: true }) } } }]
 }
@@ -766,6 +861,9 @@ function plainTextFootnotes(blocks: DocNode[], ctx: Ctx) {
     else if (prev && (o.block < prev.block || (o.block === prev.block && (o.node < prev.node || (o.node === prev.node && o.offset < prev.offset))))) ok = false
     else prev = o
   }
+  // Una «nota» que es solo el número, sin texto, no es una nota: mejor no convertir ninguna.
+  const textoDeNota = (bi: number) => (blocks[bi]!.content ?? []).map((n) => n.text ?? '').join('').replace(labelRe, '').trim()
+  if (ok && noteIdx.some((bi) => !textoDeNota(bi))) ok = false
   if (!ok) {
     warn(ctx, 'notas_texto_plano_ambiguas', `${k} notas`)
     return

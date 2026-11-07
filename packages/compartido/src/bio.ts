@@ -33,7 +33,7 @@ export function problemasDeFormaDeBio(doc: unknown): string[] {
       }
       for (const marca of nodo.marks ?? []) {
         if (marca.type === "link") {
-          if (!isAllowedUrl(marca.attrs?.["href"])) problemas.push("Hay un enlace que no es válido. Solo se admiten direcciones que empiecen con http://, https:// o mailto:.");
+          if (!isAllowedUrl(marca.attrs?.["href"])) problemas.push("Hay un enlace que no es válido. Solo se admiten direcciones que empiecen con http://, https://, mailto: o / (una página de este sitio).");
         } else if (marca.type !== "italic") {
           problemas.push("La bio solo admite itálica y enlaces (sin negrita).");
         }

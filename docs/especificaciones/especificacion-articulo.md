@@ -236,10 +236,10 @@ Las redes no están en WordPress (el perfil solo guarda un campo obsoleto de Goo
 Todo documento pasa por el mismo validador que usa el panel, en modo migración. Los errores de seguridad (direcciones `javascript:` o `data:`, proveedores de video no admitidos) siguen siendo errores. Lo demás se registra como aviso en el informe por artículo:
 
 - imagen sin texto alternativo (2.431 imágenes en 813 artículos), que el conversor marca con `altPendiente`;
-- imagen con ruta relativa (1 artículo, el 5360: cuatro íconos de un documento de Word que quedaron como imágenes sueltas en medio del texto; queda para revisión manual);
+- imagen con ruta relativa (1 artículo, el 5360: cuatro íconos de un documento de Word que nunca se subieron; desde el 7/11/2026 el conversor los saca con el aviso `imagen_ruta_relativa_quitada`, decisión 84);
 - salto de línea dentro de un título, reemplazado por un espacio (2 artículos).
 
-En modo migración los 2.637 artículos pasan sin errores. En modo estricto falla 1, el 5360. Los 813 artículos con imágenes sin texto alternativo pasan gracias a `altPendiente`.
+En modo migración los 2.637 artículos pasan sin errores. En modo estricto, desde el 7/11/2026, tampoco falla ninguno (el 5360 era el único). Los 813 artículos con imágenes sin texto alternativo pasan gracias a `altPendiente`.
 
 **Decisión (5/10/2026), aplicada el 6/10/2026:** el panel deja guardar un artículo migrado aunque tenga imágenes sin texto alternativo. Cada imagen pendiente muestra un aviso visible en el editor, y el texto alternativo sigue siendo obligatorio para las imágenes nuevas. Consecuencias:
 
