@@ -2,6 +2,18 @@
 
 **Documento temporal.** Se escribió el 23/10/2026 y se reescribió el 30/10/2026 al cerrar la reorganización de secciones, para arrancar sin releer todo. **Borrarlo** (con `git rm`, sacando su fila del índice de `CLAUDE.md`) cuando la fase 7 esté en marcha y lo duradero esté en `estado-fase7.md` (a crear) y en `pendientes.md`.
 
+## Dónde quedamos (7/11/2026, noche: fin de la jornada)
+
+**Para retomar, empezar por `estado-fase7.md`** (lo duradero de la fase: qué se hizo, herramientas y lo que falta para el lanzamiento). Todo commiteado y subido; `ESCRITURA_REAL_HABILITADA` en `false`.
+
+**Hecho hoy, después de la migración:** el sitio ya no tiene los respaldos para la base vieja y la letra capital sale del artículo; las pruebas del sitio pasan contra la real con el corpus completo (salvo los 4 «null» de `test:humo`, manuales); decisión 90 sobre los datos que quedaban (textos alternativos «null», `sin-asignar` y borradores, a mano con el sitio corriendo, en `tareas-con-el-sitio-corriendo.md`; volanta opcional; contacto como formulario); las 10 imágenes externas, bajadas y guardadas en la real (`imagenes:externas`, con la ceremonia de la decisión 50).
+
+**Esperando a la editorial:** Mariano le escribe a la directora para pedirle el texto de «Quiénes somos» y que elija el hosting o le ponga un tope de presupuesto (los requisitos del VPS están en `estado-fase7.md`; Mariano tiene una búsqueda comparativa armada para Perplexity).
+
+**Lo que sigue (propuesto, no depende del proveedor):** preparar el despliegue para un VPS genérico (guía, servicio, respaldos automáticos con restauración probada, cómo subir la base y las imágenes) y arreglar que Prisma conecte solo después de reiniciar MySQL. Después: formulario de contacto (con una dependencia de correo a consultar) y los cambios del front «menos lavado» que está pensando Mariano.
+
+**Este documento** ya se puede borrar cuando se empiece el despliegue: lo vigente está en `estado-fase7.md`, `pendientes.md` y `tareas-con-el-sitio-corriendo.md`.
+
 ## Dónde quedamos (7/11/2026, tarde: migración real hecha)
 
 **La migración completa a `evaristo_cms` está hecha** (Etapa 3, con la ceremonia de la decisión 50). Respaldo previo: `CMS-EVARISTO(ASSETS)\respaldos\evaristo_cms-antes-migracion-completa-2026-11-07T1531Z.sql`. Se aplicaron las nueve migraciones (`db:deploy`) y `db:sembrar`; el intento en seco confirmó 37 filas a reescribir; Mariano corrió `migrar:escribir` en su terminal (commit `e0eda7b` con el interruptor en `true`, revertido en `6fa5dd3`). Resultado: **estado ok**, 2.619 artículos creados y 35 reescritos, 0 fallidos y 0 conflictos, 3.030 redirecciones nuevas y 58 sin cambios, limpieza con 10 secciones y 3 categorías viejas borradas y nada viejo con artículos (informe `packages/compartido/out/migracion/2026-11-07T173411Z-escribir.md`). Verificación independiente en solo lectura (`verificar:escritura --todos --wordpress=evaristo_lectura_nueva` con `--originales`, `--mapa` y `--avatares`; sin el mapa da diferencias falsas de imágenes): **69.931 comprobaciones, 0 diferencias**, igual que el ensayo. `ESCRITURA_REAL_HABILITADA` está otra vez en `false`.
