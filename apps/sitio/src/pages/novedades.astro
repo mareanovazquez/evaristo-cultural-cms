@@ -1,6 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
 import Listado from "../components/Listado.astro";
+import MarcaFondo from "../components/MarcaFondo.astro";
 import { esNovedad, fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../lib/articulos";
 import { cantidadDePaginas, paginaPedida } from "../lib/paginacion";
 import { contarNovedades, notasNovedades } from "../lib/portada";
@@ -16,6 +17,7 @@ const notas = await notasNovedades(pagina);
 ---
 
 <Base titulo={pagina > 1 ? `Novedades (página ${pagina})` : "Novedades"} descripcion="Las novedades de Evaristo Cultural: lo que acaba de salir y el archivo de lo que fue novedad.">
+  <MarcaFondo principal="Novedades" />
   <Listado
     titulo="Novedades"
     total={total}
