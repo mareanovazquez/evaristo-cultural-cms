@@ -310,15 +310,13 @@
   padding: var(--space-8) 0;
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
-  /* Contexto propio para que la marca de fondo (z-index -1) quede detrás de las tarjetas y no detrás de la página */
-  position: relative;
-  isolation: isolate;
 }
 /* Marca de fondo (7/11/2026, para que la portada se vea menos lavada): «EVARISTO CULTURAL» enorme, con la tipografía y los pesos del
-   wordmark, centrada detrás de la banda y cortada por los bordes de la pantalla (el body recorta con overflow-x: clip, sin barra de
-   desplazamiento). Colores muy suaves: es decoración, no texto para leer. Las tarjetas, con su fondo blanco, pasan por encima. */
-.banda-marca {
-  position: absolute;
+   wordmark, FIJA en el centro de la pantalla (position: fixed, sin parallax ni JavaScript): el contenido pasa por encima al bajar y la
+   marca se asoma en los huecos. Lo que tiene fondo propio (navbar, carrusel, banner, tarjetas, footer) la tapa. Se corta por los
+   bordes de la pantalla sin barra horizontal. Colores muy suaves: es decoración, no texto para leer. Solo en la portada. */
+.portada-marca-fondo {
+  position: fixed;
   z-index: -1;
   top: 50%;
   left: 50%;
@@ -335,11 +333,11 @@
   pointer-events: none;
   user-select: none;
 }
-.banda-marca b {
+.portada-marca-fondo b {
   font-weight: 900;
   color: var(--surface-2);
 }
-.banda-marca span {
+.portada-marca-fondo span {
   font-weight: 600;
   color: var(--accent-100);
 }

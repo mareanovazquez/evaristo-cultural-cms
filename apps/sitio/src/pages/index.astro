@@ -38,6 +38,9 @@ const BAJADA = "Revista cultural de Evaristo Editorial: entrevistas, reseñas, e
           <p class="portada-fecha">{hoy}</p>
         </header>
 
+        {/* Decoración: la marca enorme, fija en el fondo de la pantalla; el contenido pasa por encima al bajar (7/11/2026). aria-hidden: no es contenido. */}
+        <p class="portada-marca-fondo" aria-hidden="true"><b>Evaristo</b> <span>Cultural</span></p>
+
         <Carrusel diapositivas={carrusel.map(diapositivaDeNota)} intervalo={6000} />
 
         {arriba.length > 0 && (
@@ -50,8 +53,6 @@ const BAJADA = "Revista cultural de Evaristo Editorial: entrevistas, reseñas, e
 
         {banda.length > 0 && (
           <section class="portada-banda" aria-labelledby="ultimas-publicaciones">
-            {/* Decoración: la marca enorme detrás de las tarjetas (7/11/2026). No es contenido: aria-hidden. */}
-            <p class="banda-marca" aria-hidden="true"><b>Evaristo</b> <span>Cultural</span></p>
             <div class="banda-presentacion">
               <h2 id="ultimas-publicaciones">Últimas publicaciones</h2>
               <p>Lo más nuevo de la revista.</p>
