@@ -2,9 +2,28 @@
 
 **Documento temporal.** Se escribió el 23/10/2026 y se reescribió el 30/10/2026 al cerrar la reorganización de secciones, para arrancar sin releer todo. **Borrarlo** (con `git rm`, sacando su fila del índice de `CLAUDE.md`) cuando la fase 7 esté en marcha y lo duradero esté en `estado-fase7.md` (a crear) y en `pendientes.md`.
 
+## Dónde quedamos (7/11/2026, Etapas 1 y 2 terminadas)
+
+**Para retomar, empezar por acá.** Todo commiteado y subido (último commit `81b4b50`, más el de esta nota). La real no se tocó (solo lecturas y respaldos) y `ESCRITURA_REAL_HABILITADA` está en `false`.
+
+**Hecho el 7/11/2026 (decisiones 83 a 89):**
+- Variantes de tamaño de las imágenes: `/media/<clave>?w=N` con caché en `MEDIA_DIR_VARIANTES` y `srcset` en el sitio (83).
+- Etapa 1 completa: arreglos de datos (notas al pie, enlaces internos como ruta, íconos del 5360, firmas «Por …»; 84), URLs viejas de WordPress y feed RSS en `/feed/` (85), permiso de `evaristo_migracion` sobre la de pruebas (86), `run-corpus` en vivo y nombres de informes que no se pisan, buscador medido (25 a 65 ms).
+- La real se convierte al modelo nuevo dentro de la migración, con `--limpiar-taxonomia` (87).
+- Etapa 2 completa: ensayo general en `evaristo_cms_test` (`ensayo:preparar` y `ensayo:migrar`, 88). Estado ok en 1 min 46 s, 0 fallidos, repetirlo sin cambios, `verificar:escritura --todos` con 0 diferencias. Encontró y se corrigieron: el correo del autor 39 (los correos se sacan de las bios, 89), el conflicto de claves de imagen `TAPA.jpg`/`tapa.jpg` y la verificación limitada a la muestra.
+- Respaldos de la real de ese día: `CMS-EVARISTO(ASSETS)\respaldos\evaristo_cms-ensayo-2026-11-07T1442Z.sql` y `…T1451Z.sql`.
+
+**Lo que sigue: la Etapa 3 (migración real).** Antes, decidir con Mariano (de a una):
+1. Si se migra la real ya o se espera al hosting (la real no se muestra en ningún lado hasta el despliegue).
+2. Si quiere mirar «Revisión» del panel con el corpus completo antes (no hace falta: la verificación dio 0 diferencias; es la herramienta del trabajo manual posterior).
+
+Secuencia de la Etapa 3 (decisión 87, con la ceremonia de la decisión 50): respaldo; `db:deploy` y `db:sembrar` contra la real; intento en seco con `--esperar-sobrescribir=0` para confirmar N (en el ensayo, 37); commit aparte con el interruptor en `true`; Mariano corre en su terminal `migrar:escribir --todos --wordpress=evaristo_lectura_nueva --originales=<...> --mapa=<...> --avatares=<...> --esperar-articulos=2654 --sobrescribir --esperar-sobrescribir=N --limpiar-taxonomia`; `verificar:escritura --todos --wordpress=evaristo_lectura_nueva` con el mapa y los avatares; `git revert` del interruptor; borrar los respaldos de `listarSeccionesMenu`, `leerTopbar` y `leerBanner` en el sitio; recién ahí el push.
+
+**Antes de seguir:** levantar la 3307 y la 3308 y comprobarlas con `Test-NetConnection`. Si Prisma da `pool timeout` después de reiniciar MySQL84, es la caché de autenticación fría (ver `pendientes.md`, sección 9).
+
 ## Dónde quedamos (4/11/2026, pausa a mitad de la Etapa 1)
 
-**Para retomar mañana, empezar por acá.** Todo lo de este día está commiteado en `main` (5 commits sin subir al empezar la pausa: `ceab152` a `0ac16df`, más el de esta nota si Mariano lo pide); **el push lo hace Mariano**.
+**Histórico.** Todo lo de este día está commiteado en `main` (5 commits sin subir al empezar la pausa: `ceab152` a `0ac16df`, más el de esta nota si Mariano lo pide); **el push lo hace Mariano**.
 
 **Hecho el 4/11/2026:**
 - **Etapa 0b completa**, salvo quitar la clave SSH de la Lenovo de hPanel (Mariano). Originales extraídos con `npm run extraer:originales` a `CMS-EVARISTO(ASSETS)\wordpress-2026-10-31\originales\` (11.174 archivos: 10.975 originales con la clave del CMS y 199 fotos de autor `avatar-<id>.<ext>`), más `mapa-originales.csv` y `mapa-avatares.csv`. Copia idéntica (comparada archivo por archivo con SHA-256) en `backup2` (`E:\Proyectos frontend\CMS-EVARISTO(ASSETS)\wordpress-2026-10-31\`). El dump del 31/10 está cargado en `evaristo_lectura_nueva` (3307).
