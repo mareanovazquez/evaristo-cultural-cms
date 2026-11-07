@@ -867,3 +867,39 @@ a.topbar:focus-visible {
     transform: none;
   }
 }
+
+/* ---------- Marca de fondo (MarcaFondo.astro, 7/11/2026) ----------
+   Una palabra enorme, FIJA en el centro de la pantalla (position: fixed, sin parallax ni JavaScript): el contenido pasa por encima al
+   bajar y la palabra se asoma en los huecos. Lo que tiene fondo propio (navbar, carrusel, banner, tarjetas, footer) la tapa. Se corta
+   por los bordes de la pantalla sin barra horizontal (overflow-x: clip en el body). Colores muy suaves: es decoración, no texto para
+   leer. En la portada, «EVARISTO CULTURAL» con los pesos del wordmark; en cada sección, su nombre en Roboto Black y en accent-100, el
+   mismo verde del fondo de la etiqueta de sección. */
+.marca-fondo {
+  position: fixed;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  display: flex;
+  gap: 0.25em;
+  font-family: var(--font-marca);
+  font-size: clamp(110px, 20vw, 340px);
+  line-height: 0.8;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+.marca-fondo b {
+  font-weight: 900;
+  color: var(--surface-2);
+}
+.marca-fondo span {
+  font-weight: 600;
+  color: var(--accent-100);
+}
+.marca-fondo--sola b {
+  color: var(--accent-100);
+}

@@ -1,6 +1,7 @@
 ---
 import Base from "../../layouts/Base.astro";
 import Listado from "../../components/Listado.astro";
+import MarcaFondo from "../../components/MarcaFondo.astro";
 import { rutaSeccion } from "@evaristo/compartido/urls";
 import { esNovedad, fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../../lib/articulos";
 import { cantidadDePaginas, paginaPedida } from "../../lib/paginacion";
@@ -28,6 +29,7 @@ const notas = await notasDeSeccion(seccion.id, pagina);
 ---
 
 <Base titulo={pagina > 1 ? `${seccion.nombre} (página ${pagina})` : seccion.nombre} descripcion={`Notas de ${seccion.nombre} en Evaristo Cultural.`}>
+  <MarcaFondo principal={seccion.nombre} />
   <Listado
     titulo={seccion.nombre}
     total={total}

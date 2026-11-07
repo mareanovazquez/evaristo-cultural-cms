@@ -4,6 +4,7 @@ import Base from "../layouts/Base.astro";
 import Banner from "../components/Banner.astro";
 import BloqueSeccion from "../components/BloqueSeccion.astro";
 import Carrusel from "../components/Carrusel.astro";
+import MarcaFondo from "../components/MarcaFondo.astro";
 import Tarjeta from "../components/Tarjeta.astro";
 import { esNovedad, fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../lib/articulos";
 import { leerBanner } from "../lib/banner";
@@ -38,8 +39,7 @@ const BAJADA = "Revista cultural de Evaristo Editorial: entrevistas, reseñas, e
           <p class="portada-fecha">{hoy}</p>
         </header>
 
-        {/* Decoración: la marca enorme, fija en el fondo de la pantalla; el contenido pasa por encima al bajar (7/11/2026). aria-hidden: no es contenido. */}
-        <p class="portada-marca-fondo" aria-hidden="true"><b>Evaristo</b> <span>Cultural</span></p>
+        <MarcaFondo principal="Evaristo" secundaria="Cultural" />
 
         <Carrusel diapositivas={carrusel.map(diapositivaDeNota)} intervalo={6000} />
 

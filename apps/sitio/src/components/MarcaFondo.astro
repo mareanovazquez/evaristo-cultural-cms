@@ -1,0 +1,14 @@
+---
+// Palabra enorme fija en el fondo de la pantalla (7/11/2026; estilos en sitio.css, «Marca de fondo»). Es decoración: aria-hidden.
+//   Portada: <MarcaFondo principal="Evaristo" secundaria="Cultural" />  (los dos pesos del wordmark)
+//   Sección: <MarcaFondo principal={seccion.nombre} />                 (una sola palabra, en el verde de la etiqueta)
+interface Props {
+  principal: string;
+  secundaria?: string;
+}
+const { principal, secundaria } = Astro.props;
+---
+
+<p class:list={["marca-fondo", { "marca-fondo--sola": !secundaria }]} aria-hidden="true">
+  <b>{principal}</b>{secundaria && <> <span>{secundaria}</span></>}
+</p>

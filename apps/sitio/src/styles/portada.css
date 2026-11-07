@@ -311,36 +311,6 @@
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
 }
-/* Marca de fondo (7/11/2026, para que la portada se vea menos lavada): «EVARISTO CULTURAL» enorme, con la tipografía y los pesos del
-   wordmark, FIJA en el centro de la pantalla (position: fixed, sin parallax ni JavaScript): el contenido pasa por encima al bajar y la
-   marca se asoma en los huecos. Lo que tiene fondo propio (navbar, carrusel, banner, tarjetas, footer) la tapa. Se corta por los
-   bordes de la pantalla sin barra horizontal. Colores muy suaves: es decoración, no texto para leer. Solo en la portada. */
-.portada-marca-fondo {
-  position: fixed;
-  z-index: -1;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  margin: 0;
-  display: flex;
-  gap: 0.25em;
-  font-family: var(--font-marca);
-  font-size: clamp(110px, 20vw, 340px);
-  line-height: 0.8;
-  letter-spacing: -0.02em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  pointer-events: none;
-  user-select: none;
-}
-.portada-marca-fondo b {
-  font-weight: 900;
-  color: var(--surface-2);
-}
-.portada-marca-fondo span {
-  font-weight: 600;
-  color: var(--accent-100);
-}
 @media (max-width: 1023px) {
   .portada-banda {
     grid-template-columns: repeat(2, minmax(0, 1fr));
