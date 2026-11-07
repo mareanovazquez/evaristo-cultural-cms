@@ -45,7 +45,7 @@
 ## Lo que falta de la decisión 78
 
 1. ✅ **El «90 días por defecto» de las novedades (hecho el 4/11/2026).** En el panel, una casilla «Es novedad»: al marcarla propone hoy + 90 días (fin del día, hora local), y la fecha se puede cambiar; al desmarcarla se vacía. La ayuda explica qué pasa al vencer y, si ya venció, que desmarcarla la saca también del archivo. Prueba en `test-pantalla` (93). **Confirmado con Mariano el 4/11/2026:** pueden convivir varias novedades, cada una vence en su fecha (una nueva no reemplaza a la anterior), cualquier artículo de cualquier sección puede ser novedad, y si no hay vigentes el bloque de la portada no se muestra (sin vencimiento automático alternativo).
-2. **Convertir la real** antes o junto con la migración completa (ver Etapa 3). Es lo único de esta reorganización que condiciona la fase 7.
+2. **Convertir la real**: decidido el 7/11/2026 (decisión 87), va **dentro de la migración** (los 35 se reescriben con `--sobrescribir` y después una limpieza borra las secciones y categorías viejas vacías). Falta escribir y probar esa limpieza.
 3. **A confirmar con la editorial:** el nombre «Asia» para lo que era Seda; la identidad de Crítica (distinta de Reseña; arranca vacía, se carga tras la revisión manual); que Textos admita cuentos nuevos (se habló en la reunión). Y que Mariano mire el menú nuevo en escritorio y celular: no se vio en un navegador.
 4. ✅ **`run-corpus` arreglado el 7/11/2026:** lee WordPress en vivo (solo lectura; `npm run corpus -w @evaristo/compartido -- [salida]`, con la 3307 levantada), con los mismos artículos que la migración y el mapeo nuevo. Ya no usa `posts.json` ni los dos archivos de `out/`.
 5. ✅ **`test-flujo` (F-g), arreglado el 7/11/2026:** un informe del mismo segundo que otro ya no lo pisa (`rutaLibre` agrega `-2`, `-3`…), en la simulación y en la escritura.
@@ -141,7 +141,7 @@ En este orden (de lo que más condiciona a lo que menos):
 
 - **Ceremonia de la decisión 50:** respaldo con `mysqldump --result-file`; ensayo en seco y aprobación; commit aparte con `ESCRITURA_REAL_HABILITADA = true` (sin push ni tests); Mariano ejecuta `migrar:escribir` en su terminal interactiva; verificación en solo lectura; `git revert --no-commit` y commit con el interruptor en `false`; recién ahí el push. **Nunca dejar el `true` al cerrar una sesión.**
 - **Antes:** aplicar las nueve migraciones a `evaristo_cms` con `db:deploy` (con respaldo previo) y regenerar el texto plano de los 19 artículos de la decisión 53 (con `--sobrescribir`).
-- **Antes (nuevo, decisión 78): convertir la real al modelo nuevo.** Hoy tiene 17 secciones y los 35 artículos con la sección vieja. `db:sembrar` solo **crea** las que faltan (Textos) y no borra las viejas; el verificador posterior ya espera 9 secciones (`SECCIONES.length`) y marcaría la diferencia. Dos caminos: (a) **conversión en el lugar**, como se hizo en la dev el 30/10 (reaplicar a cada artículo la sección, categorías y volanta que calcula `armar`, subir las secciones nuevas y borrar las viejas ya vacías; el script era descartable y no se guardó, hay que rehacerlo, con modo de prueba que deshace la transacción); o (b) **re-migrar los 35 con `--sobrescribir`** y borrar después las secciones y categorías viejas. Con respaldo previo y aprobación. Decidirlo con Mariano.
+- **Antes (nuevo, decisión 78): convertir la real al modelo nuevo.** Hoy tiene 17 secciones y los 35 artículos con la sección vieja. `db:sembrar` solo **crea** las que faltan (Textos) y no borra las viejas; el verificador posterior ya espera 9 secciones (`SECCIONES.length`) y marcaría la diferencia. **Decidido el 7/11/2026 (decisión 87): re-migrar los 35 con `--sobrescribir` dentro de la migración completa** y después una limpieza que borra las secciones y categorías viejas vacías y ajusta nombre y orden (la secuencia completa, de 7 pasos, está en la decisión 87). Lo que falta es escribir y probar la limpieza. Con respaldo previo y aprobación.
 - **Después:** comparación independiente contra WordPress con los 2.637, revisión por muestreo, reparto de `sin-asignar` (8) y revisión de Textos (~1.037, 96 de ellos Novedades de WordPress con la novedad vencida), bios y fotos de los 424 autores, y decidir con la dueña qué hacer con los 48 borradores y el privado 19300.
 
 ### Etapa 4: lanzamiento (depende de la fase 1)
@@ -152,7 +152,7 @@ En este orden (de lo que más condiciona a lo que menos):
 ### Decisiones para plantear (de a una)
 
 1. **Hosting y correo** (cuándo se decide y con quién): condiciona el lanzamiento. Al 31/10/2026, Mariano y Roxana están hablando de abrir un hosting propio para que la propiedad quede en la editorial; todavía no está decidido.
-2. **Cómo convertir la real** (en el lugar o re-migrando los 35): ver Etapa 3.
+2. ~~**Cómo convertir la real**~~: decidido el 7/11/2026, dentro de la migración (decisión 87).
 3. **Qué hacer con los 39 pares que comparten un archivo** (Etapa 0b, paso 4) y **cómo resolver las colisiones de nombres de imagen** (renombrar al importar o colación binaria; Etapa 1, punto 1).
 4. ~~**Variantes de tamaño de las imágenes**~~: decidido (83) y hecho el 7/11/2026, a pedido en la API.
 5. **Borradores migrados y privado 19300:** publicar, eliminar o dejar.
