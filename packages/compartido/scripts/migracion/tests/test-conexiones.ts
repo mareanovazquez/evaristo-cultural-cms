@@ -128,6 +128,11 @@ t("T14: --esperar-articulos exige --escribir; --sobrescribir exige --escribir y 
   falla(["--muestra", "--esperar-articulos=35"], /solo se usa con --escribir/);
   falla(["--muestra", "--sobrescribir"], /--sobrescribir solo se usa con --escribir/);
   falla(["--muestra", "--sobrescribir", "--esperar-sobrescribir=1"], /--sobrescribir solo se usa con --escribir/);
+  // --limpiar-taxonomia (decisión 87): solo al escribir, sin valor; la simulación siempre muestra la limpieza prevista.
+  falla(["--todos", "--limpiar-taxonomia"], /--limpiar-taxonomia solo se usa con --escribir/);
+  falla(["--todos", "--escribir", "--esperar-articulos=1", "--limpiar-taxonomia=si"], /no lleva valor/);
+  assert.equal(parsearArgumentos(["--todos", "--escribir", "--esperar-articulos=1", "--limpiar-taxonomia"], [1]).limpiarTaxonomia, true);
+  assert.equal(parsearArgumentos(["--todos", "--escribir", "--esperar-articulos=1"], [1]).limpiarTaxonomia, undefined);
   falla(["--muestra", "--simular", "--escribir", "--esperar-articulos=35"], /no se pueden usar juntos/);
   falla(["--muestra", "--escribir"], /necesita --esperar-articulos/);
   for (const n of ["abc", "0", "-1", "3.5", "1e3", " 5", "5 ", "035x"]) falla(["--muestra", "--escribir", `--esperar-articulos=${n}`], /entero positivo/);

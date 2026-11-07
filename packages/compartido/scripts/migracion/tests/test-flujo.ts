@@ -95,10 +95,13 @@ try {
   });
 
   // c. repetir b
-  await ta("F-c: repetir la muestra: todo sin cambios y ningún actualizadoEn cambia", async () => {
+  await ta("F-c: repetir la muestra (con --limpiar-taxonomia): todo sin cambios, ningún actualizadoEn cambia y no hay taxonomía vieja que borrar", async () => {
     const antes = await foto();
-    const r = await correr(["--muestra", "--esperar-articulos=35"]);
+    const r = await correr(["--muestra", "--esperar-articulos=35", "--limpiar-taxonomia"]);
     assert.equal(r.codigo, 0, r.texto);
+    // La base de pruebas ya tiene el modelo nuevo: la limpieza corre, no borra nada y lo dice (en la terminal y en el informe).
+    assert.ok(r.texto.includes("Limpieza prevista (con --limpiar-taxonomia): Secciones viejas a borrar (0): ninguna"), r.texto);
+    assert.match(r.texto, /Limpieza de la taxonomía vieja: 0 secciones y 0 categorías borradas;/);
     assert.deepEqual(r.conteos, { escritos: 0, sinCambios: 35, difieren: 0, sobrescritos: 0, fallidos: 0 });
     assert.deepEqual(r.redirecciones, { creadas: 0, sinCambios: 58, conflictos: 0 });
     assert.deepEqual(await foto(), antes);

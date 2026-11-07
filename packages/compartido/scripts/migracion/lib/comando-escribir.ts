@@ -7,10 +7,11 @@ import { credencialesDeUrl, ErrorDeCredenciales } from "./credenciales.ts";
 import type { Credenciales } from "./credenciales.ts";
 import { DESTINO_REAL, ESCRITURA_REAL_HABILITADA } from "./destinos.ts";
 import type { Informe } from "./informe.ts";
+import { resumenLimpieza } from "./taxonomia-vieja.ts";
 import { ocultarCorreos } from "./utilidades.ts";
 
 export const USO = [
-  "Uso: migrar-escribir.ts (--muestra | --ids=a,b | --todos) --esperar-articulos=N --originales=<carpeta> [--wordpress=<base>] [--mapa=<csv>] [--avatares=<csv>] [--abortar-al-primer-error]",
+  "Uso: migrar-escribir.ts (--muestra | --ids=a,b | --todos) --esperar-articulos=N --originales=<carpeta> [--wordpress=<base>] [--mapa=<csv>] [--avatares=<csv>] [--abortar-al-primer-error] [--limpiar-taxonomia]",
   "                        [--sobrescribir --esperar-sobrescribir=N]   (N = total de filas que se reescribirían: artículos + autores + imágenes)",
 ].join("\n");
 
@@ -66,5 +67,6 @@ export function resumenDelPlan(i: Informe, destino: { host: string; puerto: numb
   l.push(`Problemas de artículo: ${i.problemasDeArticulo.length ? i.problemasDeArticulo.map((p) => `${p.wpId}:${p.codigo}`).join(", ") : "ninguno"}`);
   l.push(`Bloqueantes: ${i.bloqueantes.length ? i.bloqueantes.map((b) => b.codigo).join(", ") : "ninguno"}`);
   l.push(`Avisos por código (artículos): ${JSON.stringify(Object.fromEntries(Object.entries(i.avisosPorCodigo).map(([k, v]) => [k, v.articulos])))}`);
+  if (i.limpiezaPrevista) for (const linea of resumenLimpieza(i.limpiezaPrevista)) l.push(`Limpieza prevista (con --limpiar-taxonomia): ${linea}`);
   return l.map(ocultarCorreos);
 }

@@ -133,7 +133,7 @@ export async function correrFlujoEscribir(argv: readonly string[], env: Readonly
 
   const corrida = await correrEscritura({
     destino, plan, esperarArticulos: opciones.esperarArticulos, sobrescribir: opciones.sobrescribir, esperarSobrescribir: opciones.esperarSobrescribir,
-    abortarAlPrimerError: opciones.abortarAlPrimerError, terminalInteractiva: deps.terminalInteractiva, baseTipeada, carpetaInformes: deps.carpetaInformes,
+    abortarAlPrimerError: opciones.abortarAlPrimerError, limpiarTaxonomia: opciones.limpiarTaxonomia === true, terminalInteractiva: deps.terminalInteractiva, baseTipeada, carpetaInformes: deps.carpetaInformes,
     abrir: (d) => deps.abrirEscritura(d, credenciales),
   });
   if (corrida.rechazada) {
@@ -144,6 +144,8 @@ export async function correrFlujoEscribir(argv: readonly string[], env: Readonly
   log(`Escritura en ${corrida.informe.destino.host}:${corrida.informe.destino.puerto}/${corrida.informe.destino.base}: estado ${r.estado}${r.abortado ? " (abortada al primer error)" : ""}`);
   log(`Artículos: ${JSON.stringify(r.conteos)} | redirecciones: ${JSON.stringify(r.redirecciones)} | conflictos: ${r.conflictos.length}`);
   log(`Sobrescritura (solo ids): ${JSON.stringify(r.idsSobrescritos)}`);
+  const l = corrida.informe.limpieza;
+  if (l) log("error" in l ? `Limpieza de la taxonomía vieja: FALLÓ y se deshizo (${l.error})` : `Limpieza de la taxonomía vieja: ${l.seccionesBorradas} secciones y ${l.categoriasBorradas} categorías borradas; ${l.seccionesAjustadas} secciones ajustadas y ${l.seccionesCreadas} creadas; quedan con artículos ${l.plan.secciones.conArticulos.length} secciones y ${l.plan.categorias.conArticulos.length} categorías viejas`);
   if (corrida.rutas) log(`Informe: ${corrida.rutas.md}`);
   return corrida.codigoDeSalida;
 }

@@ -5,6 +5,8 @@ import { join } from "node:path";
 import type { OpcionesCli, ConexionesVerificadas } from "./conexiones.ts";
 import type { ResumenEjecucion } from "./ejecutor.ts";
 import type { Preparado } from "./preparar.ts";
+import { resumenLimpieza } from "./taxonomia-vieja.ts";
+import type { PlanLimpieza } from "./taxonomia-vieja.ts";
 import { cuentaDe } from "./utilidades.ts";
 
 export interface Informe {
@@ -34,9 +36,11 @@ export interface Informe {
   conflictos: Preparado["validacion"]["conflictos"];
   avisosPorCodigo: Record<string, { articulos: number; total: number }>;
   biosConCorreo: Array<{ wpUserId: number; nombre: string; articulos: number }>;
+  /** Lo que haría --limpiar-taxonomia después de escribir este plan (decisión 87): qué secciones y categorías viejas quedarían vacías. */
+  limpiezaPrevista?: PlanLimpieza;
 }
 
-export function construirInforme(o: { generadoEn: string; opciones: OpcionesCli; ids: number[]; conexiones: Pick<ConexionesVerificadas, "destino" | "servidorCms" | "servidorWordPress">; preparado: Preparado; ejecucion: ResumenEjecucion }): Informe {
+export function construirInforme(o: { generadoEn: string; opciones: OpcionesCli; ids: number[]; conexiones: Pick<ConexionesVerificadas, "destino" | "servidorCms" | "servidorWordPress">; preparado: Preparado; ejecucion: ResumenEjecucion; limpiezaPrevista?: PlanLimpieza }): Informe {
   const { plan, planCompleto, validacion } = o.preparado;
   const avisosPorCodigo: Informe["avisosPorCodigo"] = {};
   const sumar = (clave: string) => { const a = (avisosPorCodigo[clave] ??= { articulos: 0, total: 0 }); a.articulos++; a.total++; };
@@ -81,6 +85,7 @@ export function construirInforme(o: { generadoEn: string; opciones: OpcionesCli;
     ...(plan.fotosAutor ? { fotosAutor: { conFoto: plan.fotosAutor.length, sinFila: plan.fotosAutorSinFila ?? [] } } : {}),
     intercalaciones: validacion.intercalaciones, bloqueantes: validacion.bloqueantes, problemasDeArticulo: validacion.deArticulo, conflictos: validacion.conflictos,
     avisosPorCodigo, biosConCorreo: [...bios.values()].sort((a, b) => a.wpUserId - b.wpUserId),
+    ...(o.limpiezaPrevista ? { limpiezaPrevista: o.limpiezaPrevista } : {}),
   };
 }
 
@@ -102,7 +107,12 @@ export function informeAMarkdown(i: Informe): string {
   md.push(`- Originales faltantes: ${j(i.imagenes.originalesFaltantes)}; sin medir: ${j(i.imagenes.sinMedir)}`);
   if (i.fotosAutor) md.push(`- Fotos de autor: ${j(i.fotosAutor)}`);
   md.push(`- Avisos por código (artículos / ocurrencias): ${j(i.avisosPorCodigo)}`);
-  md.push(`- Bios con correo (el correo no se copia): ${j(i.biosConCorreo)}`, "");
+  md.push(`- Bios con correo (el correo no se copia): ${j(i.biosConCorreo)}`);
+  if (i.limpiezaPrevista) {
+    md.push("", "## Limpieza de la taxonomía vieja prevista (--limpiar-taxonomia, decisión 87)", "");
+    for (const l of resumenLimpieza(i.limpiezaPrevista)) md.push(`- ${l}`);
+  }
+  md.push("");
   md.push("## Filas por tabla", "", "| tabla | en el plan | insertar | actualizar | omitir | ya existe (sin comparar) | clave natural |", "|---|---|---|---|---|---|---|");
   for (const t of i.tablas) md.push(`| ${t.tabla} | ${t.enElPlan} | ${t.insertar} | ${t.actualizar} | ${t.omitir} | ${t.yaExisteSinComparar ?? "—"} | ${t.claveNatural} |`);
   md.push("", "## Artículos", "", "| wpId | slug | estado | publicadoEn | sección | encabezado | avisos |", "|---|---|---|---|---|---|---|");

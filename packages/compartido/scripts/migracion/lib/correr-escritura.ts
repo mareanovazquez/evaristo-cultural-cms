@@ -6,6 +6,8 @@ import { abrirConexionEscritura, calcularSobrescrituras, escribirPlan } from "./
 import type { ConexionEscritura, PlanEscribible, ResultadoEscritura, Sobrescritura } from "./escribir.ts";
 import { codigoDeSalida, construirInformeEscritura, escribirInformeEscritura } from "./informe-escritura.ts";
 import type { InformeEscritura } from "./informe-escritura.ts";
+import { limpiarTaxonomia } from "./limpiar-taxonomia.ts";
+import { modeloTaxonomia } from "./taxonomia-vieja.ts";
 
 export interface OpcionesCorrida {
   /** Una de las constantes de destinos.ts. */
@@ -15,6 +17,8 @@ export interface OpcionesCorrida {
   sobrescribir: boolean;
   esperarSobrescribir: number | null;
   abortarAlPrimerError: boolean;
+  /** --limpiar-taxonomia (decisión 87): después de escribir, borrar las secciones y categorías viejas sin artículos y ajustar las nuevas. */
+  limpiarTaxonomia?: boolean;
   terminalInteractiva: boolean;
   baseTipeada: string | null;
   /** Si se pasa, el informe se escribe ahí (<fecha>-escribir.json y .md). */
@@ -48,13 +52,22 @@ export async function correrEscritura(o: OpcionesCorrida): Promise<ResultadoCorr
     }
     // 3. escribir
     const resultado = await escribirPlan(conexion.prisma, o.plan, { abortarAlPrimerError: o.abortarAlPrimerError, sobrescribir });
+    // 4. la limpieza de la taxonomía vieja, si se pidió y la corrida no se cortó: en su propia transacción (o entera, o nada)
+    let limpieza: InformeEscritura["limpieza"];
+    if (o.limpiarTaxonomia && !resultado.abortado) {
+      try {
+        limpieza = await limpiarTaxonomia(conexion.prisma, modeloTaxonomia());
+      } catch (e) {
+        limpieza = { error: e instanceof Error ? e.message.split("\n")[0]! : "error desconocido" };
+      }
+    }
     const informe = construirInformeEscritura({
       generadoEn: (o.ahora?.() ?? new Date()).toISOString(), destino: { host: conexion.destino.host, puerto: conexion.destino.puerto, base: conexion.destino.base }, servidor: conexion.servidor,
       opciones: { abortarAlPrimerError: o.abortarAlPrimerError, sobrescribir: o.sobrescribir, esperarArticulos: o.esperarArticulos, esperarSobrescribir: o.esperarSobrescribir },
-      plan: o.plan, resultado,
+      plan: o.plan, resultado, ...(limpieza ? { limpieza } : {}),
     });
     const rutas = o.carpetaInformes ? escribirInformeEscritura(o.carpetaInformes, informe) : null;
-    return { rechazada: false, resultado, informe, rutas, codigoDeSalida: codigoDeSalida(resultado) };
+    return { rechazada: false, resultado, informe, rutas, codigoDeSalida: codigoDeSalida(resultado, limpieza) };
   } finally {
     await conexion.cerrar();
   }

@@ -5,6 +5,7 @@
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { PrismaClient } from "../../../src/generated/prisma/client.js";
 import { guardaDestino } from "./destinos.ts";
+import type { CategoriaEnBase, SeccionEnBase } from "./taxonomia-vieja.ts";
 import { marcas, num, str } from "./utilidades.ts";
 
 export type Fila = Record<string, unknown>;
@@ -225,6 +226,28 @@ export async function leerAutoresPorSlugsOWpUserIds(bd: Consulta, pares: Readonl
 }
 export const leerSeccionesCms = (bd: Consulta) => bd("SELECT slug FROM secciones");
 export const leerCategoriasCms = (bd: Consulta) => bd("SELECT slug FROM categorias");
+
+/**
+ * Secciones y categorías del CMS con los wpId de los artículos que las usan, para la vista previa de la limpieza de la taxonomía vieja
+ * (decisión 87). Las secciones van con SELECT *: la real todavía no tiene la columna `orden` (llega con la migración secciones_orden).
+ */
+export async function leerTaxonomiaCms(bd: Consulta): Promise<{ secciones: SeccionEnBase[]; categorias: CategoriaEnBase[] }> {
+  const secciones = await bd("SELECT * FROM secciones");
+  const categorias = await bd("SELECT id, slug, nombre FROM categorias");
+  const articulos = await bd("SELECT wpId, seccionId, categoriaPrincipalId FROM articulos");
+  const enlaces = await bd("SELECT ac.categoriaId AS categoriaId, a.wpId AS wpId FROM articulos_categorias ac JOIN articulos a ON a.id = ac.articuloId");
+  const wp = (v: unknown) => (v === null || v === undefined ? null : num(v));
+  return {
+    secciones: secciones.map((s) => ({
+      slug: String(s["slug"]), nombre: String(s["nombre"]), interna: num(s["interna"]) === 1, orden: "orden" in s ? num(s["orden"]) : null,
+      articulos: articulos.filter((a) => num(a["seccionId"]) === num(s["id"])).map((a) => wp(a["wpId"])),
+    })),
+    categorias: categorias.map((c) => ({
+      slug: String(c["slug"]), nombre: String(c["nombre"]),
+      articulos: [...enlaces.filter((e) => num(e["categoriaId"]) === num(c["id"])).map((e) => wp(e["wpId"])), ...articulos.filter((a) => a["categoriaPrincipalId"] !== null && num(a["categoriaPrincipalId"]) === num(c["id"])).map((a) => wp(a["wpId"]))],
+    })),
+  };
+}
 
 /** Agrupa por intercalación, en la base, los pares (id, slug) dados y cuenta los grupos con más de una fila. */
 export async function agruparSlugsEnBd(bd: Consulta, valores: ReadonlyArray<readonly [number, string]>): Promise<Fila | undefined> {

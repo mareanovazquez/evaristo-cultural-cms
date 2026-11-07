@@ -8,7 +8,8 @@ import type { EntradaArmar } from "./armar.ts";
 import { entradaEnVivo } from "./entrada-vivo.ts";
 import { construirInforme } from "./informe.ts";
 import type { Informe } from "./informe.ts";
-import { leerCuentas } from "./leer-wordpress.ts";
+import { leerCuentas, leerTaxonomiaCms } from "./leer-wordpress.ts";
+import { modeloTaxonomia, planearLimpieza } from "./taxonomia-vieja.ts";
 import type { Consulta } from "./leer-wordpress.ts";
 import { prepararPlan } from "./preparar.ts";
 import { leerMapaAvataresCsv, leerMapaCsv } from "./extraer-originales.ts";
@@ -58,6 +59,9 @@ export async function simular(
     ...(deps.medir ? { medir: deps.medir } : {}),
   });
   const ejecucion = await new EjecutorNulo(bd).ejecutar(preparado.plan);
-  const informe = construirInforme({ generadoEn: (deps.ahora?.() ?? new Date()).toISOString(), opciones, ids, conexiones, preparado, ejecucion });
+  // Vista previa de la limpieza de la taxonomía vieja (decisión 87): lo que quedaría vacío después de reescribir los artículos del plan.
+  const taxonomia = await leerTaxonomiaCms(bd);
+  const limpiezaPrevista = planearLimpieza(modeloTaxonomia(), taxonomia.secciones, taxonomia.categorias, new Set(preparado.plan.articulos.map((a) => a.wpId)));
+  const informe = construirInforme({ generadoEn: (deps.ahora?.() ?? new Date()).toISOString(), opciones, ids, conexiones, preparado, ejecucion, limpiezaPrevista });
   return { informe, preparado, ejecucion };
 }

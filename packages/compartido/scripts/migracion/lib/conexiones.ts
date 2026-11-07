@@ -84,6 +84,8 @@ export interface OpcionesCli {
   mapa?: string;
   /** `mapa-avatares.csv` (--avatares=<archivo>): las fotos de autor (decisión 80). Sin la opción, ningún autor lleva foto. */
   avatares?: string;
+  /** --limpiar-taxonomia (solo con --escribir): después de escribir, borra las secciones y categorías viejas sin artículos (decisión 87). */
+  limpiarTaxonomia?: boolean;
 }
 
 export class ErrorDeArgumentos extends Error {}
@@ -95,7 +97,7 @@ export const NO_IMPLEMENTADO: readonly string[] = [];
  * Interpreta los argumentos. `idsMuestra` son los 35 ids de la muestra, en el orden en que se arman.
  * Exactamente uno de --ids=a,b | --muestra | --todos; --simular (por defecto) o --escribir con --esperar-articulos=N;
  * --abortar-al-primer-error; --sobrescribir (solo con --escribir, y con --esperar-sobrescribir=N); --originales=<carpeta>; --wordpress=<base>
- * (solo una de BASES_WORDPRESS); --mapa=<mapa-originales.csv>; --avatares=<mapa-avatares.csv>.
+ * (solo una de BASES_WORDPRESS); --mapa=<mapa-originales.csv>; --avatares=<mapa-avatares.csv>; --limpiar-taxonomia (solo con --escribir).
  * Todo lo demás se rechaza. Que --escribir se acepte al parsear no la habilita: la decisión es de confirmaciones.ts.
  */
 export function parsearArgumentos(argv: readonly string[], idsMuestra: readonly number[]): OpcionesCli {
@@ -106,7 +108,7 @@ export function parsearArgumentos(argv: readonly string[], idsMuestra: readonly 
     return v === "" ? rechazar(`${nombre} necesita un valor (${nombre}=...)`) : v;
   };
   let ids: string | null = null, muestra = false, todos = false, simular = false, escribir = false, esperar: string | null = null, esperarSobre: string | null = null;
-  let abortar = false, sobrescribir = false, originales: string | null = null, wordpress: string | null = null, mapa: string | null = null, avatares: string | null = null;
+  let limpiar = false, abortar = false, sobrescribir = false, originales: string | null = null, wordpress: string | null = null, mapa: string | null = null, avatares: string | null = null;
   for (const arg of argv) {
     const nombre = arg.includes("=") ? arg.slice(0, arg.indexOf("=")) : arg;
     if (!arg.startsWith("--")) rechazar(`argumento desconocido: ${arg}`);
@@ -124,6 +126,7 @@ export function parsearArgumentos(argv: readonly string[], idsMuestra: readonly 
       case "--esperar-sobrescribir": if (!conValor) rechazar("--esperar-sobrescribir necesita un valor (--esperar-sobrescribir=N)"); esperarSobre = valor(arg, nombre); break;
       case "--abortar-al-primer-error": sinValor(nombre); abortar = true; break;
       case "--sobrescribir": sinValor(nombre); sobrescribir = true; break;
+      case "--limpiar-taxonomia": sinValor(nombre); limpiar = true; break;
       case "--originales": if (!conValor) rechazar("--originales necesita un valor (--originales=<carpeta>)"); originales = valor(arg, nombre); break;
       case "--wordpress": if (!conValor) rechazar("--wordpress necesita un valor (--wordpress=<base>)"); wordpress = valor(arg, nombre); if (!BASES_WORDPRESS.includes(wordpress)) rechazar(`--wordpress: solo ${BASES_WORDPRESS.join(" o ")}`); break;
       case "--mapa": if (!conValor) rechazar("--mapa necesita un valor (--mapa=<mapa-originales.csv>)"); mapa = valor(arg, nombre); break;
@@ -137,6 +140,7 @@ export function parsearArgumentos(argv: readonly string[], idsMuestra: readonly 
   if (simular && escribir) rechazar("--simular y --escribir no se pueden usar juntos");
   if (esperar !== null && !escribir) rechazar("--esperar-articulos solo se usa con --escribir");
   if (sobrescribir && !escribir) rechazar("--sobrescribir solo se usa con --escribir");
+  if (limpiar && !escribir) rechazar("--limpiar-taxonomia solo se usa con --escribir (la simulación siempre muestra la limpieza prevista)");
   if (sobrescribir && esperarSobre === null) rechazar("--sobrescribir necesita --esperar-sobrescribir=N");
   if (esperarSobre !== null && !sobrescribir) rechazar("--esperar-sobrescribir solo se usa con --sobrescribir");
   let esperarSobrescribir: number | null = null;
@@ -165,5 +169,5 @@ export function parsearArgumentos(argv: readonly string[], idsMuestra: readonly 
   const pedidosSinImplementar = todos ? NO_IMPLEMENTADO : [];
   if (pedidosSinImplementar.length) rechazar(`${pedidosSinImplementar.join(" y ")}: no implementado en este tramo`);
 
-  return { alcance, modo: escribir ? "escribir" : "simular", esperarArticulos, esperarSobrescribir, abortarAlPrimerError: abortar, sobrescribir, originales, ...(wordpress !== null ? { wordpress } : {}), ...(mapa !== null ? { mapa } : {}), ...(avatares !== null ? { avatares } : {}) };
+  return { alcance, modo: escribir ? "escribir" : "simular", esperarArticulos, esperarSobrescribir, abortarAlPrimerError: abortar, sobrescribir, originales, ...(wordpress !== null ? { wordpress } : {}), ...(mapa !== null ? { mapa } : {}), ...(avatares !== null ? { avatares } : {}), ...(limpiar ? { limpiarTaxonomia: true } : {}) };
 }

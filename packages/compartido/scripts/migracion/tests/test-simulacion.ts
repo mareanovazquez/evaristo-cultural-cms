@@ -39,6 +39,11 @@ function clienteSimulado(existentes: Record<string, string[]> = {}) {
       const m = texto.match(/SELECT (\w+) AS clave FROM (\w+) WHERE/);
       if (m) return (existentes[m[2]!] ?? []).filter((v) => p.map(String).includes(v)).map((v) => ({ clave: v }));
       if (/FROM `wp_users`/.test(texto)) return entrada.cuentas.map((c) => ({ id: c.wpUserId, login: c.user_login, nombre: c.nombre }));
+      // La taxonomía del CMS para la vista previa de la limpieza (decisión 87): una base con el modelo viejo y sin la columna orden.
+      if (texto === "SELECT * FROM secciones") return [{ id: 1, slug: "entrevista", nombre: "Entrevistas", interna: 0 }, { id: 2, slug: "seda", nombre: "Seda", interna: 0 }, { id: 3, slug: "ficcion", nombre: "Ficción", interna: 0 }];
+      if (texto === "SELECT id, slug, nombre FROM categorias") return [{ id: 1, slug: "poesia", nombre: "Poesía" }, { id: 2, slug: "vieja", nombre: "Vieja" }];
+      if (texto === "SELECT wpId, seccionId, categoriaPrincipalId FROM articulos") return [{ wpId: 12526, seccionId: 2, categoriaPrincipalId: 2 }, { wpId: 620, seccionId: 2, categoriaPrincipalId: null }, { wpId: null, seccionId: 3, categoriaPrincipalId: null }];
+      if (/FROM articulos_categorias ac JOIN articulos a/.test(texto)) return [{ categoriaId: 2, wpId: 620 }];
       throw new Error(`consulta inesperada en la simulación: ${texto.slice(0, 80)}`);
     },
   };
@@ -73,6 +78,16 @@ await ta("T16: la simulación de los 35 solo emite SELECT y devuelve el informe 
   assert.equal(informe.categoriasACrear.length, 7);
   assert.equal(informe.imagenes.referenciadas, 202);
   assert.equal(informe.imagenes.conFila, 200);
+  // Vista previa de la limpieza: «seda» solo tiene artículos del plan (se borra); «ficcion» tiene uno del panel (queda); «entrevista» cambia de
+  // nombre y de orden; «vieja» solo la usan artículos del plan (se borra); faltan las otras 8 secciones del modelo.
+  const lp = informe.limpiezaPrevista!;
+  assert.deepEqual(lp.secciones.borrar, ["seda"]);
+  assert.deepEqual(lp.secciones.conArticulos, [{ slug: "ficcion", articulos: 1 }]);
+  assert.deepEqual(lp.secciones.ajustar, [{ slug: "entrevista", cambios: { nombre: { antes: "Entrevistas", despues: "Entrevista" }, orden: { antes: null, despues: 1 } } }]);
+  assert.equal(lp.secciones.crear.length, 8);
+  assert.deepEqual(lp.categorias.borrar, ["vieja"]);
+  assert.deepEqual(lp.categorias.conArticulos, []);
+  assert.match(informeAMarkdown(informe), /## Limpieza de la taxonomía vieja prevista/);
   assert.equal(informe.imagenes.bytesTotales, 200 * 1000);
   assert.deepEqual(informe.imagenes.originalesFaltantes.map((x) => x.adjuntoWpId), [2464, 22547]);
   assert.deepEqual(informe.imagenes.sinMedir, []);

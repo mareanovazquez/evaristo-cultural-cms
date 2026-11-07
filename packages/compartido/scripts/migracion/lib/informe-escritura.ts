@@ -4,6 +4,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import type { IdsSobrescritura } from "./confirmaciones.ts";
 import { rutaLibre } from "./informe.ts";
 import type { PlanEscribible, ResultadoEscritura, ServidorEscritura } from "./escribir.ts";
+import type { ResultadoLimpieza } from "./limpiar-taxonomia.ts";
+import { resumenLimpieza } from "./taxonomia-vieja.ts";
 
 const REGEX_CORREO = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
 /** Reemplaza cualquier dirección de correo que aparezca en un texto. */
@@ -31,16 +33,20 @@ export interface InformeEscritura {
   idsSobrescritos: IdsSobrescritura;
   /** Cuántos artículos del plan llevan cada aviso (solo el código). */
   avisosPorCodigo: Record<string, number>;
+  /** Con --limpiar-taxonomia (decisión 87): lo que hizo la limpieza de la taxonomía vieja, o por qué falló (y se deshizo). */
+  limpieza?: ResultadoLimpieza | { error: string };
 }
 
 /** 0 si todo salió bien; 1 si hubo artículos fallidos o conflictos. (Una corrida rechazada por las confirmaciones sale con 2.) */
-export function codigoDeSalida(r: ResultadoEscritura): number {
-  return r.conteos.fallidos > 0 || r.conflictos.length > 0 ? 1 : 0;
+export function codigoDeSalida(r: ResultadoEscritura, limpieza?: InformeEscritura["limpieza"]): number {
+  // La limpieza también cuenta: si falló, o si quedó una sección o categoría vieja con artículos, hay que mirarla.
+  const limpiezaConProblemas = !!limpieza && ("error" in limpieza || limpieza.plan.secciones.conArticulos.length > 0 || limpieza.plan.categorias.conArticulos.length > 0);
+  return r.conteos.fallidos > 0 || r.conflictos.length > 0 || limpiezaConProblemas ? 1 : 0;
 }
 
 export function construirInformeEscritura(o: {
   generadoEn: string; destino: { host: string; puerto: number; base: string }; servidor: ServidorEscritura; opciones: InformeEscritura["opciones"];
-  plan: PlanEscribible; resultado: ResultadoEscritura;
+  plan: PlanEscribible; resultado: ResultadoEscritura; limpieza?: InformeEscritura["limpieza"];
 }): InformeEscritura {
   const { plan, resultado: r } = o;
   const fila = (tabla: string, enElPlan: number, x: Partial<Omit<FilaTabla, "tabla" | "enElPlan">>): FilaTabla =>
@@ -56,7 +62,7 @@ export function construirInformeEscritura(o: {
     for (const c of new Set(codigos)) avisos[c] = (avisos[c] ?? 0) + 1;
   }
   return {
-    generadoEn: o.generadoEn, modo: "escribir", destino: o.destino, servidor: o.servidor, opciones: o.opciones, estado: r.estado, abortado: r.abortado, codigoDeSalida: codigoDeSalida(r),
+    generadoEn: o.generadoEn, modo: "escribir", destino: o.destino, servidor: o.servidor, opciones: o.opciones, estado: r.estado, abortado: r.abortado, codigoDeSalida: codigoDeSalida(r, o.limpieza),
     tablas: [
       fila("categorias", b.categorias.enElPlan, { insertadas: b.categorias.creadas, sinCambios: b.categorias.existentes }),
       fila("autores", b.autores.enElPlan, { insertadas: b.autores.creados, sinCambios: b.autores.sinCambios, difieren: b.autores.difieren, sobrescritas: b.autores.sobrescritos, conflictos: b.autores.conflictos }),
@@ -73,6 +79,7 @@ export function construirInformeEscritura(o: {
     fallidos: r.articulos.filter((x) => x.resultado === "fallido").map((x) => ({ wpId: x.wpId, slug: x.slug, motivo: sinCorreos(x.motivo ?? "") })),
     idsSobrescritos: r.idsSobrescritos, avisosPorCodigo: avisos,
     ...(b.fotos.enElPlan ? { fotosAutor: { asignadas: b.fotos.asignadas, conOtraFoto: b.fotos.conOtraFoto } } : {}),
+    ...(o.limpieza ? { limpieza: o.limpieza } : {}),
   };
 }
 
@@ -88,7 +95,16 @@ export function informeEscrituraAMarkdown(i: InformeEscritura): string {
   md.push(`- Filas reescritas por la sobrescritura (solo ids): ${total ? j(i.idsSobrescritos) : "ninguna"}`);
   md.push(`- Conflictos: ${i.conflictos.length ? j(i.conflictos) : "ninguno"}`);
   md.push(`- Artículos fallidos: ${i.fallidos.length ? j(i.fallidos) : "ninguno"}`);
-  md.push(`- Avisos por código (artículos): ${j(i.avisosPorCodigo)}`, "");
+  md.push(`- Avisos por código (artículos): ${j(i.avisosPorCodigo)}`);
+  if (i.limpieza) {
+    md.push("", "## Limpieza de la taxonomía vieja (--limpiar-taxonomia)", "");
+    if ("error" in i.limpieza) md.push(`- FALLÓ y se deshizo sin cambiar nada: ${i.limpieza.error}`);
+    else {
+      md.push(`- Borradas: ${i.limpieza.seccionesBorradas} secciones y ${i.limpieza.categoriasBorradas} categorías; ajustadas: ${i.limpieza.seccionesAjustadas} secciones y ${i.limpieza.categoriasAjustadas} categorías; secciones creadas: ${i.limpieza.seccionesCreadas}`);
+      for (const l of resumenLimpieza(i.limpieza.plan)) md.push(`- ${l}`);
+    }
+  }
+  md.push("");
   md.push("## Filas por tabla", "", "| tabla | en el plan | insertadas | sin cambios | difieren | sobrescritas | conflictos | fallidos |", "|---|---|---|---|---|---|---|---|");
   for (const t of i.tablas) md.push(`| ${t.tabla} | ${t.enElPlan} | ${t.insertadas} | ${t.sinCambios} | ${t.difieren} | ${t.sobrescritas} | ${t.conflictos} | ${t.fallidos} |`);
   md.push("", "## Filas que difieren del plan (campos)", "");
