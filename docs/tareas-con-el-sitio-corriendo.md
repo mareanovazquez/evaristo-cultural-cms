@@ -9,7 +9,7 @@ Vinieron así de WordPress. En cada una, escribir un texto alternativo real (o d
 | Artículo (id en el CMS) | Título | Imágenes |
 |---|---|---|
 | 1510 | Álex de la Iglesia en estado puro | `HELHER_ESCRIBANO-A-1188.jpg` (alt «null») |
-| 684 | El regreso de Yen-Tchin-King | una imagen de revistaseda.com.ar (alt «undefined»; es externa: ver también la bajada de imágenes externas, decisión 90) |
+| 684 | El regreso de Yen-Tchin-King | `lafcadio-1-466e76d8bce5.jpg` (alt «undefined»; bajada del Internet Archive el 7/11/2026) |
 | 686 | Chile-Asia: Es tiempo de iniciar un diálogo intercultural | `chile1.jpg` (alt «undefined») |
 | 687 | La felicidad de Tomo-chan | `banana1.jpg` y `banana2.jpg` (alt «undefined») |
 
