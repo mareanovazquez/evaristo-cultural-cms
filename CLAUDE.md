@@ -35,6 +35,7 @@ Leer solo lo que la tarea necesite.
 | `docs/plan-cambio-de-equipo.md` | **Temporal (borrar cuando el cambio esté hecho).** Plan para pasar el trabajo a otro equipo: qué hay fuera de git y cómo se lleva, versiones a instalar, restaurar las bases, verificación de 13 puntos y cómo dejar este equipo listo para entregar. Leer al cambiar de equipo. |
 | `docs/guia-descarga-wordpress.md` | Guía paso a paso para bajar `wp-content/uploads` y la base de WordPress antes del 28/11/2026 (SSH, qué apartar por las colisiones de mayúsculas, cómo descargar, cómo verificar con `npm run verificar:descarga`, respaldo y limpieza). Leer al hacer la descarga. |
 | `docs/guia-prueba-editorial.md` | Guía para la prueba del panel con la editorial (criterio de cierre de la fase 4): preparación, tareas, cómo observar y cómo decidir si se aprobó. Leer al preparar o analizar esa prueba. |
+| `docs/tareas-con-el-sitio-corriendo.md` | **Temporal.** Ajustes manuales que se hacen desde el panel una vez publicado el sitio (decisión 90): textos alternativos «null», `sin-asignar`, borradores uno por uno, revisión del contenido migrado. Leer al terminar el lanzamiento. |
 | `docs/pendientes.md` | Estado técnico vivo (bases, tests, commits) y lista de pendientes. Leer al empezar y antes de planificar. |
 | `docs/plan-implementacion.md` | Roadmap de fases 0 a 7, decisiones 1 a 67 y riesgos. Largo: buscar la fase o decisión, no leerlo entero. |
 | `docs/decisiones-de-diseno.md` | Paleta, tipografía, tokens, componentes, notas al pie, letra capital, celular. Leer antes de tocar CSS o UI. |
