@@ -4,7 +4,7 @@
 // Comprueba: permisos (solo administrador), el interruptor (y que crear la fila no cambie el topbar), las validaciones (cantidad, texto de la imagen,
 // enlaces, tipo, peso y medida), guardar y ordenar, borrar solo lo que ya no se usa (fila y archivo), que la biblioteca no borre una imagen del banner,
 // y el sitio: dónde está el banner, una sola imagen fija, varias con puntos, capas inactivas fuera del teclado, enlaces internos y externos, el
-// límite de 3, y que sin las tablas (la base real hasta la fase 7) el sitio no se rompa.
+// límite de 3.
 //
 // Uso: npm run test:admin-banner
 import assert from "node:assert/strict";
@@ -46,7 +46,6 @@ let server: Server | undefined;
 let carpeta: string | undefined;
 let configAnterior: Awaited<ReturnType<typeof prisma.configuracionSitio.findUnique>> = null;
 let bannerAnterior: Awaited<ReturnType<typeof prisma.bannerImagen.findMany>> = [];
-let tablaRenombrada = false;
 const imagenesCreadas: number[] = [];
 
 try {
@@ -267,21 +266,11 @@ try {
   assert.equal((conAlt.match(/<img /g) ?? []).length, 1, "y no se abre ninguna etiqueta nueva");
   assert.match(conAlt, /<img class="banner-img" src="[^"]+"(?: srcset="[^"]+" sizes="[^"]+")? alt="[^"]*alert\('[a-z0-9]+'\)[^"]*" loading="eager"\s*\/?>/, "todo el texto queda dentro del atributo alt");
 
-  // Sin las tablas (la base real hasta la fase 7) el sitio sigue y no hay banner
-  await prisma.$executeRawUnsafe("RENAME TABLE `banner_imagenes` TO `banner_imagenes_prueba`");
-  tablaRenombrada = true;
-  const sinTabla = await pedir("GET", "/");
-  assert.equal(sinTabla.estado, 200, "el sitio no se rompe sin la tabla");
-  assert.equal(banner(sinTabla.texto), null, "y no dibuja el banner");
-  await prisma.$executeRawUnsafe("RENAME TABLE `banner_imagenes_prueba` TO `banner_imagenes`");
-  tablaRenombrada = false;
-
   console.log("OK: banner de la portada (permisos, interruptor, validaciones, guardado y orden, borrado de lo que no se usa y sitio)");
 } catch (e) {
   console.error(e instanceof Error ? (e.stack ?? e.message) : e);
   process.exitCode = 1;
 } finally {
-  if (tablaRenombrada) await prisma.$executeRawUnsafe("RENAME TABLE `banner_imagenes_prueba` TO `banner_imagenes`").catch(() => console.error("ATENCIÓN: hay que renombrar a mano banner_imagenes_prueba → banner_imagenes en evaristo_cms_dev"));
   await prisma.bannerImagen.deleteMany().catch(() => undefined);
   await prisma.autor.deleteMany({ where: { slug: { startsWith: `bantest-${sufijo}` } } }).catch(() => undefined);
   await prisma.imagen.deleteMany({ where: { id: { in: imagenesCreadas } } }).catch(() => undefined);

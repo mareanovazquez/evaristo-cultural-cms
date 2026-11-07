@@ -6,16 +6,7 @@ const visibles = () => ({ estado: "PUBLICADO" as const, publicadoEn: { lte: new 
 
 /** Secciones del menú: las que no son internas, en el orden que les dio el administrador en el panel. */
 export async function listarSeccionesMenu() {
-  const donde = { interna: false };
-  const campos = { slug: true, nombre: true } as const;
-  try {
-    return await prisma.seccion.findMany({ where: donde, orderBy: [{ orden: "asc" }, { id: "asc" }], select: campos });
-  } catch (error) {
-    // Provisorio: la base real todavía no tiene la columna `orden` (la migración `secciones_orden` se aplica en la fase 7). Sin ella, el
-    // menú sale en el orden de carga (por id), que es el mismo con el que se numeró. Borrar este respaldo cuando la real tenga la migración.
-    if ((error as { code?: string } | null)?.code !== "P2022" && !/Unknown column|orden/i.test(String((error as Error | null)?.message))) throw error;
-    return prisma.seccion.findMany({ where: donde, orderBy: { id: "asc" }, select: campos });
-  }
+  return prisma.seccion.findMany({ where: { interna: false }, orderBy: [{ orden: "asc" }, { id: "asc" }], select: { slug: true, nombre: true } });
 }
 
 /** Sección con página pública: existe y no es interna (sin-asignar). */

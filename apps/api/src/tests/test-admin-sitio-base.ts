@@ -2,7 +2,7 @@
 // compilado (`npm run build:sitio`). Guarda la configuración que hubiera y la deja como estaba al terminar; crea un usuario temporal y lo borra.
 // Comprueba: permisos (solo administrador), valores por defecto sin configuración, guardar y leer, normalización del texto, validaciones
 // (texto largo, enlaces peligrosos o mal formados, texto vacío con el topbar encendido), y el sitio: se ve lo guardado, se oculta apagado
-// o sin texto, sin enlace es un mensaje sin vínculo, el texto se escapa y, sin la tabla (la base real hasta la fase 7), usa los valores por defecto.
+// o sin texto, sin enlace es un mensaje sin vínculo, el texto se escapa.
 //
 // Uso: npm run test:admin-sitio
 import assert from "node:assert/strict";
@@ -38,7 +38,6 @@ const dominio = `${sufijo}.ejemplo.org`;
 const CLAVE = "clave-de-prueba-larga-1";
 let server: Server | undefined;
 let anterior: Awaited<ReturnType<typeof prisma.configuracionSitio.findUnique>> = null;
-let tablaRenombrada = false;
 
 try {
   await prisma.configuracionSitio.count().catch(() => fallar("falta la migración configuracion_sitio en evaristo_cms_dev (db:deploy)"));
@@ -175,21 +174,11 @@ try {
   f = franja(await portada());
   assert.ok(f && f.includes(`Raro ${sufijo}`) && !f.includes("javascript:") && !f.includes("href"), `enlace inválido en la base: ${f}`);
 
-  // Sin la tabla (la base real hasta la fase 7), el sitio sigue y usa los valores por defecto
-  await prisma.$executeRawUnsafe("RENAME TABLE `configuracion_sitio` TO `configuracion_sitio_prueba`");
-  tablaRenombrada = true;
-  const sinTabla = await pedir("GET", "/");
-  assert.equal(sinTabla.estado, 200, "el sitio no se rompe sin la tabla");
-  assert.ok(franja(sinTabla.texto)?.includes(TOPBAR_POR_DEFECTO.texto), "y muestra el topbar por defecto");
-  await prisma.$executeRawUnsafe("RENAME TABLE `configuracion_sitio_prueba` TO `configuracion_sitio`");
-  tablaRenombrada = false;
-
   console.log("OK: topbar editable (permisos, valores por defecto, guardado, validaciones y sitio)");
 } catch (e) {
   console.error(e instanceof Error ? (e.stack ?? e.message) : e);
   process.exitCode = 1;
 } finally {
-  if (tablaRenombrada) await prisma.$executeRawUnsafe("RENAME TABLE `configuracion_sitio_prueba` TO `configuracion_sitio`").catch(() => console.error("ATENCIÓN: hay que renombrar a mano configuracion_sitio_prueba → configuracion_sitio en evaristo_cms_dev"));
   await prisma.configuracionSitio.deleteMany().catch(() => undefined);
   if (anterior) await prisma.configuracionSitio.create({ data: anterior }).catch(() => undefined);
   await prisma.usuario.deleteMany({ where: { email: { endsWith: `@${dominio}` } } }).catch(() => undefined);

@@ -35,8 +35,8 @@ const reunir = (n: JSONNode) => {
 reunir(cuerpo);
 const dimensionesImagenes = await medidasDeImagenes([...ids]);
 
-// La letra capital va a ser un campo del artículo (panel, fase 4). Mientras tanto, solo se prueba con ?capital=1 en desarrollo.
-const conCapital = pruebaLayoutHabilitada() && Astro.url.searchParams.get("capital") === "1";
+// Letra capital: la activa la editora en el panel (campo conCapital). En desarrollo se puede forzar con ?capital=1 para probar el diseño.
+const conCapital = articulo.conCapital || (pruebaLayoutHabilitada() && Astro.url.searchParams.get("capital") === "1");
 const { html, notesHtml } = renderArticleBody(cuerpo, { conCapital, dimensionesImagenes, variantes: true });
 
 const relacionados = await articulosRelacionados(articulo);

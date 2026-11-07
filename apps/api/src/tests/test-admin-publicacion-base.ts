@@ -200,6 +200,11 @@ try {
   const verSitio = await sitio(ruta1);
   assert.equal(verSitio.estado, 200, "el artículo publicado se ve en el sitio");
   assert.ok(verSitio.texto.includes("Texto del artículo de prueba") && verSitio.texto.includes("Árbol"), "con su título y su texto");
+  // Letra capital: el sitio sigue el campo del artículo (con la casilla apagada no sale; encendida, sí)
+  assert.ok(!verSitio.texto.includes("con-capital"), "sin la casilla no hay letra capital");
+  await prisma.articulo.update({ where: { id: a1.id }, data: { conCapital: true } });
+  assert.ok((await sitio(ruta1)).texto.includes('class="con-capital"'), "con la casilla, el primer párrafo lleva la letra capital");
+  await prisma.articulo.update({ where: { id: a1.id }, data: { conCapital: false } });
   const panel1 = await leer(a1.id);
   assert.equal(panel1["estado"], "PUBLICADO");
   assert.equal(panel1["ruta"], ruta1);
