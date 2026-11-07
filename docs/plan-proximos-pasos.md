@@ -2,6 +2,12 @@
 
 **Documento temporal.** Se escribió el 23/10/2026 y se reescribió el 30/10/2026 al cerrar la reorganización de secciones, para arrancar sin releer todo. **Borrarlo** (con `git rm`, sacando su fila del índice de `CLAUDE.md`) cuando la fase 7 esté en marcha y lo duradero esté en `estado-fase7.md` (a crear) y en `pendientes.md`.
 
+## Dónde quedamos (7/11/2026, tarde: migración real hecha)
+
+**La migración completa a `evaristo_cms` está hecha** (Etapa 3, con la ceremonia de la decisión 50). Respaldo previo: `CMS-EVARISTO(ASSETS)\respaldos\evaristo_cms-antes-migracion-completa-2026-11-07T1531Z.sql`. Se aplicaron las nueve migraciones (`db:deploy`) y `db:sembrar`; el intento en seco confirmó 37 filas a reescribir; Mariano corrió `migrar:escribir` en su terminal (commit `e0eda7b` con el interruptor en `true`, revertido en `6fa5dd3`). Resultado: **estado ok**, 2.619 artículos creados y 35 reescritos, 0 fallidos y 0 conflictos, 3.030 redirecciones nuevas y 58 sin cambios, limpieza con 10 secciones y 3 categorías viejas borradas y nada viejo con artículos (informe `packages/compartido/out/migracion/2026-11-07T173411Z-escribir.md`). Verificación independiente en solo lectura (`verificar:escritura --todos --wordpress=evaristo_lectura_nueva` con `--originales`, `--mapa` y `--avatares`; sin el mapa da diferencias falsas de imágenes): **69.931 comprobaciones, 0 diferencias**, igual que el ensayo. `ESCRITURA_REAL_HABILITADA` está otra vez en `false`.
+
+**Lo que sigue:** sacar del sitio los respaldos del modelo viejo (`listarSeccionesMenu`, `leerTopbar`, `leerBanner`) y que lea `articulo.conCapital`; después, lo de «Después» de la Etapa 3 (revisión por muestreo, `sin-asignar`, Textos, autores, borradores) y la Etapa 4 (hosting).
+
 ## Dónde quedamos (7/11/2026, Etapas 1 y 2 terminadas)
 
 **Para retomar, empezar por acá.** Todo commiteado y subido (último commit `81b4b50`, más el de esta nota). La real no se tocó (solo lecturas y respaldos) y `ESCRITURA_REAL_HABILITADA` está en `false`.
@@ -158,6 +164,8 @@ En este orden (de lo que más condiciona a lo que menos):
 - Revisar los resultados con la herramienta «Revisión» del panel (avisos, imágenes sin texto alternativo, `sin-asignar`, Textos, borradores).
 
 ### Etapa 3: la migración real
+
+✅ **Hecha el 7/11/2026** (ver «Dónde quedamos», arriba). Quedan los puntos de «Después».
 
 - **Ceremonia de la decisión 50:** respaldo con `mysqldump --result-file`; ensayo en seco y aprobación; commit aparte con `ESCRITURA_REAL_HABILITADA = true` (sin push ni tests); Mariano ejecuta `migrar:escribir` en su terminal interactiva; verificación en solo lectura; `git revert --no-commit` y commit con el interruptor en `false`; recién ahí el push. **Nunca dejar el `true` al cerrar una sesión.**
 - **Antes:** aplicar las nueve migraciones a `evaristo_cms` con `db:deploy` (con respaldo previo) y regenerar el texto plano de los 19 artículos de la decisión 53 (con `--sobrescribir`).
