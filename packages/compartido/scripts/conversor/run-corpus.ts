@@ -5,28 +5,41 @@ import { aCsv } from '../../src/conversor/titulos.ts'
 import { cargarMapeo, urlVieja } from '../../src/conversor/taxonomia.ts'
 import { validateArticleBodyDetallado, type ModoValidacion } from '../../src/schema/validate.ts'
 import type { DocNode } from '../../src/conversor/types.ts'
+import { abrirSoloWordPress, BASES_WORDPRESS, leerIdsAMigrar, leerPosts, leerTerminos, leerUsuarios } from '../migracion/lib/leer-wordpress.ts'
 
 const root = (p: string) => fileURLToPath(new URL(p, import.meta.url))
-// Uso: run-corpus.ts [posts.json] [salida] [--modo=migracion|estricto]  (por defecto: migracion)
+// Convierte todo el corpus y mide la pérdida de texto, los avisos y la clasificación. Lee WordPress en vivo, en solo lectura (los mismos
+// artículos que la migración con --todos: publicados, borradores, privados, programados y pendientes), con la 3307 levantada:
+//   npx tsx --env-file=../../.env scripts/conversor/run-corpus.ts [salida] [--modo=migracion|estricto] [--wordpress=evaristo_lectura_nueva]
+// Por defecto: salida out/, modo migracion y la base evaristo_lectura_nueva (el dump definitivo del 31/10/2026).
+// Antes leía posts.json y dos archivos de out/ (autor-por-post.json y categorias-por-post.json) cuyos generadores ya no existen (7/11/2026).
 const args = process.argv.slice(2)
 const positional = args.filter((a) => !a.startsWith('--'))
 const modo = (args.find((a) => a.startsWith('--modo='))?.slice(7) ?? 'migracion') as ModoValidacion
 if (modo !== 'migracion' && modo !== 'estricto') { console.error(`--modo inválido: ${modo}`); process.exit(1) }
-const posts = JSON.parse(readFileSync(positional[0] ?? root('../../posts.json'), 'utf8'))
-const out = positional[1] ?? root('../../out')
+const baseWp = args.find((a) => a.startsWith('--wordpress='))?.slice(12) ?? 'evaristo_lectura_nueva'
+if (!BASES_WORDPRESS.includes(baseWp)) { console.error(`--wordpress inválido: ${baseWp} (se admiten ${BASES_WORDPRESS.join(', ')})`); process.exit(1) }
+const out = positional[0] ?? root('../../out')
 mkdirSync(out, { recursive: true })
 
-// Autor de WordPress por artículo (out/autor-por-post.json, de scripts/extraer-autores-por-post.ts): hace falta para detectar el autor dentro del título.
-let autorDe = new Map<number, string | null>()
-try { autorDe = new Map(JSON.parse(readFileSync(root('../../out/autor-por-post.json'), 'utf8')).map((a: any) => [a.id, a.autor])) } catch {
-  console.warn('Aviso: no hay out/autor-por-post.json; no se detectará el autor dentro del título (autor_en_titulo). Generalo con scripts/extraer-autores-por-post.ts')
+// Artículos, autor de WordPress (para detectar el autor dentro del título) y categorías (para la taxonomía nueva), de a 500.
+const { wp, cerrar } = await abrirSoloWordPress(baseWp)
+const ids = (await leerIdsAMigrar(wp)).map((f) => Number(f['id']))
+const posts: Array<{ id: number; slug: string; titulo: string; fecha: string; estado: string; autor: number; contenido_crudo: string }> = []
+const categoriasDe = new Map<number, string[]>()
+for (let i = 0; i < ids.length; i += 500) {
+  const lote = ids.slice(i, i + 500)
+  for (const f of await leerPosts(wp, lote)) posts.push({ id: Number(f['id']), slug: String(f['nombre'] ?? ''), titulo: String(f['titulo'] ?? ''), fecha: String(f['fecha'] ?? ''), estado: String(f['estado']), autor: Number(f['autor']), contenido_crudo: String(f['contenido'] ?? '') })
+  for (const f of await leerTerminos(wp, 'category', lote)) categoriasDe.set(Number(f['id']), [...(categoriasDe.get(Number(f['id'])) ?? []), String(f['slug'])])
 }
-// Categorías de WordPress por artículo (out/categorias-por-post.json, de scripts/consultar-categorias.ts) y mapeo a la taxonomía nueva.
+const idsAutores = [...new Set(posts.map((p) => p.autor))]
+const nombreDeUsuario = new Map<number, string>()
+for (let i = 0; i < idsAutores.length; i += 500) for (const f of await leerUsuarios(wp, idsAutores.slice(i, i + 500))) nombreDeUsuario.set(Number(f['id']), String(f['nombre']))
+await cerrar()
+posts.sort((a, b) => a.id - b.id)
+const autorDe = new Map(posts.map((p) => [p.id, nombreDeUsuario.get(p.autor) ?? null]))
+console.log(`WordPress ${baseWp}: ${posts.length} artículos ${JSON.stringify(posts.reduce<Record<string, number>>((c, p) => ((c[p.estado] = (c[p.estado] ?? 0) + 1), c), {}))}`)
 const mapeo = cargarMapeo()
-let categoriasDe: Map<number, string[]> | null = null
-try { categoriasDe = new Map(Object.entries(JSON.parse(readFileSync(root('../../out/categorias-por-post.json'), 'utf8'))).map(([id, c]) => [Number(id), c as string[]])) } catch {
-  console.warn('Aviso: no hay out/categorias-por-post.json; no se asignan secciones ni categorías. Generalo con scripts/consultar-categorias.ts')
-}
 const nombreWp = (slug: string) => mapeo.taxonomiasWp[slug]?.nombre ?? slug
 const filasSinAsignar: Array<Array<string | number>> = [], filasMultiples: Array<Array<string | number>> = [], filasClasificacion: Array<Array<string | number>> = []
 const registros = new Map<string, Array<Array<string | number>>>()
@@ -42,7 +55,8 @@ const filasAvisos: Array<Array<string | number>> = []
 const dec = (s: string) => s.replace(/&nbsp;/g,' ').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&#0?39;|&apos;/g,"'")
   .replace(/&#(\d+);/g,(_,d)=>String.fromCodePoint(+d)).replace(/&#x([0-9a-f]+);/gi,(_,h)=>String.fromCodePoint(parseInt(h,16)))
   .replace(/&([a-z]+);/gi,(m,n)=>({aacute:'á',eacute:'é',iacute:'í',oacute:'ó',uacute:'ú',ntilde:'ñ',Aacute:'Á',Eacute:'É',Iacute:'Í',Oacute:'Ó',Uacute:'Ú',Ntilde:'Ñ',uuml:'ü',hellip:'…',ndash:'–',mdash:'—',laquo:'«',raquo:'»',ldquo:'“',rdquo:'”',lsquo:'‘',rsquo:'’',iexcl:'¡',iquest:'¿'} as any)[n] ?? m)
-const isContent = (t: string) => !/^\d{1,2}$/.test(t) && !/^(?:i{1,3}|iv|vi{0,3}|ix|x{1,3}|xi{1,3})$/.test(t)
+// Los números de las marcas de nota («[12]», «[xiv]») no cuentan: al convertirse en notas al pie dejan de ser texto. Romanos del i al xcix.
+const isContent = (t: string) => !/^\d{1,2}$/.test(t) && !/^(?:xc|xl|l?x{0,3})(?:ix|iv|v?i{0,3})$/.test(t)
 const tok = (s: string) => (s.normalize('NFC').replace(/­/g,'').toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [])
 function srcTokens(raw: string) {
   let s = raw.replace(/\[caption[^\]]*\]/g,' ').replace(/\[\/caption\]/g,' ').replace(/\[embed\][\s\S]*?\[\/embed\]/g,' ').replace(/\[gallery[^\]]*\]/g,' ')
@@ -76,9 +90,8 @@ console.log(`modo de validación: ${modo}`)
 
 for (const p of posts) {
   let r
-  const slugsWp = categoriasDe?.get(p.id)
-  if (categoriasDe && !slugsWp) console.warn(`Aviso: el artículo ${p.id} no figura en categorias-por-post.json`)
-  try { r = convertWpPost(p, { autor: autorDe.get(p.id) ?? null, taxonomia: categoriasDe ? { id: p.id, slugs: slugsWp ?? [], mapeo } : undefined }) } catch (e: any) {
+  const slugsWp = categoriasDe.get(p.id) ?? []
+  try { r = convertWpPost(p, { autor: autorDe.get(p.id) ?? null, taxonomia: { id: p.id, slugs: slugsWp, mapeo } }) } catch (e: any) {
     crashes++; report.push({ id: p.id, slug: p.slug, crash: String(e.stack ?? e).slice(0, 300) }); continue
   }
   const tax = r.taxonomia
@@ -121,7 +134,7 @@ writeFileSync(`${out}/reporte-por-articulo.json`, JSON.stringify(report, null, 1
 // Una fila por aviso (del cuerpo o del título); revision_humana = sí en los avisos del título que hay que mirar a mano.
 writeFileSync(`${out}/avisos-por-articulo.csv`, aCsv(['id', 'slug', 'origen', 'codigo', 'cantidad', 'revision_humana', 'detalle'], filasAvisos))
 writeFileSync(`${out}/muestra-convertida.json`, JSON.stringify(sampleOut, null, 1))
-if (categoriasDe) {
+{
   const encabezadoBase = ['id', 'titulo', 'fecha', 'url_vieja', 'taxonomias_originales']
   writeFileSync(`${out}/sin-asignar.csv`, aCsv(encabezadoBase, filasSinAsignar))
   writeFileSync(`${out}/secciones-multiples.csv`, aCsv([...encabezadoBase, 'candidatas', 'seccion', 'categorias'], filasMultiples))

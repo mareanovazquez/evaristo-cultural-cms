@@ -2,13 +2,14 @@
 // real, que solo admite SELECT) y comprueba que no hay nada que no sea SELECT; además recorre el grafo de imports de migrar.ts y
 // comprueba que no alcanza ningún cliente Prisma con permiso de escritura.
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { DESTINO_REAL } from "../lib/conexiones.ts";
 import type { OpcionesCli } from "../lib/conexiones.ts";
 import { entradaDesdeSnapshot } from "../lib/entrada-snapshot.ts";
-import { informeAMarkdown, nombreDeInforme } from "../lib/informe.ts";
+import { informeAMarkdown, nombreDeInforme, rutaLibre } from "../lib/informe.ts";
 import type { Medicion } from "../lib/imagenes.ts";
 import { COLACION, SOLO_LECTURA, consultar, validarSoloSelect } from "../lib/leer-wordpress.ts";
 import type { Consulta, Fila } from "../lib/leer-wordpress.ts";
@@ -182,6 +183,23 @@ await ta("T16: el grafo de imports de migrar.ts no alcanza ningún cliente Prism
   assert.deepEqual(culpables, []);
   // los únicos módulos que escriben en disco lo hacen en la carpeta de informes (informe.ts) o leen (imagenes.ts, entradas)
   assert.deepEqual(importan(/\bwriteFileSync|\bappendFileSync|\brmSync|\bunlinkSync|\brenameSync|\bcopyFileSync/), ["scripts/migracion/lib/informe.ts"]);
+});
+
+await ta("rutaLibre: dos informes del mismo segundo no se pisan (-2, -3…)", async () => {
+  const carpeta = mkdtempSync(join(tmpdir(), "evaristo-informes-"));
+  try {
+    const nombre = "2026-11-07T101530Z-escribir";
+    const escribir = () => { const b = rutaLibre(carpeta, nombre); writeFileSync(`${b}.json`, "{}"); writeFileSync(`${b}.md`, ""); return b; };
+    assert.equal(escribir(), join(carpeta, nombre));
+    assert.equal(escribir(), join(carpeta, `${nombre}-2`));
+    assert.equal(escribir(), join(carpeta, `${nombre}-3`));
+    // Alcanza con que exista uno de los dos archivos para que el nombre esté ocupado.
+    writeFileSync(join(carpeta, "otro.md"), "");
+    assert.equal(rutaLibre(carpeta, "otro"), join(carpeta, "otro-2"));
+    assert.equal(readdirSync(carpeta).length, 7);
+  } finally {
+    rmSync(carpeta, { recursive: true, force: true });
+  }
 });
 
 console.log(`${ok} pruebas de simulación ok`);

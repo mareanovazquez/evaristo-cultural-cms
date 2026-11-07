@@ -28,6 +28,7 @@
     "db:sembrar": "tsx scripts/db-sembrar.ts",
     "db:probar-modelo": "tsx scripts/db-probar-modelo.ts",
     "migracion:seco": "tsx scripts/migracion/corrida-en-seco.ts",
+    "corpus": "tsx --env-file=../../.env scripts/conversor/run-corpus.ts",
     "migrar": "tsx scripts/migracion/migrar.ts",
     "migrar:escribir": "tsx scripts/migracion/migrar-escribir.ts",
     "verificar:descarga": "tsx scripts/migracion/verificar-descarga.ts",

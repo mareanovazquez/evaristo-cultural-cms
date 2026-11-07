@@ -1,8 +1,8 @@
 // Informe de la escritura (JSON + Markdown). Es un RESUMEN: no copia cuerpos de artículos ni bios, las diferencias se informan con los NOMBRES
 // de los campos (nunca con sus valores) y todo el texto pasa por sinCorreos() antes de guardarse. Lo único que escribe es la carpeta de salida.
 import { mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
 import type { IdsSobrescritura } from "./confirmaciones.ts";
+import { rutaLibre } from "./informe.ts";
 import type { PlanEscribible, ResultadoEscritura, ServidorEscritura } from "./escribir.ts";
 
 const REGEX_CORREO = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g;
@@ -101,10 +101,10 @@ export function nombreDeInformeEscritura(generadoEn: string): string {
   return `${generadoEn.slice(0, 19).replace(/:/g, "")}Z-escribir`;
 }
 
-/** Escribe <carpeta>/<fecha>-escribir.json y .md. Devuelve las rutas. */
+/** Escribe <carpeta>/<fecha>-escribir.json y .md (sin pisar uno anterior). Devuelve las rutas. */
 export function escribirInformeEscritura(carpeta: string, i: InformeEscritura): { json: string; md: string } {
   mkdirSync(carpeta, { recursive: true });
-  const base = join(carpeta, nombreDeInformeEscritura(i.generadoEn));
+  const base = rutaLibre(carpeta, nombreDeInformeEscritura(i.generadoEn));
   writeFileSync(`${base}.json`, sinCorreos(JSON.stringify(i, null, 1)));
   writeFileSync(`${base}.md`, informeEscrituraAMarkdown(i));
   return { json: `${base}.json`, md: `${base}.md` };

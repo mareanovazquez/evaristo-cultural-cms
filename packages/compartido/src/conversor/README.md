@@ -16,5 +16,5 @@ Corre en cadena las 4 suites de `src/conversor/tests/` (19 + 41 + 10 + 33 prueba
 
 ## Archivos
 - `datos/conversor/`: léxico de títulos y mapeo de taxonomías (entradas versionadas).
-- `scripts/conversor/run-corpus.ts`: convierte todo el corpus; lee `posts.json` y escribe informes en `out/`.
+- `scripts/conversor/run-corpus.ts` (`npm run corpus -w @evaristo/compartido -- [salida] [--modo=estricto] [--wordpress=<base>]`): convierte todo el corpus leyendo WordPress en vivo (solo lectura, la 3307; por defecto `evaristo_lectura_nueva`), mide la pérdida de texto y escribe los informes en `out/` (o en la carpeta indicada).
 - `posts.json` y `out/` son salidas generadas, no se versionan (están en `.gitignore`).

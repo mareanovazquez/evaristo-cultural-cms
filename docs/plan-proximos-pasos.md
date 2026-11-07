@@ -47,8 +47,8 @@
 1. ✅ **El «90 días por defecto» de las novedades (hecho el 4/11/2026).** En el panel, una casilla «Es novedad»: al marcarla propone hoy + 90 días (fin del día, hora local), y la fecha se puede cambiar; al desmarcarla se vacía. La ayuda explica qué pasa al vencer y, si ya venció, que desmarcarla la saca también del archivo. Prueba en `test-pantalla` (93). **Confirmado con Mariano el 4/11/2026:** pueden convivir varias novedades, cada una vence en su fecha (una nueva no reemplaza a la anterior), cualquier artículo de cualquier sección puede ser novedad, y si no hay vigentes el bloque de la portada no se muestra (sin vencimiento automático alternativo).
 2. **Convertir la real** antes o junto con la migración completa (ver Etapa 3). Es lo único de esta reorganización que condiciona la fase 7.
 3. **A confirmar con la editorial:** el nombre «Asia» para lo que era Seda; la identidad de Crítica (distinta de Reseña; arranca vacía, se carga tras la revisión manual); que Textos admita cuentos nuevos (se habló en la reunión). Y que Mariano mire el menú nuevo en escritorio y celular: no se vio en un navegador.
-4. **`run-corpus` quedó desactualizado:** sus dos generadores de entrada (`consultar-categorias.ts`, `extraer-autores-por-post.ts`) ya no existen en el repo. Arreglarlo (que lea las categorías de la 3307 y aplique el mapeo nuevo, como hizo el script descartable del 30/10) o darlo de baja. Mientras, el reparto de las 2.637 se calcula con una consulta de solo lectura a la 3307.
-5. **`test-flujo` (F-g) falló una vez** al contar informes de escritura, con nombre por segundo: dos informes del mismo segundo se pisan. Pasó en las repeticiones. Hacer los nombres únicos o relajar la cuenta.
+4. ✅ **`run-corpus` arreglado el 7/11/2026:** lee WordPress en vivo (solo lectura; `npm run corpus -w @evaristo/compartido -- [salida]`, con la 3307 levantada), con los mismos artículos que la migración y el mapeo nuevo. Ya no usa `posts.json` ni los dos archivos de `out/`.
+5. ✅ **`test-flujo` (F-g), arreglado el 7/11/2026:** un informe del mismo segundo que otro ya no lo pisa (`rutaLibre` agrega `-2`, `-3`…), en la simulación y en la escritura.
 6. **Revisión manual posterior a la migración:** ~1.037 de Textos (96 son Novedades de WordPress con la novedad vencida, para encontrarlos) y 8 de `sin-asignar`. 261 artículos tenían más de una sección candidata y la perdedora se descartó (es el costo de «no repetir secciones como categorías»).
 
 ## Lo que falta de lo hecho antes (no es urgente, no bloquea la fase 7)
@@ -130,7 +130,7 @@ En este orden (de lo que más condiciona a lo que menos):
 5. ✅ **Redirecciones que faltan (hecho el 7/11/2026, decisión 85).** Reglas puras en `packages/compartido/src/rutas-wordpress.ts` y tres consultas puntuales en la API (`?p=`, `?author=` y uploads). Confirmado con el corpus completo: WordPress tenía la hora en UTC, así que la fecha de las 2.637 URLs viejas coincide con la canónica. Sin caché en memoria (no hace falta: las reglas no consultan la base). Pruebas: 8 nuevas en `test:redirecciones` (25) y la de `test:humo` contra la base. Falta definir `SITIO_URL` cuando haya dominio (el feed usa el origen del pedido mientras tanto).
 6. ✅ **Permiso** de `evaristo_migracion` sobre `evaristo_cms_test`: se deja (decisión 86, 7/11/2026).
 7. **Buscador con los 2.637:** probar el rendimiento (algunos textos pasan de 100 KB).
-8. **`run-corpus`** y el nombre de los informes de `test-flujo` (ver arriba).
+8. ✅ **`run-corpus`** y el nombre de los informes de `test-flujo`: hechos el 7/11/2026. Corrida del corpus definitivo (2.686 artículos): 0 caídas, 0 inválidos, ninguno con más del 1 % de pérdida de texto (máximo 0,54 %; 206 palabras de 4.079.152, todas pegotes del original como «tiempo65»). La métrica ya no cuenta como perdidos los números romanos de las marcas de nota (hasta el xcix).
 
 ### Etapa 2: ensayo general en una copia (Claude y Mariano)
 

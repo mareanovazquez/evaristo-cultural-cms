@@ -1,6 +1,6 @@
 // Informe de la corrida (JSON + Markdown). Es un RESUMEN: no copia cuerpos de artículos ni bios, y los avisos de bio_con_correo traen
 // solo el id y el nombre del autor y cuántos artículos afecta (nunca el correo). Lo único que escribe es en la carpeta de salida.
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { OpcionesCli, ConexionesVerificadas } from "./conexiones.ts";
 import type { ResumenEjecucion } from "./ejecutor.ts";
@@ -114,10 +114,21 @@ export function nombreDeInforme(generadoEn: string): string {
   return `${generadoEn.slice(0, 19).replace(/:/g, "")}Z-simular`;
 }
 
-/** Escribe <carpeta>/<nombre>.json y .md. Devuelve las rutas. */
+/**
+ * Ruta base libre para un informe: <carpeta>/<nombre>, o <nombre>-2, -3… si ya hay uno con ese nombre (el nombre va al segundo y dos
+ * corridas en el mismo segundo se pisaban; pasó una vez en test-flujo, 7/11/2026).
+ */
+export function rutaLibre(carpeta: string, nombre: string): string {
+  const ocupada = (b: string) => existsSync(`${b}.json`) || existsSync(`${b}.md`);
+  let base = join(carpeta, nombre);
+  for (let n = 2; ocupada(base); n++) base = join(carpeta, `${nombre}-${n}`);
+  return base;
+}
+
+/** Escribe <carpeta>/<nombre>.json y .md (sin pisar uno anterior). Devuelve las rutas. */
 export function escribirInforme(carpeta: string, i: Informe): { json: string; md: string } {
   mkdirSync(carpeta, { recursive: true });
-  const base = join(carpeta, nombreDeInforme(i.generadoEn));
+  const base = rutaLibre(carpeta, nombreDeInforme(i.generadoEn));
   writeFileSync(`${base}.json`, JSON.stringify(i, null, 1));
   writeFileSync(`${base}.md`, informeAMarkdown(i));
   return { json: `${base}.json`, md: `${base}.md` };
