@@ -64,7 +64,11 @@ a.topbar:focus-visible {
 .header {
   background: var(--header-bg);
   color: var(--header-text);
-  position: relative;
+  /* Fijo arriba al bajar, en todos los anchos (7/11/2026). sticky y no fixed: no saca al header del flujo, así que el contenido no
+     salta y el topbar se va con el scroll. Por encima de la portada (z-index 1 y 2); el visor de la galería es un <dialog> y va arriba de todo. */
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 .header .logo b {
   color: var(--header-text);
@@ -203,6 +207,10 @@ a.topbar:focus-visible {
   border-bottom: 1px solid var(--border-soft);
   box-shadow: var(--shadow-md);
   padding: var(--space-4) var(--gutter) var(--space-6);
+  /* Con el header fijo, el panel se desplaza por dentro si no entra en la pantalla */
+  max-height: calc(100dvh - var(--header-alto));
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .panel-movil ul {
   list-style: none;
@@ -800,4 +808,62 @@ a.topbar:focus-visible {
   padding: var(--space-4);
   background: var(--surface);
   border-radius: var(--radius);
+}
+
+/* ---------- Volver arriba (7/11/2026) ----------
+   Aparece después de bajar una pantalla, abajo a la derecha, en todas las páginas. Verde de la identidad con la flecha en negro
+   (7,4:1). Invisible queda fuera del teclado (visibility). */
+.volver-arriba {
+  position: fixed;
+  right: var(--space-6);
+  bottom: calc(var(--space-6) + env(safe-area-inset-bottom, 0px));
+  z-index: 15;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: var(--accent-500);
+  color: var(--text);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(8px);
+  transition: opacity 200ms ease, transform 200ms ease, visibility 0s linear 200ms;
+}
+.volver-arriba.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 200ms ease, transform 200ms ease, visibility 0s;
+}
+.volver-arriba:hover {
+  background: var(--accent-600);
+}
+.volver-arriba:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+.volver-arriba .icon {
+  width: 22px;
+  height: 22px;
+}
+@media (max-width: 859px) {
+  .volver-arriba {
+    right: var(--space-4);
+    bottom: calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+    width: 44px;
+    height: 44px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .volver-arriba,
+  .volver-arriba.visible {
+    transition: none;
+    transform: none;
+  }
 }

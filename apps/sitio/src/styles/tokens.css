@@ -38,6 +38,7 @@
   --header-text-soft: var(--border-strong); /* «CULTURAL» de la marca: 6,5:1 sobre el negro */
   --header-hover: #3a3536;
   --header-focus: var(--accent-500); /* 7,4:1 sobre el negro */
+  --header-alto: 72px; /* el navbar queda fijo arriba: los saltos a anclas (notas al pie) dejan este lugar libre */
 
   /* Tipografía */
   --font-serif: "Fraunces", Georgia, "Times New Roman", serif;

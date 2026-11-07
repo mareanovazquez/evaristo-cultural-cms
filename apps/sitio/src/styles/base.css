@@ -6,6 +6,13 @@
 }
 html {
   -webkit-text-size-adjust: 100%;
+  /* El navbar es fijo (sticky): un salto a un ancla no tiene que quedar tapado por él */
+  scroll-padding-top: var(--header-alto);
+}
+@media (max-width: 859px) {
+  :root {
+    --header-alto: 64px;
+  }
 }
 @media (prefers-reduced-motion: no-preference) {
   html {

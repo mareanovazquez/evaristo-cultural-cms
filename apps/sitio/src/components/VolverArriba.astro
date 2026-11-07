@@ -1,0 +1,35 @@
+---
+// Botón «Volver arriba» (7/11/2026): aparece después de bajar una pantalla, en todas las páginas (va en Base.astro).
+// Sin JavaScript queda oculto (atributo hidden), porque no serviría. Con «reducir movimiento» sube sin animación.
+---
+
+<button class="volver-arriba" type="button" aria-label="Volver arriba" hidden>
+  <svg class="icon" aria-hidden="true"><use href="#i-arrow-up" /></svg>
+</button>
+
+<script>
+  const boton = document.querySelector<HTMLButtonElement>(".volver-arriba");
+  if (boton) {
+    boton.hidden = false;
+    let pendiente = false;
+    const actualizar = () => {
+      pendiente = false;
+      boton.classList.toggle("visible", window.scrollY > window.innerHeight);
+    };
+    const alMover = () => {
+      if (!pendiente) {
+        pendiente = true;
+        requestAnimationFrame(actualizar);
+      }
+    };
+    window.addEventListener("scroll", alMover, { passive: true });
+    window.addEventListener("resize", alMover, { passive: true });
+    actualizar();
+    boton.addEventListener("click", () => {
+      const sinAnimacion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.scrollTo({ top: 0, behavior: sinAnimacion ? "auto" : "smooth" });
+      // El foco vuelve al principio (la marca del header), para que el teclado siga desde arriba
+      document.querySelector<HTMLElement>(".header .logo")?.focus({ preventScroll: true });
+    });
+  }
+</script>
