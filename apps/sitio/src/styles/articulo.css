@@ -315,6 +315,26 @@
 .rotulos {
   margin: 0 0 var(--space-4);
 }
+/* En la página del artículo la etiqueta de sección es más grande (7/11/2026): la sección es el dato principal de la cabecera.
+   Misma decoración que en las tarjetas (fondo accent-100, texto accent-900, mayúsculas, 4px), solo cambian el cuerpo y el relleno. */
+.nota .rotulos .etiqueta {
+  font-size: 14px;
+  padding: 6px var(--space-4);
+}
+/* Más aire entre la etiqueta y la volanta (16 + 16 = 32px): así la volanta se lee pegada al título y no como otra etiqueta.
+   Sin volanta, la distancia al título no cambia. */
+.nota .rotulos + .volanta {
+  margin-top: var(--space-4);
+}
+@media (max-width: 859px) {
+  .nota .rotulos .etiqueta {
+    font-size: 13px;
+    padding: 5px var(--space-3);
+  }
+  .nota .rotulos + .volanta {
+    margin-top: var(--space-2);
+  }
+}
 /* Volanta (categoría principal): línea corta pegada al título, Fraunces cursiva en el color de los links */
 .nota .volanta {
   font-family: var(--font-serif);
