@@ -903,3 +903,18 @@ a.topbar:focus-visible {
 .marca-fondo--sola b {
   color: var(--accent-100);
 }
+/* En la nota (7/11/2026): vertical, de abajo hacia arriba como el lomo de un libro, pegada al borde izquierdo y dentro del margen,
+   nunca detrás del texto de lectura (columna de 680px). Solo desde 1200px de ancho: más angosto no hay margen libre. */
+.marca-fondo--vertical {
+  display: none;
+}
+@media (min-width: 1200px) {
+  .marca-fondo--vertical {
+    display: block;
+    top: 50%;
+    left: var(--space-6);
+    writing-mode: vertical-rl;
+    transform: translateY(-50%) rotate(180deg);
+    font-size: clamp(150px, 12vw, 240px);
+  }
+}

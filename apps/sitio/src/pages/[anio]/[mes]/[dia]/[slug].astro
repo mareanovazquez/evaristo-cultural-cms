@@ -4,6 +4,7 @@ import Articulo from "../../../../components/Articulo.astro";
 import Bio from "../../../../components/Bio.astro";
 import FichaTecnica from "../../../../components/FichaTecnica.astro";
 import Galeria from "../../../../components/Galeria.astro";
+import MarcaFondo from "../../../../components/MarcaFondo.astro";
 import Tarjeta from "../../../../components/Tarjeta.astro";
 import { renderArticleBody, type JSONNode } from "@evaristo/compartido/render";
 import { rutaCategoria } from "@evaristo/compartido/urls";
@@ -56,6 +57,7 @@ const seccion = articulo.seccion.interna ? undefined : articulo.seccion.nombre;
 ---
 
 <Base titulo={articulo.titulo} descripcion={articulo.bajada ?? undefined}>
+  {seccion && <MarcaFondo principal={seccion} vertical />}
   <Articulo
     seccion={seccion}
     novedad={esNovedad(articulo.novedadHasta)}
