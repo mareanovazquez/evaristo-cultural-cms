@@ -19,6 +19,7 @@ import { crearRutasAdminSitio } from "./admin/sitio.js";
 import { crearRutasAdminUsuarios } from "./admin/usuarios.js";
 import { crearManejadorMedia } from "./media.js";
 import { destinoCategoriaWp, cargarMapeo } from "@evaristo/compartido/taxonomia";
+import { cargarEtiquetasWp, rutaWordPress } from "@evaristo/compartido/rutas-wordpress";
 import { crearManejadorRedirecciones } from "./redirecciones.js";
 import { cabecerasDelPanel, cabecerasDelSitio, confiarEnProxy } from "./seguridad.js";
 
@@ -170,6 +171,8 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
   // (4b) Redirecciones 301 de las URLs viejas de WordPress. Después de los estáticos (los archivos no consultan la base) y antes del SSR.
   // Las /category/<slug>/ de WordPress se resuelven con el mapeo de taxonomías (cada una tiene su `destino`), sin consultar la base.
   const mapeoTaxonomias = cargarMapeo();
+  // Las 5.959 etiquetas de WordPress (slug → nombre), para mandar /tag/<slug>/ al buscador. Se cargan una vez, en memoria.
+  const etiquetasWp = cargarEtiquetasWp();
   app.use(
     crearManejadorRedirecciones(
       (candidatos) =>
@@ -185,6 +188,13 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
           },
         }),
       (ruta) => destinoCategoriaWp(ruta, mapeoTaxonomias),
+      {
+        rutaWp: (ruta, consulta) => rutaWordPress(ruta, consulta, mapeoTaxonomias, etiquetasWp),
+        // select explícito: solo lo que hace falta para armar el destino
+        articuloPorWpId: (wpId) => prisma.articulo.findUnique({ where: { wpId }, select: { slug: true, estado: true, publicadoEn: true } }),
+        autorPorWpUserId: (wpUserId) => prisma.autor.findUnique({ where: { wpUserId }, select: { slug: true, soloTexto: true } }),
+        imagenesPorNombre: (nombreOriginal) => prisma.imagen.findMany({ where: { nombreOriginal }, select: { clave: true, nombreOriginal: true }, take: 20 }),
+      },
     ),
   );
   const ssr: RequestHandler = async (req, res, next) => {

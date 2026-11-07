@@ -23,6 +23,7 @@ const tituloCompleto = titulo === "Evaristo Cultural" ? titulo : `${titulo} · E
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{tituloCompleto}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate" type="application/rss+xml" title="Evaristo Cultural" href="/feed/" />
     {descripcion && <meta name="description" content={descripcion} />}
     {noindex && <meta name="robots" content="noindex, nofollow" />}
     <link rel="preconnect" href="https://fonts.googleapis.com" />

@@ -135,6 +135,25 @@ try {
   // 8) Redirecciones de la muestra y el panel
   const slugAnterior = await pedir("/2017/06/19/culpables/");
   if (slugAnterior.estado !== 301) falla("/2017/06/19/culpables/", `dio ${slugAnterior.estado}, se esperaba 301`);
+  // 8b) URLs de WordPress resueltas por reglas (Etapa 1, punto 5): /?p=ID, /wp-content/uploads/… y el feed RSS.
+  const conWpId = await prisma.articulo.findFirst({ where: { estado: "PUBLICADO", publicadoEn: { lte: ahora }, wpId: { not: null } }, select: { wpId: true, slug: true, publicadoEn: true } });
+  if (conWpId?.wpId && conWpId.publicadoEn) {
+    const r = await pedir(`/?p=${conWpId.wpId}`);
+    if (r.estado !== 301 || r.cabeceras["location"] !== canonica(conWpId.slug, conWpId.publicadoEn)) falla(`/?p=${conWpId.wpId}`, `dio ${r.estado} ${String(r.cabeceras["location"])}`);
+  }
+  const imagenVieja = await prisma.imagen.findFirst({ where: { wpId: { not: null } }, select: { clave: true, nombreOriginal: true } });
+  if (imagenVieja) {
+    const r = await pedir(`/wp-content/uploads/${encodeURIComponent(imagenVieja.nombreOriginal)}`);
+    if (r.estado !== 301 || r.cabeceras["location"] !== `/media/${encodeURIComponent(imagenVieja.clave)}`) falla(`uploads ${imagenVieja.nombreOriginal}`, `dio ${r.estado} ${String(r.cabeceras["location"])}`);
+  }
+  const feed = await pedir("/feed/");
+  const items = contar(feed.cuerpo, /<item>/g);
+  if (feed.estado !== 200 || !String(feed.cabeceras["content-type"]).startsWith("application/rss+xml")) falla("/feed/", `dio ${feed.estado} ${String(feed.cabeceras["content-type"])}`);
+  else if (items !== Math.min(20, publicados.length)) falla("/feed/", `${items} artículos, se esperaban ${Math.min(20, publicados.length)}`);
+  else if (publicados[0]?.publicadoEn && !feed.cuerpo.includes(`${canonica(publicados[0].slug, publicados[0].publicadoEn)}</link>`)) falla("/feed/", "no empieza por la nota más nueva");
+  if (!portada.cuerpo.includes('<link rel="alternate" type="application/rss+xml"')) falla("/", "no anuncia el feed");
+  console.log(`WordPress: /?p=ID, /wp-content/uploads/ y /feed/ (${items} artículos) responden.`);
+
   const panel = existsSync(fileURLToPath(new URL("../../../panel/dist/index.html", import.meta.url)));
   if (panel) {
     const adm = await pedir("/admin/");

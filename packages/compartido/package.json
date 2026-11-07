@@ -10,6 +10,7 @@
     "./schema": "./src/schema/validate.ts",
     "./render": "./src/render/render.ts",
     "./urls": "./src/urls.ts",
+    "./rutas-wordpress": "./src/rutas-wordpress.ts",
     "./taxonomia": "./src/conversor/taxonomia.ts",
     "./permisos": "./src/permisos.ts",
     "./sitio": "./src/sitio.ts",

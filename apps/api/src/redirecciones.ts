@@ -1,5 +1,6 @@
 import type { RequestHandler } from "express";
-import { normalizarRuta, rutaArticulo, rutaAutor } from "@evaristo/compartido/urls";
+import { originalDeMiniatura, type RutaWp } from "@evaristo/compartido/rutas-wordpress";
+import { normalizarRuta, rutaArticulo, rutaAutor, urlMedia } from "@evaristo/compartido/urls";
 
 // Redirecciones 301 de las URLs viejas de WordPress (tabla `redirecciones`).
 //
@@ -10,6 +11,8 @@ import { normalizarRuta, rutaArticulo, rutaAutor } from "@evaristo/compartido/ur
 //  - Un artículo que no se ve (borrador, programado a futuro) o un autor de solo texto no redirigen: el pedido sigue y da 404.
 //  - Las categorías de WordPress (/category/<slug>/…) no están en la tabla: las resuelve `destinoEstatico` (el mapeo de taxonomías, decisión 78),
 //    sin consultar la base. Si no es de una categoría conocida, el pedido sigue el camino normal.
+//  - Las demás URLs de WordPress que no están en la tabla (etiquetas, feeds, páginas fijas, archivos por fecha, /?p=ID, /?s=…, /?author=ID y
+//    /wp-content/uploads/…) las resuelve `OpcionesWp` (rutas-wordpress.ts en @evaristo/compartido; Etapa 1, punto 5 de la fase 7).
 
 export type TipoRedireccion = "ARTICULO" | "SLUG_ANTERIOR" | "AUTOR" | "MANUAL";
 
@@ -53,14 +56,60 @@ function sinBarraFinalCambiada(ruta: string): string {
 
 export type DestinoEstatico = (ruta: string) => string | undefined;
 
-export function crearManejadorRedirecciones(buscar: BuscarRedirecciones, destinoEstatico?: DestinoEstatico): RequestHandler {
+/** Lo que hace falta para las URLs de WordPress que no están en la tabla: las reglas puras y tres consultas a la base. */
+export interface OpcionesWp {
+  rutaWp: (ruta: string, consulta: URLSearchParams) => RutaWp | undefined;
+  articuloPorWpId: (wpId: number) => Promise<FilaRedireccion["articulo"]>;
+  autorPorWpUserId: (wpUserId: number) => Promise<FilaRedireccion["autor"]>;
+  /** Imágenes cuyo nombre en WordPress (`imagenes.nombreOriginal`) se parece al pedido: la colación es laxa, se elige la exacta acá. */
+  imagenesPorNombre: (nombre: string) => Promise<Array<{ clave: string; nombreOriginal: string }>>;
+}
+
+async function destinoWp(r: RutaWp, wp: OpcionesWp): Promise<string | undefined> {
+  if ("destino" in r) return r.destino;
+  if ("articuloWpId" in r) {
+    const articulo = await wp.articuloPorWpId(r.articuloWpId);
+    return articulo ? destinoDe({ origen: "", tipo: "ARTICULO", codigo: 301, destino: null, articulo, autor: null }) : undefined;
+  }
+  if ("autorWpUserId" in r) {
+    const autor = await wp.autorPorWpUserId(r.autorWpUserId);
+    return autor ? destinoDe({ origen: "", tipo: "AUTOR", codigo: 301, destino: null, articulo: null, autor }) : undefined;
+  }
+  // /wp-content/uploads/<archivo>: el original con ese nombre; si no hay, y es una miniatura («-300x200»), su original.
+  for (const nombre of [r.uploads, originalDeMiniatura(r.uploads)]) {
+    if (!nombre) continue;
+    const imagen = (await wp.imagenesPorNombre(nombre)).find((i) => i.nombreOriginal === nombre);
+    if (imagen) return urlMedia(imagen.clave);
+  }
+  return undefined;
+}
+
+export function crearManejadorRedirecciones(buscar: BuscarRedirecciones, destinoEstatico?: DestinoEstatico, wp?: OpcionesWp): RequestHandler {
   return async (req, res, next) => {
-    if ((req.method !== "GET" && req.method !== "HEAD") || !req.path.startsWith("/") || req.path === "/") {
+    if ((req.method !== "GET" && req.method !== "HEAD") || !req.path.startsWith("/") || (req.path === "/" && !wp)) {
       next();
       return;
     }
     try {
       const consulta = req.originalUrl.includes("?") ? req.originalUrl.slice(req.originalUrl.indexOf("?")) : "";
+      // URLs de WordPress resueltas por reglas (y, si hace falta, una consulta puntual). Su destino ya es completo: no se le agrega la consulta.
+      const rutaWp = wp?.rutaWp(req.path, new URLSearchParams(consulta));
+      if (rutaWp) {
+        const destino = await destinoWp(rutaWp, wp!);
+        if (destino !== undefined && destino !== req.originalUrl) {
+          res.redirect(301, destino);
+          return;
+        }
+        if (!("destino" in rutaWp)) {
+          // Un artículo, autor o imagen que no está (o no se ve): no hay nada más que buscar.
+          next();
+          return;
+        }
+      }
+      if (req.path === "/") {
+        next();
+        return;
+      }
       const fijo = destinoEstatico?.(req.path);
       if (fijo !== undefined) {
         res.redirect(301, fijo + consulta);
