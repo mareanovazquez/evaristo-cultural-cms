@@ -1,7 +1,7 @@
 ---
 // Galería de imágenes del artículo, al final de la nota (después de la ficha técnica). Cada imagen se ve ampliada en un visor con flechas
 // (lib/visor-galeria.ts). Sin JavaScript, el enlace de cada imagen abre el archivo.
-import { urlMedia } from "../lib/articulos";
+import { srcsetMedia, TAMANOS, urlMedia } from "../lib/articulos";
 
 export interface ItemGaleria {
   alt: string | null;
@@ -27,7 +27,7 @@ const { items } = Astro.props;
                 class="galeria-abrir"
                 aria-label={`Ampliar la imagen ${i + 1} de ${items.length}${item.epigrafe ? `: ${item.epigrafe}` : ""}`}
               >
-                <img src={urlMedia(item.imagen.clave)} alt={item.alt ?? ""} width={item.imagen.ancho} height={item.imagen.alto} loading="lazy" />
+                <img src={urlMedia(item.imagen.clave)} srcset={srcsetMedia(item.imagen.clave, item.imagen.ancho)} sizes={srcsetMedia(item.imagen.clave, item.imagen.ancho) ? TAMANOS.galeria : undefined} alt={item.alt ?? ""} width={item.imagen.ancho} height={item.imagen.alto} loading="lazy" />
               </a>
               {item.epigrafe && <figcaption>{item.epigrafe}</figcaption>}
             </figure>

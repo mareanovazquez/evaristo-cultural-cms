@@ -2,7 +2,7 @@
 import Base from "../../layouts/Base.astro";
 import Tarjeta from "../../components/Tarjeta.astro";
 import { renderArticleBody, type JSONNode } from "@evaristo/compartido/render";
-import { esNovedad, fechaLarga, posicionFocal, rutaArticulo, urlMedia } from "../../lib/articulos";
+import { esNovedad, fechaLarga, posicionFocal, rutaArticulo, urlMedia, urlMediaAncho } from "../../lib/articulos";
 import Paginacion from "../../components/Paginacion.astro";
 import { buscarAutor, contarNotasDelAutor, enlacesDeRedes, notasDelAutor } from "../../lib/autores";
 import { cantidadDePaginas, paginaPedida } from "../../lib/paginacion";
@@ -43,7 +43,7 @@ const iniciales = autor.nombre
       {
         autor.foto ? (
           <img
-            src={urlMedia(autor.foto.clave)}
+            src={urlMediaAncho(autor.foto.clave, 320)}
             alt={autor.fotoAlt ?? ""}
             style={`object-position: ${posicionFocal(autor.fotoPuntoFocalX, autor.fotoPuntoFocalY)}`}
             width="160"

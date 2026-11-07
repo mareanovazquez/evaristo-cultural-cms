@@ -37,7 +37,7 @@ const dimensionesImagenes = await medidasDeImagenes([...ids]);
 
 // La letra capital va a ser un campo del artículo (panel, fase 4). Mientras tanto, solo se prueba con ?capital=1 en desarrollo.
 const conCapital = pruebaLayoutHabilitada() && Astro.url.searchParams.get("capital") === "1";
-const { html, notesHtml } = renderArticleBody(cuerpo, { conCapital, dimensionesImagenes });
+const { html, notesHtml } = renderArticleBody(cuerpo, { conCapital, dimensionesImagenes, variantes: true });
 
 const relacionados = await articulosRelacionados(articulo);
 const autores = articulo.autores.map((x) => x.autor);

@@ -3,6 +3,7 @@
 // No emite estilos en línea ni el sprite de íconos: de eso se ocupa el layout (SPRITE_ICONO_VOLVER).
 import { isValidVideoId, isVideoProvider, videoEmbedUrl, videoProviderLabel } from './video.ts'
 import { isAllowedUrl, isAllowedImageSrc, validateArticleBody, contarImagenesPendientes, type JSONNode } from '../schema/validate.ts'
+import { srcsetDeUrl, TAMANOS } from '../urls.ts'
 
 export { isAllowedUrl, isAllowedImageSrc, validateArticleBody, contarImagenesPendientes }
 export type { JSONNode }
@@ -15,6 +16,8 @@ export interface OpcionesRender {
   prefijoIds?: string
   /** Medidas de las imágenes de la biblioteca, por imagenId. Sin medida, la imagen sale sin width ni height. */
   dimensionesImagenes?: Map<number, { ancho: number; alto: number }>
+  /** Agrega srcset y sizes a las imágenes de la biblioteca (/media/<clave>), para que el navegador pida una variante de tamaño (decisión 83). Por defecto, false. */
+  variantes?: boolean
 }
 
 export interface RenderResult {
@@ -131,7 +134,7 @@ function medidaValida(n: unknown): n is number {
 }
 
 export function renderArticleBody(doc: JSONNode, opciones: OpcionesRender = {}): RenderResult {
-  const { conCapital = false, prefijoIds: p = '', dimensionesImagenes } = opciones
+  const { conCapital = false, prefijoIds: p = '', dimensionesImagenes, variantes = false } = opciones
   const footnotes: Array<{ id: number; contentDoc: JSONNode }> = []
   let footnoteCounter = 0
   const primerBloque = doc?.type === 'doc' ? doc.content?.[0] : undefined
@@ -194,7 +197,9 @@ export function renderArticleBody(doc: JSONNode, opciones: OpcionesRender = {}):
         const dimensiones = medida && medidaValida(medida.ancho) && medidaValida(medida.alto)
           ? ` width="${medida.ancho}" height="${medida.alto}"`
           : ''
-        return `<figure><img class="cuerpo-img" src="${escapeHtml(String(src).trim())}" alt="${escapeHtml(alt)}"${dimensiones} loading="lazy">${caption}</figure>`
+        const srcset = variantes ? srcsetDeUrl(String(src), medida && medidaValida(medida.ancho) ? medida.ancho : undefined) : undefined
+        const responsiva = srcset ? ` srcset="${escapeHtml(srcset)}" sizes="${TAMANOS.cuerpo}"` : ''
+        return `<figure><img class="cuerpo-img" src="${escapeHtml(String(src).trim())}"${responsiva} alt="${escapeHtml(alt)}"${dimensiones} loading="lazy">${caption}</figure>`
       }
       case 'video': {
         const provider = node.attrs?.provider

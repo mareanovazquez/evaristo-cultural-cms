@@ -2,6 +2,8 @@
 // Estructura de un artículo: cintillo y volanta, título, bajada, autores y fecha, imagen de encabezado,
 // cuerpo renderizado y notas. El HTML del cuerpo ya viene escapado por el renderizador.
 // El slot recibe lo que va después (bios, relacionados).
+import { srcsetDeUrl, TAMANOS } from "../lib/articulos";
+
 export interface AutorLinea {
   nombre: string;
   slug: string;
@@ -59,7 +61,7 @@ const hayMeta = autores.length > 0 || fecha;
   {
     encabezado && (
       <figure class="wide encabezado">
-        <img class="hero-img" src={encabezado.src} alt={encabezado.alt} style={`object-position: ${encabezado.posicion}`} fetchpriority="high" />
+        <img class="hero-img" src={encabezado.src} srcset={srcsetDeUrl(encabezado.src)} sizes={srcsetDeUrl(encabezado.src) ? TAMANOS.encabezado : undefined} alt={encabezado.alt} style={`object-position: ${encabezado.posicion}`} fetchpriority="high" />
         {encabezado.credito && <figcaption>{encabezado.credito}</figcaption>}
       </figure>
     )

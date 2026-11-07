@@ -38,6 +38,8 @@ export interface OpcionesApp {
   dirMedia?: string | undefined;
   /** Carpeta de las imágenes subidas desde el panel. Por defecto, la variable MEDIA_DIR_SUBIDAS. */
   dirSubidas?: string | undefined;
+  /** Caché en disco de las variantes de tamaño (decisión 83). Por defecto, la variable MEDIA_DIR_VARIANTES; sin ella, ?w se ignora. */
+  dirVariantes?: string | undefined;
   /** Para las pruebas: reemplaza partes de la autenticación (repositorio, límite de intentos, cookie Secure). */
   auth?: Partial<OpcionesAuth>;
   /** Proxies de confianza (ver `confiarEnProxy`). Por defecto, la variable TRUST_PROXY; sin ella, ninguno. */
@@ -156,8 +158,9 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
     crearManejadorMedia({
       dirMedia: "dirMedia" in opciones ? opciones.dirMedia : process.env["MEDIA_DIR"] || undefined,
       dirSubidas,
+      dirVariantes: "dirVariantes" in opciones ? opciones.dirVariantes : process.env["MEDIA_DIR_VARIANTES"] || undefined,
       // select explícito: solo lo que la ruta necesita
-      buscar: (clave) => prisma.imagen.findMany({ where: { clave }, select: { clave: true, tipoMime: true, hash: true } }),
+      buscar: (clave) => prisma.imagen.findMany({ where: { clave }, select: { clave: true, tipoMime: true, hash: true, ancho: true } }),
     }),
   );
 

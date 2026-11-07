@@ -265,7 +265,7 @@ try {
   const conAlt = banner(html)!;
   assert.ok(conAlt.includes("&quot;comillas&quot;") && conAlt.includes("&amp;"), "el texto alternativo se escapa");
   assert.equal((conAlt.match(/<img /g) ?? []).length, 1, "y no se abre ninguna etiqueta nueva");
-  assert.match(conAlt, /<img class="banner-img" src="[^"]+" alt="[^"]*alert\('[a-z0-9]+'\)[^"]*" loading="eager"\s*\/?>/, "todo el texto queda dentro del atributo alt");
+  assert.match(conAlt, /<img class="banner-img" src="[^"]+"(?: srcset="[^"]+" sizes="[^"]+")? alt="[^"]*alert\('[a-z0-9]+'\)[^"]*" loading="eager"\s*\/?>/, "todo el texto queda dentro del atributo alt");
 
   // Sin las tablas (la base real hasta la fase 7) el sitio sigue y no hay banner
   await prisma.$executeRawUnsafe("RENAME TABLE `banner_imagenes` TO `banner_imagenes_prueba`");

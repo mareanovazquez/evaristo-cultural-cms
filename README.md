@@ -36,6 +36,7 @@ CMS propio de la revista Evaristo Cultural, pensado para reemplazar el WordPress
 | `DATABASE_URL_MIGRACION` | Usuario de escritura de la migración (ver más abajo). |
 | `MEDIA_DIR` | Carpeta con los originales de las imágenes (ruta absoluta). Sin ella ni `MEDIA_DIR_SUBIDAS`, `/media/<clave>` responde 503. |
 | `MEDIA_DIR_SUBIDAS` | Carpeta donde se guardan las imágenes subidas desde el panel (ruta absoluta; la API la crea en la primera subida). `/media` busca primero acá y después en `MEDIA_DIR`. Sin ella, subir responde 503. En desarrollo conviene una carpeta propia para no mezclar las pruebas con la muestra. |
+| `MEDIA_DIR_VARIANTES` | Caché en disco de las variantes de tamaño (`/media/<clave>?w=N`, decisión 83; ruta absoluta, la API la crea en la primera variante). Carpeta propia, fuera de las otras dos: se puede borrar entera y se vuelve a generar a pedido. Sin ella, `?w` se ignora y se sirve el original. |
 | `PORT` | Puerto del servidor único (3000 por defecto). |
 | `NODE_ENV` | Con `production` la cookie de sesión lleva `Secure` y el sitio y el panel mandan `Strict-Transport-Security` (HSTS). |
 | `TRUST_PROXY` | Proxies de confianza delante del servidor: un número (los que hay entre el servidor y quien visita, por ejemplo `1`), o una lista que Express entienda (`loopback`, `10.0.0.0/8`). Vacío: ninguno. Hace falta cuando se despliega detrás de un balanceador, para que el límite de intentos de ingreso cuente la dirección real de cada visitante. `true` no se acepta. |
@@ -230,7 +231,7 @@ Después abrir:
 | `npm run build:panel` | Compila el panel con Vite en `apps/panel/dist/` (no se versiona). |
 | `npm run dev:panel` | Servidor de desarrollo de Vite para el panel, con recarga en caliente (ver más abajo). |
 | `npm run dev:sitio` | `astro dev` del sitio solo, en http://127.0.0.1:4321, con recarga en caliente y el `.env` cargado. No incluye la API. |
-| `npm run test:media` | Pruebas puras de la ruta `/media/<clave>` (archivos temporales, sin base). |
+| `npm run test:media` | Pruebas puras de la ruta `/media/<clave>` y de sus variantes de tamaño `?w=N` (archivos e imágenes temporales generadas con `sharp`, sin base). |
 | `npm run test:media-originales -- --originales="<carpeta>"` | Comprueba `/media` contra la base real (solo lectura) y la carpeta de originales: bytes y SHA-256 de las 200 imágenes. |
 | `npm run test:articulos -- --originales="<carpeta>"` | Recorre la vista pública de los artículos de la base (solo lectura; requiere `build:sitio`): 200 en la URL canónica, 301 si la fecha o la barra no coinciden, 404 para lo no publicado. |
 | `npm run test:autores -- --originales="<carpeta>"` | Recorre las páginas de autores y el listado contra la base (solo lectura; requiere `build:sitio`). |

@@ -200,6 +200,19 @@ t('imagen: sin estilos en línea ni aspect-ratio', () => {
   const h = html(doc(img({ src: '/media/a.jpg', alt: 'x', imagenId: 7 })), { dimensionesImagenes: new Map([[7, { ancho: 1, alto: 2 }]]) })
   assert.ok(!/style|aspect|object-fit/i.test(h))
 })
+t('imagen: con variantes, srcset y sizes para las de la biblioteca (decisión 83)', () => {
+  const dimensionesImagenes = new Map([[7, { ancho: 700, alto: 500 }]])
+  assert.equal(
+    html(doc(img({ src: '/media/a%20b.jpg', alt: 'x', imagenId: 7 })), { dimensionesImagenes, variantes: true }),
+    '<figure><img class="cuerpo-img" src="/media/a%20b.jpg" srcset="/media/a%20b.jpg?w=160 160w, /media/a%20b.jpg?w=320 320w, /media/a%20b.jpg?w=480 480w, /media/a%20b.jpg?w=640 640w, /media/a%20b.jpg 700w" sizes="(min-width: 720px) 680px, 100vw" alt="x" width="700" height="500" loading="lazy"></figure>',
+  )
+  // Sin medida se ofrecen todos los anchos; los GIF, las URL externas y las imágenes más chicas que 160 px no llevan srcset.
+  assert.equal(html(doc(img({ src: '/media/a.jpg', alt: 'x' })), { variantes: true }).match(/\d+w/g)?.length, 8)
+  for (const src of ['/media/a.gif', 'https://otro.com/a.jpg']) assert.ok(!html(doc(img({ src, alt: 'x' })), { variantes: true }).includes('srcset'), src)
+  assert.ok(!html(doc(img({ src: '/media/a.jpg', alt: 'x', imagenId: 7 })), { dimensionesImagenes: new Map([[7, { ancho: 150, alto: 100 }]]), variantes: true }).includes('srcset'))
+  // Sin la opción, igual que antes.
+  assert.ok(!html(doc(img({ src: '/media/a.jpg', alt: 'x' }))).includes('srcset'))
+})
 t('imagen: src no permitido no se renderiza', () => {
   for (const src of ['javascript:alert(1)', 'data:image/png;base64,AAAA', '//evil.com/a.png', 'interior/a.gif', '', undefined]) {
     assert.equal(html(doc(img({ src, alt: 'x' }))), '', String(src))

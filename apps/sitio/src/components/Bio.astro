@@ -2,7 +2,7 @@
 // Bio de un autor al final del artículo: foto chica (o iniciales) junto al texto.
 // El texto de la bio es un documento con itálica y enlaces; lo dibuja el mismo renderizador del cuerpo.
 import { renderArticleBody, type JSONNode } from "@evaristo/compartido/render";
-import { posicionFocal, urlMedia } from "../lib/articulos";
+import { posicionFocal, urlMediaAncho } from "../lib/articulos";
 
 interface Props {
   nombre: string;
@@ -24,7 +24,7 @@ const iniciales = nombre
   <div class="foto">
     {
       foto ? (
-        <img src={urlMedia(foto.clave)} alt={foto.alt ?? ""} style={`object-position: ${posicionFocal(foto.x, foto.y)}`} loading="lazy" width="72" height="72" />
+        <img src={urlMediaAncho(foto.clave, 160)} alt={foto.alt ?? ""} style={`object-position: ${posicionFocal(foto.x, foto.y)}`} loading="lazy" width="72" height="72" />
       ) : (
         <span aria-hidden="true">{iniciales}</span>
       )

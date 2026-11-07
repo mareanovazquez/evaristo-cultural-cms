@@ -13,6 +13,7 @@
 //  - Cambia con las flechas izquierda y derecha del teclado y deslizando el dedo (sin trabar el desplazamiento vertical de la página).
 //  - No anuncia cada cambio a quien usa un lector de pantalla mientras avanza solo; sí cuando la persona lo cambia.
 //  - La altura es fija (no salta al cambiar de nota) y la primera imagen carga con prioridad.
+import { srcsetDeUrl, TAMANOS } from "../lib/articulos";
 import type { Diapositiva } from "../lib/portada";
 
 interface Props {
@@ -36,6 +37,8 @@ const { diapositivas, intervalo = 6000, autoplay = true, etiqueta = "Notas desta
               <img
                 class="diapositiva-img"
                 src={d.imagen.src}
+                srcset={srcsetDeUrl(d.imagen.src)}
+                sizes={srcsetDeUrl(d.imagen.src) ? TAMANOS.pagina : undefined}
                 alt={d.imagen.alt}
                 style={`object-position: ${d.imagen.posicion}`}
                 loading={i === 0 ? "eager" : "lazy"}

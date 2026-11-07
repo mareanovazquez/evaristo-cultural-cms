@@ -12,6 +12,7 @@
 //    recorta con `overflow: hidden` y cortaría la sombra).
 //  - Sin imágenes no dibuja nada. Una sola medida para todos los anchos (3:1), así que no hay recortes distintos en el celular.
 import { BANNER_INTERVALO_MS, BANNER_MAX_IMAGENES } from "@evaristo/compartido/sitio";
+import { srcsetDeUrl, TAMANOS } from "../lib/articulos";
 import type { SlideDeBanner } from "../lib/banner";
 
 interface Props {
@@ -30,7 +31,7 @@ const esExterno = (enlace: string) => /^http/i.test(enlace);
       <div class="banner-pieza">
         <div class="banner-marco">
           {slides.map((s, i) => {
-            const imagen = <img class="banner-img" src={s.src} alt={s.alt} loading={i === 0 ? "eager" : "lazy"} />;
+            const imagen = <img class="banner-img" src={s.src} srcset={srcsetDeUrl(s.src)} sizes={srcsetDeUrl(s.src) ? TAMANOS.pagina : undefined} alt={s.alt} loading={i === 0 ? "eager" : "lazy"} />;
             return (
               <div class={`banner-capa${i === 0 ? " activa" : ""}`} data-capa data-enlace={s.enlace ? "true" : "false"} aria-hidden={i === 0 ? "false" : "true"} inert={i !== 0}>
                 {s.enlace ? (

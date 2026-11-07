@@ -1,7 +1,7 @@
 import { prisma } from "./prisma";
 
 // Las URLs públicas (artículo, autor, media) viven en @evaristo/compartido/urls, que también usa la API.
-export { rutaArticulo, urlMedia } from "@evaristo/compartido/urls";
+export { rutaArticulo, urlMedia, urlMediaAncho, srcsetMedia, srcsetDeUrl, TAMANOS } from "@evaristo/compartido/urls";
 
 const formatoFecha = new Intl.DateTimeFormat("es-AR", { dateStyle: "long", timeZone: "UTC" });
 export const fechaLarga = (d: Date): string => formatoFecha.format(d);

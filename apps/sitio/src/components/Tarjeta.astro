@@ -11,11 +11,12 @@ interface Props {
   /** Un pedazo del texto (HTML ya escapado, con lo buscado entre <mark>), en los resultados de una búsqueda. */
   extracto?: string | undefined;
 }
+import { srcsetDeUrl, TAMANOS } from "../lib/articulos";
 const { href, titulo, seccion, imagen, meta, novedad = false, extracto } = Astro.props;
 ---
 
 <article class="tarjeta">
-  {imagen ? <img class="img" src={imagen.src} alt="" style={`object-position: ${imagen.posicion}`} loading="lazy" /> : <div class="img"></div>}
+  {imagen ? <img class="img" src={imagen.src} srcset={srcsetDeUrl(imagen.src)} sizes={srcsetDeUrl(imagen.src) ? TAMANOS.tarjeta : undefined} alt="" style={`object-position: ${imagen.posicion}`} loading="lazy" /> : <div class="img"></div>}
   <div class="tarjeta-texto">
     {(seccion || novedad) && <div class="etiquetas">{seccion && <span class="etiqueta">{seccion}</span>}{novedad && <span class="etiqueta etiqueta-novedad">Novedad</span>}</div>}
     <h3><a href={href}>{titulo}</a></h3>

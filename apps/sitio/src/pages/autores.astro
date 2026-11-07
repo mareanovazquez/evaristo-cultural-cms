@@ -1,6 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
-import { posicionFocal, urlMedia } from "../lib/articulos";
+import { posicionFocal, urlMediaAncho } from "../lib/articulos";
 import { listarAutores } from "../lib/autores";
 
 // Listado de autores: los que tienen página y al menos una nota publicada, por orden alfabético.
@@ -25,7 +25,7 @@ const iniciales = (nombre: string) =>
               <a href={`/author/${encodeURIComponent(a.slug)}/`}>
                 <span class="foto">
                   {a.foto ? (
-                    <img src={urlMedia(a.foto.clave)} alt="" style={`object-position: ${posicionFocal(a.fotoPuntoFocalX, a.fotoPuntoFocalY)}`} loading="lazy" width="56" height="56" />
+                    <img src={urlMediaAncho(a.foto.clave, 160)} alt="" style={`object-position: ${posicionFocal(a.fotoPuntoFocalX, a.fotoPuntoFocalY)}`} loading="lazy" width="56" height="56" />
                   ) : (
                     <span aria-hidden="true">{iniciales(a.nombre)}</span>
                   )}
