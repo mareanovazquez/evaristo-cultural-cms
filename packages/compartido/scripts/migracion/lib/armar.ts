@@ -8,7 +8,7 @@ import { reescribirImagenes, resolverImagen, srcDeClave, verificarEnlacesCuerpo 
 import type { Medicion } from "./enlaces-imagenes.ts";
 import type { AdjuntoSnapshot, MetaSnapshot, PostSnapshot, SnapshotWp, TerminoSnapshot, UsuarioSnapshot } from "./snapshot-tipos.ts";
 import {
-  adjuntoDeUrl, contarAltPendiente, contarInvisibles, contieneCorreo, decEntidades, decodificar, docDeTexto, firmaInicial, quitarU200E, rutaUploads, slugFinal, textoPlanoDe,
+  adjuntoDeUrl, contarAltPendiente, contarInvisibles, contieneCorreo, decEntidades, decodificar, docDeTexto, firmaInicial, quitarCorreos, quitarU200E, rutaUploads, slugFinal, textoPlanoDe,
 } from "./utilidades.ts";
 
 // Estados: solo estos se migran con regla. El 19300 es el único artículo privado que se acepta (decisión tomada).
@@ -360,7 +360,8 @@ export function armar(entrada: EntradaArmar, deps: DependenciasArmar = {}): Plan
       const descripcion = usuario?.bio?.trim() ?? "";
       autores.set(wpUserId, {
         wpUserId, slug: usuario?.nicename ?? "", nombre: nombreAutor, soloTexto,
-        bio: soloTexto ? null : docDeTexto(descripcion),
+        // Sin los correos (7/11/2026): la bio es pública. bioConCorreo sigue marcando la bio original, para revisarla.
+        bio: soloTexto ? null : docDeTexto(quitarCorreos(descripcion)),
         bioConCorreo: !soloTexto && contieneCorreo(descripcion),
         articulosEnMuestra: [],
       });

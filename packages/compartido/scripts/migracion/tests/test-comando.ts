@@ -272,7 +272,9 @@ t("T22: el verificador (lib/verificar.ts y verificar-escritura.ts) solo lee: no 
     assert.ok(!/DATABASE_URL_MIGRACION|process\.env/.test(codigo), `${rel(archivo)}: no toca el entorno ni las credenciales de migración`);
   }
   const script = readFileSync(SCRIPT, "utf8");
-  assert.deepEqual(script.match(/abrirSoloCms\(\)|abrirSoloWordPress\(\)/g), ["abrirSoloCms()", "abrirSoloWordPress()"], "el script abre solo las dos conexiones de solo lectura que ya existen");
+  // La de WordPress lleva la base de --wordpress (7/11/2026), que solo acepta BASES_WORDPRESS: sigue siendo una de las dos de solo lectura.
+  assert.deepEqual(script.match(/abrirSoloCms\([^)]*\)|abrirSoloWordPress\([^)]*\)/g), ["abrirSoloCms()", "abrirSoloWordPress(args.wordpress)"], "el script abre solo las dos conexiones de solo lectura que ya existen");
+  assert.match(script, /BASES_WORDPRESS\.includes\(valor\)/, "--wordpress solo acepta las bases de WordPress permitidas");
   assert.ok(!/--base/.test(script.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "")), "no hay argumento de base");
   assert.equal((script.match(/destino: DESTINO_REAL/g) ?? []).length, 1, "apunta siempre a DESTINO_REAL");
 });
@@ -282,12 +284,12 @@ t("T26: verificar-escritura.ts rechaza los argumentos inválidos con 2, antes de
   const env = { ...process.env, DATABASE_URL: "mysql://nadie:nada@127.0.0.1:1/evaristo_cms" };
   const correr = (...args: string[]) => spawnSync(process.execPath, ["--import", "tsx", join(MIGRACION, "verificar-escritura.ts"), ...args], { env, encoding: "utf8", cwd: RAIZ, timeout: 60_000 });
   for (const [args, texto] of [
-    [[], /hay que indicar uno de --id, --ids o --muestra/],
-    [["--solo-estos"], /hay que indicar uno de --id, --ids o --muestra/],
+    [[], /hay que indicar uno de --id, --ids, --muestra o --todos/],
+    [["--solo-estos"], /hay que indicar uno de --id, --ids, --muestra o --todos/],
     [["--base=evaristo_cms", "--muestra"], /argumento desconocido: --base=evaristo_cms/],
     [["--base=evaristo_cms_test", "--id=12526"], /argumento desconocido: --base=evaristo_cms_test/],
-    [["--id=12526", "--ids=12526,1555"], /exactamente uno de --id, --ids o --muestra/],
-    [["--muestra", "--id=12526"], /exactamente uno de --id, --ids o --muestra/],
+    [["--id=12526", "--ids=12526,1555"], /exactamente uno de --id, --ids, --muestra o --todos/],
+    [["--muestra", "--id=12526"], /exactamente uno de --id, --ids, --muestra o --todos/],
     [["--id=12526,1555"], /--id lleva un solo número/],
     [["--id=abc"], /tiene que ser un número/],
     [["--ids=1,2"], /ids que no son de la muestra/],
@@ -296,6 +298,11 @@ t("T26: verificar-escritura.ts rechaza los argumentos inválidos con 2, antes de
     [["--muestra=1"], /--muestra no lleva valor/],
     [["--muestra", "--solo-estos=1"], /--solo-estos no lleva valor/],
     [["--muestra", "--destino=pruebas"], /argumento desconocido/],
+    // --todos (la migración completa) y --wordpress (solo las dos bases de WordPress permitidas), 7/11/2026
+    [["--todos", "--muestra"], /exactamente uno de --id, --ids, --muestra o --todos/],
+    [["--todos=1"], /--todos no lleva valor/],
+    [["--todos", "--wordpress=evaristo_cms"], /--wordpress: solo evaristo_lectura o evaristo_lectura_nueva/],
+    [["--todos", "--wordpress"], /--wordpress: solo/],
     [["--id=12526", "--originales=carpeta-que-no-existe"], /no se puede leer la carpeta de originales/],
   ] as Array<[string[], RegExp]>) {
     const r = correr(...args);

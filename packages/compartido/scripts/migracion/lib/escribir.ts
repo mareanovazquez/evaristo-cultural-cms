@@ -210,8 +210,10 @@ export async function escribirBase(prisma: PrismaClient, plan: Plan, opciones: {
     r.difieren.push({ tabla: "autores", clave: String(a.wpUserId), campos, sobrescrita: reescribir });
   }
 
-  // 3. imágenes
-  for (const i of plan.imagenes) {
+  // 3. imágenes. Primero las que se reescriben: si una cambia de clave (decisión 79: «TAPA.jpg» pasa a «TAPA-wp2475.jpg»), libera la vieja antes
+  // de que se cree la que la usa («tapa.jpg», que la colación no distingue). Lo encontró el ensayo general del 7/11/2026. El orden es estable.
+  const imagenesEnOrden = [...plan.imagenes].sort((a, b) => Number(permitidos.imagenes.has(b.wpId)) - Number(permitidos.imagenes.has(a.wpId)));
+  for (const i of imagenesEnOrden) {
     const mismaClave = await prisma.imagen.findUnique({ where: { clave: i.clave }, select: { id: true, wpId: true } });
     if (mismaClave && mismaClave.wpId !== i.wpId) {
       r.imagenes.conflictos++;

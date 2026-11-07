@@ -83,6 +83,19 @@ const REGEX_CORREO = /[\w.+-]+@[\w-]+(?:\.[\w-]+)+/;
 /** Reemplaza las direcciones de correo de un texto por el marcador (para que no viajen en los snapshots versionados). */
 export const ocultarCorreos = (texto: string) => texto.replace(new RegExp(REGEX_CORREO.source, "g"), MARCADOR_CORREO_OMITIDO);
 
+/**
+ * Saca las direcciones de correo de una bio (decidido con Mariano el 7/11/2026: las bios son públicas). Se va también la etiqueta que las
+ * presenta («Contacto:», «Mail:», «E-mail:», «Correo:») y los espacios que quedan al final de ESE renglón; los demás renglones no se tocan
+ * (si no, cambiarían bios sin correo). Así quedó, a mano, la del autor 39 el 21/10/2026. El aviso bio_con_correo se sigue dando, para revisar
+ * que la frase haya quedado bien.
+ */
+const CORREO_CON_ETIQUETA = new RegExp(`[ \\t]*(?:(?:contacto|e-?mail|mail|correo(?:\\s+electr[oó]nico)?)\\s*:\\s*)?${REGEX_CORREO.source}`, "gi");
+export const quitarCorreos = (texto: string) =>
+  texto
+    .split(/(\r?\n)/)
+    .map((renglon) => (REGEX_CORREO.test(renglon) ? renglon.replace(CORREO_CON_ETIQUETA, "").replace(/[ \t]+$/, "") : renglon))
+    .join("");
+
 /** ¿Hay una dirección de correo en el texto, o el marcador que la reemplazó en el snapshot? */
 export const contieneCorreo = (texto: string) => REGEX_CORREO.test(texto) || texto.includes(MARCADOR_CORREO_OMITIDO);
 

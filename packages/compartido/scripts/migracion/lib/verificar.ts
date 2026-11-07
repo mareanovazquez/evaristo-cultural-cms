@@ -20,8 +20,10 @@ export interface OpcionesVerificacion {
   wp?: Consulta;
   /** La base que se verifica (host, puerto y base); se comprueba contra lo que dice el servidor. */
   destino: DestinoUrl;
-  /** wpId de los artículos a verificar (de la muestra). */
+  /** wpId de los artículos a verificar (de la muestra, o todos los de WordPress con `todos`). */
   ids: readonly number[];
+  /** Verificar la migración completa (--todos): el plan esperado se arma con todos los artículos de WordPress, no solo con los de la muestra. */
+  todos?: boolean;
   /** No comparar los conteos globales de la base: solo lo relacionado con los artículos pedidos. */
   soloEstos: boolean;
   originales: string;
@@ -68,12 +70,15 @@ export async function verificarEscritura(o: OpcionesVerificacion): Promise<Resul
 
   // el plan esperado: simulación de solo lectura (las colisiones se miran contra la propia base verificada)
     const { preparado } = await simular(
-      { alcance: { tipo: "ids", ids: [...o.ids] }, modo: "simular", esperarArticulos: null, esperarSobrescribir: null, abortarAlPrimerError: false, sobrescribir: false, originales: o.originales, ...(o.mapa ? { mapa: o.mapa } : {}), ...(o.avatares ? { avatares: o.avatares } : {}) },
+      { alcance: o.todos ? { tipo: "todos" } : { tipo: "ids", ids: [...o.ids] }, modo: "simular", esperarArticulos: null, esperarSobrescribir: null, abortarAlPrimerError: false, sobrescribir: false, originales: o.originales, ...(o.mapa ? { mapa: o.mapa } : {}), ...(o.avatares ? { avatares: o.avatares } : {}) },
       { wp, bd, destino: o.destino, servidorCms, servidorWordPress },
       { destinoPermitido: o.destino },
     );
     plan = preparado.plan;
   }
+
+  // Con todos, se verifica cada artículo del plan (los que WordPress tiene pero no se migran, como los borradores sin título, no cuentan).
+  const ids: readonly number[] = o.todos ? plan.articulos.map((a) => a.wpId) : o.ids;
 
   // conteos de todas las tablas
   const tablas = ((await bd("SELECT TABLE_NAME AS t FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_TYPE = 'BASE TABLE' ORDER BY TABLE_NAME")) as Fila[]).map((f) => str(f["t"]));
@@ -85,7 +90,7 @@ export async function verificarEscritura(o: OpcionesVerificacion): Promise<Resul
 
   const presentes: number[] = [], ausentes: number[] = [];
   const filaDe = new Map<number, Fila>();
-  for (const id of o.ids) {
+  for (const id of ids) {
     const f = await uno("SELECT a.*, s.slug AS seccionSlug, cp.slug AS categoriaPrincipalSlug FROM articulos a JOIN secciones s ON s.id = a.seccionId LEFT JOIN categorias cp ON cp.id = a.categoriaPrincipalId WHERE a.wpId = ?", id);
     if (f) { presentes.push(id); filaDe.set(id, f); } else { ausentes.push(id); chk(id, "el artículo está en la base", false, "no está"); }
   }
@@ -192,11 +197,14 @@ export async function verificarEscritura(o: OpcionesVerificacion): Promise<Resul
     const cats = await bd("SELECT * FROM categorias");
     const reds = await bd("SELECT * FROM redirecciones");
     const enJson = (v: unknown) => JSON.stringify(v, (_k, x) => (typeof x === "bigint" ? Number(x) : x));
-    const texto = enJson([arts, aut, imgs, cats, reds]);
     // los correos que están en el propio contenido del artículo (el cuerpo que escribió su autor) son legítimos: lo que no puede haber es un correo que el plan no tenga,
     // ni ninguno en las demás tablas. En las bios de los autores del plan solo pueden estar los correos que el plan trae (hoy, el wpUserId 39).
-    const correosDe = (s: string) => new Set(s.match(new RegExp(CORREO.source, "g")) ?? []);
-    const delPlan = correosDe(enJson(plan.articulos.filter((x) => presentes.includes(x.wpId)).map((x) => [x.titulo, x.bajada, x.cuerpo, x.textoPlano, x.redesDescripcion, x.avisosMigracion, x.etiquetasWp, x.encabezadoAlt, x.encabezadoCredito])));
+    // Un nombre de archivo de imagen con @ («foto@2x.jpg», «…@LaVanguardia-Web.jpg») tiene la forma de un correo y no lo es (visto con el corpus completo, 7/11/2026):
+    // después de la @ hay una sola palabra y la extensión. Si hay un dominio antes de la extensión («alguien@dominio.com.jpg»), sí es un correo.
+    const esArchivo = (c: string) => /@[\w-]+\.(?:jpe?g|png|gif|webp|bmp)$/i.test(c);
+    const correosDe = (s: string) => new Set((s.match(new RegExp(CORREO.source, "g")) ?? []).filter((c) => !esArchivo(c)));
+    const contenidoDelPlan = enJson(plan.articulos.filter((x) => presentes.includes(x.wpId)).map((x) => [x.titulo, x.bajada, x.cuerpo, x.textoPlano, x.redesDescripcion, x.avisosMigracion, x.etiquetasWp, x.encabezadoAlt, x.encabezadoCredito]));
+    const delPlan = correosDe(contenidoDelPlan);
     const enArticulos = correosDe(enJson(arts));
     const deMas = [...enArticulos].filter((x) => !delPlan.has(x)).length;
     const enOtras = correosDe(enJson([aut, imgs, cats, reds])).size;
@@ -207,7 +215,12 @@ export async function verificarEscritura(o: OpcionesVerificacion): Promise<Resul
     const biosDeMas = [...enBios].filter((x) => !correosDeBiosDelPlan.has(x)).length;
     chk(null, "(h) sin correos fuera de autores.bio y del contenido del propio artículo", deMas === 0 && enOtras === 0 && biosDeMas === 0, `${deMas} correos de más en artículos, ${enOtras} en otras tablas, ${biosDeMas} de más en bios (${enArticulos.size} en el contenido de los artículos, todos del plan)`);
     const fragmentos = plan.autores.flatMap((a) => hojas(a.bio)).map((s) => s.trim()).filter((s) => s.length >= 15).map((s) => JSON.stringify(s).slice(1, -1));
-    chk(null, "(h) sin texto de bio fuera de autores.bio", fragmentos.every((s) => !texto.includes(s)));
+    // En un artículo, un fragmento de bio solo puede estar si ya viene en su contenido de WordPress (autores que pegaron su bio en el texto: el 1974, el
+    // 8440, el 19448, el 20300 y el 20439); en las demás tablas, nunca.
+    const textoOtras = enJson([aut, imgs, cats, reds]);
+    const textoArticulos = enJson(arts);
+    const fueraDeLugar = fragmentos.filter((s) => textoOtras.includes(s) || (textoArticulos.includes(s) && !contenidoDelPlan.includes(s)));
+    chk(null, "(h) sin texto de bio fuera de autores.bio", fueraDeLugar.length === 0, `${fueraDeLugar.length} fragmentos fuera de lugar`);
   }
 
   // (a)/(i) conteos globales
@@ -221,7 +234,7 @@ export async function verificarEscritura(o: OpcionesVerificacion): Promise<Resul
 
   if (!o.soloEstos) {
     const esperado: Record<string, number> = {
-      articulos: o.ids.length, categorias: new Set(plan.articulos.flatMap((a) => a.categorias)).size, autores: plan.autores.length, imagenes: plan.imagenes.length + (plan.fotosAutor?.length ?? 0), redirecciones: plan.redirecciones.length,
+      articulos: ids.length, categorias: new Set(plan.articulos.flatMap((a) => a.categorias)).size, autores: plan.autores.length, imagenes: plan.imagenes.length + (plan.fotosAutor?.length ?? 0), redirecciones: plan.redirecciones.length,
       articulos_categorias: plan.articulos.reduce((n, a) => n + a.categorias.length, 0), articulos_autores: plan.articulos.reduce((n, a) => n + a.autores.length, 0),
       articulos_galeria: 0, fichas_tecnicas: 0, usuarios: 0, pruebaconexion: 0,
     };

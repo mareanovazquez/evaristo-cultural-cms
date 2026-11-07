@@ -1,7 +1,7 @@
 // Pruebas puras de scripts/migracion/lib/utilidades.ts (sin base ni archivos).
 import assert from "node:assert/strict";
 import type { DocNode } from "../../../src/conversor/types.ts";
-import { aNFC, decodificarPostName, firmaInicial, limpiarSlug, quitarU200E, slugBorrador, slugFinal, textoPlanoDe } from "../lib/utilidades.ts";
+import { aNFC, decodificarPostName, firmaInicial, limpiarSlug, quitarCorreos, quitarU200E, slugBorrador, slugFinal, textoPlanoDe } from "../lib/utilidades.ts";
 
 let ok = 0;
 const t = (name: string, fn: () => void) => { fn(); ok++; console.log("ok", name); };
@@ -134,5 +134,15 @@ t("firmaInicial: se quita solo si repite exacto al autor (620, 4643); si agrega 
   }
   // Si la firma era todo el cuerpo, queda un párrafo vacío (el cuerpo nunca queda sin bloques).
   assert.deepEqual(firmaInicial(cuerpo(p("Por Riordan Roett")), "Riordan Roett").cuerpo, cuerpo({ type: "paragraph" }));
+});
+t("quitarCorreos: saca el correo y su etiqueta, como se hizo a mano con el autor 39 (los correos de la prueba son inventados)", () => {
+  assert.equal(quitarCorreos("Coordina seminarios de crítica literaria. ana.perez@ejemplo.com"), "Coordina seminarios de crítica literaria.");
+  assert.equal(quitarCorreos("Talleres de poesía. \r\nContacto: ana_perez@ejemplo.com.ar"), "Talleres de poesía. \r\n");
+  // Un renglón sin correo no se toca, aunque tenga espacios al final (si no, cambiarían bios sin correo).
+  assert.equal(quitarCorreos("Uno.  \r\nDos. x@y.com  \r\nTres.  "), "Uno.  \r\nDos.\r\nTres.  ");
+  assert.equal(quitarCorreos("Doctoranda en Semiótica (UNC). Mail: a.b+c@uni.edu.ar"), "Doctoranda en Semiótica (UNC).");
+  assert.equal(quitarCorreos("Revista Evaristo Cultural.\r\nx@y.com\r\n\r\nOtro párrafo."), "Revista Evaristo Cultural.\r\n\r\n\r\nOtro párrafo.");
+  assert.equal(quitarCorreos("E-mail: x@y.com y CORREO ELECTRÓNICO: z@w.org"), " y");
+  assert.equal(quitarCorreos("Sin correo, con un @usuario de Instagram."), "Sin correo, con un @usuario de Instagram.");
 });
 console.log(`${ok} pruebas de utilidades ok`);

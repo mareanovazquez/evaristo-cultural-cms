@@ -12,16 +12,16 @@ import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import { DESTINO_REAL } from "./lib/destinos.ts";
 import { cargarDatosVersionados } from "./lib/entrada-snapshot.ts";
-import { abrirSoloCms, abrirSoloWordPress } from "./lib/leer-wordpress.ts";
+import { abrirSoloCms, abrirSoloWordPress, BASE_WORDPRESS_POR_DEFECTO, BASES_WORDPRESS } from "./lib/leer-wordpress.ts";
 import { codigoDeSalida, formatearVerificacion, verificarEscritura } from "./lib/verificar.ts";
 
 config({ path: fileURLToPath(new URL("../../../../.env", import.meta.url)), quiet: true });
 
-const USO = "Uso: verificar-escritura.ts (--id=N | --ids=a,b,c | --muestra) [--solo-estos] [--originales=<carpeta>] [--mapa=<mapa-originales.csv>] [--avatares=<mapa-avatares.csv>]";
+const USO = "Uso: verificar-escritura.ts (--id=N | --ids=a,b,c | --muestra | --todos) [--wordpress=<base>] [--solo-estos] [--originales=<carpeta>] [--mapa=<mapa-originales.csv>] [--avatares=<mapa-avatares.csv>]";
 const idsMuestra = cargarDatosVersionados().ids;
 
-function argumentos(argv: readonly string[]): { ids: number[]; soloEstos: boolean; originales: string; mapa: string | null; avatares: string | null } | string {
-  let ids: number[] | null = null, soloEstos = false, originales: string | null = null, mapa: string | null = null, avatares: string | null = null;
+function argumentos(argv: readonly string[]): { ids: number[]; todos: boolean; wordpress: string; soloEstos: boolean; originales: string; mapa: string | null; avatares: string | null } | string {
+  let ids: number[] | null = null, todos = false, wordpress = BASE_WORDPRESS_POR_DEFECTO, soloEstos = false, originales: string | null = null, mapa: string | null = null, avatares: string | null = null;
   const vistos = new Set<string>();
   for (const arg of argv) {
     const nombre = arg.includes("=") ? arg.slice(0, arg.indexOf("=")) : arg;
@@ -30,7 +30,7 @@ function argumentos(argv: readonly string[]): { ids: number[]; soloEstos: boolea
     const valor = arg.includes("=") ? arg.slice(arg.indexOf("=") + 1) : null;
     switch (nombre) {
       case "--id": case "--ids": {
-        if (ids !== null) return "hay que indicar exactamente uno de --id, --ids o --muestra";
+        if (ids !== null) return "hay que indicar exactamente uno de --id, --ids, --muestra o --todos";
         if (valor === null || valor === "") return `${nombre} necesita un valor`;
         const partes = valor.split(",").map((x) => x.trim());
         if (nombre === "--id" && partes.length !== 1) return "--id lleva un solo número (para varios, --ids=a,b,c)";
@@ -43,8 +43,19 @@ function argumentos(argv: readonly string[]): { ids: number[]; soloEstos: boolea
       }
       case "--muestra":
         if (valor !== null) return "--muestra no lleva valor";
-        if (ids !== null) return "hay que indicar exactamente uno de --id, --ids o --muestra";
+        if (ids !== null) return "hay que indicar exactamente uno de --id, --ids, --muestra o --todos";
         ids = [...idsMuestra];
+        break;
+      // La migración completa (decisión 87, paso 6): el plan esperado son todos los artículos de WordPress; los ids salen de ese plan.
+      case "--todos":
+        if (valor !== null) return "--todos no lleva valor";
+        if (ids !== null) return "hay que indicar exactamente uno de --id, --ids, --muestra o --todos";
+        ids = [];
+        todos = true;
+        break;
+      case "--wordpress":
+        if (valor === null || !BASES_WORDPRESS.includes(valor)) return `--wordpress: solo ${BASES_WORDPRESS.join(" o ")}`;
+        wordpress = valor;
         break;
       case "--solo-estos":
         if (valor !== null) return "--solo-estos no lleva valor";
@@ -65,8 +76,8 @@ function argumentos(argv: readonly string[]): { ids: number[]; soloEstos: boolea
       default: return `argumento desconocido: ${arg}`;
     }
   }
-  if (ids === null) return "hay que indicar uno de --id, --ids o --muestra";
-  return { ids, soloEstos, mapa, avatares, originales: originales ?? fileURLToPath(new URL("../../../../../CMS-EVARISTO(ASSETS)/uploads-muestra/originales", import.meta.url)) };
+  if (ids === null) return "hay que indicar uno de --id, --ids, --muestra o --todos";
+  return { ids, todos, wordpress, soloEstos, mapa, avatares, originales: originales ?? fileURLToPath(new URL("../../../../../CMS-EVARISTO(ASSETS)/uploads-muestra/originales", import.meta.url)) };
 }
 
 const args = argumentos(process.argv.slice(2));
@@ -78,9 +89,9 @@ if (args.mapa !== null && !existsSync(args.mapa)) { console.error(`Error en los 
 const cms = await abrirSoloCms();
 let wp: Awaited<ReturnType<typeof abrirSoloWordPress>> | null = null;
 try {
-  wp = await abrirSoloWordPress();
-  const r = await verificarEscritura({ bd: cms.bd, wp: wp.wp, destino: DESTINO_REAL, ids: args.ids, soloEstos: args.soloEstos, originales: args.originales, ...(args.mapa !== null ? { mapa: args.mapa } : {}), ...(args.avatares !== null ? { avatares: args.avatares } : {}) });
-  for (const linea of formatearVerificacion(r, args.ids)) console.log(linea);
+  wp = await abrirSoloWordPress(args.wordpress);
+  const r = await verificarEscritura({ bd: cms.bd, wp: wp.wp, destino: DESTINO_REAL, ids: args.ids, todos: args.todos, soloEstos: args.soloEstos, originales: args.originales, ...(args.mapa !== null ? { mapa: args.mapa } : {}), ...(args.avatares !== null ? { avatares: args.avatares } : {}) });
+  for (const linea of formatearVerificacion(r, args.todos ? r.presentes.concat(r.ausentes) : args.ids)) console.log(linea);
   process.exitCode = codigoDeSalida(r);
 } finally {
   await wp?.cerrar();

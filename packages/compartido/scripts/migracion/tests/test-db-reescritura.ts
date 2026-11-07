@@ -256,6 +256,24 @@ try {
     assert.equal(await prisma.articulo.count(), 35);
   });
 
+  // Lo encontró el ensayo general del 7/11/2026 (decisión 79): una imagen que se reescribe con otra clave («TAPA.jpg» → «TAPA-wp2475.jpg»)
+  // tiene que liberar la vieja ANTES de que se cree la imagen nueva que la usa («tapa.jpg», igual para la colación). Antes daba un conflicto y
+  // el artículo de la imagen nueva no se escribía.
+  await ta("R-clave: una imagen que se reescribe con otra clave libera la vieja antes de crear la que la usa", async () => {
+    const plan = await planLimpio();
+    const r0 = await escribirPlan(prisma, plan, SIN_ABORTAR);
+    assert.equal(r0.estado, "ok");
+    const x = plan.imagenes.find((i) => /\.jpe?g$/i.test(i.clave))!;
+    const claveNueva = x.clave.replace(/(\.[^.]+)$/, `-wp${x.wpId}$1`);
+    // La nueva va DESPUÉS en el plan y con la clave vieja en mayúsculas (la colación no distingue): sin el orden nuevo, choca.
+    const nueva = { ...x, wpId: 990_001, clave: x.clave.toUpperCase(), nombreOriginal: x.clave.toUpperCase(), hash: "f".repeat(64), articulos: [], usos: [] };
+    const plan2: PlanEscribible = { ...plan, articulos: [], redirecciones: [], categoriasACrear: [], autores: [], imagenes: [nueva, { ...x, clave: claveNueva }] };
+    const r = await escribirPlan(prisma, plan2, { ...SIN_ABORTAR, sobrescribir: sobre([], [], [x.wpId]) });
+    assert.deepEqual(r.conflictos, [], JSON.stringify(r.conflictos));
+    assert.equal((await prisma.imagen.findUniqueOrThrow({ where: { wpId: x.wpId } })).clave, claveNueva);
+    assert.equal((await prisma.imagen.findUniqueOrThrow({ where: { wpId: 990_001 } })).clave, x.clave.toUpperCase());
+  });
+
   console.log(`${cantidad()} pruebas con base (parte 3) ok`);
 } finally {
   await conexion.cerrar();
