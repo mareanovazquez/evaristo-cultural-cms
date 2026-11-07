@@ -15,7 +15,8 @@
     "./permisos": "./src/permisos.ts",
     "./sitio": "./src/sitio.ts",
     "./bio": "./src/bio.ts",
-    "./texto-plano": "./src/texto-plano.ts"
+    "./texto-plano": "./src/texto-plano.ts",
+    "./destinos": "./scripts/migracion/lib/destinos.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

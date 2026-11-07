@@ -7,6 +7,8 @@
     "dev": "tsx --env-file=../../.env src/servidor.ts",
     "dev:desarrollo": "tsx --env-file=../../.env src/servidor.ts --base-dev",
     "usuario:crear": "tsx --env-file=../../.env src/herramientas/crear-usuario.ts",
+    "imagenes:externas": "tsx --env-file=../../.env src/herramientas/traer-imagenes-externas.ts",
+    "test:imagenes-externas": "tsx --env-file=../../.env src/tests/test-imagenes-externas-base.ts",
     "start": "tsx --env-file=../../.env src/servidor.ts",
     "typecheck": "tsc --noEmit",
     "test:media": "tsx src/tests/test-media.ts",

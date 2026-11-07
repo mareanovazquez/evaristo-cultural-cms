@@ -42,6 +42,7 @@
     "test:banner": "npm run test:banner --workspace=@evaristo/api",
     "test:admin-sitio": "npm run test:admin-sitio --workspace=@evaristo/api",
     "test:admin-galeria-ficha":"npm run test:admin-galeria-ficha --workspace=@evaristo/api",
+    "test:imagenes-externas": "npm run test:imagenes-externas --workspace=@evaristo/api",
     "test:editor": "npm run test:editor --workspace=@evaristo/panel",
     "test:pantalla": "npm run test:pantalla --workspace=@evaristo/panel",
     "test:render": "npm run test:render --workspace=@evaristo/compartido",
