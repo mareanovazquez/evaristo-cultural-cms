@@ -144,7 +144,7 @@ rm /tmp/evaristo_cms-para-servidor.sql
 
 Tiene que dar 2.637 publicados y 17 borradores (más lo que se haya cargado en la Lenovo después del 11/11/2026).
 
-Si `db:estado` dice que hay migraciones sin aplicar (por ejemplo `recuperacion_clave`, la de la recuperación de contraseña, si no se aplicó a la real de la Lenovo antes del volcado), aplicarlas ahora con `db:deploy` y el usuario de estructura, como en el paso 10.
+Si `db:estado` dice que hay migraciones sin aplicar (una creada después del volcado), aplicarlas ahora con `db:deploy` y el usuario de estructura, como en el paso 10.
 
 **Las imágenes.** En la Lenovo, primero el manifiesto (huellas SHA-256 de cada archivo) y después la carpeta:
 

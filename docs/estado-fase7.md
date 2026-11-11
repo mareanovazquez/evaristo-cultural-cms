@@ -20,7 +20,7 @@ Estado al 11/11/2026. Lo duradero de la fase 7. El plan con el que se llegó has
 
 **Lo que sigue (no depende del proveedor), en este orden:**
 1. ~~**El `<head>`**~~ hecho el 11/11/2026 (punto 6 de abajo).
-2. ~~**Recuperación de contraseña del panel**~~ **hecha el 11/11/2026 (decisión 92)**: «¿Olvidaste tu contraseña?» en el ingreso, enlace por correo (una hora, una sola vez), con el mismo SMTP del formulario. La migración `recuperacion_clave` está aplicada en `_dev` y `_test`; **en la real falta aplicarla** (con respaldo y aprobación: en la Lenovo antes del volcado para el servidor, o en el servidor después de cargarlo, según el paso 6 de `guia-despliegue.md`).
+2. ~~**Recuperación de contraseña del panel**~~ **hecha el 11/11/2026 (decisión 92)**: «¿Olvidaste tu contraseña?» en el ingreso, enlace por correo (una hora, una sola vez), con el mismo SMTP del formulario. La migración `recuperacion_clave` está aplicada en `_dev`, `_test` y **la real** (11/11/2026, con aprobación y respaldo previo: `CMS-EVARISTO(ASSETS)espaldosevaristo_cms-antes-recuperacion-clave-2026-11-11T2024Z.sql`).
 3. **Cierre de la fase 4** (punto 9): repasar los mensajes del panel y coordinar con Roxana la prueba con alguien de la editorial.
 4. Los cambios del front «menos lavado», cuando haya devolución.
 
@@ -91,4 +91,4 @@ Al pegar comandos largos en PowerShell, la terminal puede cortarlos en varios re
 8. **Revisión final:** celular, accesibilidad, velocidad, metadatos para redes. Después, cambio de DNS y seguimiento de los 404 los primeros días.
 9. **Cierre de la fase 4 (paso 8):** la prueba del panel con alguien de la editorial (`guia-prueba-editorial.md`).
 
-**Próximo paso propuesto** (no depende del proveedor): el cierre de la fase 4 (mensajes del panel) y aplicar la migración `recuperacion_clave` a la real (con respaldo y aprobación). Cuando esté el VPS, seguir `guia-despliegue.md`.
+**Próximo paso propuesto** (no depende del proveedor): el cierre de la fase 4 (mensajes del panel). Cuando esté el VPS, seguir `guia-despliegue.md`.
