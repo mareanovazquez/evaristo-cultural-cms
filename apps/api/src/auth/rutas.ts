@@ -66,36 +66,36 @@ const IngresoSchema = z.object({
   clave: z.string().min(1).max(CLAVE_MAXIMA),
 });
 
-export function crearAuth({ repo, seguro, limiteIngresos = { ventanaMs: 15 * 60 * 1000, max: 10 }, ahora = () => new Date() }: OpcionesAuth) {
-  const atributosCookie = (maxAgeSeg: number) => `Path=/api; HttpOnly; SameSite=Strict; Max-Age=${maxAgeSeg}${seguro ? "; Secure" : ""}`;
-
-  /** Rechaza los pedidos que cambian datos y no vienen del propio sitio. */
-  const protegerOrigen: RequestHandler = (req, res, next) => {
-    if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") {
-      next();
-      return;
+/** Rechaza los pedidos que cambian datos y no vienen del propio sitio. Lo usan el panel y el formulario de contacto. */
+export const protegerOrigen: RequestHandler = (req, res, next) => {
+  if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") {
+    next();
+    return;
+  }
+  const origen = req.headers.origin;
+  const mismoSitio = req.headers["sec-fetch-site"];
+  const host = req.headers.host;
+  if (mismoSitio === "cross-site" || mismoSitio === "same-site") {
+    error(res, 403, "El pedido no viene de este sitio.");
+    return;
+  }
+  if (origen !== undefined) {
+    let hostOrigen: string | undefined;
+    try {
+      hostOrigen = new URL(origen).host;
+    } catch {
+      /* Origin inválido */
     }
-    const origen = req.headers.origin;
-    const mismoSitio = req.headers["sec-fetch-site"];
-    const host = req.headers.host;
-    if (mismoSitio === "cross-site" || mismoSitio === "same-site") {
+    if (!hostOrigen || hostOrigen !== host) {
       error(res, 403, "El pedido no viene de este sitio.");
       return;
     }
-    if (origen !== undefined) {
-      let hostOrigen: string | undefined;
-      try {
-        hostOrigen = new URL(origen).host;
-      } catch {
-        /* Origin inválido */
-      }
-      if (!hostOrigen || hostOrigen !== host) {
-        error(res, 403, "El pedido no viene de este sitio.");
-        return;
-      }
-    }
-    next();
-  };
+  }
+  next();
+};
+
+export function crearAuth({ repo, seguro, limiteIngresos = { ventanaMs: 15 * 60 * 1000, max: 10 }, ahora = () => new Date() }: OpcionesAuth) {
+  const atributosCookie = (maxAgeSeg: number) => `Path=/api; HttpOnly; SameSite=Strict; Max-Age=${maxAgeSeg}${seguro ? "; Secure" : ""}`;
 
   /** Si hay una sesión vigente, deja el usuario en req.usuario. No corta el pedido. */
   const cargarSesion: RequestHandler = async (req, _res, next) => {

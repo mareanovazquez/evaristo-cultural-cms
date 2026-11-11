@@ -17,6 +17,7 @@ import { crearRutasAdminPublicacion } from "./admin/publicacion.js";
 import { crearRutasAdminRevision } from "./admin/revision.js";
 import { crearRutasAdminSitio } from "./admin/sitio.js";
 import { crearRutasAdminUsuarios } from "./admin/usuarios.js";
+import { crearRutasContacto, envioDesdeEntorno, type OpcionesContacto } from "./contacto.js";
 import { crearManejadorMedia } from "./media.js";
 import { destinoCategoriaWp, cargarMapeo } from "@evaristo/compartido/taxonomia";
 import { cargarEtiquetasWp, rutaWordPress } from "@evaristo/compartido/rutas-wordpress";
@@ -45,6 +46,8 @@ export interface OpcionesApp {
   auth?: Partial<OpcionesAuth>;
   /** Proxies de confianza (ver `confiarEnProxy`). Por defecto, la variable TRUST_PROXY; sin ella, ninguno. */
   proxy?: boolean | number | string;
+  /** Formulario de contacto (envío y límite). Por defecto, el envío según el entorno (`envioDesdeEntorno`). */
+  contacto?: OpcionesContacto;
 }
 
 export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones: OpcionesApp = {}): express.Express {
@@ -98,6 +101,9 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
   // Borrar imágenes de la biblioteca: editor y administrador.
   app.delete("/api/admin/imagenes/:id", auth.exigirPermiso("imagenes.borrar"));
   app.use("/api/admin", crearRutasAdminUsuarios(prisma, auth.exigirPermiso("usuarios.gestionar")), crearRutasAdminAutores(prisma), crearRutasAdminClasificacion(prisma), crearRutasAdminRevision(prisma), crearRutasAdminSitio(prisma), crearRutasAdminBanner(prisma, { dirSubidas }), crearRutasAdminArticulos(prisma), crearRutasAdminEdicion(prisma), crearRutasAdminPublicacion(prisma), crearRutasAdminImagenes(prisma, { dirSubidas }));
+
+  // Formulario de contacto del sitio público (no necesita sesión; sí que el pedido venga del propio sitio).
+  app.use("/api/contacto", crearRutasContacto(opciones.contacto ?? { enviar: envioDesdeEntorno() }));
 
   app.get("/api/salud", async (_req, res) => {
     try {
