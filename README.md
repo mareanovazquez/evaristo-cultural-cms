@@ -37,7 +37,7 @@ CMS propio de la revista Evaristo Cultural, pensado para reemplazar el WordPress
 | `MEDIA_DIR` | Carpeta con los originales de las imágenes (ruta absoluta). Sin ella ni `MEDIA_DIR_SUBIDAS`, `/media/<clave>` responde 503. |
 | `MEDIA_DIR_SUBIDAS` | Carpeta donde se guardan las imágenes subidas desde el panel (ruta absoluta; la API la crea en la primera subida). `/media` busca primero acá y después en `MEDIA_DIR`. Sin ella, subir responde 503. En desarrollo conviene una carpeta propia para no mezclar las pruebas con la muestra. |
 | `MEDIA_DIR_VARIANTES` | Caché en disco de las variantes de tamaño (`/media/<clave>?w=N`, decisión 83; ruta absoluta, la API la crea en la primera variante). Carpeta propia, fuera de las otras dos: se puede borrar entera y se vuelve a generar a pedido. Sin ella, `?w` se ignora y se sirve el original. |
-| `SITIO_URL` | Dirección pública del sitio, sin barra final (por ejemplo `https://evaristocultural.com.ar`). La usa el feed RSS de `/feed/` para las direcciones completas; sin ella, toma el origen del pedido. |
+| `SITIO_URL` | Dirección pública del sitio, sin barra final (por ejemplo `https://evaristocultural.com.ar`). La usan el feed RSS de `/feed/` y el `<head>` de cada página (dirección canónica e imagen para redes) para las direcciones completas; sin ella, toman el origen del pedido (detrás de un proxy puede salir con `http://`: en el servidor tiene que estar). |
 | `PORT` | Puerto del servidor único (3000 por defecto). |
 | `NODE_ENV` | Con `production` la cookie de sesión lleva `Secure` y el sitio y el panel mandan `Strict-Transport-Security` (HSTS). |
 | `TRUST_PROXY` | Proxies de confianza delante del servidor: un número (los que hay entre el servidor y quien visita, por ejemplo `1`), o una lista que Express entienda (`loopback`, `10.0.0.0/8`). Vacío: ninguno. Hace falta cuando se despliega detrás de un balanceador, para que el límite de intentos de ingreso cuente la dirección real de cada visitante. `true` no se acepta. |
@@ -263,6 +263,8 @@ Después abrir:
 | `npm run test:admin-autores` | Autores del panel contra `evaristo_cms_dev`: permisos, bio, redes, foto, dirección con redirección, eliminar y unir (crea y borra datos temporales). |
 | `npm run test:admin-usuarios` | Usuarios, roles y propiedad de los artículos contra `evaristo_cms_dev` (crea y borra usuarios, fichas y artículos temporales). |
 | `npm run test:auth` | Pruebas de la autenticación (sin base). |
+| `npm run test:head` | El `<head>` para buscadores y redes (dirección canónica, descripción, imagen para Open Graph) y la redirección de las páginas sin barra final (sin base). |
+| `npm run test:contacto` | Formulario de contacto: validación, ruta, origen, límite, trampa y el correo que arma nodemailer (sin base ni correo). |
 | `npm run test:auth-base` | Ingreso y sesiones contra `evaristo_cms_dev` (crea y borra un usuario temporal). |
 | `npm run test:admin-articulos` | Listado de artículos del panel contra `evaristo_cms_dev` (crea y borra un usuario temporal). |
 | `npm run test:admin-edicion` | Edición de artículos del panel contra `evaristo_cms_dev` (crea y borra datos temporales; guarda los 35 como borrador de cambios sin alterar lo publicado). |

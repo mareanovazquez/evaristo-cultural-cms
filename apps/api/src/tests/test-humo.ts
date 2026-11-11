@@ -120,9 +120,19 @@ try {
 
   // 6) Rutas que no existen: 404 del sitio (artículo, autor, ruta cualquiera, método no GET)
   for (const ruta of ["/2020/01/01/no-existe/", "/author/no-existe/", "/author/", "/no/existe/", "/seccion-inexistente", "/wp-login.php", "/%E0%A4%A"]) {
-    const r = await pedir(ruta);
+    let r = await pedir(ruta);
+    // Sin barra final, primero redirige a la dirección con barra (11/11/2026, barra-final.ts) y esa es la que da 404.
+    if (r.estado === 301 && !ruta.endsWith("/")) {
+      if (r.cabeceras["location"] !== `${ruta}/`) falla(ruta, `301 a ${String(r.cabeceras["location"])}, se esperaba ${ruta}/`);
+      r = await pedir(`${ruta}/`);
+    }
     if (r.estado !== 404 && r.estado !== 400) falla(ruta, `dio ${r.estado}`);
     else if (r.estado === 404) revisarHtml(ruta, r, 404);
+  }
+  // Las páginas fijas sin barra final redirigen a la dirección con barra (la canónica).
+  for (const ruta of ["/autores", "/novedades", "/contacto", "/quienes-somos"]) {
+    const r = await pedir(ruta);
+    if (r.estado !== 301 || r.cabeceras["location"] !== `${ruta}/`) falla(ruta, `dio ${r.estado} → ${String(r.cabeceras["location"])}, se esperaba 301 → ${ruta}/`);
   }
   const post = await pedir("/no/existe/", "POST");
   if (post.estado !== 404) falla("POST /no/existe/", `dio ${post.estado}`);

@@ -17,6 +17,7 @@ import { crearRutasAdminPublicacion } from "./admin/publicacion.js";
 import { crearRutasAdminRevision } from "./admin/revision.js";
 import { crearRutasAdminSitio } from "./admin/sitio.js";
 import { crearRutasAdminUsuarios } from "./admin/usuarios.js";
+import { crearRedireccionBarraFinal } from "./barra-final.js";
 import { crearRutasContacto, envioDesdeEntorno, type OpcionesContacto } from "./contacto.js";
 import { crearManejadorMedia } from "./media.js";
 import { destinoCategoriaWp, cargarMapeo } from "@evaristo/compartido/taxonomia";
@@ -203,6 +204,9 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
       },
     ),
   );
+  // (4c) Las páginas sin barra final redirigen a la dirección con barra (la canónica). Después de las redirecciones de WordPress.
+  app.use(crearRedireccionBarraFinal());
+
   const ssr: RequestHandler = async (req, res, next) => {
     const manejador = await cargarManejadorAstro();
     if (!manejador) {

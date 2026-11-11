@@ -37,7 +37,7 @@ const iniciales = autor.nombre
   .join("");
 ---
 
-<Base titulo={pagina > 1 ? `${autor.nombre} (página ${pagina})` : autor.nombre}>
+<Base titulo={pagina > 1 ? `${autor.nombre} (página ${pagina})` : autor.nombre} descripcion={`Notas de ${autor.nombre} en Evaristo Cultural.`}>
   <section class="autor-cabecera">
     <div class="foto">
       {

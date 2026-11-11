@@ -56,7 +56,13 @@ const encabezado = articulo.imagenEncabezado
 const seccion = articulo.seccion.interna ? undefined : articulo.seccion.nombre;
 ---
 
-<Base titulo={articulo.titulo} descripcion={articulo.bajada ?? undefined}>
+<Base
+  titulo={articulo.titulo}
+  descripcion={articulo.redesDescripcion?.trim() || articulo.bajada || undefined}
+  imagen={articulo.redesImagen ?? articulo.imagenEncabezado ?? undefined}
+  tipo="article"
+  publicadoEn={articulo.publicadoEn}
+>
   {seccion && <MarcaFondo principal={seccion} vertical />}
   <Articulo
     seccion={seccion}

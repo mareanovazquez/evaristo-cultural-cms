@@ -34,7 +34,10 @@ export async function buscarArticulo(slug: string) {
       seccion: { select: { nombre: true, slug: true, interna: true } },
       categoriaPrincipal: { select: { nombre: true, slug: true } },
       categorias: { select: { categoriaId: true } },
-      imagenEncabezado: { select: { clave: true } },
+      imagenEncabezado: { select: { clave: true, ancho: true, alto: true } },
+      // Datos para redes (Open Graph): si están vacíos, se usan la bajada y la imagen de encabezado.
+      redesDescripcion: true,
+      redesImagen: { select: { clave: true, ancho: true, alto: true } },
       galeria: { orderBy: { orden: "asc" }, select: { alt: true, epigrafe: true, imagen: { select: { clave: true, ancho: true, alto: true } } } },
       fichaTecnica: { select: { titulo: true, autor: true, traductor: true, editorial: true, coleccion: true, anio: true, paginas: true, isbn: true, precio: true } },
       conCapital: true,

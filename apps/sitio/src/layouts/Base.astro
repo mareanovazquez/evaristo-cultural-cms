@@ -7,14 +7,28 @@ import Iconos from "../components/Iconos.astro";
 import Header from "../components/Header.astro";
 import Footer from "../components/Footer.astro";
 import VolverArriba from "../components/VolverArriba.astro";
+import { baseDelSitio, descripcionCorta, imagenParaRedes, NOMBRE_SITIO, urlCanonica } from "../lib/metadatos";
 
 interface Props {
   titulo: string;
-  descripcion?: string;
+  /** Para buscadores y redes. Sin ella, la del sitio. Se corta a 160 caracteres. */
+  descripcion?: string | undefined;
   noindex?: boolean;
+  /** Imagen para redes (Open Graph): la nota usa la de redes o la de encabezado. Sin ella, no se manda imagen. */
+  imagen?: { clave: string; ancho?: number | null; alto?: number | null } | undefined;
+  /** "article" en las notas; "website" en el resto. */
+  tipo?: "website" | "article";
+  /** Fecha de publicación de la nota (article:published_time). */
+  publicadoEn?: Date | undefined;
 }
-const { titulo, descripcion, noindex = false } = Astro.props;
-const tituloCompleto = titulo === "Evaristo Cultural" ? titulo : `${titulo} · Evaristo Cultural`;
+const { titulo, descripcion, noindex = false, imagen, tipo = "website", publicadoEn } = Astro.props;
+const tituloCompleto = titulo === NOMBRE_SITIO ? titulo : `${titulo} · ${NOMBRE_SITIO}`;
+
+// Buscadores y redes (11/11/2026). Las páginas que no se indexan (404, buscador) no llevan dirección canónica ni Open Graph.
+const base = baseDelSitio(Astro.url.origin);
+const canonica = noindex ? undefined : urlCanonica(Astro.url, base);
+const textoDescripcion = descripcionCorta(descripcion);
+const imagenRedes = imagen ? imagenParaRedes(imagen, base) : undefined;
 ---
 
 <!doctype html>
@@ -25,8 +39,26 @@ const tituloCompleto = titulo === "Evaristo Cultural" ? titulo : `${titulo} · E
     <title>{tituloCompleto}</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate" type="application/rss+xml" title="Evaristo Cultural" href="/feed/" />
-    {descripcion && <meta name="description" content={descripcion} />}
+    <meta name="description" content={textoDescripcion} />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
+    {
+      canonica && (
+        <>
+          <link rel="canonical" href={canonica} />
+          <meta property="og:site_name" content={NOMBRE_SITIO} />
+          <meta property="og:locale" content="es_AR" />
+          <meta property="og:type" content={tipo} />
+          <meta property="og:title" content={titulo} />
+          <meta property="og:description" content={textoDescripcion} />
+          <meta property="og:url" content={canonica} />
+          {imagenRedes && <meta property="og:image" content={imagenRedes.url} />}
+          {imagenRedes?.ancho && <meta property="og:image:width" content={String(imagenRedes.ancho)} />}
+          {imagenRedes?.alto && <meta property="og:image:height" content={String(imagenRedes.alto)} />}
+          {tipo === "article" && publicadoEn && <meta property="article:published_time" content={publicadoEn.toISOString()} />}
+          <meta name="twitter:card" content={imagenRedes ? "summary_large_image" : "summary"} />
+        </>
+      )
+    }
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
