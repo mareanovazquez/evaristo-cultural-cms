@@ -23,6 +23,7 @@ Estado al 7/11/2026. Lo duradero de la fase 7. El plan con el que se llegó hast
 | 3 | **Migración real** con la ceremonia de la decisión 50: respaldo, las 9 migraciones pendientes, intento en seco (37 filas a reescribir), escritura, verificación y el interruptor de vuelta en `false` | 7/11/2026 |
 | — | Sitio sin los respaldos para la base vieja y letra capital desde el artículo | 7/11/2026 |
 | — | Las 10 imágenes del cuerpo que apuntaban a otros sitios, bajadas y guardadas; el píxel de Gmail del 552, quitado (90) | 7/11/2026 |
+| — | Paquete de garantía para la directora: `CMS-EVARISTO(ASSETS)\entrega-roxana-2026-11-11\` (copia de `wordpress.sql`, `uploads-completo.tar` y `lista-completa.tsv` del 31/10, hashes verificados, `LEEME.txt` con cómo restaurarlo en un WordPress nuevo y `SHA256SUMS.txt`). Mariano lo sube a Google Drive, compartido solo con ella | 11/11/2026 |
 
 **Resultado de la migración:** 2.619 artículos creados y 35 reescritos, 0 fallidos y 0 conflictos. La real quedó con:
 - 2.654 artículos (2.637 publicados y 17 borradores);
