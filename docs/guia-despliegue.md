@@ -240,7 +240,7 @@ systemctl list-timers evaristo-respaldo         # cuándo corre la próxima
 
 ```powershell
 ssh -t admin@IP "sudo /srv/evaristo/app/despliegue/preparar-descarga.sh"
-scp "admin@IP:respaldos-para-bajar/*" "C:UsersmareaDocumentsProyectos FrontendCMS-EVARISTO(ASSETS)espaldosservidor\"
+scp "admin@IP:respaldos-para-bajar/*" "C:\Users\marea\Documents\Proyectos Frontend\CMS-EVARISTO(ASSETS)\respaldos\servidor\"
 ssh admin@IP "rm -rf respaldos-para-bajar"
 ```
 

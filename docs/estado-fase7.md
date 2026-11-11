@@ -12,19 +12,19 @@ Estado al 11/11/2026. Lo duradero de la fase 7. El plan con el que se llegó has
 - los datos para el correo del formulario de contacto: el correo de la editorial donde tienen que llegar los mensajes (llegan con «Responder» a quien escribió; no hay pantalla de gestión);
 - la devolución sobre los cambios del front «menos lavado».
 
-**Hecho el 11/11/2026:**
+**Hecho el 11/11/2026 (cierre de la jornada):**
 - **Para la editorial**, por si se arrepiente de algo o le pasa algo al equipo: el paquete de garantía de WordPress (base y `uploads`, con `LEEME` y hashes) y la copia navegable sin conexión de los 2.637 publicados, los dos ya en Drive, compartidos con la directora.
-- **Sitio:** la página de contacto con su formulario (front, API y envío por SMTP con `nodemailer`), «Quiénes somos» con texto provisorio, «Autores» solo en el footer, campos de formulario con fondo #f5f5f3.
+- **Sitio:** la página de contacto con su formulario (front, API y envío por SMTP con `nodemailer`), «Quiénes somos» con texto provisorio, «Autores» solo en el footer, campos de formulario con fondo #f5f5f3, y **el `<head>` para buscadores y redes** (canónica, descripción, Open Graph con la imagen de cada nota) con **la redirección de las páginas sin barra final** (punto 6).
+- **Panel:** **recuperación de contraseña por correo** (decisión 92): «¿Olvidaste tu contraseña?» en el ingreso, enlace que vale una hora y una sola vez, con el mismo SMTP del formulario. Su migración, `recuperacion_clave`, está aplicada en `_dev`, `_test` y **la real** (con aprobación y respaldo previo: `CMS-EVARISTO(ASSETS)\respaldos\evaristo_cms-antes-recuperacion-clave-2026-11-11T2024Z.sql`; los datos no cambiaron).
 - **Base:** Prisma conecta solo después de reiniciar MySQL (decisión 91).
 - **Despliegue:** la guía para un VPS genérico y los archivos de `despliegue/`, con los respaldos y la prueba de restauración probados en la Lenovo.
 
-**Lo que sigue (no depende del proveedor), en este orden:**
-1. ~~**El `<head>`**~~ hecho el 11/11/2026 (punto 6 de abajo).
-2. ~~**Recuperación de contraseña del panel**~~ **hecha el 11/11/2026 (decisión 92)**: «¿Olvidaste tu contraseña?» en el ingreso, enlace por correo (una hora, una sola vez), con el mismo SMTP del formulario. La migración `recuperacion_clave` está aplicada en `_dev`, `_test` y **la real** (11/11/2026, con aprobación y respaldo previo: `CMS-EVARISTO(ASSETS)espaldosevaristo_cms-antes-recuperacion-clave-2026-11-11T2024Z.sql`).
-3. **Cierre de la fase 4** (punto 9): repasar los mensajes del panel y coordinar con Roxana la prueba con alguien de la editorial.
-4. Los cambios del front «menos lavado», cuando haya devolución.
+**Lo que sigue (no depende del proveedor):**
+1. **Cierre de la fase 4** (punto 9). **Quedó pendiente a pedido de Mariano (11/11/2026):** repasar los mensajes del panel (la parte técnica) y coordinar con Roxana la prueba con alguien de la editorial (`guia-prueba-editorial.md`).
+2. Los cambios del front «menos lavado», cuando haya devolución de la directora.
+3. Opcional: borrar `plan-proximos-pasos.md` (temporal; lo vigente ya está acá y en `pendientes.md`).
 
-**Cuando esté el VPS:** seguir `guia-despliegue.md` (anotar ahí lo que haya que corregir: el servicio, Caddy y MySQL en Ubuntu todavía no se probaron), cargar el SMTP y probar un envío real del formulario, crear el primer administrador, la revisión final y el cambio de DNS (puntos 7 y 8).
+**Cuando esté el VPS:** seguir `guia-despliegue.md` (anotar ahí lo que haya que corregir: el servicio, Caddy y MySQL en Ubuntu todavía no se probaron), cargar el SMTP y probar un envío real del formulario y de la recuperación de contraseña, revisar SPF y DKIM del remitente, poner `SITIO_URL`, crear el primer administrador, la revisión final y el cambio de DNS (puntos 7 y 8).
 
 ## Lo hecho
 
@@ -41,6 +41,8 @@ Estado al 11/11/2026. Lo duradero de la fase 7. El plan con el que se llegó has
 | — | Página de contacto (decisión 90): front, API y envío por SMTP (`nodemailer` 10.2.1). «Quiénes somos» con texto provisorio. «Autores» sale del header (queda en el footer) | 11/11/2026 |
 | — | Prisma conecta solo después de reiniciar MySQL (decisión 91) | 11/11/2026 |
 | — | Despliegue preparado para un VPS genérico (`guia-despliegue.md` y `despliegue/`), con respaldos y restauración probados en la Lenovo | 11/11/2026 |
+| — | El `<head>` para buscadores y redes, y la redirección de las páginas sin barra final | 11/11/2026 |
+| — | Recuperación de contraseña del panel (decisión 92); migración `recuperacion_clave` aplicada a la real con respaldo previo | 11/11/2026 |
 | — | Copia navegable sin conexión para la directora (`copia:navegable`): `CMS-EVARISTO(ASSETS)\copia-navegable-2026-11-11\` y `copia-navegable-evaristo-cultural-2026-11-11.zip` (1,34 GB, 13.873 archivos). Los 2.637 publicados de 2.637, 3.783 páginas, 10.060 recursos, 0 enlaces rotos (revisados archivo por archivo), imágenes de hasta 1200 px, tipografías incluidas, sin buscador. «Pathfinder.jpg» está dañada en el origen y va como original | 11/11/2026 |
 
 **Resultado de la migración:** 2.619 artículos creados y 35 reescritos, 0 fallidos y 0 conflictos. La real quedó con:
@@ -89,6 +91,6 @@ Al pegar comandos largos en PowerShell, la terminal puede cortarlos en varios re
 6. ~~**`<head>`**~~ **Hecho el 11/11/2026:** cada página indexable lleva `description` (la propia o la del sitio, cortada a 160 caracteres), `link rel=canonical` (con `SITIO_URL`; de la consulta solo queda `?pagina=N`) y Open Graph (`og:title`, `og:description`, `og:url`, `og:type`, `og:locale`, `og:site_name`, `twitter:card`); las notas, además, `og:image` con sus medidas (la imagen para redes que vino de WordPress o la de encabezado, en la variante de 1200 px) y `article:published_time`, y la descripción para redes si la tienen (`redesDescripcion`, 1.230 notas migradas de Webdados). La 404 y el buscador no llevan canónica ni Open Graph. Las páginas sin barra final redirigen con 301 a la dirección con barra (`apps/api/src/barra-final.ts`; no se tocan `/api`, `/admin`, `/media`, los archivos, las rutas que empiezan con `//` ni las mal codificadas). Código en `apps/sitio/src/lib/metadatos.ts` y `layouts/Base.astro`. Pruebas: `npm run test:head` (16, sin base) y `test:humo` (contra la real: las páginas fijas sin barra y las inexistentes). En el servidor, `SITIO_URL` tiene que estar (sin ella, detrás de Caddy las direcciones saldrían con `http://`).
 7. **Primer administrador** en la real (`npm run usuario:crear -- --base-real`) y los usuarios de la editorial.
 8. **Revisión final:** celular, accesibilidad, velocidad, metadatos para redes. Después, cambio de DNS y seguimiento de los 404 los primeros días.
-9. **Cierre de la fase 4 (paso 8):** la prueba del panel con alguien de la editorial (`guia-prueba-editorial.md`).
+9. **Cierre de la fase 4 (paso 8):** repasar los mensajes del panel y la prueba del panel con alguien de la editorial (`guia-prueba-editorial.md`). **Pendiente** (Mariano lo dejó para más adelante el 11/11/2026).
 
-**Próximo paso propuesto** (no depende del proveedor): el cierre de la fase 4 (mensajes del panel). Cuando esté el VPS, seguir `guia-despliegue.md`.
+**Próximo paso propuesto** (no depende del proveedor): el cierre de la fase 4 (punto 9), cuando Mariano lo retome. Cuando esté el VPS, seguir `guia-despliegue.md`.
