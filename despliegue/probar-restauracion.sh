@@ -35,7 +35,8 @@ archivo="${1:-$(ls -1t "$DESTINO"/base/"$BASE"-*.sql.gz 2>/dev/null | head -n 1 
 [ -n "$archivo" ] && [ -r "$archivo" ] || fallar "no hay respaldo para probar en $DESTINO/base"
 echo "Respaldo: $archivo"
 
-sql() { "${BIN}mysql" --defaults-extra-file="$CREDENCIALES" --default-character-set=utf8mb4 -N -B "$@"; }
+# Sin los \r: el cliente de Windows termina los renglones en \r\n (solo pasa al probarlo en la Lenovo; en Linux no cambia nada).
+sql() { "${BIN}mysql" --defaults-extra-file="$CREDENCIALES" --default-character-set=utf8mb4 -N -B "$@" | tr -d '\r'; }
 borrar_prueba() { sql -e "DROP DATABASE IF EXISTS \`$PRUEBA\`" || true; }
 trap borrar_prueba EXIT
 

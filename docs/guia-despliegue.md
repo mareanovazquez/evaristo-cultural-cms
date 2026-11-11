@@ -2,7 +2,7 @@
 
 Se escribió el 11/11/2026, antes de elegir proveedor: sirve para cualquier VPS con **Ubuntu 24.04**. Los archivos que se nombran están en `despliegue/`. Requisitos del servidor: `estado-fase7.md`, «Lo que falta para el lanzamiento», punto 1.
 
-**Qué está probado y qué no.** En la Lenovo se probaron el respaldo y la rotación (`respaldar.sh`), la prueba de restauración (`probar-restauracion.sh`), el manifiesto de las imágenes y que la app arranca con `node --import tsx` (sin abrir puertos). El servicio, Caddy, MySQL en Ubuntu y el orden completo de los pasos **se prueban recién en el servidor**: al seguir la guía la primera vez, anotar acá lo que haya que corregir.
+**Qué está probado y qué no.** En la Lenovo (11/11/2026, contra `evaristo_cms_dev`) se probaron el respaldo y la rotación (`respaldar.sh`), la prueba de restauración (`probar-restauracion.sh`: restaura bien y detecta una diferencia), el manifiesto de las imágenes y que la app arranca con `node --import tsx` (sin abrir puertos). El servicio, Caddy, MySQL en Ubuntu y el orden completo de los pasos **se prueban recién en el servidor**: al seguir la guía la primera vez, anotar acá lo que haya que corregir.
 
 ## Cómo queda armado
 
