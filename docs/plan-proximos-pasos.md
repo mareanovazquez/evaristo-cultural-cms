@@ -2,7 +2,7 @@
 
 **Documento temporal.** Se escribió el 23/10/2026 y se reescribió el 30/10/2026 al cerrar la reorganización de secciones, para arrancar sin releer todo. **Borrarlo** (con `git rm`, sacando su fila del índice de `CLAUDE.md`) cuando la fase 7 esté en marcha y lo duradero esté en `estado-fase7.md` (a crear) y en `pendientes.md`.
 
-## Dónde quedamos (7/11/2026, noche: fin de la jornada)
+## Dónde quedamos (7/11/2026, noche; actualizado el 11/11/2026)
 
 **Para retomar, empezar por `estado-fase7.md`** (lo duradero de la fase: qué se hizo, herramientas y lo que falta para el lanzamiento). Todo commiteado y subido; `ESCRITURA_REAL_HABILITADA` en `false`.
 
@@ -10,7 +10,7 @@
 
 **Esperando a la editorial:** Mariano le escribe a la directora para pedirle el texto de «Quiénes somos» y que elija el hosting o le ponga un tope de presupuesto (los requisitos del VPS están en `estado-fase7.md`; Mariano tiene una búsqueda comparativa armada para Perplexity).
 
-**Lo que sigue (propuesto, no depende del proveedor):** preparar el despliegue para un VPS genérico (guía, servicio, respaldos automáticos con restauración probada, cómo subir la base y las imágenes) y arreglar que Prisma conecte solo después de reiniciar MySQL. Después: formulario de contacto (con una dependencia de correo a consultar) y los cambios del front «menos lavado» que está pensando Mariano.
+**Lo que sigue:** ~~preparar el despliegue para un VPS genérico, arreglar que Prisma conecte solo después de reiniciar MySQL y el formulario de contacto~~ **hecho el 11/11/2026** (ver `estado-fase7.md`, «Dónde estamos», que tiene lo que sigue ahora). Los cambios del front «menos lavado» esperan la devolución de la directora.
 
 **Este documento** ya se puede borrar cuando se empiece el despliegue: lo vigente está en `estado-fase7.md`, `pendientes.md` y `tareas-con-el-sitio-corriendo.md`.
 

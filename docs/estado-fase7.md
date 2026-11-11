@@ -1,16 +1,30 @@
 # Fase 7: migración completa y lanzamiento
 
-Estado al 7/11/2026. Lo duradero de la fase 7. El plan con el que se llegó hasta acá, etapa por etapa, está en `plan-proximos-pasos.md` (temporal); las decisiones, en `plan-implementacion.md` (79 a 90); los pendientes técnicos, en `pendientes.md`; lo manual para después del lanzamiento, en `tareas-con-el-sitio-corriendo.md`.
+Estado al 11/11/2026. Lo duradero de la fase 7. El plan con el que se llegó hasta acá, etapa por etapa, está en `plan-proximos-pasos.md` (temporal); las decisiones, en `plan-implementacion.md` (79 a 91); la guía para instalar el sitio, en `guia-despliegue.md`; los pendientes técnicos, en `pendientes.md`; lo manual para después del lanzamiento, en `tareas-con-el-sitio-corriendo.md`.
 
 ## Dónde estamos
 
-**La migración está hecha y verificada.** Falta el lanzamiento, que espera la decisión del hosting.
+**La migración está hecha y verificada (7/11/2026), y el despliegue está preparado (11/11/2026).** Falta el lanzamiento, que espera que la editorial elija el hosting (un VPS).
 
-**Esperando a la editorial** (Mariano le escribe a la directora el 7/11/2026):
-- que elija el hosting, o al menos ponga un tope de presupuesto (al 11/11/2026 Roxana ya tiene las opciones de hosting y las está evaluando);
-- el texto de «Quiénes somos».
+**Esperando a la editorial:**
+- que elija el hosting: al 11/11/2026 Roxana tiene las opciones y las está evaluando. Si dijera que no al VPS, se evaluaron dos escenarios (volver a WordPress con un tema nuevo, o quedarse con la copia de todo lo publicado): los dos son posibles con lo que ya está en Drive;
+- el texto de «Quiénes somos» (hoy hay uno provisorio, la presentación de la editorial);
+- los datos para el correo del formulario de contacto: el correo de la editorial donde tienen que llegar los mensajes (llegan con «Responder» a quien escribió; no hay pantalla de gestión);
+- la devolución sobre los cambios del front «menos lavado».
 
-**Lo que Mariano tiene en mente:** cambios en el front para que el sitio se vea «menos lavado» (el comentario de la directora), y un formulario de contacto en lugar de una página con datos.
+**Hecho el 11/11/2026:**
+- **Para la editorial**, por si se arrepiente de algo o le pasa algo al equipo: el paquete de garantía de WordPress (base y `uploads`, con `LEEME` y hashes) y la copia navegable sin conexión de los 2.637 publicados, los dos ya en Drive, compartidos con la directora.
+- **Sitio:** la página de contacto con su formulario (front, API y envío por SMTP con `nodemailer`), «Quiénes somos» con texto provisorio, «Autores» solo en el footer, campos de formulario con fondo #f5f5f3.
+- **Base:** Prisma conecta solo después de reiniciar MySQL (decisión 91).
+- **Despliegue:** la guía para un VPS genérico y los archivos de `despliegue/`, con los respaldos y la prueba de restauración probados en la Lenovo.
+
+**Lo que sigue (no depende del proveedor), en este orden:**
+1. **El `<head>`** (punto 6 de abajo): `canonical` en todas las páginas, la redirección de las páginas fijas sin barra final (`/autores` → `/autores/`; hoy responden igual con y sin barra), `og:image` y `description`.
+2. **Recuperación de contraseña del panel**, con el mismo SMTP del formulario. Necesita una tabla nueva: migración de Prisma (primero en `_dev`; en la real, con respaldo y aprobación).
+3. **Cierre de la fase 4** (punto 9): repasar los mensajes del panel y coordinar con Roxana la prueba con alguien de la editorial.
+4. Los cambios del front «menos lavado», cuando haya devolución.
+
+**Cuando esté el VPS:** seguir `guia-despliegue.md` (anotar ahí lo que haya que corregir: el servicio, Caddy y MySQL en Ubuntu todavía no se probaron), cargar el SMTP y probar un envío real del formulario, crear el primer administrador, la revisión final y el cambio de DNS (puntos 7 y 8).
 
 ## Lo hecho
 
@@ -24,6 +38,9 @@ Estado al 7/11/2026. Lo duradero de la fase 7. El plan con el que se llegó hast
 | — | Sitio sin los respaldos para la base vieja y letra capital desde el artículo | 7/11/2026 |
 | — | Las 10 imágenes del cuerpo que apuntaban a otros sitios, bajadas y guardadas; el píxel de Gmail del 552, quitado (90) | 7/11/2026 |
 | — | Paquete de garantía para la directora: `CMS-EVARISTO(ASSETS)\entrega-roxana-2026-11-11\` (copia de `wordpress.sql`, `uploads-completo.tar` y `lista-completa.tsv` del 31/10, hashes verificados, `LEEME.txt` con cómo restaurarlo en un WordPress nuevo y `SHA256SUMS.txt`). Mariano lo sube a Google Drive, compartido solo con ella | 11/11/2026 |
+| — | Página de contacto (decisión 90): front, API y envío por SMTP (`nodemailer` 10.2.1). «Quiénes somos» con texto provisorio. «Autores» sale del header (queda en el footer) | 11/11/2026 |
+| — | Prisma conecta solo después de reiniciar MySQL (decisión 91) | 11/11/2026 |
+| — | Despliegue preparado para un VPS genérico (`guia-despliegue.md` y `despliegue/`), con respaldos y restauración probados en la Lenovo | 11/11/2026 |
 | — | Copia navegable sin conexión para la directora (`copia:navegable`): `CMS-EVARISTO(ASSETS)\copia-navegable-2026-11-11\` y `copia-navegable-evaristo-cultural-2026-11-11.zip` (1,34 GB, 13.873 archivos). Los 2.637 publicados de 2.637, 3.783 páginas, 10.060 recursos, 0 enlaces rotos (revisados archivo por archivo), imágenes de hasta 1200 px, tipografías incluidas, sin buscador. «Pathfinder.jpg» está dañada en el origen y va como original | 11/11/2026 |
 
 **Resultado de la migración:** 2.619 artículos creados y 35 reescritos, 0 fallidos y 0 conflictos. La real quedó con:
