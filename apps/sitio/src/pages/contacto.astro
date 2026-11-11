@@ -1,5 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
+import MarcaFondo from "../components/MarcaFondo.astro";
 import { AVISOS_CONTACTO, CONTACTO_LIMITES, esEstadoContacto } from "@evaristo/compartido/contacto";
 
 // Contacto (decisión 90): un formulario en lugar de una página con datos. El envío lo hace la API (POST /api/contacto, que manda el
@@ -12,6 +13,7 @@ const enviado = estado === "enviado";
 ---
 
 <Base titulo="Contacto" descripcion="Escribile a la redacción de Evaristo Cultural.">
+  <MarcaFondo principal="Contacto" />
   <section class="section col">
     <h1 class="titulo-pagina">Contacto</h1>
     <p class="contacto-intro">Escribinos por consultas, propuestas de colaboración o comentarios sobre la revista. Te respondemos por correo.</p>

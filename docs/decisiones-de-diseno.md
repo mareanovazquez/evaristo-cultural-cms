@@ -117,7 +117,7 @@ Las tres bases (#67beb0, #fefefc, #231f20) se derivan en una escala del acento y
 | Tarjeta | Fondo #fefefc, shadow-sm | shadow-md | Anillo 2px #538e85, separado 2px |
 | Caja de contenido | Fondo #f5f5f3, sin borde | Sin cambio | n/a |
 | Link | Texto #456e68, subrayado | Texto #374f4b | Anillo 2px #538e85, separado 2px |
-| Input | Fondo #fefefc, borde #8f8d8d | Borde #231f20 | Borde #538e85 de 2px |
+| Input | Fondo #f5f5f3, borde #8f8d8d | Borde #231f20 | Borde #538e85 de 2px |
 
 El acento puro #67beb0 no se usa para texto sobre blanco. Para texto con color se usa accent-800.
 
@@ -152,12 +152,14 @@ Los campos usan etiqueta flotante: la etiqueta empieza dentro del campo y sube a
 
 | Estado | Borde | Fondo | Etiqueta |
 | --- | --- | --- | --- |
-| Reposo | 1px #8f8d8d | #fefefc | Dentro del campo, 16px, #656262 |
-| Hover | 1px #231f20 | #fefefc | Igual que en reposo |
-| Foco | 2px #538e85 | #fefefc | Arriba, 12px, #456e68 |
-| Con contenido | 1px #8f8d8d | #fefefc | Arriba, 12px, #656262 |
-| Error | 2px #a8261d | #fefefc | Arriba, 12px, #a8261d |
-| Deshabilitado | 1px #d2d1d0 | #f5f5f3 | #656262, sin hover |
+| Reposo | 1px #8f8d8d | #f5f5f3 | Dentro del campo, 16px, #656262 |
+| Hover | 1px #231f20 | #f5f5f3 | Igual que en reposo |
+| Foco | 2px #538e85 | #f5f5f3 | Arriba, 12px, #456e68 |
+| Con contenido | 1px #8f8d8d | #f5f5f3 | Arriba, 12px, #656262 |
+| Error | 2px #a8261d | #f5f5f3 | Arriba, 12px, #a8261d |
+| Deshabilitado | 1px #d2d1d0 | #ececea | #656262, sin hover |
+
+El fondo del campo es #f5f5f3, un poco más oscuro que el del sitio (decidido el 11/11/2026, con el formulario de contacto): el campo se distingue mejor, también sobre la marca de fondo. Contrastes sobre #f5f5f3: etiqueta 5,6:1 y borde 3,1:1 (el mínimo para un control es 3:1).
 
 ### Medidas
 

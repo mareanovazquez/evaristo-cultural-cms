@@ -826,7 +826,9 @@ a.topbar:focus-visible {
   font-size: 16px; /* 16px evita el zoom automático en iPhone */
   line-height: 1.4;
   color: var(--text);
-  background: var(--bg);
+  /* Un poco más oscuro que el fondo del sitio (11/11/2026, Mariano): el campo se distingue mejor, también sobre la marca de fondo.
+     Contrastes sobre #f5f5f3: etiqueta 5,6:1, borde 3,1:1. */
+  background: var(--surface);
   border: 1px solid var(--border-input);
   border-radius: var(--radius);
   transition: border-color 150ms ease, box-shadow 150ms ease;
