@@ -7,7 +7,7 @@ Estado al 7/11/2026. Lo duradero de la fase 7. El plan con el que se llegó hast
 **La migración está hecha y verificada.** Falta el lanzamiento, que espera la decisión del hosting.
 
 **Esperando a la editorial** (Mariano le escribe a la directora el 7/11/2026):
-- que elija el hosting, o al menos ponga un tope de presupuesto;
+- que elija el hosting, o al menos ponga un tope de presupuesto (al 11/11/2026 Roxana ya tiene las opciones de hosting y las está evaluando);
 - el texto de «Quiénes somos».
 
 **Lo que Mariano tiene en mente:** cambios en el front para que el sitio se vea «menos lavado» (el comentario de la directora), y un formulario de contacto en lugar de una página con datos.
