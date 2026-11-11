@@ -1,7 +1,7 @@
 ---
 import Marca from "./Marca.astro";
 
-import { SECCIONES_VISIBLES, URL_AUTORES, urlSeccion } from "../lib/rutas";
+import { SECCIONES_VISIBLES, urlSeccion } from "../lib/rutas";
 import { listarSeccionesMenu } from "../lib/secciones";
 import { leerTopbar } from "../lib/sitio";
 
@@ -9,6 +9,7 @@ import { leerTopbar } from "../lib/sitio";
 const topbar = await leerTopbar();
 
 // Las secciones y su orden salen de la base: las administra el administrador desde el panel.
+// El menú es solo contenido (Novedades y secciones): Autores, Quiénes somos y Contacto van en el footer (11/11/2026).
 const SECCIONES_MENU = await listarSeccionesMenu();
 const visibles = SECCIONES_MENU.slice(0, SECCIONES_VISIBLES);
 const resto = SECCIONES_MENU.slice(SECCIONES_VISIBLES);
@@ -44,17 +45,20 @@ const actual = (href: string) => (ruta === href || ruta.startsWith(href) ? "page
             </li>
           ))
         }
-        <li>
-          <details class="mas">
-            <summary>
-              Más <svg class="icon icon-chev" aria-hidden="true"><use href="#i-chevron-down" /></svg>
-            </summary>
-            <div class="mas-panel">
-              {resto.map((s) => <a href={urlSeccion(s.slug)} aria-current={actual(urlSeccion(s.slug))}>{s.nombre}</a>)}
-              <a href={URL_AUTORES} aria-current={actual(URL_AUTORES)}>Autores</a>
-            </div>
-          </details>
-        </li>
+        {
+          resto.length > 0 && (
+            <li>
+              <details class="mas">
+                <summary>
+                  Más <svg class="icon icon-chev" aria-hidden="true"><use href="#i-chevron-down" /></svg>
+                </summary>
+                <div class="mas-panel">
+                  {resto.map((s) => <a href={urlSeccion(s.slug)} aria-current={actual(urlSeccion(s.slug))}>{s.nombre}</a>)}
+                </div>
+              </details>
+            </li>
+          )
+        }
       </ul>
     </nav>
 
@@ -72,7 +76,7 @@ const actual = (href: string) => (ruta === href || ruta.startsWith(href) ? "page
           <li><a href="/novedades/" aria-current={actual("/novedades/")}>Novedades</a></li>
           {SECCIONES_MENU.map((s) => <li><a href={urlSeccion(s.slug)} aria-current={actual(urlSeccion(s.slug))}>{s.nombre}</a></li>)}
         </ul>
-        <div class="secundario"><a href={URL_AUTORES}>Autores</a><a href="/buscar/">Buscar</a></div>
+        <div class="secundario"><a href="/buscar/">Buscar</a></div>
       </nav>
     </details>
   </div>

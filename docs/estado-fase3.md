@@ -21,7 +21,7 @@ Actualizado el 21/10/2026. **La fase 3 está terminada en lo técnico** (todo en
 - **Volanta:** línea propia sobre el título, Fraunces cursiva, y es un enlace a la página de su categoría principal.
 - **Cantidad de notas de un listado:** etiqueta rectangular oscura (accent-900).
 - **Marca:** EVARISTO en Roboto Black (900) con el negro de la paleta y CULTURAL / EDITORIAL en Roboto SemiBold (600) con `border-strong`, mayúsculas e interletrado apretado (−0,02em).
-- **Menú:** seis secciones visibles (las seis primeras de `SECCIONES`) y el resto en "Más"; "Autores" en el desplegable y el footer. Secciones internas (`sin-asignar`) sin cintillo y sin página.
+- **Menú:** seis secciones visibles (las seis primeras de `SECCIONES`) y el resto en "Más"; "Autores" en el desplegable y el footer (desde el 11/11/2026, solo en el footer). Secciones internas (`sin-asignar`) sin cintillo y sin página.
 - **Listados** (autor, sección, categoría): de la más nueva a la más vieja, 12 por página con `?pagina=N`; página inválida vale 1, fuera de rango da 404. Las páginas de categoría incluyen las notas que tienen la categoría entre las suyas, no solo como principal.
 - **Autores:** orden alfabético por nombre (no hay campo de apellido); iniciales si no hay foto; los de solo texto no tienen página; redes: una dirección http(s) o un usuario (con o sin @), el resto se descarta.
 - **Letra capital:** campo del artículo (columna `conCapital`, agregada en la fase 4), apagada por defecto, también en lo migrado. El sitio todavía no la lee (ver `pendientes.md`); `?capital=1` funciona solo en desarrollo. Ninguna regla del renderizador para firmas en el cuerpo (el 620 empieza con "Por Riordan Roett": se quita a mano en la revisión).
