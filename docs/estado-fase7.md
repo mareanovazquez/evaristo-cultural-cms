@@ -61,7 +61,7 @@ Al pegar comandos largos en PowerShell, la terminal puede cortarlos en varios re
    - Node 22.12 o más nuevo y MySQL 8.4;
    - HTTPS con Let's Encrypt (nginx o Caddy);
    - control de los DNS;
-   - correo saliente (SMTP) para el formulario de contacto y la recuperación de contraseña;
+   - correo saliente (SMTP) para el formulario de contacto y la recuperación de contraseña, con **SPF y DKIM configurados para el dominio del remitente** (`CORREO_REMITENTE`), para que los mensajes no caigan en spam. Los mensajes del formulario llegan a `CONTACTO_DESTINO` y se contestan con «Responder» desde esa casilla (van con Reply-To a quien escribió); no se guardan en el sitio. Si la editorial quiere contestar como `@evaristocultural.com.ar`, el destino tiene que ser una casilla de ese dominio (o un Gmail con «enviar como»);
    - snapshots.
 
    Lo decide la editorial.
