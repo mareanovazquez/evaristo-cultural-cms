@@ -810,6 +810,175 @@ a.topbar:focus-visible {
   border-radius: var(--radius);
 }
 
+/* ---------- Formularios (docs/decisiones-de-diseno.md, «Formularios»): etiqueta flotante, una columna ----------
+   La etiqueta va después del campo y sube cuando el campo tiene foco o contenido (placeholder=" " y :placeholder-shown).
+   El borde de 2px del foco y del error se dibuja con una sombra de 1px, para que el texto no se mueva. */
+.campo {
+  position: relative;
+}
+.campo input,
+.campo textarea {
+  display: block;
+  width: 100%;
+  height: 56px;
+  padding: 24px var(--space-4) 8px;
+  font-family: var(--font-sans);
+  font-size: 16px; /* 16px evita el zoom automático en iPhone */
+  line-height: 1.4;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border-input);
+  border-radius: var(--radius);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+.campo textarea {
+  height: auto;
+  min-height: 160px;
+  padding-top: 28px;
+  resize: vertical;
+}
+.campo input:hover,
+.campo textarea:hover {
+  border-color: var(--text);
+}
+.campo input:focus,
+.campo textarea:focus {
+  outline: none;
+  border-color: var(--accent-700);
+  box-shadow: 0 0 0 1px var(--accent-700);
+}
+.campo label {
+  position: absolute;
+  top: 17px;
+  left: 17px;
+  font-size: 16px;
+  line-height: 22px;
+  color: var(--text-muted);
+  pointer-events: none;
+  transform-origin: left top;
+  transition: transform 150ms ease, color 150ms ease;
+}
+.campo input:focus + label,
+.campo input:not(:placeholder-shown) + label,
+.campo textarea:focus + label,
+.campo textarea:not(:placeholder-shown) + label {
+  transform: translateY(-10px) scale(0.75); /* 12px, arriba */
+}
+.campo input:focus + label,
+.campo textarea:focus + label {
+  color: var(--accent-800);
+}
+.campo.con-error input,
+.campo.con-error textarea {
+  border-color: var(--peligro);
+  box-shadow: 0 0 0 1px var(--peligro);
+}
+.campo.con-error label {
+  color: var(--peligro);
+}
+.campo-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin: var(--space-1) 0 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--peligro);
+}
+.campo-error[hidden] {
+  display: none;
+}
+.campo-error .icon {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+/* La trampa para robots: fuera de la pantalla (no display:none, que algunos robots detectan) */
+.campo-trampa {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+/* Botón large (52px): la acción principal de un formulario */
+.btn--grande {
+  height: 52px;
+  padding: 0 24px;
+  font-size: 16px;
+}
+.btn:disabled {
+  color: var(--text-muted);
+  background: var(--surface-2);
+  cursor: default;
+}
+
+/* ---------- Aviso en la página (docs/decisiones-de-diseno.md, «Avisos»): barra de 4px, ícono de 20px, sin sombra ---------- */
+.aviso-pagina {
+  display: flex;
+  gap: var(--space-3);
+  margin: 0 0 var(--space-6);
+  padding: var(--space-4);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text-soft);
+  border-left: 4px solid var(--text);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.aviso-pagina[hidden] {
+  display: none;
+}
+.aviso-pagina:focus:not(:focus-visible) {
+  outline: none;
+}
+.aviso-pagina p {
+  margin: 0;
+}
+.aviso-pagina p + p {
+  margin-top: var(--space-1);
+}
+.aviso-pagina .icon {
+  margin-top: 2px;
+}
+.aviso-titulo {
+  font-weight: 600;
+  color: var(--text);
+}
+.aviso--exito {
+  background: var(--accent-50);
+  border-left-color: var(--accent-500);
+}
+.aviso--exito .icon {
+  color: var(--accent-800);
+}
+.aviso--peligro {
+  background: #fceeed;
+  border-left-color: var(--peligro);
+}
+.aviso--peligro .icon,
+.aviso--peligro .aviso-titulo {
+  color: var(--peligro);
+}
+
+/* ---------- Contacto (decisión 90) ---------- */
+.contacto-intro {
+  margin: 0 0 var(--space-8);
+  color: var(--text-soft);
+}
+.contacto {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+.contacto[hidden] {
+  display: none;
+}
+.contacto .btn {
+  align-self: flex-start;
+  margin-top: var(--space-1);
+}
+
 /* ---------- Volver arriba (7/11/2026) ----------
    Aparece después de bajar una pantalla, abajo a la derecha, en todas las páginas. Verde de la identidad con la flecha en negro
    (7,4:1). Invisible queda fuera del teclado (visibility). */

@@ -15,6 +15,7 @@
     "./permisos": "./src/permisos.ts",
     "./sitio": "./src/sitio.ts",
     "./bio": "./src/bio.ts",
+    "./contacto": "./src/contacto.ts",
     "./texto-plano": "./src/texto-plano.ts",
     "./destinos": "./scripts/migracion/lib/destinos.ts"
   },

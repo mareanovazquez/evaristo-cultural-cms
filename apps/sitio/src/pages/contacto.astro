@@ -1,0 +1,135 @@
+---
+import Base from "../layouts/Base.astro";
+import { AVISOS_CONTACTO, CONTACTO_LIMITES, esEstadoContacto } from "@evaristo/compartido/contacto";
+
+// Contacto (decisión 90): un formulario en lugar de una página con datos. El envío lo hace la API (POST /api/contacto, que manda el
+// correo con el SMTP del hosting). Con JavaScript, el formulario se manda con fetch y el resultado aparece sin recargar; sin JavaScript,
+// se manda igual y la API vuelve a /contacto/?estado=<clave> (ver AVISOS_CONTACTO).
+// El texto de la introducción es provisorio: la editorial todavía no lo definió.
+const estado = Astro.url.searchParams.get("estado");
+const aviso = esEstadoContacto(estado) ? AVISOS_CONTACTO[estado] : undefined;
+const enviado = estado === "enviado";
+---
+
+<Base titulo="Contacto" descripcion="Escribile a la redacción de Evaristo Cultural.">
+  <section class="section col">
+    <h1 class="titulo-pagina">Contacto</h1>
+    <p class="contacto-intro">Escribinos por consultas, propuestas de colaboración o comentarios sobre la revista. Te respondemos por correo.</p>
+
+    <div class:list={["aviso-pagina", aviso && `aviso--${aviso.tipo}`]} role="status" tabindex="-1" hidden={!aviso} data-aviso>
+      <svg class="icon" aria-hidden="true"><use href={aviso?.tipo === "exito" ? "#i-circle-check" : "#i-circle-alert"} data-aviso-icono /></svg>
+      <div>
+        <p class="aviso-titulo" data-aviso-titulo>{aviso?.titulo}</p>
+        <p data-aviso-texto>{aviso?.texto}</p>
+        <p hidden={!enviado} data-aviso-otro><a href="/contacto/">Escribir otro mensaje</a></p>
+      </div>
+    </div>
+
+    <form class="contacto" action="/api/contacto" method="post" hidden={enviado} data-contacto>
+      <div class="campo">
+        <input id="contacto-nombre" name="nombre" type="text" autocomplete="name" maxlength={CONTACTO_LIMITES.nombre} required placeholder=" " aria-describedby="contacto-nombre-error" />
+        <label for="contacto-nombre">Nombre</label>
+        <p class="campo-error" id="contacto-nombre-error" hidden><svg class="icon" aria-hidden="true"><use href="#i-circle-alert" /></svg><span></span></p>
+      </div>
+      <div class="campo">
+        <input id="contacto-correo" name="correo" type="email" autocomplete="email" maxlength={CONTACTO_LIMITES.correo} required placeholder=" " aria-describedby="contacto-correo-error" />
+        <label for="contacto-correo">Correo electrónico</label>
+        <p class="campo-error" id="contacto-correo-error" hidden><svg class="icon" aria-hidden="true"><use href="#i-circle-alert" /></svg><span></span></p>
+      </div>
+      <div class="campo">
+        <textarea id="contacto-mensaje" name="mensaje" rows="7" minlength={CONTACTO_LIMITES.mensajeMinimo} maxlength={CONTACTO_LIMITES.mensaje} required placeholder=" " aria-describedby="contacto-mensaje-error"></textarea>
+        <label for="contacto-mensaje">Mensaje</label>
+        <p class="campo-error" id="contacto-mensaje-error" hidden><svg class="icon" aria-hidden="true"><use href="#i-circle-alert" /></svg><span></span></p>
+      </div>
+      <!-- Trampa para robots: una persona no lo ve ni llega con el teclado; si viene con algo, la API descarta el mensaje. -->
+      <div class="campo-trampa" aria-hidden="true">
+        <label for="contacto-sitio">No completes este campo</label>
+        <input id="contacto-sitio" name="sitio" type="text" tabindex="-1" autocomplete="off" />
+      </div>
+      <button type="submit" class="btn btn--primary btn--grande" data-enviar>Enviar mensaje</button>
+    </form>
+  </section>
+</Base>
+
+<script>
+  import { AVISOS_CONTACTO, CAMPOS_CONTACTO, errorDeCampo, type CampoContacto, type EstadoContacto } from "@evaristo/compartido/contacto";
+
+  const form = document.querySelector<HTMLFormElement>("[data-contacto]");
+  const aviso = document.querySelector<HTMLElement>("[data-aviso]");
+  if (form && aviso) {
+    // Con JavaScript, la validación es la nuestra (la del navegador queda para cuando no hay JavaScript).
+    form.noValidate = true;
+    const boton = form.querySelector<HTMLButtonElement>("[data-enviar]")!;
+    const control = (campo: CampoContacto) => form.elements.namedItem(campo) as HTMLInputElement | HTMLTextAreaElement;
+
+    const mostrarError = (campo: CampoContacto, mensaje: string | undefined) => {
+      const el = control(campo);
+      const caja = document.getElementById(`contacto-${campo}-error`)!;
+      caja.querySelector("span")!.textContent = mensaje ?? "";
+      caja.hidden = !mensaje;
+      if (mensaje) el.setAttribute("aria-invalid", "true");
+      else el.removeAttribute("aria-invalid");
+      el.closest(".campo")!.classList.toggle("con-error", !!mensaje);
+    };
+
+    for (const campo of CAMPOS_CONTACTO) {
+      const el = control(campo);
+      // Los errores aparecen al salir del campo, no mientras se escribe (solo si ya se escribió algo: pasar con Tab no lo marca).
+      el.addEventListener("input", () => {
+        el.dataset["tocado"] = "1";
+        if (el.getAttribute("aria-invalid") && !errorDeCampo(campo, el.value)) mostrarError(campo, undefined);
+      });
+      el.addEventListener("blur", () => {
+        if (el.dataset["tocado"]) mostrarError(campo, errorDeCampo(campo, el.value));
+      });
+    }
+
+    const mostrarAviso = (estado: EstadoContacto) => {
+      const { tipo, titulo, texto } = AVISOS_CONTACTO[estado];
+      aviso.className = `aviso-pagina aviso--${tipo}`;
+      aviso.querySelector("[data-aviso-icono]")!.setAttribute("href", tipo === "exito" ? "#i-circle-check" : "#i-circle-alert");
+      aviso.querySelector("[data-aviso-titulo]")!.textContent = titulo;
+      aviso.querySelector("[data-aviso-texto]")!.textContent = texto;
+      aviso.querySelector<HTMLElement>("[data-aviso-otro]")!.hidden = estado !== "enviado";
+      aviso.hidden = false;
+      aviso.focus();
+    };
+
+    form.addEventListener("submit", async (evento) => {
+      evento.preventDefault();
+      let primero: CampoContacto | undefined;
+      for (const campo of CAMPOS_CONTACTO) {
+        const error = errorDeCampo(campo, control(campo).value);
+        mostrarError(campo, error);
+        if (error && !primero) primero = campo;
+      }
+      if (primero) {
+        control(primero).focus();
+        return;
+      }
+
+      boton.disabled = true;
+      boton.textContent = "Enviando…";
+      aviso.hidden = true;
+      let estado: EstadoContacto;
+      try {
+        const datos = Object.fromEntries(["nombre", "correo", "mensaje", "sitio"].map((n) => [n, (form.elements.namedItem(n) as HTMLInputElement).value]));
+        const respuesta = await fetch(form.action, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify(datos),
+        });
+        estado = respuesta.ok ? "enviado" : respuesta.status === 429 ? "limite" : respuesta.status === 400 ? "datos" : "error";
+      } catch {
+        estado = "error";
+      }
+      boton.disabled = false;
+      boton.textContent = "Enviar mensaje";
+      if (estado === "enviado") {
+        form.reset();
+        form.hidden = true;
+      }
+      mostrarAviso(estado);
+    });
+  }
+</script>

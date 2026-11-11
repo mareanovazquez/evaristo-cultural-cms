@@ -6,7 +6,8 @@
 // rutas relativas, para que funcione abriéndola desde el disco (file://).
 //   - Las imágenes van en una sola versión de hasta ANCHO px (sin srcset), para que la copia pese menos.
 //   - Las tipografías de Google Fonts se bajan y quedan adentro (licencia OFL). Si no hay internet, quedan enlazadas en línea.
-//   - El buscador, el feed y el panel no van: los enlaces al buscador se sacan y los demás quedan como texto.
+//   - El buscador, el contacto, el feed y el panel no van (necesitan el servidor): los enlaces al buscador se sacan y los demás quedan
+//     como texto.
 //   - Los nombres de archivo quedan en ASCII (sin tildes ni espacios), así la carpeta se comprime y se mueve sin que se rompan.
 //   - Los enlaces a URLs viejas de WordPress (dentro de los artículos) se resuelven con las redirecciones del sitio.
 //
@@ -31,7 +32,7 @@ const PARALELOS = 8;
 /** Dominios del sitio: un enlace absoluto a ellos se trata como interno (los artículos viejos los tienen). */
 const DOMINIOS = new Set(["evaristocultural.com.ar", "www.evaristocultural.com.ar"]);
 /** Lo que no va en la copia: necesita el servidor o no es para el público. */
-const EXCLUIDAS = /^\/(buscar|feed|admin|api|prueba-layout)(\/|$)/;
+const EXCLUIDAS = /^\/(buscar|contacto|feed|admin|api|prueba-layout)(\/|$)/;
 /** Agente para pedir el CSS de Google Fonts (con uno de navegador actual devuelve woff2). */
 const AGENTE = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
 
