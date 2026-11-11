@@ -1074,6 +1074,26 @@ a.topbar:focus-visible {
 .marca-fondo--sola b {
   color: var(--accent-100);
 }
+/* En Contacto (11/11/2026): no fija, sino al final de la página y apoyada sobre el footer, para que no quede detrás del formulario.
+   Centrada respecto de la página y cortada por los bordes de la pantalla, como las otras. El margen negativo se come el margen superior
+   del footer; text-box recorta lo que queda debajo de la línea base (las mayúsculas no tienen descendentes), así las letras tocan el
+   footer. Donde text-box no existe (Firefox, por ahora), un ajuste aproximado para la métrica de Roboto. */
+.marca-fondo--al-pie {
+  position: relative;
+  z-index: auto;
+  top: auto;
+  left: 50%;
+  display: block;
+  width: max-content;
+  transform: translateX(-50%);
+  margin-bottom: calc(var(--space-24) * -1 - 0.06em);
+}
+@supports (text-box: trim-end alphabetic) {
+  .marca-fondo--al-pie {
+    text-box: trim-end alphabetic;
+    margin-bottom: calc(var(--space-24) * -1);
+  }
+}
 /* En la nota (7/11/2026): vertical, de abajo hacia arriba como el lomo de un libro, pegada al borde izquierdo y dentro del margen,
    nunca detrás del texto de lectura (columna de 680px). Solo desde 1200px de ancho: más angosto no hay margen libre. */
 .marca-fondo--vertical {

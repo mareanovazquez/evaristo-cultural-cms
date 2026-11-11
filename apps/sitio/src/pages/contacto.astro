@@ -13,7 +13,6 @@ const enviado = estado === "enviado";
 ---
 
 <Base titulo="Contacto" descripcion="Escribile a la redacción de Evaristo Cultural.">
-  <MarcaFondo principal="Contacto" />
   <section class="section col">
     <h1 class="titulo-pagina">Contacto</h1>
     <p class="contacto-intro">Escribinos por consultas, propuestas de colaboración o comentarios sobre la revista. Te respondemos por correo.</p>
@@ -51,6 +50,8 @@ const enviado = estado === "enviado";
       <button type="submit" class="btn btn--primary btn--grande" data-enviar>Enviar mensaje</button>
     </form>
   </section>
+  <!-- En esta página la palabra no va fija detrás del formulario: cierra la página, apoyada sobre el footer (11/11/2026). -->
+  <MarcaFondo principal="Contacto" alPie />
 </Base>
 
 <script>
