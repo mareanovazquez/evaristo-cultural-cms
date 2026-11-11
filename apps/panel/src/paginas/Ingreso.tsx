@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router";
+import { Link, Navigate, useLocation, useNavigate } from "react-router";
 import { ErrorApi } from "../api";
 import { useSesion } from "../sesion";
 import { useTitulo } from "../titulo";
@@ -63,6 +63,11 @@ export function Ingreso() {
         <button type="submit" className="boton boton-primario" disabled={enviando}>
           {enviando ? "Ingresando…" : "Ingresar"}
         </button>
+        <p className="ingreso-pie">
+          <Link to="/recuperar" state={{ email: email.trim() }}>
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </p>
       </form>
     </main>
   );

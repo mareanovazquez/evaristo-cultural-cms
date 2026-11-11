@@ -311,7 +311,7 @@ Está en `testing-tiptap/src/editor` (unas 1.100 líneas) y `App.tsx` (793 líne
 
 **Paso 8: cierre** (en curso desde el 23/10/2026; ver la sección «Paso 8»).
 - ~~Mensajes de error en lenguaje común en todo el panel~~, ~~política de contenido para el sitio y el panel~~, ~~`trust proxy` por variable~~, ~~registro de quién editó y publicó cada artículo~~ y ~~guía de la prueba~~: hecho. Falta **hacer la prueba con alguien de la editorial**: criterio de cierre de la fase (una persona no técnica carga y publica una nota completa sin ayuda), con `docs/guia-prueba-editorial.md`.
-- Para cuando haya hosting y correo: recuperación de contraseña por correo y límite de intentos que sobreviva a reinicios (hoy vive en memoria).
+- Para cuando haya hosting y correo: ~~recuperación de contraseña por correo~~ (hecha el 11/11/2026, decisión 92; funciona en cuanto se cargue el SMTP) y límite de intentos que sobreviva a reinicios (hoy vive en memoria).
 - Pruebas de las pantallas del panel: hechas en jsdom (`test:pantalla`); falta mirarlas en un navegador.
 
 **Para cerrar la fase y lanzar:** aplicar a `evaristo_cms` las migraciones `sesiones` y `borradores_y_capital` con `db:deploy` antes de la migración completa de la fase 7 (el cliente de Prisma ya espera `conCapital` y los scripts de la migración fallan contra una base sin esa columna), y recrear los usuarios editores. Desde el paso 7 se suman `usuarios_redactor_creador_autor`, `secciones_orden` y `articulos_avisos_revisados` (ver «Cierre del paso 7»).

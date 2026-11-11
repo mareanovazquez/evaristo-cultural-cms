@@ -283,6 +283,7 @@ model Usuario {
   creadoEn       DateTime   @default(now())
   actualizadoEn  DateTime   @updatedAt
   sesiones       Sesion[]
+  recuperaciones RecuperacionClave[]
   borradores     ArticuloBorrador[]
   // Artículos que creó (un Redactor solo ve y edita los suyos).
   articulosCreados Articulo[] @relation("ArticulosCreados")
@@ -327,6 +328,23 @@ model Sesion {
   @@index([usuarioId])
   @@index([venceEn])
   @@map("sesiones")
+}
+
+// Recuperación de contraseña del panel (11/11/2026): el enlace que llega por correo lleva un código aleatorio; acá se guarda solo
+// su SHA-256 (una copia de la base no sirve para cambiar contraseñas). Vale una hora y una sola vez: al usarlo se marca usadoEn y
+// se borran los demás de la persona. Los vencidos se borran al pedir uno nuevo.
+model RecuperacionClave {
+  id        Int       @id @default(autoincrement())
+  tokenHash String    @unique @db.Char(64)
+  usuarioId Int
+  usuario   Usuario   @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  creadoEn  DateTime  @default(now())
+  venceEn   DateTime
+  usadoEn   DateTime?
+
+  @@index([usuarioId])
+  @@index([venceEn])
+  @@map("recuperaciones_clave")
 }
 
 // Configuración del sitio que edita el administrador desde el panel. Una sola fila (id 1): si no existe, el sitio usa los valores por

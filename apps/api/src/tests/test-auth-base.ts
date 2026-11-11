@@ -3,6 +3,7 @@
 //
 // Uso: npm run test:auth-base
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { request, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { obtenerClientePrisma } from "@evaristo/compartido/db";
@@ -37,8 +38,11 @@ try {
   }
   const usuario = await prisma.usuario.create({ data: { email, nombre: "Prueba de autenticación", rol: "EDITOR", passwordHash: await hashearClave(clave) }, select: { id: true } });
 
+  // La recuperación de contraseña guarda los enlaces en vez de mandarlos.
+  const enlaces: string[] = [];
+  const recuperacion = { enviar: async (_d: { email: string; nombre: string }, enlace: string) => void enlaces.push(enlace), base: "https://evaristo.example" };
   server = await new Promise<Server>((listo) => {
-    const s = crearApp(prisma, {}).listen(0, "127.0.0.1", () => listo(s));
+    const s = crearApp(prisma, { auth: { recuperacion } }).listen(0, "127.0.0.1", () => listo(s));
   });
   const puerto = (server.address() as AddressInfo).port;
   const pedir = (metodo: string, ruta: string, cuerpo?: unknown, cookie?: string) =>
@@ -94,12 +98,36 @@ try {
   assert.equal(await prisma.sesion.count({ where: { usuarioId: usuario.id } }), 0);
   assert.equal((await pedir("GET", "/api/auth/yo", undefined, cookie2)).estado, 401);
 
-  // Borrar el usuario borra sus sesiones en cascada
-  await pedir("POST", "/api/auth/ingresar", { email, clave });
+  // Recuperación de contraseña con la tabla de verdad (recuperaciones_clave)
+  assert.equal((await pedir("POST", "/api/auth/recuperar", { email })).estado, 200);
+  await new Promise((listo) => setTimeout(listo, 50));
+  assert.equal(enlaces.length, 1);
+  const codigo = /^https:\/\/evaristo\.example\/admin\/restablecer#([A-Za-z0-9_-]{43})$/.exec(enlaces[0]!)?.[1] ?? "";
+  assert.equal(codigo.length, 43);
+  const enlacesEnBase = await prisma.recuperacionClave.findMany({ where: { usuarioId: usuario.id }, select: { tokenHash: true, venceEn: true, usadoEn: true } });
+  assert.equal(enlacesEnBase.length, 1);
+  assert.equal(enlacesEnBase[0]!.tokenHash, createHash("sha256").update(codigo).digest("hex"), "en la base, solo el SHA-256");
+  assert.equal(enlacesEnBase[0]!.usadoEn, null);
+  assert.ok(Math.abs(enlacesEnBase[0]!.venceEn.getTime() - (Date.now() + 3600 * 1000)) < 60_000, "vence en una hora");
+  assert.equal((await pedir("POST", "/api/auth/restablecer/verificar", { token: codigo })).estado, 200);
+  const sesionAntes = await pedir("POST", "/api/auth/ingresar", { email, clave });
+  const nueva = "clave-recuperada-larga-2";
+  assert.equal((await pedir("POST", "/api/auth/restablecer", { token: codigo, clave: nueva })).estado, 200);
+  assert.equal(await prisma.recuperacionClave.count({ where: { usuarioId: usuario.id } }), 0, "el enlace se borró");
+  assert.equal(await prisma.sesion.count({ where: { usuarioId: usuario.id } }), 0, "las sesiones se cerraron");
+  assert.equal((await pedir("GET", "/api/auth/yo", undefined, `${NOMBRE_COOKIE}=${new RegExp(`${NOMBRE_COOKIE}=([^;]+)`).exec(sesionAntes.cookie ?? "")?.[1] ?? ""}`)).estado, 401);
+  assert.equal((await pedir("POST", "/api/auth/ingresar", { email, clave })).estado, 401, "la contraseña vieja ya no entra");
+  assert.equal((await pedir("POST", "/api/auth/restablecer", { token: codigo, clave: "otra-clave-larga-3" })).json["codigo"], "enlace_invalido", "no sirve dos veces");
+
+  // Borrar el usuario borra sus sesiones y sus enlaces de recuperación en cascada
+  await pedir("POST", "/api/auth/ingresar", { email, clave: nueva });
   assert.equal(await prisma.sesion.count({ where: { usuarioId: usuario.id } }), 1);
+  assert.equal((await pedir("POST", "/api/auth/recuperar", { email })).estado, 200);
+  assert.equal(await prisma.recuperacionClave.count({ where: { usuarioId: usuario.id } }), 1);
   await prisma.usuario.delete({ where: { id: usuario.id } });
   assert.equal(await prisma.sesion.count({ where: { usuarioId: usuario.id } }), 0);
-  console.log("OK: ingreso, sesión, vencimiento, salida y borrado en cascada funcionan contra evaristo_cms_dev.");
+  assert.equal(await prisma.recuperacionClave.count({ where: { usuarioId: usuario.id } }), 0);
+  console.log("OK: ingreso, sesión, vencimiento, salida, recuperación de contraseña y borrado en cascada funcionan contra evaristo_cms_dev.");
 } finally {
   await prisma.usuario.deleteMany({ where: { email } });
   server?.closeAllConnections();

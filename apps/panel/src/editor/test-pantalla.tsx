@@ -190,6 +190,11 @@ let usuariosServidos: UsuarioDeLista[] = [
   { id: 1, email: 'a@b.c', nombre: 'Prueba', rol: 'ADMINISTRADOR', activo: true, debeCambiarClave: false, ultimoAccesoEn: '2026-10-23T09:00:00.000Z', creadoEn: '2026-10-01T09:00:00.000Z', autor: null, articulos: 0 },
   { id: 4, email: 'rita@b.c', nombre: 'Rita', rol: 'REDACTOR', activo: true, debeCambiarClave: false, ultimoAccesoEn: null, creadoEn: '2026-10-02T09:00:00.000Z', autor: { id: 20, nombre: 'Rita', slug: 'rita' }, articulos: 3 },
 ]
+// Recuperación de contraseña: un código que la API simulada acepta, los pedidos recibidos y si hay envío de correo.
+const CODIGO_BUENO = 'c'.repeat(43)
+const pedidosRecuperacion: Array<{ ruta: string; cuerpo: J }> = []
+let recuperacionNoDisponible = false
+let sinSesion = false
 globalThis.fetch = (async (entrada: string | URL | Request, init?: RequestInit) => {
   const url = String(entrada)
   const metodo = init?.method ?? 'GET'
@@ -202,7 +207,20 @@ globalThis.fetch = (async (entrada: string | URL | Request, init?: RequestInit) 
     conCambiosSinPublicar = false
     return responder(200, { estado: 'ok' })
   }
+  if (url === '/api/auth/yo' && metodo === 'GET' && sinSesion) return responder(401, { estado: 'error', mensaje: 'Tenés que ingresar para continuar.' })
   if (url === '/api/auth/yo' && metodo === 'GET') return responder(200, { usuario: usuarioServido })
+  if (url === '/api/auth/recuperar' && metodo === 'POST') {
+    pedidosRecuperacion.push({ ruta: url, cuerpo: JSON.parse(String(init?.body)) as J })
+    if (recuperacionNoDisponible) return responder(503, { estado: 'error', mensaje: 'La recuperación por correo no está disponible. Pedile a un administrador que te ponga una contraseña provisoria.' })
+    return responder(200, { estado: 'ok' })
+  }
+  if ((url === '/api/auth/restablecer/verificar' || url === '/api/auth/restablecer') && metodo === 'POST') {
+    const cuerpo = JSON.parse(String(init?.body)) as J
+    pedidosRecuperacion.push({ ruta: url, cuerpo })
+    if (cuerpo['token'] !== CODIGO_BUENO) return responder(400, { estado: 'error', codigo: 'enlace_invalido', mensaje: 'El enlace no sirve: venció, ya se usó o está incompleto. Pedí uno nuevo.' })
+    if (url === '/api/auth/restablecer' && String(cuerpo['clave']).length < 10) return responder(400, { estado: 'error', mensaje: 'La contraseña tiene que tener al menos 10 caracteres.' })
+    return responder(200, { estado: 'ok' })
+  }
   if (url === '/api/auth/salir' && metodo === 'POST') {
     salidas.push(url)
     return responder(200, { estado: 'ok' })
@@ -2728,6 +2746,101 @@ await t('novedad: al marcarla propone 90 días (ajustable), al desmarcarla se va
   assert.ok(document.querySelector('.edicion-lateral')!.textContent!.includes('Ya venció'))
   await act(async () => r2.unmount())
   novedadServida = null
+})
+
+// ---------- Recuperación de contraseña ----------
+const campo = (id: string) => document.getElementById(id) as HTMLInputElement | null
+const enviarFormulario = async () => act(async () => { document.querySelector('form')!.dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true })) })
+
+await t('ingreso: «¿Olvidaste tu contraseña?» lleva a pedir el enlace, con el email ya escrito', async () => {
+  sinSesion = true
+  try {
+    const r = await montar('/ingresar')
+    await hasta(() => !!campo('email'), 'la pantalla de ingreso')
+    await escribir(campo('email')!, 'olga@ejemplo.org ')
+    const enlace = [...document.querySelectorAll('a')].find((a) => a.textContent === '¿Olvidaste tu contraseña?')
+    assert.ok(enlace, 'el enlace está en la pantalla de ingreso')
+    await clic(enlace!)
+    await hasta(() => !!campo('recuperar-email'), 'la pantalla para pedir el enlace')
+    assert.equal(campo('recuperar-email')!.value, 'olga@ejemplo.org')
+    await act(async () => r.unmount())
+  } finally {
+    sinSesion = false
+  }
+})
+
+await t('recuperar: un email mal escrito avisa sin pedir nada; uno bien manda el pedido y muestra «Revisá tu correo»', async () => {
+  pedidosRecuperacion.length = 0
+  const r = await montar('/recuperar')
+  await hasta(() => !!campo('recuperar-email'), 'la pantalla para pedir el enlace')
+  await escribir(campo('recuperar-email')!, 'olga@')
+  await enviarFormulario()
+  assert.match(document.querySelector('[role="alert"]')!.textContent!, /Escribí el email con el que ingresás/)
+  assert.equal(pedidosRecuperacion.length, 0)
+  await escribir(campo('recuperar-email')!, '  olga@ejemplo.org ')
+  await enviarFormulario()
+  await hasta(() => texto().includes('Revisá tu correo'), 'la confirmación')
+  assert.deepEqual(pedidosRecuperacion, [{ ruta: '/api/auth/recuperar', cuerpo: { email: 'olga@ejemplo.org' } }])
+  assert.match(document.querySelector('[role="status"]')!.textContent!, /Si olga@ejemplo\.org tiene una cuenta en el panel, te mandamos un enlace/)
+  assert.ok([...document.querySelectorAll('a')].some((a) => a.textContent === 'Volver a ingresar'))
+  await act(async () => r.unmount())
+})
+
+await t('recuperar: sin correo configurado, muestra el mensaje de la API (pedírsela al administrador)', async () => {
+  recuperacionNoDisponible = true
+  try {
+    const r = await montar('/recuperar')
+    await hasta(() => !!campo('recuperar-email'), 'la pantalla para pedir el enlace')
+    await escribir(campo('recuperar-email')!, 'olga@ejemplo.org')
+    await enviarFormulario()
+    await hasta(() => !!document.querySelector('[role="alert"]'), 'el aviso')
+    assert.match(document.querySelector('[role="alert"]')!.textContent!, /administrador/)
+    await act(async () => r.unmount())
+  } finally {
+    recuperacionNoDisponible = false
+  }
+})
+
+await t('restablecer: sin código o con uno mal formado dice que el enlace no sirve, sin preguntarle a la API', async () => {
+  pedidosRecuperacion.length = 0
+  for (const ruta of ['/restablecer', '/restablecer#corto']) {
+    const r = await montar(ruta)
+    await hasta(() => texto().includes('El enlace no sirve'), `el aviso en ${ruta}`)
+    assert.ok([...document.querySelectorAll('a')].some((a) => a.textContent === 'Pedir un enlace nuevo'))
+    await act(async () => r.unmount())
+  }
+  assert.equal(pedidosRecuperacion.length, 0)
+})
+
+await t('restablecer: un código vencido o usado lo avisa apenas se abre', async () => {
+  pedidosRecuperacion.length = 0
+  const r = await montar(`/restablecer#${'x'.repeat(43)}`)
+  await hasta(() => texto().includes('El enlace no sirve'), 'el aviso del enlace vencido')
+  assert.deepEqual(pedidosRecuperacion.map((p) => p.ruta), ['/api/auth/restablecer/verificar'])
+  await act(async () => r.unmount())
+})
+
+await t('restablecer: con un código vigente, pide la contraseña dos veces, muestra los errores y al final «Listo» con el botón para ingresar', async () => {
+  pedidosRecuperacion.length = 0
+  const r = await montar(`/restablecer#${CODIGO_BUENO}`)
+  await hasta(() => !!campo('restablecer-clave'), 'el formulario de la contraseña nueva')
+  await escribir(campo('restablecer-clave')!, 'una-clave-nueva-1')
+  await escribir(campo('restablecer-repetida')!, 'otra-cosa-distinta')
+  await enviarFormulario()
+  assert.match(document.querySelector('[role="alert"]')!.textContent!, /no coinciden/)
+  assert.equal(pedidosRecuperacion.filter((p) => p.ruta === '/api/auth/restablecer').length, 0, 'no se pidió nada')
+  await escribir(campo('restablecer-clave')!, 'corta')
+  await escribir(campo('restablecer-repetida')!, 'corta')
+  await enviarFormulario()
+  await hasta(() => /al menos 10/.test(document.querySelector('[role="alert"]')?.textContent ?? ''), 'el error de la API')
+  await escribir(campo('restablecer-clave')!, 'una-clave-nueva-1')
+  await escribir(campo('restablecer-repetida')!, 'una-clave-nueva-1')
+  await enviarFormulario()
+  await hasta(() => texto().includes('Tu contraseña cambió'), 'la confirmación')
+  const ultimo = pedidosRecuperacion.at(-1)!
+  assert.deepEqual(ultimo, { ruta: '/api/auth/restablecer', cuerpo: { token: CODIGO_BUENO, clave: 'una-clave-nueva-1' } })
+  assert.ok([...document.querySelectorAll('a')].some((a) => a.textContent?.trim() === 'Ingresar'))
+  await act(async () => r.unmount())
 })
 
 console.log(`\n${ok} pruebas de la pantalla ok`)

@@ -9,6 +9,7 @@ import { crearApp } from "../app.js";
 import { hashearClave, problemaDeClave, verificarClave } from "../auth/clave.js";
 import { crearAuth, DURACION_SESION_MS, NOMBRE_COOKIE } from "../auth/rutas.js";
 import type { Repositorio, SesionFila, UsuarioFila } from "../auth/repositorio.js";
+import { armarCorreoRecuperacion, recuperacionDesdeEntorno } from "../auth/recuperacion.js";
 
 let ok = 0;
 const pruebas: Array<[string, () => Promise<void>]> = [];
@@ -41,7 +42,32 @@ const repo: Repositorio = {
   },
   borrarSesion: async (tokenHash) => void sesiones.delete(tokenHash),
   borrarSesionesVencidas: async () => 0,
+  crearRecuperacion: async (tokenHash, usuarioId, venceEn) => void recuperaciones.push({ id: ++idRecuperacion, tokenHash, usuarioId, venceEn, usadoEn: null, creadoEn: reloj }),
+  ultimaRecuperacionDe: async (usuarioId) => recuperaciones.filter((r) => r.usuarioId === usuarioId).map((r) => r.creadoEn).sort((a, b) => b.getTime() - a.getTime())[0] ?? null,
+  recuperacionPorHash: async (tokenHash) => {
+    const r = recuperaciones.find((x) => x.tokenHash === tokenHash);
+    const usuario = r && usuarios.find((u) => u.id === r.usuarioId);
+    return r && usuario ? { id: r.id, venceEn: r.venceEn, usadoEn: r.usadoEn, usuario } : null;
+  },
+  usarRecuperacion: async (id, cuando) => {
+    const r = recuperaciones.find((x) => x.id === id && x.usadoEn === null);
+    if (!r) return false;
+    r.usadoEn = cuando;
+    return true;
+  },
+  borrarRecuperacionesDeUsuario: async (usuarioId) => {
+    const antes = recuperaciones.length;
+    recuperaciones = recuperaciones.filter((r) => r.usuarioId !== usuarioId);
+    return antes - recuperaciones.length;
+  },
+  borrarRecuperacionesVencidas: async (ahora) => {
+    const antes = recuperaciones.length;
+    recuperaciones = recuperaciones.filter((r) => r.venceEn >= ahora);
+    return antes - recuperaciones.length;
+  },
 };
+let recuperaciones: Array<{ id: number; tokenHash: string; usuarioId: number; venceEn: Date; usadoEn: Date | null; creadoEn: Date }> = [];
+let idRecuperacion = 0;
 let reloj = new Date("2026-10-21T12:00:00Z");
 
 const CLAVE_ANA = "una-clave-larga-1";
@@ -324,6 +350,146 @@ t("la API manda las cabeceras de seguridad de helmet", async () => {
   assert.equal(r.cabeceras["x-powered-by"], undefined);
 });
 
+// ---------- Recuperación de contraseña ----------
+const correosRecuperacion: Array<{ email: string; nombre: string; enlace: string }> = [];
+const enviarRecuperacion = async (d: { email: string; nombre: string }, enlace: string) => void correosRecuperacion.push({ ...d, enlace });
+const BASE_SITIO = "https://evaristo.example";
+const conRecuperacion = await levantar(crearApp(sinPrisma, { auth: { repo, ahora: () => reloj, limiteIngresos: { ventanaMs: 60_000, max: 1000 }, recuperacion: { enviar: enviarRecuperacion, base: BASE_SITIO, limite: { ventanaMs: 60_000, max: 1000 } } } }));
+const recuperacionConLimite = await levantar(crearApp(sinPrisma, { auth: { repo, ahora: () => reloj, recuperacion: { enviar: enviarRecuperacion, base: BASE_SITIO, limite: { ventanaMs: 60_000, max: 2 } } } }));
+const sinRecuperacion = await levantar(crearApp(sinPrisma, { auth: { repo, ahora: () => reloj, recuperacion: { enviar: undefined } } }));
+const recuperar = (p: number, email: string, cab?: Record<string, string>) => pedir(p, "POST", "/api/auth/recuperar", { cuerpo: { email }, ...(cab ? { cabeceras: cab } : {}) });
+const restablecer = (p: number, token: string, clave: string) => pedir(p, "POST", "/api/auth/restablecer", { cuerpo: { token, clave } });
+const verificarEnlace = (p: number, token: string) => pedir(p, "POST", "/api/auth/restablecer/verificar", { cuerpo: { token } });
+const tokenDelEnlace = (enlace: string) => /#([A-Za-z0-9_-]{43})$/.exec(enlace)?.[1] ?? "";
+const CLAVE_RECUPERADA = "una-clave-recuperada-9";
+const pasarElTiempo = (ms: number) => void (reloj = new Date(reloj.getTime() + ms));
+let usuarioRecupera: UsuarioFila;
+t("recuperar: crea un usuario de prueba para la recuperación", async () => {
+  usuarioRecupera = { id: 30, email: "olvido@ejemplo.org", nombre: "Olga\r\nBcc: x@y.z", rol: "EDITOR", activo: true, debeCambiarClave: true, passwordHash: await hashearClave("la-clave-vieja-30") };
+  usuarios.push(usuarioRecupera);
+});
+t("recuperar: email registrado → 200 y un correo con el enlace /admin/restablecer#<código>; en la base solo queda el SHA-256", async () => {
+  correosRecuperacion.length = 0;
+  const r = await recuperar(conRecuperacion.puerto, "  OLVIDO@ejemplo.org ");
+  assert.equal(r.estado, 200);
+  assert.equal(r.cabeceras["cache-control"], "no-store");
+  await new Promise((listo) => setTimeout(listo, 10));
+  assert.equal(correosRecuperacion.length, 1);
+  const { email, enlace } = correosRecuperacion[0]!;
+  assert.equal(email, "olvido@ejemplo.org");
+  assert.match(enlace, /^https:\/\/evaristo\.example\/admin\/restablecer#[A-Za-z0-9_-]{43}$/);
+  const token = tokenDelEnlace(enlace);
+  const guardada = recuperaciones.find((x) => x.usuarioId === 30)!;
+  assert.equal(guardada.tokenHash, createHash("sha256").update(token).digest("hex"));
+  assert.ok(!recuperaciones.some((x) => x.tokenHash === token), "el código no se guarda tal cual");
+  assert.equal(guardada.venceEn.getTime() - reloj.getTime(), 60 * 60 * 1000, "vale una hora");
+});
+t("recuperar: email que no existe o usuario inactivo → la misma respuesta 200, sin correo", async () => {
+  correosRecuperacion.length = 0;
+  const a = await recuperar(conRecuperacion.puerto, "nadie@ejemplo.org");
+  const b = await recuperar(conRecuperacion.puerto, "inactivo@ejemplo.org");
+  assert.equal(a.estado, 200);
+  assert.equal(b.estado, 200);
+  assert.deepEqual(a.json, b.json);
+  await new Promise((listo) => setTimeout(listo, 10));
+  assert.equal(correosRecuperacion.length, 0);
+});
+t("recuperar: pedirlo de nuevo enseguida no manda otro correo; pasado un minuto, sí", async () => {
+  correosRecuperacion.length = 0;
+  assert.equal((await recuperar(conRecuperacion.puerto, "olvido@ejemplo.org")).estado, 200);
+  await new Promise((listo) => setTimeout(listo, 10));
+  assert.equal(correosRecuperacion.length, 0, "dentro del minuto");
+  pasarElTiempo(61_000);
+  assert.equal((await recuperar(conRecuperacion.puerto, "olvido@ejemplo.org")).estado, 200);
+  await new Promise((listo) => setTimeout(listo, 10));
+  assert.equal(correosRecuperacion.length, 1, "pasado el minuto");
+});
+t("recuperar: email inválido → 400; sin envío configurado → 503 con el mensaje para pedírselo al administrador", async () => {
+  assert.equal((await recuperar(conRecuperacion.puerto, "no-es-un-email")).estado, 400);
+  const r = await recuperar(sinRecuperacion.puerto, "olvido@ejemplo.org");
+  assert.equal(r.estado, 503);
+  assert.match(String(r.json["mensaje"]), /administrador/);
+});
+t("recuperar: desde otro sitio → 403 (como el resto de /api/auth)", async () => {
+  assert.equal((await recuperar(conRecuperacion.puerto, "olvido@ejemplo.org", { Origin: "https://otro.example" })).estado, 403);
+});
+t("verificar: el enlace vigente → 200; uno inventado o mal formado → 400 enlace_invalido", async () => {
+  const token = tokenDelEnlace(correosRecuperacion.at(-1)!.enlace);
+  assert.equal((await verificarEnlace(conRecuperacion.puerto, token)).estado, 200);
+  for (const malo of ["A".repeat(43), "corto", "", "#".repeat(43)]) {
+    const r = await verificarEnlace(conRecuperacion.puerto, malo);
+    assert.equal(r.estado, 400, malo);
+    assert.equal(r.json["codigo"], "enlace_invalido", malo);
+  }
+});
+t("restablecer: una contraseña corta da el error de la contraseña y NO gasta el enlace", async () => {
+  const token = tokenDelEnlace(correosRecuperacion.at(-1)!.enlace);
+  const r = await restablecer(conRecuperacion.puerto, token, "corta");
+  assert.equal(r.estado, 400);
+  assert.match(String(r.json["mensaje"]), /al menos 10/);
+  assert.equal((await verificarEnlace(conRecuperacion.puerto, token)).estado, 200, "el enlace sigue sirviendo");
+});
+t("restablecer: cambia la contraseña, levanta la marca de cambiarla, cierra las sesiones y borra los enlaces; el enlace no sirve dos veces", async () => {
+  const token = tokenDelEnlace(correosRecuperacion.at(-1)!.enlace);
+  const sesionVieja = await ingresar(conRecuperacion.puerto, "olvido@ejemplo.org", "la-clave-vieja-30");
+  assert.equal(sesionVieja.estado, 200);
+  const r = await restablecer(conRecuperacion.puerto, token, CLAVE_RECUPERADA);
+  assert.equal(r.estado, 200);
+  assert.equal(usuarioRecupera.debeCambiarClave, false);
+  assert.equal((await pedir(conRecuperacion.puerto, "GET", "/api/auth/yo", { cookie: cookieDe(sesionVieja) })).estado, 401, "la sesión abierta con la clave vieja se cerró");
+  assert.equal((await ingresar(conRecuperacion.puerto, "olvido@ejemplo.org", "la-clave-vieja-30")).estado, 401, "la vieja ya no entra");
+  assert.equal((await ingresar(conRecuperacion.puerto, "olvido@ejemplo.org", CLAVE_RECUPERADA)).estado, 200, "la nueva entra");
+  assert.equal(recuperaciones.filter((x) => x.usuarioId === 30).length, 0, "no quedan enlaces de esa persona");
+  const otra = await restablecer(conRecuperacion.puerto, token, "otra-clave-cualquiera-1");
+  assert.equal(otra.estado, 400);
+  assert.equal(otra.json["codigo"], "enlace_invalido");
+});
+t("restablecer: un enlace vencido (más de una hora) no sirve", async () => {
+  correosRecuperacion.length = 0;
+  pasarElTiempo(61_000);
+  await recuperar(conRecuperacion.puerto, "olvido@ejemplo.org");
+  await new Promise((listo) => setTimeout(listo, 10));
+  const token = tokenDelEnlace(correosRecuperacion.at(-1)!.enlace);
+  pasarElTiempo(60 * 60 * 1000 + 1000);
+  const r = await restablecer(conRecuperacion.puerto, token, "una-clave-tarde-11");
+  assert.equal(r.json["codigo"], "enlace_invalido");
+  assert.equal((await ingresar(conRecuperacion.puerto, "olvido@ejemplo.org", CLAVE_RECUPERADA)).estado, 200, "la contraseña no cambió");
+});
+t("restablecer: si la cuenta se desactivó después de pedir el enlace, no sirve", async () => {
+  correosRecuperacion.length = 0;
+  pasarElTiempo(61_000);
+  await recuperar(conRecuperacion.puerto, "olvido@ejemplo.org");
+  await new Promise((listo) => setTimeout(listo, 10));
+  const token = tokenDelEnlace(correosRecuperacion.at(-1)!.enlace);
+  usuarioRecupera.activo = false;
+  try {
+    assert.equal((await restablecer(conRecuperacion.puerto, token, "una-clave-inactiva-1")).json["codigo"], "enlace_invalido");
+  } finally {
+    usuarioRecupera.activo = true;
+  }
+});
+t("recuperar y restablecer: límite por dirección (429 al pasarse)", async () => {
+  assert.equal((await recuperar(recuperacionConLimite.puerto, "nadie@ejemplo.org")).estado, 200);
+  assert.equal((await recuperar(recuperacionConLimite.puerto, "nadie@ejemplo.org")).estado, 200);
+  assert.equal((await recuperar(recuperacionConLimite.puerto, "nadie@ejemplo.org")).estado, 429);
+});
+t("el correo de recuperación: para la persona, con el enlace, sin saltos de línea del nombre, y avisa qué hacer si no lo pidió", async () => {
+  const c = armarCorreoRecuperacion({ email: "olvido@ejemplo.org", nombre: "Olga\r\nBcc: x@y.z" }, `${BASE_SITIO}/admin/restablecer#${"A".repeat(43)}`, "Evaristo Cultural <web@evaristo.example>");
+  assert.equal(c.to, "olvido@ejemplo.org");
+  assert.equal(c.from, "Evaristo Cultural <web@evaristo.example>");
+  assert.ok(!/[\r\n]/.test(c.subject));
+  assert.ok(c.text.startsWith("Hola, Olga Bcc: x@y.z:\n"));
+  assert.ok(c.text.includes(`${BASE_SITIO}/admin/restablecer#${"A".repeat(43)}`));
+  assert.match(c.text, /una hora/);
+  assert.match(c.text, /Si no lo pediste vos, ignorá este correo/);
+});
+t("recuperacionDesdeEntorno: sin SMTP, a la consola en desarrollo y ninguno en producción; con SMTP, por correo; sin remitente, error", async () => {
+  assert.equal(typeof recuperacionDesdeEntorno({}), "function");
+  assert.equal(recuperacionDesdeEntorno({ NODE_ENV: "production" }), undefined);
+  assert.equal(typeof recuperacionDesdeEntorno({ NODE_ENV: "production", SMTP_HOST: "smtp.ejemplo.com", CORREO_REMITENTE: "web@ejemplo.com" }), "function");
+  assert.throws(() => recuperacionDesdeEntorno({ SMTP_HOST: "smtp.ejemplo.com" }), /CORREO_REMITENTE/);
+});
+
 let fallo: unknown;
 try {
   for (const [name, fn] of pruebas) {
@@ -334,7 +500,7 @@ try {
 } catch (e) {
   fallo = e;
 } finally {
-  for (const s of [principal, conLimite, seguro, roles]) {
+  for (const s of [principal, conLimite, seguro, roles, conRecuperacion, recuperacionConLimite, sinRecuperacion]) {
     s.server.closeAllConnections();
     s.server.close();
   }

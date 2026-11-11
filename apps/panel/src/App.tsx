@@ -7,6 +7,8 @@ import { Clasificacion } from "./paginas/Clasificacion";
 import { Cuenta } from "./paginas/Cuenta";
 import { EditarAutor } from "./paginas/EditarAutor";
 import { Ingreso } from "./paginas/Ingreso";
+import { Recuperar } from "./paginas/Recuperar";
+import { Restablecer } from "./paginas/Restablecer";
 import { Revision } from "./paginas/Revision";
 import { RevisionLista } from "./paginas/RevisionLista";
 import { Sitio } from "./paginas/Sitio";
@@ -48,6 +50,8 @@ export function App() {
   return (
     <Routes>
       <Route path="/ingresar" element={<Ingreso />} />
+      <Route path="/recuperar" element={<Recuperar />} />
+      <Route path="/restablecer" element={<Restablecer />} />
       <Route element={<RutaProtegida />}>
         <Route element={<Estructura />}>
           <Route index element={<Articulos />} />

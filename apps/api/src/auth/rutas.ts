@@ -4,6 +4,7 @@ import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
 import { permisosDe, tienePermiso, type Permiso } from "@evaristo/compartido/permisos";
 import { CLAVE_MAXIMA, hashearClave, hashFalso, problemaDeClave, verificarClave } from "./clave.js";
+import { DURACION_RECUPERACION_MS, ESPERA_ENTRE_PEDIDOS_MS, type EnviarRecuperacion } from "./recuperacion.js";
 import type { Repositorio, Rol, UsuarioFila } from "./repositorio.js";
 
 // Ingreso, sesiones y roles del panel.
@@ -40,6 +41,13 @@ export interface OpcionesAuth {
   /** Intentos fallidos de ingreso permitidos por dirección en la ventana. */
   limiteIngresos?: { ventanaMs: number; max: number };
   ahora?: () => Date;
+  /** Recuperación de contraseña: cómo se manda el enlace (sin esto, responde 503), la base de la dirección y el límite por dirección IP. */
+  recuperacion?: {
+    enviar?: EnviarRecuperacion | undefined;
+    /** Por ejemplo https://evaristocultural.com.ar. Por defecto, SITIO_URL; sin ella, el origen del pedido. */
+    base?: string | undefined;
+    limite?: { ventanaMs: number; max: number };
+  };
 }
 
 const hashDelToken = (token: string): string => createHash("sha256").update(token).digest("hex");
@@ -94,7 +102,7 @@ export const protegerOrigen: RequestHandler = (req, res, next) => {
   next();
 };
 
-export function crearAuth({ repo, seguro, limiteIngresos = { ventanaMs: 15 * 60 * 1000, max: 10 }, ahora = () => new Date() }: OpcionesAuth) {
+export function crearAuth({ repo, seguro, limiteIngresos = { ventanaMs: 15 * 60 * 1000, max: 10 }, ahora = () => new Date(), recuperacion = {} }: OpcionesAuth) {
   const atributosCookie = (maxAgeSeg: number) => `Path=/api; HttpOnly; SameSite=Strict; Max-Age=${maxAgeSeg}${seguro ? "; Secure" : ""}`;
 
   /** Si hay una sesión vigente, deja el usuario en req.usuario. No corta el pedido. */
@@ -269,6 +277,120 @@ export function crearAuth({ repo, seguro, limiteIngresos = { ventanaMs: 15 * 60 
       await repo.borrarSesionesDeUsuario(usuario.id, req.sesionHash);
       res.setHeader("Cache-Control", "no-store");
       res.json({ estado: "ok", usuario: paraElPanel({ ...req.usuario!, debeCambiarClave: false }) });
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  // ---------- Recuperación de contraseña (auth/recuperacion.ts) ----------
+  const enviarRecuperacion = recuperacion.enviar;
+  const limiteRecuperacion = recuperacion.limite ?? { ventanaMs: 15 * 60 * 1000, max: 5 };
+  const RecuperarSchema = z.object({ email: z.string().trim().toLowerCase().email().max(255) }).strict();
+  const TOKEN = z.string().regex(/^[A-Za-z0-9_-]{43}$/);
+  const RestablecerSchema = z.object({ token: TOKEN, clave: z.string().max(CLAVE_MAXIMA + 1) }).strict();
+  const limitarRecuperacion = (max: number) =>
+    rateLimit({
+      windowMs: limiteRecuperacion.ventanaMs,
+      limit: max,
+      standardHeaders: "draft-8",
+      legacyHeaders: false,
+      handler: (_req: Request, res: Response) => error(res, 429, "Hubo demasiados pedidos. Esperá unos minutos y probá de nuevo."),
+    });
+  const limitePedidos = limitarRecuperacion(limiteRecuperacion.max);
+  const limiteRestablecer = limitarRecuperacion(limiteRecuperacion.max * 2);
+  const enlaceInvalido = (res: Response): void => {
+    res.status(400).json({ estado: "error", codigo: "enlace_invalido", mensaje: "El enlace no sirve: venció, ya se usó o está incompleto. Pedí uno nuevo." });
+  };
+  /** La base de la dirección del enlace: la de las opciones, SITIO_URL o el origen del pedido. Sin barra final. */
+  const baseEnlace = (req: Request): string => {
+    const configurada = recuperacion.base ?? process.env["SITIO_URL"];
+    const base = configurada?.trim() && /^https?:\/\/[^/\s]+/i.test(configurada.trim()) ? configurada.trim() : `${req.protocol}://${req.get("host") ?? ""}`;
+    return base.replace(/\/+$/, "");
+  };
+  /** El enlace de recuperación, si existe, no venció, no se usó y la persona sigue activa. */
+  const recuperacionVigente = async (token: string) => {
+    const fila = await repo.recuperacionPorHash(hashDelToken(token));
+    return fila && !fila.usadoEn && fila.venceEn > ahora() && fila.usuario.activo ? fila : null;
+  };
+
+  // Siempre la misma respuesta, exista o no la cuenta (no se revela qué emails tienen usuario). El correo se manda sin esperarlo,
+  // así la respuesta tarda lo mismo en los dos casos.
+  router.post("/recuperar", limitePedidos, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      if (!enviarRecuperacion) {
+        error(res, 503, "La recuperación por correo no está disponible. Pedile a un administrador que te ponga una contraseña provisoria.");
+        return;
+      }
+      const datos = RecuperarSchema.safeParse(req.body);
+      if (!datos.success) {
+        error(res, 400, "Escribí un email válido.");
+        return;
+      }
+      const usuario = await repo.usuarioPorEmail(datos.data.email);
+      if (usuario?.activo) {
+        const cuando = ahora();
+        const ultima = await repo.ultimaRecuperacionDe(usuario.id);
+        if (!ultima || cuando.getTime() - ultima.getTime() >= ESPERA_ENTRE_PEDIDOS_MS) {
+          await repo.borrarRecuperacionesVencidas(cuando);
+          const token = randomBytes(32).toString("base64url");
+          await repo.crearRecuperacion(hashDelToken(token), usuario.id, new Date(cuando.getTime() + DURACION_RECUPERACION_MS));
+          const enlace = `${baseEnlace(req)}/admin/restablecer#${token}`;
+          void enviarRecuperacion({ email: usuario.email, nombre: usuario.nombre }, enlace).catch((e: unknown) => {
+            console.error("Recuperación de contraseña: no se pudo mandar el correo.", e instanceof Error ? e.message : e);
+          });
+        }
+      }
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ estado: "ok" });
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  // Para que el panel avise apenas se abre el enlace si ya no sirve (antes de que la persona escriba la contraseña).
+  router.post("/restablecer/verificar", limiteRestablecer, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const datos = z.object({ token: TOKEN }).strict().safeParse(req.body);
+      if (!datos.success || !(await recuperacionVigente(datos.data.token))) {
+        enlaceInvalido(res);
+        return;
+      }
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ estado: "ok" });
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  router.post("/restablecer", limiteRestablecer, async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const datos = RestablecerSchema.safeParse(req.body);
+      if (!datos.success) {
+        if (!TOKEN.safeParse((req.body as { token?: unknown } | undefined)?.token).success) enlaceInvalido(res);
+        else error(res, 400, "Escribí la contraseña nueva.");
+        return;
+      }
+      const fila = await recuperacionVigente(datos.data.token);
+      if (!fila) {
+        enlaceInvalido(res);
+        return;
+      }
+      // Antes de gastar el enlace: una contraseña que no sirve no lo usa.
+      const problema = problemaDeClave(datos.data.clave);
+      if (problema) {
+        error(res, 400, problema);
+        return;
+      }
+      if (!(await repo.usarRecuperacion(fila.id, ahora()))) {
+        enlaceInvalido(res);
+        return;
+      }
+      await repo.cambiarClave(fila.usuario.id, await hashearClave(datos.data.clave), false);
+      await repo.borrarRecuperacionesDeUsuario(fila.usuario.id);
+      // Si alguien había entrado con la contraseña vieja, queda afuera.
+      await repo.borrarSesionesDeUsuario(fila.usuario.id);
+      res.setHeader("Cache-Control", "no-store");
+      res.json({ estado: "ok" });
     } catch (e) {
       next(e);
     }

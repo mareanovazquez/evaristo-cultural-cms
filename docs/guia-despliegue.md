@@ -137,12 +137,14 @@ En el servidor (pide `CLAVE_ESQUEMA`):
 
 ```bash
 mysql --host=127.0.0.1 --port=3308 --user=evaristo --password --default-character-set=utf8mb4 evaristo_cms < /tmp/evaristo_cms-para-servidor.sql
-cd /srv/evaristo/app && sudo -u evaristo -H npm run db:estado        # «Database schema is up to date!» con las 12 migraciones
+cd /srv/evaristo/app && sudo -u evaristo -H npm run db:estado        # «Database schema is up to date!»
 mysql --host=127.0.0.1 --port=3308 --user=evaristo --password -e "SELECT estado, COUNT(*) FROM evaristo_cms.articulos GROUP BY estado"
 rm /tmp/evaristo_cms-para-servidor.sql
 ```
 
 Tiene que dar 2.637 publicados y 17 borradores (más lo que se haya cargado en la Lenovo después del 11/11/2026).
+
+Si `db:estado` dice que hay migraciones sin aplicar (por ejemplo `recuperacion_clave`, la de la recuperación de contraseña, si no se aplicó a la real de la Lenovo antes del volcado), aplicarlas ahora con `db:deploy` y el usuario de estructura, como en el paso 10.
 
 **Las imágenes.** En la Lenovo, primero el manifiesto (huellas SHA-256 de cada archivo) y después la carpeta:
 

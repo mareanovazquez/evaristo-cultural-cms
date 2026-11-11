@@ -42,7 +42,7 @@ CMS propio de la revista Evaristo Cultural, pensado para reemplazar el WordPress
 | `NODE_ENV` | Con `production` la cookie de sesión lleva `Secure` y el sitio y el panel mandan `Strict-Transport-Security` (HSTS). |
 | `TRUST_PROXY` | Proxies de confianza delante del servidor: un número (los que hay entre el servidor y quien visita, por ejemplo `1`), o una lista que Express entienda (`loopback`, `10.0.0.0/8`). Vacío: ninguno. Hace falta cuando se despliega detrás de un balanceador, para que el límite de intentos de ingreso cuente la dirección real de cada visitante. `true` no se acepta. |
 | `PRUEBA_LAYOUT` | Con `1`, habilita `/prueba-layout/` fuera de `astro dev` (página temporal de pruebas). |
-| `SMTP_HOST` | Servidor de correo saliente del hosting (formulario de contacto, `/contacto/`). Con él, los mensajes se mandan de verdad y hacen falta `CONTACTO_DESTINO` y `CORREO_REMITENTE`. Sin él: en desarrollo el mensaje se anota en la consola del servidor; en producción, `/api/contacto` responde 503. Una configuración incompleta corta el arranque con un mensaje claro. |
+| `SMTP_HOST` | Servidor de correo saliente del hosting (formulario de contacto, `/contacto/`, y recuperación de contraseña del panel). Con él, los mensajes se mandan de verdad y hacen falta `CONTACTO_DESTINO` y `CORREO_REMITENTE`. Sin él: en desarrollo el mensaje se anota en la consola del servidor; en producción, `/api/contacto` responde 503. Una configuración incompleta corta el arranque con un mensaje claro. |
 | `SMTP_PUERTO` | Puerto del SMTP (465 por defecto). |
 | `SMTP_SEGURO` | `true` o `false`: TLS desde el principio. Por defecto, `true` con el 465 y `false` con otro (por ejemplo 587); sin TLS desde el principio se exige STARTTLS igual. |
 | `SMTP_USUARIO`, `SMTP_CLAVE` | Usuario y clave del SMTP (van juntos). Solo en el `.env`. |
@@ -262,10 +262,10 @@ Después abrir:
 | `npm run test:admin-clasificacion` | Secciones y categorías del panel contra `evaristo_cms_dev`: permisos, direcciones con redirección, orden del menú (mirando el sitio), eliminar y unir (crea y borra datos temporales y deja el orden como estaba). |
 | `npm run test:admin-autores` | Autores del panel contra `evaristo_cms_dev`: permisos, bio, redes, foto, dirección con redirección, eliminar y unir (crea y borra datos temporales). |
 | `npm run test:admin-usuarios` | Usuarios, roles y propiedad de los artículos contra `evaristo_cms_dev` (crea y borra usuarios, fichas y artículos temporales). |
-| `npm run test:auth` | Pruebas de la autenticación (sin base). |
+| `npm run test:auth` | Pruebas de la autenticación y de la recuperación de contraseña (sin base). |
 | `npm run test:head` | El `<head>` para buscadores y redes (dirección canónica, descripción, imagen para Open Graph) y la redirección de las páginas sin barra final (sin base). |
 | `npm run test:contacto` | Formulario de contacto: validación, ruta, origen, límite, trampa y el correo que arma nodemailer (sin base ni correo). |
-| `npm run test:auth-base` | Ingreso y sesiones contra `evaristo_cms_dev` (crea y borra un usuario temporal). |
+| `npm run test:auth-base` | Ingreso, sesiones y recuperación de contraseña contra `evaristo_cms_dev` (crea y borra un usuario temporal). |
 | `npm run test:admin-articulos` | Listado de artículos del panel contra `evaristo_cms_dev` (crea y borra un usuario temporal). |
 | `npm run test:admin-edicion` | Edición de artículos del panel contra `evaristo_cms_dev` (crea y borra datos temporales; guarda los 35 como borrador de cambios sin alterar lo publicado). |
 | `npm run test:admin-imagenes` | Biblioteca de imágenes del panel (`GET /api/admin/imagenes`) contra `evaristo_cms_dev` (solo lee). |

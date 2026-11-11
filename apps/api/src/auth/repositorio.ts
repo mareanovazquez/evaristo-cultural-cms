@@ -18,6 +18,13 @@ export interface SesionFila {
   usuario: UsuarioFila;
 }
 
+export interface RecuperacionFila {
+  id: number;
+  venceEn: Date;
+  usadoEn: Date | null;
+  usuario: UsuarioFila;
+}
+
 /** Lo que la autenticación necesita de la base. Se inyecta para poder probarla sin base de datos. */
 export interface Repositorio {
   usuarioPorEmail(email: string): Promise<UsuarioFila | null>;
@@ -32,6 +39,15 @@ export interface Repositorio {
   sesionPorHash(tokenHash: string): Promise<SesionFila | null>;
   borrarSesion(tokenHash: string): Promise<void>;
   borrarSesionesVencidas(ahora: Date): Promise<number>;
+  // Recuperación de contraseña (auth/recuperacion.ts)
+  crearRecuperacion(tokenHash: string, usuarioId: number, venceEn: Date): Promise<void>;
+  /** Cuándo pidió esta persona el último enlace (para no mandar correos seguidos). */
+  ultimaRecuperacionDe(usuarioId: number): Promise<Date | null>;
+  recuperacionPorHash(tokenHash: string): Promise<RecuperacionFila | null>;
+  /** Marca el enlace como usado si todavía no lo estaba. false: ya se había usado (dos pedidos a la vez). */
+  usarRecuperacion(id: number, cuando: Date): Promise<boolean>;
+  borrarRecuperacionesDeUsuario(usuarioId: number): Promise<number>;
+  borrarRecuperacionesVencidas(ahora: Date): Promise<number>;
 }
 
 const seleccionUsuario = { id: true, email: true, nombre: true, rol: true, activo: true, debeCambiarClave: true, passwordHash: true } as const;
@@ -59,5 +75,15 @@ export function repositorioPrisma(prisma: PrismaClient): Repositorio {
       await prisma.sesion.deleteMany({ where: { tokenHash } });
     },
     borrarSesionesVencidas: async (ahora) => (await prisma.sesion.deleteMany({ where: { venceEn: { lt: ahora } } })).count,
+    crearRecuperacion: async (tokenHash, usuarioId, venceEn) => {
+      await prisma.recuperacionClave.create({ data: { tokenHash, usuarioId, venceEn }, select: { id: true } });
+    },
+    ultimaRecuperacionDe: async (usuarioId) =>
+      (await prisma.recuperacionClave.findFirst({ where: { usuarioId }, orderBy: { creadoEn: "desc" }, select: { creadoEn: true } }))?.creadoEn ?? null,
+    recuperacionPorHash: (tokenHash) =>
+      prisma.recuperacionClave.findUnique({ where: { tokenHash }, select: { id: true, venceEn: true, usadoEn: true, usuario: { select: seleccionUsuario } } }),
+    usarRecuperacion: async (id, cuando) => (await prisma.recuperacionClave.updateMany({ where: { id, usadoEn: null }, data: { usadoEn: cuando } })).count === 1,
+    borrarRecuperacionesDeUsuario: async (usuarioId) => (await prisma.recuperacionClave.deleteMany({ where: { usuarioId } })).count,
+    borrarRecuperacionesVencidas: async (ahora) => (await prisma.recuperacionClave.deleteMany({ where: { venceEn: { lt: ahora } } })).count,
   };
 }

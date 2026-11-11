@@ -7,6 +7,7 @@ import { obtenerClientePrisma, type PrismaClient } from "@evaristo/compartido/db
 import { tienePermiso } from "@evaristo/compartido/permisos";
 import { crearAuth, type OpcionesAuth } from "./auth/rutas.js";
 import { repositorioPrisma } from "./auth/repositorio.js";
+import { recuperacionDesdeEntorno } from "./auth/recuperacion.js";
 import { crearRutasAdminArticulos } from "./admin/articulos.js";
 import { crearRutasAdminAutores } from "./admin/autores.js";
 import { crearRutasAdminBanner } from "./admin/banner.js";
@@ -77,7 +78,13 @@ export function crearApp(prisma: PrismaClient = obtenerClientePrisma(), opciones
   // (2) API: cabeceras de seguridad, JSON con límite (un cuerpo grande de artículo ronda los 120 KB) e ingreso/sesiones.
   app.use("/api", helmet());
   app.use("/api", express.json({ limit: "2mb" }));
-  const auth = crearAuth({ repo: repositorioPrisma(prisma), seguro: process.env["NODE_ENV"] === "production", ...opciones.auth });
+  const auth = crearAuth({
+    repo: repositorioPrisma(prisma),
+    seguro: process.env["NODE_ENV"] === "production",
+    // Recuperación de contraseña: por correo con el SMTP del .env (en desarrollo, sin SMTP, el enlace va a la consola).
+    recuperacion: { enviar: recuperacionDesdeEntorno() },
+    ...opciones.auth,
+  });
   app.use("/api/auth", auth.router);
   // Rutas del panel: hace falta una sesión, que el pedido venga del propio sitio y que la persona ya tenga una contraseña propia.
   app.use("/api/admin", auth.protegerOrigen, auth.cargarSesion, auth.exigirSesion, auth.exigirClaveAlDia);
