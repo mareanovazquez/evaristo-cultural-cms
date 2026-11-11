@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { urlDeConexion } from "../src/conexion-local.ts";
 import { PrismaClient } from "../src/generated/prisma/client.js";
 
 config({ path: fileURLToPath(new URL("../../../.env", import.meta.url)), quiet: true });
@@ -42,7 +43,7 @@ if (!urlBase) {
   process.exit(1);
 }
 
-const prisma = new PrismaClient({ adapter: new PrismaMariaDb(urlBase) });
+const prisma = new PrismaClient({ adapter: new PrismaMariaDb(urlDeConexion(urlBase)) });
 const diferencias: string[] = [];
 
 try {

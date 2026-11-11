@@ -4,6 +4,7 @@
 // La conexión de escritura se abre con abrirConexionEscritura(destino), que recibe uno de los dos destinos constantes de destinos.ts (la
 // identidad del objeto, no una copia con los mismos valores). De la variable DATABASE_URL solo se toman el usuario y la clave.
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { esHostLocal } from "../../../src/conexion-local.ts";
 import { Prisma, PrismaClient } from "../../../src/generated/prisma/client.js";
 import type { DocNode } from "../../../src/conversor/types.ts";
 import { validateArticleBodyDetallado } from "../../../src/schema/validate.ts";
@@ -99,7 +100,7 @@ export interface ConexionLectura {
 export async function abrirConexionLectura(destino: unknown): Promise<ConexionLectura> {
   const elegido = elegirDestinoLectura(destino);
   const { user, password } = credencialesDePruebas();
-  const prisma = new PrismaClient({ adapter: new PrismaMariaDb({ host: elegido.host, port: elegido.puerto, user, password, database: elegido.base, connectionLimit: 2, initSql: SOLO_LECTURA }) });
+  const prisma = new PrismaClient({ adapter: new PrismaMariaDb({ host: elegido.host, port: elegido.puerto, user, password, database: elegido.base, connectionLimit: 2, initSql: SOLO_LECTURA, allowPublicKeyRetrieval: esHostLocal(elegido.host) }) });
   const bd: Consulta = (sql, ...p) => consultar(prisma, sql, ...p);
   try {
     const [f] = await bd("SELECT @@port AS puerto, DATABASE() AS base, @@version AS version, @@session.transaction_read_only AS ro");

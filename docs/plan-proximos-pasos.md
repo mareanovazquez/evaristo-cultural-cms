@@ -39,7 +39,7 @@
 
 Secuencia de la Etapa 3 (decisión 87, con la ceremonia de la decisión 50): respaldo; `db:deploy` y `db:sembrar` contra la real; intento en seco con `--esperar-sobrescribir=0` para confirmar N (en el ensayo, 37); commit aparte con el interruptor en `true`; Mariano corre en su terminal `migrar:escribir --todos --wordpress=evaristo_lectura_nueva --originales=<...> --mapa=<...> --avatares=<...> --esperar-articulos=2654 --sobrescribir --esperar-sobrescribir=N --limpiar-taxonomia`; `verificar:escritura --todos --wordpress=evaristo_lectura_nueva` con el mapa y los avatares; `git revert` del interruptor; borrar los respaldos de `listarSeccionesMenu`, `leerTopbar` y `leerBanner` en el sitio; recién ahí el push.
 
-**Antes de seguir:** levantar la 3307 y la 3308 y comprobarlas con `Test-NetConnection`. Si Prisma da `pool timeout` después de reiniciar MySQL84, es la caché de autenticación fría (ver `pendientes.md`, sección 9).
+**Antes de seguir:** levantar la 3307 y la 3308 y comprobarlas con `Test-NetConnection`. Desde el 11/11/2026 (decisión 91), Prisma conecta solo después de reiniciar MySQL84; si igual diera `pool timeout`, revisar que `DATABASE_URL` apunte a 127.0.0.1.
 
 ## Dónde quedamos (4/11/2026, pausa a mitad de la Etapa 1)
 

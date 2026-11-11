@@ -43,6 +43,7 @@
     "test:migracion-db": "tsx scripts/migracion/tests/test-db-base.ts && tsx scripts/migracion/tests/test-db-articulos.ts && tsx scripts/migracion/tests/test-db-reescritura.ts && tsx scripts/migracion/tests/test-db-cli.ts && tsx scripts/migracion/tests/test-db-incremental.ts && tsx scripts/migracion/tests/test-db-verificar.ts && tsx scripts/migracion/tests/test-db-limpieza.ts",
     "test:migracion-flujo": "tsx scripts/migracion/tests/test-flujo.ts",
     "test:render": "tsx src/render/tests/test-render.ts",
+    "test:conexion-local": "tsx src/tests/test-conexion-local.ts",
     "test:render-35": "tsx scripts/render/test-render-35.ts",
     "render:preview-35": "tsx scripts/render/vista-previa-35.ts",
     "test:conversor": "tsx src/conversor/tests/test.ts && tsx src/conversor/tests/test-titulos.ts && tsx src/conversor/tests/test-integracion-titulos.ts && tsx src/conversor/tests/test-taxonomia.ts"

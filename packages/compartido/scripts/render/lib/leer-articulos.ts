@@ -4,6 +4,7 @@
 import { fileURLToPath } from "node:url";
 import { config } from "dotenv";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { esHostLocal } from "../../../src/conexion-local.ts";
 import { PrismaClient } from "../../../src/generated/prisma/client.js";
 import type { JSONNode } from "../../../src/schema/validate.ts";
 
@@ -43,6 +44,7 @@ export async function leerArticulosYDimensiones(): Promise<DatosLeidos> {
     connectionLimit: 1,
     initSql: "SET SESSION TRANSACTION READ ONLY",
     connectTimeout: 5000,
+    allowPublicKeyRetrieval: esHostLocal(url.hostname), // decisión 91
   });
   const prisma = new PrismaClient({ adapter });
   try {

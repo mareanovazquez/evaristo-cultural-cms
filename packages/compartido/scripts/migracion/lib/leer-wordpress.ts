@@ -3,6 +3,7 @@
 // `consultar()`, que rechaza todo lo que no sea un único SELECT. Este módulo no arma registros ni decide nada de negocio:
 // solo ejecuta las consultas y devuelve las filas con los mismos nombres de campo de siempre.
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { esHostLocal } from "../../../src/conexion-local.ts";
 import { PrismaClient } from "../../../src/generated/prisma/client.js";
 import { guardaDestino } from "./destinos.ts";
 import type { CategoriaEnBase, SeccionEnBase } from "./taxonomia-vieja.ts";
@@ -38,7 +39,7 @@ function clienteCms(): PrismaClient {
   return new PrismaClient({
     adapter: new PrismaMariaDb({
       host: u.hostname, port: Number(u.port), user: decodeURIComponent(u.username), password: decodeURIComponent(u.password),
-      database: u.pathname.slice(1), connectionLimit: 2, initSql: SOLO_LECTURA,
+      database: u.pathname.slice(1), connectionLimit: 2, initSql: SOLO_LECTURA, allowPublicKeyRetrieval: esHostLocal(u.hostname),
     }),
   });
 }

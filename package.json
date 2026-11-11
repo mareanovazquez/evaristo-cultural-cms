@@ -47,6 +47,7 @@
     "test:editor": "npm run test:editor --workspace=@evaristo/panel",
     "test:pantalla": "npm run test:pantalla --workspace=@evaristo/panel",
     "test:render": "npm run test:render --workspace=@evaristo/compartido",
+    "test:conexion-local": "npm run test:conexion-local --workspace=@evaristo/compartido",
     "test:render-35": "npm run test:render-35 --workspace=@evaristo/compartido",
     "render:preview-35": "npm run render:preview-35 --workspace=@evaristo/compartido --",
     "db:probar": "npm run db:probar --workspace=@evaristo/compartido",

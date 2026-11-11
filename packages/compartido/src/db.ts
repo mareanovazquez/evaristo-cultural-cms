@@ -1,4 +1,5 @@
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { urlDeConexion } from "./conexion-local.js";
 import { Prisma, PrismaClient } from "./generated/prisma/client.js";
 
 export { PrismaClient, Prisma };
@@ -7,12 +8,14 @@ export type { PruebaConexion } from "./generated/prisma/client.js";
 // Arma el cliente de Prisma con el adaptador de MariaDB/MySQL.
 // Lee DATABASE_URL de process.env: quien lo llame tiene que haber cargado el .env antes
 // (por ejemplo con `node --env-file`).
+// Con la base en la misma máquina, la conexión pide la clave pública RSA si hace falta: así el sitio vuelve solo después de
+// reiniciar MySQL (decisión 91, ver conexion-local.ts).
 export function crearClientePrisma(): PrismaClient {
   const url = process.env["DATABASE_URL"];
   if (!url) {
     throw new Error("Falta DATABASE_URL en el entorno");
   }
-  return new PrismaClient({ adapter: new PrismaMariaDb(url) });
+  return new PrismaClient({ adapter: new PrismaMariaDb(urlDeConexion(url)) });
 }
 
 const claveClienteUnico = Symbol.for("evaristo.prisma");

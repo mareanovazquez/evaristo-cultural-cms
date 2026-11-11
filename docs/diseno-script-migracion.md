@@ -87,7 +87,7 @@ Del 19 y 20/10/2026 (numeración del plan):
 
 | # | Tema | Decisión |
 |---|---|---|
-| 46 | Clave RSA | `allowPublicKeyRetrieval` solo en la conexión de escritura (host fijo 127.0.0.1). Verificado con la caché fría. |
+| 46 | Clave RSA | `allowPublicKeyRetrieval` solo en la conexión de escritura (host fijo 127.0.0.1). Verificado con la caché fría. Desde el 11/11/2026 (decisión 91), también en las conexiones de lectura al 3308, siempre que el host sea local (`esHostLocal`). |
 | 47 | Flujo inyectable solo desde tests | Ver sección 1. |
 | 48 | `test:migracion-flujo` | Suite aparte de 7 casos contra `evaristo_cms_test` con las credenciales de `evaristo_migracion` (ver sección 8). |
 | 49 | Permisos de `evaristo_migracion` | Sobre `evaristo_cms` y `evaristo_cms_test`; recomendado dejarlo (a confirmar antes de la fase 7). |
