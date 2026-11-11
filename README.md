@@ -42,6 +42,12 @@ CMS propio de la revista Evaristo Cultural, pensado para reemplazar el WordPress
 | `NODE_ENV` | Con `production` la cookie de sesión lleva `Secure` y el sitio y el panel mandan `Strict-Transport-Security` (HSTS). |
 | `TRUST_PROXY` | Proxies de confianza delante del servidor: un número (los que hay entre el servidor y quien visita, por ejemplo `1`), o una lista que Express entienda (`loopback`, `10.0.0.0/8`). Vacío: ninguno. Hace falta cuando se despliega detrás de un balanceador, para que el límite de intentos de ingreso cuente la dirección real de cada visitante. `true` no se acepta. |
 | `PRUEBA_LAYOUT` | Con `1`, habilita `/prueba-layout/` fuera de `astro dev` (página temporal de pruebas). |
+| `SMTP_HOST` | Servidor de correo saliente del hosting (formulario de contacto, `/contacto/`). Con él, los mensajes se mandan de verdad y hacen falta `CONTACTO_DESTINO` y `CORREO_REMITENTE`. Sin él: en desarrollo el mensaje se anota en la consola del servidor; en producción, `/api/contacto` responde 503. Una configuración incompleta corta el arranque con un mensaje claro. |
+| `SMTP_PUERTO` | Puerto del SMTP (465 por defecto). |
+| `SMTP_SEGURO` | `true` o `false`: TLS desde el principio. Por defecto, `true` con el 465 y `false` con otro (por ejemplo 587); sin TLS desde el principio se exige STARTTLS igual. |
+| `SMTP_USUARIO`, `SMTP_CLAVE` | Usuario y clave del SMTP (van juntos). Solo en el `.env`. |
+| `CONTACTO_DESTINO` | A quién le llegan los mensajes del formulario de contacto (el correo de la editorial). |
+| `CORREO_REMITENTE` | Quién manda los correos del sitio: una dirección del dominio, por ejemplo `Evaristo Cultural <web@evaristocultural.com.ar>`. «Responder» le contesta a quien escribió (Reply-To). |
 
 ## Crear las bases en MySQL
 

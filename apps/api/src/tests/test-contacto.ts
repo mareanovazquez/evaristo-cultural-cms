@@ -6,7 +6,8 @@ import { request, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { CONTACTO_LIMITES, errorDeCampo, esEstadoContacto, validarContacto, type DatosContacto } from "@evaristo/compartido/contacto";
 import { crearApp } from "../app.js";
-import { armarCorreoContacto, envioDesdeEntorno, type OpcionesContacto } from "../contacto.js";
+import nodemailer from "nodemailer";
+import { armarCorreoContacto, crearEnvioSmtp, envioDesdeEntorno, type OpcionesContacto } from "../contacto.js";
 
 let ok = 0;
 const pruebas: Array<[string, () => Promise<void> | void]> = [];
@@ -195,9 +196,41 @@ t("armarCorreoContacto: Reply-To a quien escribió y el nombre en una sola líne
   assert.ok(c.text.startsWith("Hola.\nSegundo renglón.\n"));
   assert.match(c.text, /el 11 de noviembre de 2026 a las 15:30\.\n/);
 });
-t("envioDesdeEntorno: en producción no hay envío (hasta tener SMTP); en desarrollo, la consola", () => {
+t("envioDesdeEntorno: sin SMTP_HOST, en producción no hay envío; en desarrollo, la consola", () => {
   assert.equal(envioDesdeEntorno({ NODE_ENV: "production" }), undefined);
   assert.equal(typeof envioDesdeEntorno({}), "function");
+});
+t("envioDesdeEntorno: con SMTP_HOST arma el envío (sin conectarse todavía)", () => {
+  const smtp = { SMTP_HOST: "smtp.ejemplo.com", SMTP_USUARIO: "web@ejemplo.com", SMTP_CLAVE: "x", CONTACTO_DESTINO: "revista@ejemplo.com", CORREO_REMITENTE: "web@ejemplo.com" };
+  assert.equal(typeof envioDesdeEntorno({ ...smtp, NODE_ENV: "production" }), "function");
+  assert.equal(typeof envioDesdeEntorno({ ...smtp, SMTP_PUERTO: "587" }), "function");
+});
+t("envioDesdeEntorno: una configuración incompleta o mal escrita corta el arranque", () => {
+  const smtp = { SMTP_HOST: "smtp.ejemplo.com", CONTACTO_DESTINO: "revista@ejemplo.com", CORREO_REMITENTE: "web@ejemplo.com" };
+  assert.throws(() => envioDesdeEntorno({ ...smtp, CONTACTO_DESTINO: "" }), /CONTACTO_DESTINO/);
+  assert.throws(() => envioDesdeEntorno({ ...smtp, CORREO_REMITENTE: " " }), /CORREO_REMITENTE/);
+  assert.throws(() => envioDesdeEntorno({ ...smtp, SMTP_PUERTO: "abc" }), /SMTP_PUERTO/);
+  assert.throws(() => envioDesdeEntorno({ ...smtp, SMTP_SEGURO: "si" }), /SMTP_SEGURO/);
+  assert.throws(() => envioDesdeEntorno({ ...smtp, SMTP_USUARIO: "web@ejemplo.com" }), /SMTP_USUARIO y SMTP_CLAVE/);
+});
+t("crearEnvioSmtp: el correo que arma nodemailer (sin mandarlo) lleva los encabezados bien y el nombre no cuela encabezados", async () => {
+  const transporte = nodemailer.createTransport({ streamTransport: true, buffer: true, newline: "unix" });
+  let crudo = "";
+  const envio = crearEnvioSmtp(
+    { destino: "revista@evaristo.example", remitente: "Evaristo Cultural <web@evaristo.example>" },
+    { sendMail: async (m) => (crudo = String(((await transporte.sendMail(m)) as { message: Buffer }).message)) },
+    () => new Date("2026-11-11T18:30:00Z"),
+  );
+  await envio({ nombre: "José Pérez\r\nBcc: espia@x.com", correo: "jose@ejemplo.com", mensaje: "Hola, ¿cómo están?\nSaludos." });
+  const [plegados = "", cuerpo = ""] = crudo.split("\n\n");
+  // Los encabezados largos van partidos en varios renglones (los que siguen empiezan con espacio): se unen para revisarlos.
+  const encabezados = plegados.replace(/\n[ \t]+/g, " ");
+  assert.match(encabezados, /^To: revista@evaristo\.example$/m);
+  assert.match(encabezados, /^From: Evaristo Cultural <web@evaristo\.example>$/m);
+  assert.match(encabezados, /^Reply-To: .+ <jose@ejemplo\.com>$/m);
+  assert.match(encabezados, /^Subject: =\?UTF-8\?/m, "el asunto con tildes va codificado");
+  assert.doesNotMatch(encabezados, /^Bcc:/im);
+  assert.match(cuerpo, /Hola, =C2=BFc=C3=B3mo est=C3=A1n\?|Hola, ¿cómo están\?/);
 });
 
 // ---------- Correr ----------

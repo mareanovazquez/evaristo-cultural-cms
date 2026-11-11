@@ -26,7 +26,7 @@
     "test:admin-banner": "tsx --env-file=../../.env src/tests/test-admin-banner-base.ts",
     "test:banner": "tsx --env-file=../../.env src/tests/test-banner-base.ts",
     "test:admin-sitio": "tsx --env-file=../../.env src/tests/test-admin-sitio-base.ts",
-    "test:admin-revision":"tsx --env-file=../../.env src/tests/test-admin-revision-base.ts",
+    "test:admin-revision": "tsx --env-file=../../.env src/tests/test-admin-revision-base.ts",
     "test:seguridad": "tsx --env-file=../../.env src/tests/test-seguridad-base.ts",
     "test:portada": "tsx --env-file=../../.env src/tests/test-portada-base.ts",
     "test:carrusel": "tsx --env-file=../../.env src/tests/test-carrusel-base.ts",
@@ -49,6 +49,7 @@
     "express-rate-limit": "8.7.1",
     "helmet": "8.3.0",
     "multer": "2.4.0",
+    "nodemailer": "10.2.1",
     "sharp": "0.35.5",
     "zod": "4.6.5"
   },

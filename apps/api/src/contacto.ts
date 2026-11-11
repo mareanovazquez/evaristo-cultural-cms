@@ -1,5 +1,6 @@
 import express, { type Request, type Response, type Router } from "express";
 import { rateLimit } from "express-rate-limit";
+import nodemailer from "nodemailer";
 import { validarContacto, type DatosContacto, type EstadoContacto } from "@evaristo/compartido/contacto";
 import { protegerOrigen } from "./auth/rutas.js";
 
@@ -10,8 +11,8 @@ import { protegerOrigen } from "./auth/rutas.js";
 //  - Trampa para robots: si viene el campo oculto «sitio» con algo, se contesta como si se hubiera mandado, sin mandar nada.
 //  - Con JavaScript, la página manda JSON y recibe JSON (200 ok, 400 datos, 429 límite, 502/503 error). Sin JavaScript, manda el
 //    formulario común y la respuesta es una redirección 303 a /contacto/?estado=enviado|datos|limite|error.
-//  - El envío es una función que se pasa desde afuera (EnviarContacto). Hoy, en desarrollo, se anota en la consola; el envío por SMTP
-//    llega con la dependencia de correo y los datos del hosting. En producción, sin envío configurado, la ruta responde 503.
+//  - El envío es una función que se pasa desde afuera (EnviarContacto). La de siempre sale de envioDesdeEntorno: por SMTP (nodemailer)
+//    si el .env tiene SMTP_HOST; si no, en desarrollo se anota en la consola y en producción la ruta responde 503.
 
 export type EnviarContacto = (datos: DatosContacto) => Promise<void>;
 
@@ -87,7 +88,7 @@ const unaLinea = (s: string): string => s.replace(/[\r\n\t]+/g, " ").replace(/\s
 
 /**
  * El correo que recibe la editorial. «Responder» le contesta a quien escribió (Reply-To). Los saltos de línea del nombre se sacan
- * (van en encabezados). Lo usa el envío por SMTP cuando llegue la dependencia de correo.
+ * (van en encabezados). Lo usa el envío por SMTP.
  */
 export function armarCorreoContacto(datos: DatosContacto, config: ConfigCorreoContacto, ahora: Date = new Date()) {
   const nombre = unaLinea(datos.nombre);
@@ -102,13 +103,60 @@ export function armarCorreoContacto(datos: DatosContacto, config: ConfigCorreoCo
   };
 }
 
-// ---------------------------------------------------------------- el envío según el entorno
+// ---------------------------------------------------------------- el envío
+
+/** Lo único que se usa de un transporte de nodemailer (así las pruebas pasan uno que no manda nada). */
+export interface TransporteCorreo {
+  sendMail(mensaje: ReturnType<typeof armarCorreoContacto>): Promise<unknown>;
+}
+
+/** El envío por SMTP: arma el correo y lo pasa al transporte. */
+export function crearEnvioSmtp(config: ConfigCorreoContacto, transporte: TransporteCorreo, ahora: () => Date = () => new Date()): EnviarContacto {
+  return async (datos) => {
+    await transporte.sendMail(armarCorreoContacto(datos, config, ahora()));
+  };
+}
 
 const anotarEnConsola: EnviarContacto = async (datos) => {
   console.log(`[contacto] Desarrollo: no se manda ningún correo. De ${unaLinea(datos.nombre)} <${datos.correo}>, ${datos.mensaje.length} caracteres.`);
 };
 
-/** El envío que corresponde al entorno: en desarrollo, a la consola; en producción, ninguno hasta que esté el SMTP (la ruta responde 503). */
+/**
+ * El envío que corresponde al entorno (variables del .env):
+ *   SMTP_HOST, SMTP_PUERTO (465 por defecto), SMTP_SEGURO (TLS desde el principio; por defecto, sí con el 465), SMTP_USUARIO, SMTP_CLAVE:
+ *     el servidor de correo del hosting. Con SMTP_HOST, se manda de verdad y hacen falta además:
+ *   CONTACTO_DESTINO: a quién le llegan los mensajes (el correo de la editorial).
+ *   CORREO_REMITENTE: quién los manda; una dirección del dominio del sitio (por ejemplo «Evaristo Cultural <web@…>»).
+ * Sin SMTP_HOST: en desarrollo, el mensaje se anota en la consola; en producción no hay envío y la ruta responde 503.
+ * Una configuración incompleta corta el arranque con un mensaje claro (mejor que descubrirlo cuando alguien escribe).
+ */
 export function envioDesdeEntorno(entorno: NodeJS.ProcessEnv = process.env): EnviarContacto | undefined {
-  return entorno["NODE_ENV"] === "production" ? undefined : anotarEnConsola;
+  const host = entorno["SMTP_HOST"]?.trim();
+  if (!host) return entorno["NODE_ENV"] === "production" ? undefined : anotarEnConsola;
+
+  const destino = entorno["CONTACTO_DESTINO"]?.trim();
+  const remitente = entorno["CORREO_REMITENTE"]?.trim();
+  if (!destino || !remitente) throw new Error("Con SMTP_HOST hacen falta CONTACTO_DESTINO (a quién le llegan los mensajes) y CORREO_REMITENTE (quién los manda).");
+  const puerto = Number(entorno["SMTP_PUERTO"]?.trim() || 465);
+  if (!Number.isInteger(puerto) || puerto <= 0 || puerto > 65535) throw new Error(`SMTP_PUERTO no es un puerto válido: «${entorno["SMTP_PUERTO"]}».`);
+  const seguroTexto = entorno["SMTP_SEGURO"]?.trim().toLowerCase();
+  if (seguroTexto && seguroTexto !== "true" && seguroTexto !== "false") throw new Error("SMTP_SEGURO tiene que ser true o false.");
+  const seguro = seguroTexto ? seguroTexto === "true" : puerto === 465;
+  const usuario = entorno["SMTP_USUARIO"]?.trim();
+  const clave = entorno["SMTP_CLAVE"];
+  if (Boolean(usuario) !== Boolean(clave)) throw new Error("SMTP_USUARIO y SMTP_CLAVE van juntos (o ninguno de los dos).");
+
+  const transporte = nodemailer.createTransport({
+    host,
+    port: puerto,
+    secure: seguro,
+    // Sin TLS desde el principio (587), igual se exige STARTTLS: la clave nunca viaja sin cifrar.
+    requireTLS: !seguro,
+    ...(usuario && clave ? { auth: { user: usuario, pass: clave } } : {}),
+    // Que un SMTP caído no deje colgado el pedido de quien escribe.
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000,
+  });
+  return crearEnvioSmtp({ destino, remitente }, transporte);
 }
