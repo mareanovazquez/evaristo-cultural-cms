@@ -24,6 +24,7 @@ Estado al 7/11/2026. Lo duradero de la fase 7. El plan con el que se llegó hast
 | — | Sitio sin los respaldos para la base vieja y letra capital desde el artículo | 7/11/2026 |
 | — | Las 10 imágenes del cuerpo que apuntaban a otros sitios, bajadas y guardadas; el píxel de Gmail del 552, quitado (90) | 7/11/2026 |
 | — | Paquete de garantía para la directora: `CMS-EVARISTO(ASSETS)\entrega-roxana-2026-11-11\` (copia de `wordpress.sql`, `uploads-completo.tar` y `lista-completa.tsv` del 31/10, hashes verificados, `LEEME.txt` con cómo restaurarlo en un WordPress nuevo y `SHA256SUMS.txt`). Mariano lo sube a Google Drive, compartido solo con ella | 11/11/2026 |
+| — | Copia navegable sin conexión para la directora (`copia:navegable`): `CMS-EVARISTO(ASSETS)\copia-navegable-2026-11-11\` y `copia-navegable-evaristo-cultural-2026-11-11.zip` (1,34 GB, 13.873 archivos). Los 2.637 publicados de 2.637, 3.783 páginas, 10.060 recursos, 0 enlaces rotos (revisados archivo por archivo), imágenes de hasta 1200 px, tipografías incluidas, sin buscador. «Pathfinder.jpg» está dañada en el origen y va como original | 11/11/2026 |
 
 **Resultado de la migración:** 2.619 artículos creados y 35 reescritos, 0 fallidos y 0 conflictos. La real quedó con:
 - 2.654 artículos (2.637 publicados y 17 borradores);
@@ -47,6 +48,7 @@ La limpieza borró 10 secciones y 3 categorías viejas. Verificación independie
 | `ensayo:preparar` y `ensayo:migrar` | Ensayo en `evaristo_cms_test` con una copia de la real |
 | `imagenes:externas` (`apps/api`) | Baja las imágenes externas de una lista fija revisada; ya no queda ninguna |
 | `npm run corpus` | El conversor sobre todo WordPress, en vivo |
+| `copia:navegable` (`apps/api`) con `--originales` y `--salida` (carpeta nueva) | Copia del sitio público que se abre desde el disco, sin servidor ni internet. Lee la real en solo lectura (como `test:humo`). Necesita `build:sitio`; después de reiniciar `MySQL84`, entrar una vez con el usuario `evaristo` (`pendientes.md`, sección 9). Unos 6 minutos |
 
 Al pegar comandos largos en PowerShell, la terminal puede cortarlos en varios renglones y ejecutar solo el primero. Conviene armar los argumentos en variables cortas (`$X = @(...)` y `npm run ... -- @X`), como se hizo en la migración.
 
