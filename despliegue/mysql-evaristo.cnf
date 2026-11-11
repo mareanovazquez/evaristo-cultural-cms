@@ -1,0 +1,17 @@
+# Configuración de MySQL 8.4 para el servidor. docs/guia-despliegue.md, paso 4.
+# Va en /etc/mysql/mysql.conf.d/evaristo.cnf (se lee después de la configuración del paquete). Después: sudo systemctl restart mysql
+[mysqld]
+# Solo la misma máquina: la base no se ve desde internet. Y en el 3308, como en la Lenovo: las herramientas y las pruebas del repo
+# exigen 127.0.0.1:3308, y con la base local Prisma vuelve solo después de un reinicio (decisión 91).
+bind-address = 127.0.0.1
+port = 3308
+mysqlx = OFF
+
+character-set-server = utf8mb4
+collation-server = utf8mb4_es_0900_ai_ci
+
+# Un artículo largo con su JSON ronda los 120 KB; el volcado inicial trae filas más grandes.
+max_allowed_packet = 64M
+
+# Para un VPS de 2 a 4 GB de RAM (la base entera ronda los 100 MB: entra en memoria). Con 4 GB se puede subir a 1G.
+innodb_buffer_pool_size = 512M

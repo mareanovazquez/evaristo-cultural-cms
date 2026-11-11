@@ -1,0 +1,30 @@
+# Caddy: HTTPS con Let's Encrypt (automático) y proxy al servidor de Node. docs/guia-despliegue.md, paso 8.
+# Va en /etc/caddy/Caddyfile. Después: sudo systemctl reload caddy
+#
+# - El dominio es evaristocultural.com.ar, sin www (como estaba en WordPress); www redirige ahí.
+# - Caddy pide y renueva el certificado solo, apenas el DNS apunta al servidor (puertos 80 y 443 abiertos).
+# - Le pasa a Node la dirección real de quien visita (X-Forwarded-For): por eso en el .env va TRUST_PROXY=1.
+# - El Host llega tal cual: el control de origen del panel y del formulario de contacto lo necesita.
+# - HSTS y las demás cabeceras de seguridad las pone la app (NODE_ENV=production).
+
+www.evaristocultural.com.ar {
+	redir https://evaristocultural.com.ar{uri} permanent
+}
+
+evaristocultural.com.ar {
+	encode zstd gzip
+
+	# Las imágenes que se suben desde el panel pesan hasta 10 MB (procesar-imagen.ts); algo de margen para el resto del pedido.
+	request_body {
+		max_size 15MB
+	}
+
+	reverse_proxy 127.0.0.1:3000
+
+	log {
+		output file /var/log/caddy/evaristo.log {
+			roll_size 20MiB
+			roll_keep 10
+		}
+	}
+}

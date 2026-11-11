@@ -52,6 +52,7 @@
     "render:preview-35": "npm run render:preview-35 --workspace=@evaristo/compartido --",
     "db:probar": "npm run db:probar --workspace=@evaristo/compartido",
     "db:deploy": "npm run db:deploy --workspace=@evaristo/compartido",
+    "db:estado": "npm run db:estado --workspace=@evaristo/compartido",
     "db:nueva": "npm run db:nueva --workspace=@evaristo/compartido --",
     "db:verificar": "npm run db:verificar --workspace=@evaristo/compartido",
     "build:panel": "npm run build --workspace=@evaristo/panel",

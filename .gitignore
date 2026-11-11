@@ -17,3 +17,5 @@ packages/compartido/posts.json
 
 # Las migraciones de Prisma sí se versionan
 !packages/compartido/prisma/migrations/**/*.sql
+# Y la plantilla de usuarios de MySQL del despliegue (sin claves)
+!despliegue/*.sql

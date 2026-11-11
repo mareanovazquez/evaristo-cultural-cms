@@ -1,0 +1,15 @@
+# Respaldo diario y prueba de la restauración. docs/guia-despliegue.md, paso 9. Lo dispara evaristo-respaldo.timer.
+# Va en /etc/systemd/system/. Para correrlo a mano: sudo systemctl start evaristo-respaldo && journalctl -u evaristo-respaldo -n 30
+# Si falla, queda en `systemctl --failed` y en el journal.
+
+[Unit]
+Description=Respaldo de Evaristo Cultural (base e imágenes subidas) y prueba de la restauración
+After=mysql.service
+Requires=mysql.service
+
+[Service]
+Type=oneshot
+ExecStart=/srv/evaristo/app/despliegue/respaldar.sh
+ExecStart=/srv/evaristo/app/despliegue/probar-restauracion.sh
+Nice=10
+IOSchedulingClass=idle

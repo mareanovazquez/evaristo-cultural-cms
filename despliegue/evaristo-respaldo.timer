@@ -1,0 +1,14 @@
+# Todos los días de madrugada (hora del servidor; conviene ponerlo en America/Argentina/Buenos_Aires). docs/guia-despliegue.md, paso 9.
+# Va en /etc/systemd/system/. Después: sudo systemctl daemon-reload && sudo systemctl enable --now evaristo-respaldo.timer
+# Persistent: si el servidor estaba apagado a esa hora, corre apenas arranca.
+
+[Unit]
+Description=Respaldo diario de Evaristo Cultural
+
+[Timer]
+OnCalendar=*-*-* 04:15:00
+RandomizedDelaySec=15min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

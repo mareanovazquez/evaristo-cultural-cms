@@ -296,6 +296,7 @@ evaristo-cultural-cms/
 │   ├── sitio/        # Sitio público (Astro)
 │   ├── panel/        # Panel de administración (React + Vite), servido en /admin
 │   └── api/          # Servidor único (Express 5): /api, /admin y el sitio de Astro
+├── despliegue/       # Servidor: systemd, Caddy, MySQL, respaldos y actualización (docs/guia-despliegue.md)
 └── packages/
     └── compartido/   # Tipos, editor, renderizador, validador, conversor y schema de Prisma
 ```

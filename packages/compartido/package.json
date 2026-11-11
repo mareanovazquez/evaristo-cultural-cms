@@ -25,6 +25,7 @@
     "db:migrate": "prisma migrate dev",
     "db:probar": "tsx src/db-probar.ts",
     "db:deploy": "prisma migrate deploy",
+    "db:estado": "prisma migrate status",
     "db:nueva": "tsx scripts/db-nueva-migracion.ts",
     "db:verificar": "tsx scripts/db-verificar.ts",
     "db:sembrar": "tsx scripts/db-sembrar.ts",

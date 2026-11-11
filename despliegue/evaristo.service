@@ -1,0 +1,40 @@
+# Servicio del sitio (sitio, panel y API en un solo proceso de Node). docs/guia-despliegue.md, paso 7.
+# Va en /etc/systemd/system/evaristo.service. Después: sudo systemctl daemon-reload && sudo systemctl enable --now evaristo
+#
+# - Arranca después de MySQL y vuelve a arrancar solo si se cae (y después de reiniciar el servidor).
+# - Node directo con el cargador de tsx (sin npm de por medio): systemd le manda SIGTERM al proceso del servidor, que cierra ordenado.
+# - Corre como el usuario evaristo, sin permisos de más: solo puede escribir las imágenes subidas y la caché de variantes (las dos
+#   carpetas tienen que existir antes de arrancar; si no, systemd no lo levanta).
+# - El .env (con las claves) lo lee Node con --env-file; tiene que ser del usuario evaristo y con permisos 600.
+
+[Unit]
+Description=Evaristo Cultural (sitio, panel y API)
+After=network-online.target mysql.service
+Wants=network-online.target mysql.service
+# Que nunca deje de intentar levantarlo (con 5 s entre intentos, ver RestartSec).
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=evaristo
+Group=evaristo
+WorkingDirectory=/srv/evaristo/app/apps/api
+ExecStart=/usr/bin/node --env-file=/srv/evaristo/app/.env --import tsx src/servidor.ts
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+
+# Seguridad: nada fuera de lo necesario.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/evaristo/datos/subidas /srv/evaristo/datos/variantes
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

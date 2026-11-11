@@ -1,0 +1,22 @@
+# .env del servidor (docs/guia-despliegue.md, paso 5). Se copia a /srv/evaristo/app/.env, del usuario evaristo y con permisos 600.
+# Las claves se completan en el servidor; nunca en el repo ni en un documento.
+NODE_ENV=production
+PORT=3000
+# Caddy está adelante: un proxy.
+TRUST_PROXY=1
+SITIO_URL=https://evaristocultural.com.ar
+
+# La app usa el usuario sin permisos sobre la estructura (ver usuarios-mysql.sql).
+DATABASE_URL="mysql://evaristo_app:CLAVE_APP@127.0.0.1:3308/evaristo_cms"
+
+MEDIA_DIR=/srv/evaristo/datos/originales
+MEDIA_DIR_SUBIDAS=/srv/evaristo/datos/subidas
+MEDIA_DIR_VARIANTES=/srv/evaristo/datos/variantes
+
+# Correo saliente del hosting (formulario de contacto). Ver el README, «Variables de entorno».
+SMTP_HOST=
+SMTP_PUERTO=465
+SMTP_USUARIO=
+SMTP_CLAVE=
+CONTACTO_DESTINO=
+CORREO_REMITENTE="Evaristo Cultural <web@evaristocultural.com.ar>"
