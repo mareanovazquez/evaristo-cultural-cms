@@ -1074,11 +1074,13 @@ a.topbar:focus-visible {
 .marca-fondo--sola b {
   color: var(--accent-100);
 }
-/* En Contacto (11/11/2026): no fija, sino al final de la página y apoyada sobre el footer, para que no quede detrás del formulario.
-   Centrada respecto de la página y cortada por los bordes de la pantalla, como las otras. El margen negativo se come el margen superior
-   del footer; text-box recorta lo que queda debajo de la línea base (las mayúsculas no tienen descendentes), así las letras tocan el
-   footer. Donde text-box no existe (Firefox, por ahora), un ajuste aproximado para la métrica de Roboto. */
+/* En Contacto (11/11/2026): no fija, sino al final de la página y medio enterrada detrás del footer, para que no quede detrás del
+   formulario. Centrada respecto de la página y cortada por los bordes de la pantalla, como las otras. El margen negativo se come el
+   margen superior del footer y además ENTERRADO de la altura de la letra: el footer (position: relative y después en el documento)
+   la tapa. Las mayúsculas de Roboto miden 0,71em: 0,18em es un cuarto, y se sigue leyendo. text-box recorta lo que queda debajo de
+   la línea base, así lo enterrado se mide desde ahí; donde text-box no existe (Firefox, por ahora), un ajuste aproximado. */
 .marca-fondo--al-pie {
+  --enterrado: 0.18em;
   position: relative;
   z-index: auto;
   top: auto;
@@ -1086,13 +1088,17 @@ a.topbar:focus-visible {
   display: block;
   width: max-content;
   transform: translateX(-50%);
-  margin-bottom: calc(var(--space-24) * -1 - 0.06em);
+  margin-bottom: calc(var(--space-24) * -1 - var(--enterrado) - 0.06em);
 }
 @supports (text-box: trim-end alphabetic) {
   .marca-fondo--al-pie {
     text-box: trim-end alphabetic;
-    margin-bottom: calc(var(--space-24) * -1);
+    margin-bottom: calc(var(--space-24) * -1 - var(--enterrado));
   }
+}
+/* El footer va por delante de la marca de Contacto (no cambia nada en las demás páginas: ahí la marca está fija con z-index: -1). */
+.footer {
+  position: relative;
 }
 /* En la nota (7/11/2026): vertical, de abajo hacia arriba como el lomo de un libro, pegada al borde izquierdo y dentro del margen,
    nunca detrás del texto de lectura (columna de 680px). Solo desde 1200px de ancho: más angosto no hay margen libre. */
