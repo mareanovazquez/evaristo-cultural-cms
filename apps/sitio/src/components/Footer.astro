@@ -2,7 +2,7 @@
 import { URL_AUTORES, urlSeccion } from "../lib/rutas";
 import { listarSeccionesMenu } from "../lib/secciones";
 
-// «Quiénes somos» sigue vacío: la editorial todavía no mandó el texto (ver especificacion-home.md, sección 6). Contacto es un formulario (decisión 90).
+// «Quiénes somos» tiene un texto provisorio (la presentación de la editorial) hasta que llegue el de la revista. Contacto es un formulario (decisión 90).
 const URL_EDITORIAL = "https://evaristoeditorial.com.ar";
 const URL_INSTAGRAM = "https://www.instagram.com/evaristoeditorial/";
 const principales = (await listarSeccionesMenu()).slice(0, 4);
@@ -26,7 +26,7 @@ const principales = (await listarSeccionesMenu()).slice(0, 4);
         <ul>
           <li><a href="/novedades/">Novedades</a></li>
           <li><a href={URL_AUTORES}>Autores</a></li>
-          <li><a href="#">Quiénes somos</a></li>
+          <li><a href="/quienes-somos/">Quiénes somos</a></li>
           <li><a href="/contacto/">Contacto</a></li>
         </ul>
       </div>
